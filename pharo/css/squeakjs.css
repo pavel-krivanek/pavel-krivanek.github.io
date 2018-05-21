@@ -1,0 +1,42 @@
+body {
+    background-color: #E0E0E0;
+    font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    font-size: 9pt;
+}
+canvas {
+    background: #000;
+}
+
+#container {
+  display:inline-block;
+  padding: 0;
+  margin: 0;
+}
+
+#statusBar {
+  padding: 0;
+  margin: 0;
+  min-height: 1.25em;
+}
+
+#sqSpinner {
+    color: black;
+    padding-left: 1em;
+    background-color: #E0A0A0;
+}
+
+#drop {
+    color: #9b988a;
+    border: 6px dashed #9b988a;
+    min-height: 50px;
+    max-width: 600px;
+    margin: 10px 0;
+    padding: 10px;
+}
+.filelist > ul {
+    overflow: scroll;
+    margin: 10px 0;
+    padding: 10px;
+}

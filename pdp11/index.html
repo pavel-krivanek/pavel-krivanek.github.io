@@ -4,7 +4,7 @@
 <!-- Copyright (C) 2014-2015 Ben Wheeler. All rights reserved. Absolutely no warranty, express or implied. -->
 	<head>
 		<meta charset="utf-8"> 
-		<title>OverType - The Over-The-Top Typewriter Simulator</title>
+		<title>PDP-11</title>
 		<style type="text/css" media="all">
 			body {
 				font-family: Helvetica, sans-serif;
@@ -76,11 +76,11 @@
 				font-size: 20px;
 				line-height: 30px;
 				position: absolute;
-				left: 5em;
+				left: 50%;
+				margin-left: -26em;
 				top: 0;
 				//height: 165ex;
 				height:20ex;
-				border: 1px solid black;
 			}
 			.output {
 				margin-bottom: 2em;
@@ -96,18 +96,6 @@
 				/*  box-shadow: 8px 8px 4px #888; */
 				white-space: nowrap;
 				z-index: 2;
-			}
-			.tippex {
-				position: absolute; /* overlays .output, but still relative to #Carriage */
-				width: 51em;
-				height: 120px;
-				left: 10px;
-				top: -200px; /* Starts off the top of the screen */
-				background-color: white;
-				border: 1px solid black;
-				box-shadow: 4px 4px 2px #888;
-				z-index: 3;
-				display: none;
 			}
 			.cursor {
 				position: absolute;
@@ -139,11 +127,11 @@
 			}
 			
 			@font-face {
-    font-family: 'GNUTypewriterStandard';
-        src: url('GNUTypewriterStandard.ttf') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-      }
+				font-family: 'GNUTypewriterStandard';
+				src: url('GNUTypewriterStandard.ttf') format('truetype');
+				font-weight: normal;
+				font-style: normal;
+			}
 
  /* The following rules are deprecated. */ 
 
@@ -181,9 +169,9 @@ display: none;
 	     
 		</style>
 		<style type="text/css" media="print">
-			.title, .controls, .topbar, .tippex, .cursor { display: none !important; }
+			.title, .controls, .topbar, .cursor { display: none !important; }
 			.output { box-shadow: none; border: none; padding: 10ex 0 0 0; background-image: none; }
-			#Carriage { left: 0 !important; top: 0 !important; }
+			#Carriage { left: 0 !important; top: 0 !important; left: 5em; margin-left: 0;}
 			body { background-color: white; }
 		</style>
 		<!-- jQuery -->
@@ -264,8 +252,6 @@ display: none;
 			var redshift = false;
 			var shift_lock = false;
 			var redshift_lock = false;
-			var tippex_mode = false;
-			var sseq = '';
 			
 			var printBuffer = [];
 
@@ -277,34 +263,6 @@ display: none;
 				$('.buttons, .output, .cursor').hide();
 				started = false;
 			}
-			function tippex_start() {
-				tippex_mode = true;
-				$('#TippexStart').hide();
-				$('#TippexStop').show();
-				$('.tippex').show().animate({
-					top: y - ypx - 20,
-				}, 200);
-			}
-			function tippex_stop() {
-				tippex_mode = false;
-				$('#TippexStop').hide();
-				$('#TippexStart').show();
-				$('.tippex').animate({
-					top: -200,
-				}, 200, function() {
-					$(this).hide();
-				});
-			}
-			function topbar_hide() {
-				$('.topbar').slideUp('fast');
-				$('#TopbarHide').hide();
-				$('#TopbarShow').show();
-			}
-			function topbar_show() {
-				$('.topbar').slideDown('fast');
-				$('#TopbarShow').hide();
-				$('#TopbarHide').show();
-			}			
 			function keydown_capslock(e) {
 				// If already locked, unlock
 				if (shift_lock || redshift_lock) {
@@ -352,28 +310,15 @@ display: none;
 				alt_mutex = true;
 			}
 
-			function keydown_enter(e) {
-				e.preventDefault();
-				crlf(e.keyCode);
-			}
-
-			function crlf(keyCode) {
+			function crlf() {
 				// Carriage return sets its own mutex, which prevents any other keydown (including another enter) 
 				// from working until the return has finished.
 				cr_mutex = false; //!
- 				// I can't think of a decent way of keeping tippex in use past a CR - it needs to be repositioned. So, if active, switch it off.
-				if (tippex_mode) {
-					tippex_stop();
-				}
-				// If we're not already at the beginning of the line, start playing the return motion sound
+ 				// If we're not already at the beginning of the line, start playing the return motion sound
 				var line_length = x / xpx;
 				var return_time = 13 * line_length;
 				y += ypx;
 				
-				//$('#Carriage').css("top", (vmid) + 'px');
-				
-				//$('#Carriage').css("top", (vmid - y) + 'px');
-				//$('#Carriage').css("left",  hmid + 'px');
 				cr_mutex = false;
 				x = 0;
 			}	
@@ -381,10 +326,6 @@ display: none;
 			function keydown_cursor_up(e) {
 				e.preventDefault();
 				e.stopPropagation(); 
-				// Remove tippex for any vertical movement
-				if (tippex_mode) {
-					tippex_stop();
-				}
 				if (y > 0) {
 					y -= (ypx / 4);
 					$.ionSound.play('typewriter-spacebar');
@@ -395,10 +336,6 @@ display: none;
 			function keydown_cursor_down(e) {
 				e.preventDefault();
 				e.stopPropagation(); 
-				// Remove tippex for any vertical movement
-				if (tippex_mode) {
-					tippex_stop();
-				}
 				$.ionSound.play('typewriter-spacebar');
 				y += (ypx / 4);
 			///	move_page();
@@ -433,43 +370,6 @@ display: none;
 				}
 			}
 			
-			function sseq_complete(e, linecount) {
-				var chars = [32,  121, 111, 98, 32, 108, 108, 117, 100, 32, 97, 32, 107, 99, 97, 74, 32, 115, 101, 107, 97, 109, 32, 121, 97, 108, 112, 32, 111, 110, 32, 100, 110, 97, 32, 107, 114, 111, 119, 32, 108, 108, 65];
-				// auto CR - because of the difficulty of waiting for it in the middle of typing, do it first if the next line won't fit
-				var initial_wait = 200;
-				if (x / xpx >= max_width / 2) {
-					//keydown_enter(e);
-					initial_wait = 2000;
-				} 
-				for (var i=chars.length; i; i--) {
-					// Randomly omit or alter this character
-					if (Math.random() < 0.005 * linecount) {
-						continue;
-					}
-					var charCode = chars[i-1];
-					if (Math.random() < 0.02 * linecount) {
-						charCode = Math.floor(Math.random() * 26) + 97;
-					}
-					setTimeout(function(e, charCode) {
-						return function() {
-							if (charCode < 97) { // is upper case, pretend we're holding shift
-								shift_mutex = true;
-							} else {
-								shift_mutex = false;
-							}
-							e.charCode = charCode;
-							e.keyCode = charCode;
-							keydown(e);
-							keypress(e);
-							keyup(e);
-						}
-					}(e, charCode), initial_wait + 150 * (chars.length - i) + Math.floor(Math.random() * 100)); 
-				}
-				setTimeout(function() {
-					sseq_complete(e, linecount + 1);
-				}, 9000);
-			}
-
 			function keydown_tab(e) {
 				e.preventDefault(); // Don't lose focus
 				var oldx = x;
@@ -519,7 +419,7 @@ display: none;
 					switch (e.keyCode) {
 						case 8:
 						case 9:
-		//				case 13:
+						case 13:
 						case 37:
 						case 38:
 						case 39:
@@ -557,13 +457,15 @@ display: none;
 			
 			function printer() {
 				setTimeout(function(){
+					var delay = typingSpeed;
 					if (printBuffer.length > 0)
 					{
 						var code = printBuffer.pop();
 						typeCharacter2(code);
+						if (code = 32) delay /= 2 ; 
 						
 					}
-					setTimeout(printer, typingSpeed);
+					setTimeout(printer, delay);
 				}, typingSpeed);
 			
 			}
@@ -571,37 +473,26 @@ display: none;
 
 
 			function typeCharacter2(charCode, shiftKey) {
-
+					
+				console.log(charCode);
+								
 				var nosound = false;
 
+				if (charCode == 13) return; // ignore
+				if (charCode == 0) return; // ignore
 				if (charCode == 10) {
-					crlf(10);
+					crlf();
 					move_page();
-					return;
 					}
 			
-				$("#cursorImage").attr("src","head2.png");
+				if (charCode != 32)
+					$("#cursorImage").attr("src","head2.png");
 
 				var c;
-				c = String.fromCharCode(charCode);
-
-				// Handle the sseq before doing any manipulation on c
-				//console.log("sseq is now " + sseq + " and c is " + c);
-				if (sseq == 'right2' && c.toLowerCase() == 'b') {
-					sseq = 'b';
-					console.log("Almost there!");
-				} else if (sseq == 'b' && c.toLowerCase() == 'a') {
-					console.log("Got it!");
-					// Clear this condition to avoid recursion
-					sseq = '';
-					// Clear the mutexes otherwise they'll interfere because 'a' is currently down.
-					keydown_keys = {};
-					keypress_keys = {};
-					sseq_complete(e, 0);
-				} else {
-					sseq = '';
-				}
-
+				c = String.fromCharCode(charCode).toUpperCase();
+				
+				if (charCode == 127) c = " "; 
+/*
 				if ( charCode >= 65 && charCode <= 90 ) {
 					// We only want upper case letters if shifted (so caps lock doesn't do them if it's only being used for colourshift lock)
 					if (! shiftKey && ! shift_lock) {
@@ -622,7 +513,7 @@ display: none;
 						// console.log(" -> " + c);
 					}
 				}
-
+*/
 				// Vertical offset
 				if (! (c in voffset)) {
 					voffset[c] = {
@@ -664,12 +555,15 @@ display: none;
 				}
 
 				output_character(c, this_voffset, '.output');
-				// If tippex is in use, that does a white character output onto the output. We also need a regular one onto the tippex sheet.
-				if (tippex_mode) {
-					output_character(c, this_voffset, '.tippex');
-				}
 
-				advance_one_space();
+				if (charCode != 10) {
+					advance_one_space();
+				}
+				if (charCode == 127) {
+					advance_one_space();
+					advance_one_space();
+					advance_one_space();
+				}
 
 				if (c.match(/\S/)) {
 					ink_remaining = ink_remaining - 0.02;
@@ -689,7 +583,7 @@ display: none;
 				
 				setTimeout(function(){
  $("#cursorImage").attr("src","head.png");
-}, 80);
+}, typingSpeed);
 				
 				
 		
@@ -698,31 +592,19 @@ display: none;
 			function output_character(c, this_voffset, where) {
 				// Choose an alpha level with a random element to simulate uneven key pressure and ribbon ink
 				var ink_level = (ink_remaining > 0) ? ink_remaining / 400 - ink_variation + Math.random() * ink_variation : 0;
-				// In tippex output, this needs adjusting otherwise it always requires multiple strikes to correct a character
-				// even when the ink remaining is high. 
-				if (tippex_mode && where == '.output') {
-					ink_level += 0.3;
-				}
-			//	console.log(ink_level);
+				//	console.log(ink_level);
 				
 				var hpos = 'left: ' + (x + margin_left) + 'px; ';
 				var vpos = 'top: ' + (y + this_voffset + margin_top) + 'px; ';
-				if (tippex_mode && where == '.tippex') {
-					hpos = 'left: ' + (x + margin_left - xpx + 2) + 'px; ';
-					vpos = 'top: 90px; ';
-				}
 								
 				var black_height = ypx;
 				var black_height_style = '', red_height_style = '';
 				var base_colour = '0,0,0';
-				if (tippex_mode && where == '.output') {
-					base_colour = '255,255,255';
-				}
 				// TODO: Make high brokenness do partial red chars sometimes without redshift, and/or permanently lose part of the char.
 				//       The relative probabilities of black and red need to be the opposite of what they are for redshift 
 				//       but without reversing the relative positions. voffset also needs to work oppositely.
 				//       I think I need to track the position of the print head relative to the ribbon.
-				if ((redshift || redshift_lock) && !tippex_mode) {
+				if (redshift || redshift_lock) {
 					if (Math.random() < brokenness / 100) {
 						// Colour part of the character black, to simulate not pressing Colour Shift hard enough.
 						// Black height depends on brokenness level and voffset. As the black creeps in from the top,
@@ -789,61 +671,23 @@ display: none;
 					case 9:  // tab
 						keydown_tab(e);
 						break;
-			//		case 13: // enter
+					case 13: // enter
+						addchar(13);
+						specialchar(13)
+						break;
 			//			keydown_enter(e);
 			//	addchar(13);
 			//	specialchar(13)
 			//			break;
-					case 8:  // backspace
-					case 37: // left-arrow
-						keydown_cursor_left(e);
-						if (sseq == 'down2') {
-							sseq = 'left1';
-						} else if (sseq == 'right1') {
-							sseq = 'left2';
-						} else {
-							sseq = '';
-						}
-						break;
-					case 38: // up-arrow
-						keydown_cursor_up(e);
-						if (sseq == 'up1') {
-							sseq = 'up2';
-						} else {
-							sseq = 'up1';
-						}
-						break;
-					case 32: // space
-				addchar(32);
-				specialchar(32)
-					case 39: // right-arrow - only needs special handling because Chrome doesn't produce a keypress event for it
-						keydown_cursor_right(e);
-						if (sseq == 'left1') {
-							sseq = 'right1';
-						} else if (sseq == 'left2') {
-							sseq = 'right2';
-						} else {
-							sseq = '';
-						}
-						break;
-					case 40: // down-arrow
-						keydown_cursor_down(e);
-						if (sseq == 'up2') {
-							sseq = 'down1';
-						} else if (sseq == 'down1') {
-							sseq = 'down2';
-						} else {
-							sseq = '';
-						}							
-						break;
 					default: // all other characters are handled by the keypress handler
 				}
 			}
 			
 			
 			function keydown(e) {
+								console.log("keydown");
+				console.log(e.charCode+" - "+e.keyCode);
 				
-					
 				if (! started) {
 					start();
 				}
@@ -881,41 +725,29 @@ display: none;
 					default:
 						keydown_nonmod(e);
 				}
-				return false;
+				return; //return true;
+				
+				
+				keydown_nonmod(e);
 			}
 			
 			function move_page() {
 		
-   $('#Carriage').attr('height', '+='+ypx+'px');
+				$('#Carriage').attr('height', '+='+ypx+'px');
  			
-$(function () {
-    $('#Carriage').animate({
-				//	top: (vmid) + 'px',
-					top: (vmid - y) + 'px',
-		//			height: '+='+ypx+'px',
-				//	left: (hmid - x) + 'px',
-				}, { duration: pageScrollSpeed, queue: false });
+				$(function () {
+					$('#Carriage').animate({
+						top: (vmid - y) + 'px',
+					}, { duration: pageScrollSpeed, queue: false });
 
-   $('.output').animate({
-				//	top: (vmid) + 'px',
+					$('.output').animate({
 						height: '+='+ypx+'px',
-				//	left: (hmid - x) + 'px',
-				}, { duration: pageScrollSpeed, queue: false });
+					}, { duration: pageScrollSpeed, queue: false });
 				
-		
-
-    $('.cursor').animate({
-				//	top: (vmid) + 'px',
-					top: (y + 10) + 'px',
-				//	left: (hmid - x) + 'px',
-				}, { duration: pageScrollSpeed, queue: false });
-});		
-				
-				//$('#Carriage').attr("top", (vmid - y) + 'px');
-				
-				// If the page is not centred, centre it
-			//	$('html,body').scrollTop(vmid - y - 500)
-			//$('html,body').scrollTop(document.body.scrollHeight)
+					$('.cursor').animate({
+						top: (y + 10) + 'px',
+					}, { duration: pageScrollSpeed, queue: false });
+				});		
 			}
 
 			// Handler for keyup events
@@ -970,25 +802,12 @@ $(function () {
 			}
 			
 			function setCursorPosition() {
-				
-				
-    
-  	
-		
-	$(function () {
-
-
-    $('.cursor').animate({
-				//	top: (vmid) + 'px',
-					left: ( x - 185) + 'px',
-				//	left: (hmid - x) + 'px',
-				}, { duration: typingSpeed, queue: false });
-});					
-				
-	//			$('.cursor').css('top', y+10).css('left', x - 185); // Magic numbers basically arrived at by trial and error...
-		//		$('.cursor').css('left', x - 185); // Magic numbers basically arrived at by trial and error...
-			}
-			
+				$(function () {
+					$('.cursor').animate({
+						left: ( x - 185) + 'px',
+					}, { duration: typingSpeed, queue: false });
+				});					
+			}			
 
 			// onLoad setup
 			$(function() {
@@ -1073,7 +892,7 @@ $(function () {
 				.on('keydown', function(e) { 
 					// console.log("keydown: " + e.which + " keydown_keys " + Object.keys(keydown_keys).toString() + " keypress_keys " + Object.keys(keypress_keys).toString());
 					keydown(e); 
-				})
+				}) 
 				.on('keypress', function(e) {
 					// console.log("keypress: " + e.which + " keydown_keys " + Object.keys(keydown_keys).toString() + " keypress_keys " + Object.keys(keypress_keys).toString());
 					keypress(e);
@@ -1096,7 +915,7 @@ $(function () {
 		<span id="rkbusy" style='display: none'>hard disk busy</span>
 		</div>
 
-		<div>press run, type <tt>unix</tt> at the <tt>@</tt> prompt to load the kernel, enjoy! <a href="http://aiju.de/code/pdp11/faq">faq</a></div>
+		<div>type <tt>unix</tt> at the <tt>@</tt> prompt to load the kernel, enjoy! <a href="http://aiju.de/code/pdp11/faq">faq</a></div>
 		<textarea id="terminal" readonly="readonly" onkeypress="addchar(event.which)" onkeyup="specialchar(event.which)"> </textarea>
 		<textarea id="debug" readonly="readonly"> </textarea>
 
@@ -1154,8 +973,6 @@ $(function () {
 			<div class="buttonbar">
 				<div class="buttons left">
 					<button onclick="stop()">Show instructions/info page</button>
-					<button id="TippexStart" onclick="tippex_start()">Load correction paper</button>
-					<button id="TippexStop" onclick="tippex_stop()" style="display: none">Remove correction paper</button>
 				</div>
 				<div class="buttons right">
 					<button id="TopbarHide" onclick="topbar_hide()">Hide Controls</button>
@@ -1165,8 +982,6 @@ $(function () {
 		</div><!-- .bars -->
 		<div id="Carriage">
 			<div class="output">
-			</div>
-			<div class="tippex">
 			</div>
 		<div class="cursor"><img id="cursorImage" src="head.png"></div>
 		</div>

@@ -15,6 +15,7 @@ writeterminal(msg)
 {
 	for (i in msg) { 
 		code = msg.charCodeAt(i);
+		//console.log('type: '+code);
 	//	if (code == 10) 
 	//		crlf(13);
 	//	else
@@ -29,6 +30,7 @@ writeterminal(msg)
 function
 addchar(c)
 {
+	//console.log('addchar: '+c);
 	TKS |= 0x80;
 	keybuf = c;
 	if(TKS & (1<<6)) interrupt(INTTTYIN, 4);

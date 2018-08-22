@@ -441,9 +441,10 @@ display: none;
 					return false;
 				}
 				
+if ((e.charCode != 10) && (e.charCode != 13)) { 
 				addchar(e.charCode);
-				specialchar(e.charCode)
-				
+				specialchar(e.charCode);
+			}				
 
 				//typeCharacter(e.charCode, e.shiftKey);;
 			}	

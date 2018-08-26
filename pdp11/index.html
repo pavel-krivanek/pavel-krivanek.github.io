@@ -194,9 +194,9 @@ display: none;
 
 		<script type="text/javascript">
 			// "use strict";
-			const typingSpeed = 50;
+			const typingSpeed = 100
 			const pageScrollSpeed = 200;
-			const bell_width = 69;
+			const bell_width = 72-5;
 			const max_width = 72-1;
 			const tab_width = 8;
 			const xpx = 12;  // characters width/heigth
@@ -207,7 +207,9 @@ display: none;
 			const max_ink_level = 600;
 			// These values are used for shift lock if we have not yet mapped the real value of the shifted char 
 			// by pressing it with shift held down.
-			const shifted = {
+
+
+			const shifted = { /*
 				'§': '±',
 				'1': '!',
 				'2': '@',
@@ -229,7 +231,7 @@ display: none;
 				',': '<',
 				'.': '>',
 				'/': '?',
-				'`': '~',
+				'`': '~',  */
 			};
 			var real_shifted = {};
 			var x = 0 * xpx;
@@ -253,7 +255,13 @@ display: none;
 			var shift_lock = false;
 			var redshift_lock = false;
 			
+			var headImage = "head.png";
+			
 			var printBuffer = [];
+			
+			function getRandomInt(min, max) {
+				return Math.floor(Math.random() * (max - min + 1)) + min;
+			}
 
 			function start() {			
 				$('.buttons, .output, .cursor').show();
@@ -402,14 +410,14 @@ display: none;
 			function keypress(e) {
 				// Prevent browser special key actions as long as ctrl/alt/cmd is not being held
 				if (! e.altKey && ! e.ctrlKey && ! e.metaKey) {
-					e.preventDefault();
+				e.preventDefault();
 					e.stopPropagation();
 				}
 				// If we are in the middle of a CR, ignore this keypress
 				// If this key is already being held down, ignore this keypress (keyboard auto-repeat may fire multiple events)
-				if (cr_mutex || keypress_keys[keydown_keycode]) {
-					return;
-				}
+			//	if (cr_mutex || keypress_keys[keydown_keycode]) {
+			//		return;
+			//	}
 				// Don't handle keys that are handled by keydown functions
 				// These will all have charCode 0, which is the only way of distinguishing them from chars which have the
 				// same value on Chrome which sets keyCode to match charCode in keypress handlers. (eg in a keydown handler
@@ -463,7 +471,7 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 					{
 						var code = printBuffer.pop();
 						typeCharacter2(code);
-						if (code = 32) delay /= 2 ; 
+						//if (code = 32) delay /= 2 ; 
 						
 					}
 					setTimeout(printer, delay);
@@ -475,7 +483,7 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 
 			function typeCharacter2(charCode, shiftKey) {
 					
-				//console.log(charCode);
+				console.log(charCode);
 								
 				var nosound = false;
 
@@ -486,11 +494,13 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 					move_page();
 					}
 			
-				if (charCode != 32)
+				if (charCode != 32 && charCode != 127)
 					$("#cursorImage").attr("src","head2.png");
 
 				var c;
-				c = String.fromCharCode(charCode).toUpperCase();
+				c = String.fromCharCode(charCode);//.toUpperCase();
+				console.log(c);
+				
 				
 				if (charCode == 127) c = " "; 
 /*
@@ -574,7 +584,15 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 					$.ionSound.play('typewriter-bell-2');
 				} else if (! nosound) {
 					// $.ionSound.stop('typewriter-keyup-2');
-					$.ionSound.play('type');
+					switch (charCode)
+					{
+						case 32:
+						case 127:
+							$.ionSound.play('type-space');
+							break;
+						default:
+							$.ionSound.play('type2');
+					}
 				} 
 
 				// Update ink level slider and disp
@@ -583,7 +601,20 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 				setCursorPosition();
 				
 				setTimeout(function(){
- $("#cursorImage").attr("src","head.png");
+					if (charCode != 32 && charCode != 9) {
+						switch (getRandomInt(1, 3)) {
+							case 1: 
+								headImage = "head.png";
+								break;
+							case 2: 
+								headImage = "head3.png";
+								break;
+							default: 
+								headImage = "head4.png";
+						}
+					}
+					
+ $("#cursorImage").attr("src",headImage);
 }, typingSpeed);
 				
 				
@@ -670,12 +701,33 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 				}
 				switch (e.which) {
 					case 9:  // tab
-						keydown_tab(e);
+					    if (e.charCode == 0) {
+							e.preventDefault(); 
+							console.log("DEL");
+							e.preventDefault()
+//							addchar(9);
+							specialchar(9)
+						}
+
 						break;
+		//				keydown_tab(e);
+			//			break;
 					case 13: // enter
 						addchar(13);
 						specialchar(13)
 						break;
+					case 46:  // del
+					    if (e.charCode == 0) {
+							e.preventDefault(); 
+							console.log("DEL");
+							specialchar(46);
+							printBuffer = [];
+						}
+						//addchar(46);
+						//specialchar(127);
+						break;
+
+
 			//			keydown_enter(e);
 			//	addchar(13);
 			//	specialchar(13)
@@ -686,8 +738,8 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 			
 			
 			function keydown(e) {
-				//console.log("keydown");
-				//console.log(e.charCode+" - "+e.keyCode);
+				console.log("keydown");
+				console.log(e.charCode+" - "+e.keyCode);
 				
 				if (! started) {
 					start();
@@ -698,11 +750,11 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 				}
 				// If this key is already being held down, ignore it (keyboard auto-repeat may fire multiple events)
 				// UNLESS it's a cursor key - we allow auto-repeat on those because otherwise moving is tedious.
-				if (keydown_keys[e.keyCode] && (e.keyCode < 37 || e.keyCode > 40)) {
+/*				if (keydown_keys[e.keyCode] && (e.keyCode < 37 || e.keyCode > 40)) {
 					return;
 				}
-				switch (e.which) {
-					case 16:
+*/				switch (e.which) {
+	/*				case 16:
 						keydown_shift(e);
 						break;
 					case 18:
@@ -717,9 +769,7 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 						}, 1500);
 						keydown_capslock(e);
 						break;
-					case 27: // esc
-						keydown_redshift(e);
-						break;
+	*/				case 27: // esc - ignore
 					case 17:	// ctrl - ignore
 					case 224: // cmd - ignore
 						break;
@@ -754,17 +804,17 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 			// Handler for keyup events
 			function keyup(e) {
 								
-				if (e.which == 20) {
+				if (e.which == 2000) {
 					keyup_capslock();
-				} else if (shift_mutex && e.which == 16 && ! e.shiftKey) {
+				} else if (shift_mutex && e.which == 1600 && ! e.shiftKey) {
 					if (! shift_lock) {
 						$.ionSound.play('typewriter-keyup-2');
 					}
 					shift_mutex = false;
-				}	else if (alt_mutex && e.which == 18 && ! e.altKey) {
+				}	else if (alt_mutex && e.which == 1800 && ! e.altKey) {
 					$.ionSound.play('typewriter-keyup-2');
 					alt_mutex = false;
-				}	else if (redshift && e.which == 27) {
+				}	else if (redshift && e.which == 2700) {
 					if (! redshift_lock) {
 						$.ionSound.play('typewriter-keyup-2');
 					}
@@ -775,11 +825,13 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 			///			move_page();
 					}
 					// Play the key release sound and release the mutexes after a short delay
-					setTimeout(function() {
+				/*	setTimeout(function() {
 						$.ionSound.play('typewriter-keyup-2');
 						delete keydown_keys[e.keyCode];
 						delete keypress_keys[e.keyCode];
-					}, 5);
+					}, 5); */
+					delete keydown_keys[e.keyCode];
+					delete keypress_keys[e.keyCode];
 				}
 			}
 
@@ -875,12 +927,13 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 					path: "",
 					sounds: [
 							// { name: "typewriter-keydown-2" },
-							{ name: "type" },
-							{ name: "typewriter-keyup-2" },
-							{ name: "typewriter-carriage-return-main" },
-							{ name: "typewriter-carriage-return-stop" },
-							{ name: "typewriter-spacebar" },
-							{ name: "typewriter-bell-2" },
+							{ name: 'type2' },
+							{ name: 'type-space' },
+							{ name: 'typewriter-keyup-2' },
+							{ name: 'typewriter-carriage-return-main' },
+							{ name: 'typewriter-carriage-return-stop' },
+							{ name: 'typewriter-spacebar' },
+							{ name: 'typewriter-bell-2' },
 					],
 					multiplay: true,
 					preload: true,
@@ -944,7 +997,7 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 							</label>
 							<br>
 							<label>
-								<input class="fontsel" type="radio" name="font" value="'GNUTypewriterStandard', monospace">
+								<input class="fontsel" type="radio" name="font" value="'GNUTypewriterStandard', monospace" >
 								<span style="font-family: 'GNUTypewriterStandard', monospace">GNUTypewriter</span>
 							</label>
 						</div>

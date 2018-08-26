@@ -30,7 +30,7 @@ writeterminal(msg)
 function
 addchar(c)
 {
-	//console.log('addchar: '+c);
+	console.log('addchar: '+c);
 	TKS |= 0x80;
 	keybuf = c;
 	if(TKS & (1<<6)) interrupt(INTTTYIN, 4);
@@ -40,9 +40,9 @@ function
 specialchar(c)
 {
 	switch(c) {
-	case 42: keybuf = 4; break;
+//	case 42: keybuf = 4; break;
 	case 19: keybuf = 034; break;
-	//case 46: keybuf = 127; break;
+	case 9: keybuf = 9; break;
 	default: return;
 	}
 	TKS |= 0x80;

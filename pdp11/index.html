@@ -236,6 +236,8 @@ display: none;
 			var real_shifted = {};
 			var x = 0 * xpx;
 			var y = ypx;
+			var maxY = y;
+			var minY = y;
 			var vmid = $(window).height() / 2;
 			var hmid = $(window).width() / 2;
 			var voffset = {};
@@ -327,6 +329,7 @@ display: none;
 				var line_length = x / xpx;
 				var return_time = 13 * line_length;
 				y += ypx;
+				maxY = Math.max(maxY, y);
 				
 				cr_mutex = false;
 				x = 0;
@@ -969,6 +972,37 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 					keyup(e);
 				}); // on() 
 		}
+		
+		
+		
+$(document).ready(function(){
+	console.log("ready");
+    $('#Carriage').bind('mousewheel', function(e){
+  
+  
+				y = Math.min(maxY, y - e.originalEvent.wheelDelta);
+				y = Math.max(minY, y);
+ 		
+				$(function () {
+					$('#Carriage').animate({
+						top: (vmid - y) + 'px',
+					}, { duration: pageScrollSpeed, queue: false });
+
+			//		$('.output').animate({
+				//		height: '+='+ e.originalEvent.wheelDelta +'px',
+				//	}, { duration: pageScrollSpeed, queue: false });
+					
+				
+					$('.cursor').animate({
+						top: (y + 10) + 'px',
+					}, { duration: pageScrollSpeed, queue: false });
+				});		
+
+
+    });
+});
+		
+		
 			}); //$()
 		</script>
 	</head>

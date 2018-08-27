@@ -194,8 +194,6 @@ display: none;
 
 		<script type="text/javascript">
 			// "use strict";
-			const typingSpeed = 100
-			const pageScrollSpeed = 200;
 			const bell_width = 72-5;
 			const max_width = 72-1;
 			const tab_width = 8;
@@ -233,6 +231,8 @@ display: none;
 				'/': '?',
 				'`': '~',  */
 			};
+			var typingSpeed = 50;
+			var pageScrollSpeed = 200;
 			var real_shifted = {};
 			var x = 0 * xpx;
 			var y = ypx;
@@ -254,6 +254,7 @@ display: none;
 			var redshift = false;
 			var shift_lock = false;
 			var redshift_lock = false;
+			var spoolPosition = 1;
 			
 			var headImage = "head.png";
 			
@@ -408,6 +409,9 @@ display: none;
 			}
 			
 			function keypress(e) {
+				
+			//	console.log("keypress "+e.charCode);
+				//lastChar = e.charCode;
 				// Prevent browser special key actions as long as ctrl/alt/cmd is not being held
 				if (! e.altKey && ! e.ctrlKey && ! e.metaKey) {
 				e.preventDefault();
@@ -449,9 +453,11 @@ display: none;
 					return false;
 				}
 				
-if ((e.charCode != 10) && (e.charCode != 13)) { 
-				addchar(e.charCode);
-				specialchar(e.charCode);
+if ((e.charCode != 10) && (e.charCode != 13)) {
+	
+			
+							addchar(e.charCode);
+							specialchar(e.charCode);
 			}				
 
 				//typeCharacter(e.charCode, e.shiftKey);;
@@ -483,7 +489,7 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 
 			function typeCharacter2(charCode, shiftKey) {
 					
-				console.log(charCode);
+			//	console.log(charCode);
 								
 				var nosound = false;
 
@@ -499,7 +505,7 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 
 				var c;
 				c = String.fromCharCode(charCode);//.toUpperCase();
-				console.log(c);
+			//	console.log(c);
 				
 				
 				if (charCode == 127) c = " "; 
@@ -602,7 +608,8 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 				
 				setTimeout(function(){
 					if (charCode != 32 && charCode != 9) {
-						switch (getRandomInt(1, 3)) {
+					//	console.log('spool: '+spoolPosition);
+						switch (spoolPosition) {
 							case 1: 
 								headImage = "head.png";
 								break;
@@ -612,6 +619,9 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 							default: 
 								headImage = "head4.png";
 						}
+						spoolPosition = ((spoolPosition)%3)+1;
+					
+						
 					}
 					
  $("#cursorImage").attr("src",headImage);
@@ -703,7 +713,7 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 					case 9:  // tab
 					    if (e.charCode == 0) {
 							e.preventDefault(); 
-							console.log("DEL");
+						//	console.log("TAB");
 							e.preventDefault()
 //							addchar(9);
 							specialchar(9)
@@ -713,13 +723,15 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 		//				keydown_tab(e);
 			//			break;
 					case 13: // enter
-						addchar(13);
-						specialchar(13)
+						
+							addchar(13);
+							specialchar(13);
+					
 						break;
 					case 46:  // del
 					    if (e.charCode == 0) {
 							e.preventDefault(); 
-							console.log("DEL");
+						//	console.log("DEL");
 							specialchar(46);
 							printBuffer = [];
 						}
@@ -738,8 +750,8 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 			
 			
 			function keydown(e) {
-				console.log("keydown");
-				console.log(e.charCode+" - "+e.keyCode);
+			//	console.log("keydown");
+			//	console.log(e.charCode+" - "+e.keyCode);
 				
 				if (! started) {
 					start();
@@ -803,6 +815,7 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 
 			// Handler for keyup events
 			function keyup(e) {
+		//		console.log("keyup");
 								
 				if (e.which == 2000) {
 					keyup_capslock();

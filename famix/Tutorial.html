@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">  	
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+  	<meta name="theme" content="hugo-academic">
+    <meta name="theme-color" content="primary">
+	<title></title>
+
+    <!-- Highlight js -->
+    <link rel="stylesheet" href="_support/html/highlightjs/styles/default.css">
+    <link rel="stylesheet" href="_support/html/css/highlight-commands.css">
+    <script src="_support/html/highlightjs/highlight.pack.js"></script>
+    <script src="_support/html/js/highlight-commands.js"></script>
+
+    <!-- Bootstrap -->
+    <link href="_support/html/css/bootstrap.min.css" rel="stylesheet">
+    <link href="_support/html/css/bootstrap-theme.min.css" rel="stylesheet">
+    <link href="_support/html/css/square-braket-associates.css" rel="stylesheet">
+
+
+  	<link href="_support/html/css/font-awesome.min.css" rel="stylesheet">
+  	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" media="screen">
+  	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/leaflet.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/academicons/1.8.4/css/academicons.min.css">
+    <link rel="stylesheet" href="_support/html/css/styles.css">
+    <link rel="icon" type="image/png" href="_support/html/img/icon.png">
+  	<link rel="apple-touch-icon" type="image/png" href="_support/html/img/icon-192.png">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:400,700%7cRoboto:400,400italic,700%7cRoboto+Mono">
+
+    <script>
+      window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+      ga('create', '', 'auto');
+      ga('require', 'eventTracker');
+      ga('require', 'outboundLinkTracker');
+      ga('require', 'urlChangeTracker');
+      ga('send', 'pageview');
+    </script>
+    <script async src="//www.google-analytics.com/analytics.js"></script>
+	
+
+    <style>
+/*        .container { max-width: 55em; } */
+    </style>
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+
+
+	<div class="article-header">
+	<span class="article-header-caption">Moose Famix</span>
+</div>
+
+	<nav class="navbar navbar-default navbar-fixed-top" id="navbar-main">
+  <div class="container">
+
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+              data-target=".navbar-collapse" aria-expanded="false">
+        <span class="sr-only"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="/">
+        Moose Famix
+      </a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse">
+
+      <ul class="nav navbar-nav navbar-right">
+		
+        <li class="nav-item">
+          <a href="/index.html#introduction">
+            <span>Introduction</span>
+          </a>
+        </li>
+		
+        <li class="nav-item">
+          <a href="/Catalog.html#catalog">
+            <span>Catalog</span>
+          </a>
+        </li>
+		
+        <li class="nav-item">
+          <a href="/Builder.html#builder">
+            <span>Builder</span>
+          </a>
+        </li>
+		
+        <li class="nav-item">
+          <a href="/MetamodelEntities.html#meta-model entities">
+            <span>Meta-model entities</span>
+          </a>
+        </li>
+		
+        <li class="nav-item">
+          <a href="/Relations.html#relations">
+            <span>Relations</span>
+          </a>
+        </li>
+		
+        <li class="nav-item">
+          <a href="/SimplifiedDefinitions.html#simplified definitions">
+            <span>Simplified definitions</span>
+          </a>
+        </li>
+		
+        <li class="nav-item">
+          <a href="/CodeGenerationManagement.html#code generation">
+            <span>Code generation</span>
+          </a>
+        </li>
+		
+        <li class="nav-item">
+          <a href="/Tutorial.html#tutorial">
+            <span>Tutorial</span>
+          </a>
+        </li>
+		
+      
+      </ul>
+      
+
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container -->
+</nav>
+
+
+<!-- Projects widget -->
+<section>
+<div class="container">
+<div class="row">
+  <div class="col-xs-12 col-md-4 section-heading">
+	<h1></h1>
+
+    
+  </div>
+  <div class="col-xs-12 col-md-8">
+
+	<h1>Tutorial</h1>
+<a id="ch:exampleMetamodel"></a>
+<p>
+In this tutorial, we will create a simple meta-model. During that, we will describe how to create own generator, use predefined traits, extend the meta-model with custom behavior and create models described by this meta-model. 
+</p>
+<h2>Preparation</h2>
+
+<p>
+We will start with a prebuilt Moose image based on Pharo 7 that you can find on the address <a href="https://ci.inria.fr/moose/view/Moose%206.1/job/FamixNG/lastSuccessfulBuild/artifact/FamixNG.zip">https://ci.inria.fr/moose/view/Moose%206.1/job/FamixNG/lastSuccessfulBuild/artifact/FamixNG.zip</a>
+</p>
+<p>
+As the first step, we will create a <code>FamixMetamodelGenerator</code> subclass that will describe your meta-model. We will describe a simplified Smalltalk metamodel and our class will be named <code>DemoStMetamodelGenerator</code>. We will place it into a package of the same name. The meta-model created by this generator will use a different package.
+</p>
+<figure><pre><code>FamixMetamodelGenerator subclass: #DemoStMetamodelGenerator
+    instanceVariableNames: ''
+    classVariableNames: ''
+    package: 'DemoStMetamodelGenerator'</code></pre><figcaption></figcaption></figure>
+
+<p class="note">In this tutorial, we do not use any prepared language generator to keep things more clear and straightforward. Usually, the other generator class like <code>FmxNGBasicInfrastructureGenerator</code> would be chosen as the superclass. </p>
+<p>
+Then we need to specify what is the package where the meta-model will be generated. For that purpose we will create a class-side method named <code>packageName</code>. The package name must be always specified.
+</p>
+<figure><pre><code>DemoStMetamodelGenerator class &gt;&gt; packageName
+
+    ^ #'DemoSmalltalkMetamodel-Generated'</code></pre><figcaption></figcaption></figure>
+
+<p>
+By default, the package name is used as the prefix of generated classes, but in our case, it is too long. So we will create a method <code>prefix</code> on the generator side of the generator that will specify it.
+</p>
+<figure><pre><code>DemoStMetamodelGenerator class &gt;&gt; prefix
+
+    ^ #DemoSt</code></pre><figcaption></figcaption></figure>
+
+<h2>Metamodel entities creation</h2>
+
+<p>
+We need to define the entities of our meta-model, like class, package or method. Firstly we will create one instance variable of in our generator for every one of them and then in the instance side method <code>defineClasses</code> we will define them as meta-model classes with a suitable name starting with an uppercase character.
+</p>
+<figure><pre><code>defineClasses
+
+    entity := builder newClassNamed: #Entity.
+    comment := builder newClassNamed: #Comment.
+    package := builder newClassNamed: #Package.
+    class := builder newClassNamed: #Class.
+    method := builder newClassNamed: #Method.
+    variable := builder newClassNamed: #Variable.
+    attribute := builder newClassNamed: #Attribute.
+    implicitVariable := builder newClassNamed: #ImplicitVariable.
+    globalVariable := builder newClassNamed: #GlobalVariable.
+    localVariable := builder newClassNamed: #LocalVariable.
+    parameter := builder newClassNamed: #Parameter.</code></pre><figcaption></figcaption></figure>
+
+<p class="note">We have an option to define them in this method and then let Pharo create instance variables for us automatically during the method saving.</p>
+<p>
+Then we can try to create the first testing generation of our meta-model:
+</p>
+<figure><pre><code>DemoStMetamodelGenerator new generate.</code></pre><figcaption></figcaption></figure>
+
+<p>
+We see that the package <code>DemoSmalltalkMetamodel-Generated</code> was created. For each entity, a class was created in the class category named <code>Entities</code> 
+</p>
+<p>
+In the next step, we will specify the classes hierarchy in a method named <code>defineHierarchy</code>:
+</p>
+<figure><pre><code>defineHierarchy
+
+    entity &lt;|-- package.
+    entity &lt;|-- class.
+    entity &lt;|-- method.   
+ 
+    variable &lt;|-- attribute.        
+    variable &lt;|-- implicitVariable.        
+    variable &lt;|-- globalVariable.        
+    variable &lt;|-- localVariable.        
+    variable &lt;|-- parameter.    </code></pre><figcaption></figcaption></figure>
+
+<p>
+The UML description of the class hierarchy is shown in the figure <a href="#figClassHierarchy"></a>
+</p>
+<p>
+<a id="figClassHierarchy"></a>
+<figure>
+	<img src="figures/demoSt-classHierarchy.png" id="figClassHierarchy" alt=""/>
+	<figcaption></figcaption>
+</figure>
+</p>
+<h2>Properties and relations</h2>
+
+<p>
+Then we will define some properties of the entities. It is very simple so we will show only one example - a comment contents.
+</p>
+<figure><pre><code>defineProperties
+
+    (comment property: #content type: #String)
+        comment: 'Content of the comment as a String'.</code></pre><figcaption></figcaption></figure>
+
+<p class="note">The message <code>comment:</code> is used here to set the comment of the property. It is not related to the entity <code>comment</code> of our meta-model.</p><p>
+      
+In the instance side method named <code>defineProperties</code> of the generator, we defined a string property on the comment entity and added a comment.
+</p>
+<p>
+The comment has a relation to the entities. Classes, methods and packages can be commented. The easiest way how to do that is to create a method <code>defineRelations</code>.
+</p>
+<figure><pre><code>defineRelations
+
+    entity -* comment.</code></pre><figcaption></figcaption></figure>
+
+<p>
+This will set the relationship <em>one to many</em> between classes <code>DemoStEntity</code> and <code>DemoStComment</code> represented by relation slots named <code>#comments</code> and <code>#entity</code>.
+</p>
+<p>
+Now we can start to use our meta-model for something useful. Firstly we will re-generate it (<code>DemoStMetamodelGenerator new generate</code>) and then we can write a test to prove the correct relation behavior.
+</p>
+<figure><pre><code>DemoStMetamodelGeneratorTest &gt;&gt; testRelations
+
+    | aComment aClass aString |
+    aString := 'some comment'.
+    aComment := DemoStComment new content: aString.
+    aClass := DemoStClass new.
+    aComment entity: aClass.
+
+    self assert: aComment entity equals: aClass.
+    self assert: (aClass comments includes: aComment).
+    self assert: aClass comments size equals: 1.
+    self assert: aClass comments anyOne content equals: aString.</code></pre><figcaption></figcaption></figure>
+
+<p>
+As soon we assigned the class to the comment, the comment was automatically added to the comments collection of the class. 
+</p>
+<h2>Usage of standard traits</h2>
+
+<p>
+Our meta-model is now very incomplete. We, for example, cannot set the name of the class, it is missing most of the relations and so on. Moreover, if you build a model, you will not be able to use most of the advantages of Moose platform because your model classes have almost no tools support. To solve this issues, we will start to use some of the standard traits that Famix provides.
+</p>
+<p>
+The Famix traits are placed in the package named <em>FmxNG-Traits</em>. As the first step, we need to tell to your meta-model generator, where to find them. We need to register them in your meta-model builder. The Famix traits are generated the same way as your meta-model classes - using a generator. We will take this generator and adopt its meta-model builder as a base for our own meta-model. To do that, we should override a generator's instance side method named <code>newBuilder</code>. In this method, we take the builder from the existing generator and tell him that none of the existing entities should be generated. Builder will know about them but will not create real classes nor traits for them. The message <code>builderWithStandardTraits</code> will do it.
+</p>
+<figure><pre><code>DemoStMetamodelGenerator &gt;&gt; newBuilder
+
+    ^ self builderWithStandardTraits</code></pre><figcaption></figcaption></figure>
+
+<p>
+We will firstly write a test to prove that entities like classes can have a name.
+</p>
+<figure><pre><code>DemoStMetamodelGeneratorTest &gt;&gt; testClassName
+
+    | aClass aString |
+    aString := 'some name'.
+    aClass := DemoStClass new.
+    aClass name: aString.
+    self assert: aClass name equals: aString.</code></pre><figcaption></figcaption></figure>
+
+<p>
+Then we can extend our meta-model classes definition (<code>defineHierarchy</code>).
+</p>
+<figure><pre><code>    entity --|&gt; #TNamed.</code></pre><figcaption></figcaption></figure>
+
+<p>
+This way we told to the generated class DemoSTEnitity that it should use a standard FamixNG trait named FmxNGTNamed. After re-generating of our meta-model, our tests should be green.
+</p>
+<p>
+Now let's create a relationship between method and entities that can hold them. In Smalltalk methods can belong to classes and to packages (extension methods).  We will open the tool named &quot;Famix trait groups&quot; from the Moose menu where we will find suitable trais in categories &quot;Method&quot; and &quot;Package.&quot;
+</p>
+<p>
+<a id="Method"></a>
+<figure>
+	<img src="Chapters/ExampleMetamodel/figures/Method.svg" width="23%" id="Method" alt="Method"/>
+	<figcaption>Method</figcaption>
+</figure>
+</p>
+<p>
+<a id="Package"></a>
+<figure>
+	<img src="figures/Package.svg" width="25%" id="Package" alt="Package"/>
+	<figcaption>Package</figcaption>
+</figure>
+</p>
+<p>
+We will add a standard trait <code>TMethod</code> to our <em>method</em> entity and a trait named <code>TWithMethods</code> to the entity <em>class</em>. Then we will say that methods and classes are <em>packageable</em> and the package uses a trait named <code>TPackage</code>.
+</p>
+<figure><pre><code>    method --|&gt; #TMethod.
+    class --|&gt; #TWithMethods.
+    package --|&gt; #TPackage.
+    class --|&gt; #TPackageable.
+    method --|&gt; #TPackageable.</code></pre><figcaption></figcaption></figure>
+
+<p>
+You may ask why the <em>package</em> does not use the <code>TWithMethods</code> trait too. The pair of traits <code>TWithMethods</code> and <code>TMethod</code> defines relationship <em>methods</em> - <em>parentType</em>. Of course, the package is not a parent type for the method and because the method can belong to a class and package simultaneously, it would cause a collision.
+</p>
+<p class="note">Our meta-model has no entity that can contain packages. We will not apply the trait <code>TWithPackages</code> to any class. The property <code>packageOwner</code> of the DemoSTPackage will always return nil. </p>
+<p>
+With such meta-model, we can start to build more complex models.
+</p>
+<figure><pre><code>| model class package1 package2 method1 method2 |
+
+model := MooseModel new
+    metamodel: DemoStMetamodelGenerator metamodel;
+    yourself.
+
+class := DemoStClass new name: #Class1.
+package1 := DemoStPackage new name: #Package1.
+package2 := DemoStPackage new name: #Package2.
+method1 := DemoStMethod new name: #method1.
+method2 := DemoStMethod new name: #method2.
+class parentPackage: package1.
+method1 parentType: class.
+method2 parentType: class.
+method2 parentPackage: package2.
+model addAll: { class. package1. package2. method1. method2 }.</code></pre><figcaption></figcaption></figure>
+
+<p>
+Notice that <code>isStub</code> is a property added by the trait <code>TNamed</code>. When we will inspect such model in Moose, the inspector will provide more advanced options like showing all methods in the meta-model, because we used the trait <code>TMethod</code> on some of the elements and thus they are interpreted as methods. 
+</p>
+<h2>Custom extensions</h2>
+
+<p>
+During generation of the meta-model classes, the generator touches only the methods and slots it knows they can be changed. In case we want to provide an alternative code for generated methods, we need to remove the pragma <code>&lt;generated&gt;</code> else the generator will rewrite them during the next re-generation. 
+</p>
+<p>
+As we said, the generator creates for every meta-model entity two classes. One has a name with the suffix <em>Generated</em> and is the superclass of the other one. When such pair is created, the generator only checks if the class without suffix already exists and if yes, it stays untouched. That opens a possibility to move them to a separate package and extend such classes with own methods or instance variables if needed. 
+</p>
+<p>
+We want, for example, from methods to answer a package that owns method in case that the method package is not explicitly known. In this case we need to remove pragma <code>&lt;generated&gt;</code> from the parentPackage accessor.
+</p>
+<figure><pre><code>DemoStMethod &gt;&gt; parentPackage
+
+    &lt;MSEComment: 'Package containing the entity in the code structure (if applicable)'&gt;
+    &lt;container&gt;
+
+    ^ super parentPackage ifNil: [ self parentType parentPackage ]</code></pre><figcaption></figcaption></figure>
+
+<p>
+Of course, now we have full responsibility of keeping such classes and method synchronized with the generated meta-model.
+</p>
+<h2>Importing context customization</h2>
+
+<p>
+Together with the classes for the meta-model entities, an importing context can be created. To do so, we need to specify it in the <code>newBuilder</code> method of our generator.
+</p>
+<figure><pre><code>newBuilder
+
+    ^ self builderWithStandardTraits
+        generateImportingContext: true;
+        yourself</code></pre><figcaption></figcaption></figure>
+
+<p>
+In our case, it is automatically named as <code>DemoStImportingContext</code>. This class will be useful for you as soon as you will start to write or customize an importer for your models. 
+</p>
+<p>
+The main task we need to do is to set dependencies between the meta-model elements. Simply use the message <code>requires:</code> that accepts a collection of entities required by another entity.
+</p>
+<figure><pre><code>method requires: { class }.</code></pre><figcaption></figcaption></figure>
+
+<p>
+Then a user of an importer of your models can create a related importing context like this:
+</p>
+<figure><pre><code>importerTask importingContext: (DemoStImportingContext new 
+    importPackage;
+    importMethod;
+    yourself).</code></pre><figcaption></figcaption></figure>
+
+<p>
+During import of a model then can the importer ask the importing context if the user wanted some data with an expression like this:
+</p>
+<figure><pre><code>self importingContext shouldImportClass</code></pre><figcaption></figcaption></figure>
+
+<p>
+In our case, the answer will be true because the user asked for the importing of methods and we defined classes as dependencies of methods. The names of methods with prefix <em>import</em> and <em>shouldImport</em> are generated automatically.
+</p>
+
+
+  </div>
+</div>
+</div>
+</section>
+	
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://code.jquery.com/jquery.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="_support/html/js/bootstrap.min.js"></script>
+
+    <!-- Syntax highlighting of code blocks -->
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    <!-- Prettify annotated paragraphs-->
+    <script src="_support/html/js/annotated-paragraphs.js"></script>
+
+	<footer class="site-footer">
+  <div class="container">
+    <p class="powered-by">
+
+      Powered by the
+      <a href="https://sourcethemes.com/academic/" target="_blank" rel="noopener">Academic theme</a> for
+      <a href="https://github.com/pillar-markup/pillar" target="_blank" rel="noopener">Pillar</a>.
+
+      <span class="pull-right" aria-hidden="true">
+        <a href="#" id="back_to_top">
+          <span class="button_icon">
+            <i class="fa fa-chevron-up fa-2x"></i>
+          </span>
+        </a>
+      </span>
+
+    </p>
+  </div>
+</footer>
+
+
+
+  </body>
+</html>

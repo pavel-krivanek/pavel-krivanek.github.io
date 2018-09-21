@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">  	
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+  	<meta name="theme" content="hugo-academic">
+    <meta name="theme-color" content="primary">
+	<title></title>
+
+    <!-- Highlight js -->
+    <link rel="stylesheet" href="_support/html/highlightjs/styles/default.css">
+    <link rel="stylesheet" href="_support/html/css/highlight-commands.css">
+    <script src="_support/html/highlightjs/highlight.pack.js"></script>
+    <script src="_support/html/js/highlight-commands.js"></script>
+
+    <!-- Bootstrap -->
+    <link href="_support/html/css/bootstrap.min.css" rel="stylesheet">
+    <link href="_support/html/css/bootstrap-theme.min.css" rel="stylesheet">
+    <link href="_support/html/css/square-braket-associates.css" rel="stylesheet">
+
+
+  	<link href="_support/html/css/font-awesome.min.css" rel="stylesheet">
+  	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" media="screen">
+  	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/leaflet.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/academicons/1.8.4/css/academicons.min.css">
+    <link rel="stylesheet" href="_support/html/css/styles.css">
+    <link rel="icon" type="image/png" href="_support/html/img/icon.png">
+  	<link rel="apple-touch-icon" type="image/png" href="_support/html/img/icon-192.png">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:400,700%7cRoboto:400,400italic,700%7cRoboto+Mono">
+
+    <script>
+      window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+      ga('create', '', 'auto');
+      ga('require', 'eventTracker');
+      ga('require', 'outboundLinkTracker');
+      ga('require', 'urlChangeTracker');
+      ga('send', 'pageview');
+    </script>
+    <script async src="//www.google-analytics.com/analytics.js"></script>
+	
+
+    <style>
+/*        .container { max-width: 55em; } */
+    </style>
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+
+
+	<div class="article-header">
+	<span class="article-header-caption">Moose Famix</span>
+</div>
+
+	<nav class="navbar navbar-default navbar-fixed-top" id="navbar-main">
+  <div class="container">
+
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+              data-target=".navbar-collapse" aria-expanded="false">
+        <span class="sr-only"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="/">
+        Moose Famix
+      </a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse">
+
+      <ul class="nav navbar-nav navbar-right">
+		
+        <li class="nav-item">
+          <a href="/index.html#introduction">
+            <span>Introduction</span>
+          </a>
+        </li>
+		
+        <li class="nav-item">
+          <a href="/Catalog.html#catalog">
+            <span>Catalog</span>
+          </a>
+        </li>
+		
+        <li class="nav-item">
+          <a href="/Builder.html#builder">
+            <span>Builder</span>
+          </a>
+        </li>
+		
+        <li class="nav-item">
+          <a href="/MetamodelEntities.html#meta-model entities">
+            <span>Meta-model entities</span>
+          </a>
+        </li>
+		
+        <li class="nav-item">
+          <a href="/Relations.html#relations">
+            <span>Relations</span>
+          </a>
+        </li>
+		
+        <li class="nav-item">
+          <a href="/SimplifiedDefinitions.html#simplified definitions">
+            <span>Simplified definitions</span>
+          </a>
+        </li>
+		
+        <li class="nav-item">
+          <a href="/CodeGenerationManagement.html#code generation">
+            <span>Code generation</span>
+          </a>
+        </li>
+		
+        <li class="nav-item">
+          <a href="/Tutorial.html#tutorial">
+            <span>Tutorial</span>
+          </a>
+        </li>
+		
+      
+      </ul>
+      
+
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container -->
+</nav>
+
+
+<!-- Projects widget -->
+<section>
+<div class="container">
+<div class="row">
+  <div class="col-xs-12 col-md-4 section-heading">
+	<h1></h1>
+
+    
+	<div id="profile">
+		<div class="portrait" style="background-image: url('moose-icon.png');"></div>
+	
+		<h1>Moose</h1>
+		<h3>Famix</h3>
+		<p class="center-text">General purpose meta-models building framework</p>
+	</div>
+	
+  </div>
+  <div class="col-xs-12 col-md-8">
+
+	<h1>Builder</h1>
+<a id="ch:Builder"></a>
+<h2>Creation of a builder</h2>
+<a id="ch:creationOfABuilder"></a>
+<p>
+The primary class of the metamodel builder is named <code>FamixMetamodelBuilder</code>. There are several ways how instances of this class can be created. 
+</p>
+<h3>Builder for real environment</h3>
+
+<p>
+If builders are created using the standard <code>new</code> message sent to the <code>FamixMetamodelBuilder</code> class, builder will work on real environment (implemented in class FamixMetamodelBuilderRealEnvironment). That means that all classes generated by the builder will be installed directly to the Pharo image and models can be instantiated from them.
+</p>
+<figure><pre><code>builder := FamixMetamodelBuilder new.</code></pre><figcaption></figcaption></figure>
+
+<h3>Builder for testing environment</h3>
+
+<p>
+The other option is to create a builder that is bound to a <em>Ring</em> environment, and all generated classes a part of this environment. It is used mainly for testing purposes because it does not modify any classes in the system, it is faster and the tests do not need to do a difficult cleanup. Such generated <em>Ring</em> environments can be used for other purposes like the direct export of the generated package too. 
+</p>
+<p>
+On the other hand, it is not possible to instantiate such generated classes so no real model can be created from them.
+</p>
+<figure><pre><code>builder := FamixMetamodelBuilder forTesting.</code></pre><figcaption></figcaption></figure>
+
+<h3>Code generation</h3>
+
+<p>
+The code is generated using the message <code>generate</code> sent to the builder. If no element of the meta-model is created then it will not do anything useful. 
+</p>
+<figure><pre><code>builder := FamixMetamodelBuilder new.
+builder generate.</code></pre><figcaption></figcaption></figure>
+
+<p>
+Although the builder instances can be used directly in a method or in a script that generates your meta-model, in most cases the builder is created as an instance variable of a subclass <code>FamixMetamodelGenerator</code> because then the meta-model definition can be split into several methods or classes (see chapter <a href="#ch:codeGenerationManagement"></a>).
+</p>
+
+
+<h3>Builder settings</h3>
+<a id="ch:builderSettings"></a>
+<p>
+We need to specify into which package the generated classes will be placed. It can be done using the message <code>packageName:</code> sent to a builder. If not set, a default value (<code>FamixMetamodelBulder-Generated</code>) will be used.
+</p>
+<p>
+Then we should specify a class name prefix. It is a prefix that will be added before the name of every generated class. 
+</p>
+<figure><pre><code>builder 
+    prefix: 'SQLMeta';
+    packageName: 'SQL-Metamodel'.</code></pre><figcaption></figcaption></figure>
+
+<p>
+In the definition of the meta-model, the class names are used without a prefix which makes orientation in the code of the meta-model easier. However, the name of real classes includes the specified prefix. Keep that in mind when you use such classes from a non-generated code.
+</p>
+<p>
+The default prefix is empty.
+ 
+</p><h3>Class tags</h3>
+
+<p>
+By default, the classes a generated with a tag <em>Entities</em> so in our case, the classes are placed in a category named <em>SQL-Metamodel-Entities</em>. The traits generated by the builder have a tag 'Traits'. The names of tags for entities and traits can be modified (messages <code>classTag:</code> and <code>traitTag:</code> and it is valid from this point for all the future specified classes. 
+</p>
+<p>
+The tag can be set for classes and traits individually using the message <code>tag:</code>
+</p>
+<h3>Basic superclasses</h3>
+
+<p>
+When a generalization of a class is not specified, a default superclass is used (<code>MooseEntity</code>). When the builder is used for generation of meta-models independent of Moose, or if the builder serves for generation of a meta-model which extends another meta-model, some other class can be selected as a default superclass (message <code>basicSuperclassName:</code>).
+</p>
+<p>
+For stateful traits (that mostly look as standard classes) a default superclass is different. It can be set using the message <code>defaultBasicTraitName:</code> and the default value is <code>Trait</code>. It is not recommended to change it. 
+</p>
+<p>
+Keep in mind that the basic superclasses and traits are expected to provide some behavior (e.g. class slots initialization) so be careful when you change them.
+
+</p>
+
+  </div>
+</div>
+</div>
+</section>
+	
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://code.jquery.com/jquery.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="_support/html/js/bootstrap.min.js"></script>
+
+    <!-- Syntax highlighting of code blocks -->
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    <!-- Prettify annotated paragraphs-->
+    <script src="_support/html/js/annotated-paragraphs.js"></script>
+
+	<footer class="site-footer">
+  <div class="container">
+    <p class="powered-by">
+
+      Powered by the
+      <a href="https://sourcethemes.com/academic/" target="_blank" rel="noopener">Academic theme</a> for
+      <a href="https://github.com/pillar-markup/pillar" target="_blank" rel="noopener">Pillar</a>.
+
+      <span class="pull-right" aria-hidden="true">
+        <a href="#" id="back_to_top">
+          <span class="button_icon">
+            <i class="fa fa-chevron-up fa-2x"></i>
+          </span>
+        </a>
+      </span>
+
+    </p>
+  </div>
+</footer>
+
+
+
+  </body>
+</html>

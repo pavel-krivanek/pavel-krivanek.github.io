@@ -1,0 +1,65 @@
+!!Relations
+@ch:relations
+
+Very often the meta-model entities contain properties that are in some kind of relation. For example, we have an entity for class comments and an entity for classes. Classes have a reference on their class comments, and the class comments have a reference on owning classes. In such cases, we connect such properties into a relation.
+
+The main advantage of properties connected with relations lies in their automatic updates. When you assign a comment to a class, the class is automatically assigned to the comment. 
+
+Properties that are sides of relations are created with the message ==property:== sent to an entity. This message accepts a property name as an argument. The are two ways how to connect defined properties. One uses keyword messages that describe cardinality of particular relation sides: 
+
+[[[­lan­gua­ge=­Sma­lltalk
+(tClass property: #comment) oneToOne: (tComment property: #owningClass).
+]]]
+
+The second one uses binary messages that tries to be similar to UML connectors:
+
+[[[­lan­gua­ge=­Sma­lltalk
+tClass := builder newTraitNamed: #TClass. 
+tComment := builder newTraitNamed: #TComment. 
+(tClass property: #comment) - (tComment property: #owningClass).
+]]]
+
+!!!Cardinality - standard relations
+
+Every relation keyword message has an alternative binary message.
+
+|!binary |!keyword
+| ==\-== | ==oneToOne:==
+| ==\-\*== | ==oneToMany:==
+| ==*\-== | ==manyToOne:==
+| ==\*\-\*== | ==manyToMany:==
+
+
+!!!Cardinality - aggregation
+
+We can describe the aggregation relationship too by specifying which side of the relation is a container using similar messages like in case of the standard relations. For the binary messages, the "diamond" is always on the side of the owner. 
+
+|!binary |!keyword
+| ==<>-== | ==containsOne:==
+| ==<>-*== | ==containsMany:==
+| ==-<>== | ==oneBelongsTo:==
+| ==*-<>== | ==manyBelongTo:==
+
+Notice that there is no many-to-many aggregation relation. 
+
+!!!Properties of relations
+
+Other properties can be set to the relations, for example, to comment them. Such properties are always valid only for a particular side of the relation.
+
+[[[­lan­gua­ge=­Sma­lltalk
+((tAccess property: #accessor)
+        comment: 'Behavioural entity making the access to the variable';
+        source)
+    *-
+((tWithAccesses property: #accesses)
+        comment: 'Accesses to variables made by this behaviour.').
+]]]
+
+Besides the comment, several other boolean properties can be set: 
+
+- ==container==
+- ==derived==
+- ==source==
+- ==target==
+
+By default, none of these properties is assigned to the generated entities.

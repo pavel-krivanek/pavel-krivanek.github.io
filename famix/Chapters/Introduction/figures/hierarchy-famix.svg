@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="210px" preserveAspectRatio="none" style="width:290px;height:210px;" version="1.1" viewBox="0 0 290 210" width="290px" zoomAndPan="magnify"><defs/><g><!--class FAMIXEntity--><rect fill="#FFFFFF" height="23.9688" id="FAMIXEntity" style="stroke: #383838; stroke-width: 1.5;" width="76" x="139" y="8"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="70" x="142" y="24.1387">FAMIXEntity</text><!--class FAMIXBehavioural--><rect fill="#FFFFFF" height="23.9688" id="FAMIXBehavioural" style="stroke: #383838; stroke-width: 1.5;" width="114" x="56" y="92"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="108" x="59" y="108.1387">FAMIXBehavioural</text><!--class FAMIXMethod--><rect fill="#FFFFFF" height="23.9688" id="FAMIXMethod" style="stroke: #383838; stroke-width: 1.5;" width="88" x="6" y="176"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="82" x="9" y="192.1387">FAMIXMethod</text><!--class FAMIXFunction--><rect fill="#FFFFFF" height="23.9688" id="FAMIXFunction" style="stroke: #383838; stroke-width: 1.5;" width="95" x="129.5" y="176"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="89" x="132.5" y="192.1387">FAMIXFunction</text><!--class FAMIXClass--><rect fill="#FFFFFF" height="23.9688" id="FAMIXClass" style="stroke: #383838; stroke-width: 1.5;" width="74" x="205" y="92"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="68" x="208" y="108.1387">FAMIXClass</text><!--link FAMIXEntity to FAMIXBehavioural--><path d="M155.754,48.222 C144.149,63.09 130.409,80.695 121.699,91.854 " fill="none" id="FAMIXEntity-FAMIXBehavioural" style="stroke: #383838; stroke-width: 1.0;"/><polygon fill="none" points="150.545,43.518,168.369,32.059,161.581,52.132,150.545,43.518" style="stroke: #383838; stroke-width: 1.0;"/><!--link FAMIXBehavioural to FAMIXMethod--><path d="M92.0859,132.2215 C80.6624,147.0902 67.1371,164.6946 58.5631,175.8544 " fill="none" id="FAMIXBehavioural-FAMIXMethod" style="stroke: #383838; stroke-width: 1.0;"/><polygon fill="none" points="86.7677,127.6539,104.5035,116.0589,97.8695,136.1833,86.7677,127.6539" style="stroke: #383838; stroke-width: 1.0;"/><!--link FAMIXBehavioural to FAMIXFunction--><path d="M134.246,132.2215 C145.851,147.0902 159.591,164.6946 168.301,175.8544 " fill="none" id="FAMIXBehavioural-FAMIXFunction" style="stroke: #383838; stroke-width: 1.0;"/><polygon fill="none" points="128.419,136.1321,121.631,116.0589,139.455,127.5183,128.419,136.1321" style="stroke: #383838; stroke-width: 1.0;"/><!--link FAMIXEntity to FAMIXClass--><path d="M198.19,47.732 C210.057,62.703 224.222,80.572 233.165,91.854 " fill="none" id="FAMIXEntity-FAMIXClass" style="stroke: #383838; stroke-width: 1.0;"/><polygon fill="none" points="192.704,52.08,185.766,32.059,203.676,43.384,192.704,52.08" style="stroke: #383838; stroke-width: 1.0;"/><!--
+@startuml
+skinparam shadowing false
+skinparam monochrome true
+skinparam class {
+	BackgroundColor White
+}
+hide empty members
+hide circle
+
+FAMIXEntity <|- - FAMIXBehavioural
+FAMIXBehavioural <|- - FAMIXMethod
+FAMIXBehavioural <|- - FAMIXFunction
+FAMIXEntity <|- - FAMIXClass
+@enduml
+
+PlantUML version 1.2018.11beta1(Unknown compile time)
+(GPL source distribution)
+Java Runtime: Java(TM) SE Runtime Environment
+JVM: Java HotSpot(TM) 64-Bit Server VM
+Java Version: 1.7.0_25-b15
+Operating System: Linux
+Default Encoding: UTF-8
+Language: en
+Country: US
+--></g></svg>

@@ -1,0 +1,13 @@
+
+${inputFile:path=index.pillar}$
+
+${inputFile:path=Catalog.pillar}$
+${inputFile:path=Builder.pillar}$
+${inputFile:path=MetamodelEntities.pillar}$
+${inputFile:path=Relations.pillar}$
+${inputFile:path=SimplifiedDefinitions.pillar}$
+${inputFile:path=CodeGenerationManagement.pillar}$
+${inputFile:path=Tutorial.pillar}$
+
+
+

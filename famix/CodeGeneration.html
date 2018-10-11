@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">  	
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+  	<meta name="theme" content="hugo-academic">
+    <meta name="theme-color" content="primary">
+	<title></title>
+
+    <!-- Highlight js -->
+    <link rel="stylesheet" href="_support/html/highlightjs/styles/default.css">
+    <link rel="stylesheet" href="_support/html/css/highlight-commands.css">
+    <script src="_support/html/highlightjs/highlight.pack.js"></script>
+    <script src="_support/html/js/highlight-commands.js"></script>
+
+    <!-- Bootstrap -->
+    <link href="_support/html/css/bootstrap.min.css" rel="stylesheet">
+    <link href="_support/html/css/bootstrap-theme.min.css" rel="stylesheet">
+    <link href="_support/html/css/square-braket-associates.css" rel="stylesheet">
+
+
+  	<link href="_support/html/css/font-awesome.min.css" rel="stylesheet">
+  	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" media="screen">
+  	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/leaflet.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/academicons/1.8.4/css/academicons.min.css">
+    <link rel="stylesheet" href="_support/html/css/styles.css">
+    <link rel="icon" type="image/png" href="_support/html/img/icon.png">
+  	<link rel="apple-touch-icon" type="image/png" href="_support/html/img/icon-192.png">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:400,700%7cRoboto:400,400italic,700%7cRoboto+Mono">
+
+    <script>
+      window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+      ga('create', '', 'auto');
+      ga('require', 'eventTracker');
+      ga('require', 'outboundLinkTracker');
+      ga('require', 'urlChangeTracker');
+      ga('send', 'pageview');
+    </script>
+    <script async src="//www.google-analytics.com/analytics.js"></script>
+	
+
+    <style>
+/*        .container { max-width: 55em; } */
+    </style>
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+
+
+	<div class="article-header">
+	<span class="article-header-caption">Moose Famix</span>
+</div>
+
+	<nav class="navbar navbar-default navbar-fixed-top" id="navbar-main">
+  <div class="container">
+
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+              data-target=".navbar-collapse" aria-expanded="false">
+        <span class="sr-only"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="/">
+        Moose Famix
+      </a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse">
+
+      <ul class="nav navbar-nav navbar-right">
+		
+        <li class="nav-item">
+          <a href="/index.html#introduction">
+            <span>Introduction</span>
+          </a>
+        </li>
+		
+        <li class="nav-item">
+          <a href="/Catalog.html#catalog">
+            <span>Catalog</span>
+          </a>
+        </li>
+		
+        <li class="nav-item">
+          <a href="/Definition.html#meta-model definition">
+            <span>Meta-model definition</span>
+          </a>
+        </li>
+		
+        <li class="nav-item">
+          <a href="/CodeGeneration.html#code generation">
+            <span>Code generation</span>
+          </a>
+        </li>
+		
+        <li class="nav-item">
+          <a href="/Tutorial.html#tutorial">
+            <span>Tutorial</span>
+          </a>
+        </li>
+		
+      
+      </ul>
+      
+
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container -->
+</nav>
+
+
+<!-- Projects widget -->
+<section>
+<div class="container">
+<div class="row">
+  <div class="col-xs-12 col-md-4 section-heading">
+	<h1></h1>
+
+    
+	<div id="profile">
+		<div class="portrait" style="background-image: url('moose-icon.png');"></div>
+	
+		<h1>Moose</h1>
+		<h3>Famix</h3>
+		<p class="center-text">General purpose meta-models building framework</p>
+	</div>
+	
+  </div>
+  <div class="col-xs-12 col-md-8">
+
+	<h1>Code generation</h1>
+<a id="ch:CodeGeneration"></a>
+<h2>Code generators</h2>
+<a id="ch:codeGenerators"></a>
+<p>
+Most of the meta-models for programming languages share the same basic structure. In most cases, you have entities that have a name, some related source code and so on. For more convinient definition of such meta-models, th Moose provides several predefined templates. 
+</p>
+<h3>FamixBasicInfrastructureGenerator</h3>
+
+<p>
+The <code>FamixBasicInfrastructureGenerator</code> should be used for meta-models that will store the source code information directly in the model in the text form and will not use external file references for this purpose.
+</p>
+<p>
+<a id="fig:FamixBasicInfrastructureGenerator"></a>
+<figure>
+	<img src="Chapters/CodeGeneration/figures/BasicInfrastructureGenerator.svg" width="60%" id="fig:FamixBasicInfrastructureGenerator" alt="Basic infrastructure generator"/>
+	<figcaption>Basic infrastructure generator</figcaption>
+</figure>
+</p>
+<table style="border: solid thin"><tr><th>entity</th>
+<th>description</th>
+</tr>
+<tr><td>Entity</td>
+<td>root entity of the meta-model</td>
+</tr>
+<tr><td>SourcedEntity</td>
+<td>entity with associated source code anchor</td>
+</tr>
+<tr><td>SourceAnchor</td>
+<td>abstract kind of a source anchor</td>
+</tr>
+<tr><td>SourceTextAnchor</td>
+<td>anchor with source code stored directly in the entity</td>
+</tr>
+<tr><td>SourceLanguage</td>
+<td>description of the source language</td>
+</tr>
+<tr><td>Comment</td>
+<td>comment entity</td>
+</tr>
+<tr><td>NamedEntity</td>
+<td>entity with a name</td>
+</tr>
+</table>
+
+
+<h3>FamixFileBasedLanguageGenerator</h3>
+
+<p>
+The <code>FamixFileBasedLanguageGenerator</code> is and extension of <code>FamixBasicInfrastructureGenerator</code> designed to produce a basic template for language meta-models that have source codes stored in files.
+</p>
+<p>
+<a id="fig:FileBasedLanguageGenerator"></a>
+<figure>
+	<img src="Chapters/CodeGeneration/figures/FileBasedLanguageGenerator.svg" width="95%" id="fig:FileBasedLanguageGenerator" alt="File based language generator"/>
+	<figcaption>File based language generator</figcaption>
+</figure>
+</p>
+<table style="border: solid thin"><tr><th>entity</th>
+<th>description</th>
+</tr>
+<tr><td>AbstractFileAnchor</td>
+<td>provides basic infrmation like name about file</td>
+</tr>
+<tr><td>FileAnchor</td>
+<td>refers to source code position in terms of lines/columns</td>
+</tr>
+<tr><td>IndexedFileAnchor</td>
+<td>stores source code positions as indexes in the file</td>
+</tr>
+<tr><td>MultipleFileAnchor</td>
+<td>for entities that are defined in multiple files</td>
+</tr>
+<tr><td>AbstractFile</td>
+<td>abstract file system entity</td>
+</tr>
+<tr><td>File</td>
+<td>file entity that contains language entities</td>
+</tr>
+<tr><td>Folder</td>
+<td>folder entity that contains files and other folders</td>
+</tr>
+</table>
+
+
+<h2>Code generation management</h2>
+<a id="ch:codeGenerationManagement"></a>
+<p>
+When we want to build our metamodel as extension of some already existing metamodel, we need to know the elements of the existing metamodel but do not generate it.
+</p>
+<figure><pre><code>builder doNotGenerateCurrent.</code></pre><figcaption></figcaption></figure>
+
+
+<h2>Creation of a builder</h2>
+
+<a id="ch:creationOfABuilder"></a>
+<p>
+The primary class of the metamodel builder is named <code>FamixMetamodelBuilder</code>. There are several ways how instances of this class can be created. 
+</p>
+<h3>Builder for real environment</h3>
+
+<p>
+If builders are created using the standard <code>new</code> message sent to the <code>FamixMetamodelBuilder</code> class, builder will work on real environment (implemented in class FamixMetamodelBuilderRealEnvironment). That means that all classes generated by the builder will be installed directly to the Pharo image and models can be instantiated from them.
+</p>
+<figure><pre><code>builder := FamixMetamodelBuilder new.</code></pre><figcaption></figcaption></figure>
+
+<h3>Builder for testing environment</h3>
+
+<p>
+The other option is to create a builder that is bound to a <em>Ring</em> environment, and all generated classes a part of this environment. It is used mainly for testing purposes because it does not modify any classes in the system, it is faster and the tests do not need to do a difficult cleanup. Such generated <em>Ring</em> environments can be used for other purposes like the direct export of the generated package too. 
+</p>
+<p>
+On the other hand, it is not possible to instantiate such generated classes so no real model can be created from them.
+</p>
+<figure><pre><code>builder := FamixMetamodelBuilder forTesting.</code></pre><figcaption></figcaption></figure>
+
+<h3>Class tags</h3>
+
+<p>
+By default, the classes are generated with a tag <em>Entities</em> so in our case, the classes are placed in a category named <em>SQL-Metamodel-Entities</em>. The traits generated by the builder have a tag 'Traits'. The names of tags for entities and traits can be modified using messages <code>classTag:</code> and <code>traitTag:</code> sent to the builder. They are valid from this point for all the future specified classes or traits. 
+</p>
+<p>
+The tag can be set for classes and traits individually using the message <code>tag:</code>
+</p>
+<h3>Basic superclasses</h3>
+
+<p>
+When a generalization of a class is not specified, a default superclass is used (<code>MooseEntity</code>). When the builder is used for generation of meta-models independent of Moose, or if the builder serves for generation of a meta-model which extends another meta-model, some other class can be selected as a default superclass (message <code>basicSuperclassName:</code>).
+</p>
+<p>
+For stateful traits (that mostly look as standard classes) a default superclass is different. It can be set using the message <code>defaultBasicTraitName:</code> and the default value is <code>Trait</code>. It is not recommended to change it. 
+</p>
+<p>
+Keep in mind that the basic superclasses and traits are expected to provide some behavior (e.g. class slots initialization) so be careful when you change them.
+</p>
+<h3>The composition of multiple meta-models</h3>
+
+<p>
+In many cases, we want to be able to use several meta-models in one model. We may need it if:
+</p>
+<ul>
+<li>the programs we want to model are written in several languages</li>
+<li>the programs use embedded code inside the source code of standard entities, like SQL queries in form of strings inside the Java methods</li>
+<li>models embed submodels with a different abstraction. The typical example can be models of the abstract syntax tree that is linked with the language meta-model</li>
+</ul>
+
+<p>
+The common characteristic of the cases above is that the meta-models are more or less standalone. The models created using multiple meta-models are in fact independent models and we want to work with them this way. The meta-models are created separately too within standalone packages. We just want the ability to link information in one model to another model with different meta-model.
+</p>
+<p>
+Unfortunately, if we compose two or more meta-models, the result is another standalone meta-model. So, if we have an entity <code>JavaMethod</code> from a Java meta-model that has a relation to <code>JavaMethodNode</code> from a Java AST meta-model, then this relation named  <code>#ast</code> in the method entity must be described somehow and needs to be part of the both meta-models. The <code>JavaMethodNode</code> and related entities need to be known to Java metamodel, they need to be part of it.
+</p>
+<p>
+The Famix has tools how to compose several meta-model descriptions into one using the meta-model builder definition imports, however, this approach is not very practical because this way we really need to create the third stand-alone meta-model next to both meta-model, from which it is composed. That means another set of classes, new packages etc.
+</p>
+<p>
+But that does not mean that we cannot compose meta-models. We just need to do it without the explicit connection on the meta-level. In practice, we do the following procedure:
+</p>
+<ul>
+<li>create the two completely stand-alone meta-models in different packages</li>
+<li>create a new package for the meta-models binding. This package will mostly contain only extension methods to the classes that describe entities in the original meta-models</li>
+<li>for every relation that binds the two meta-models, create methods that describe relation sides without specifying of the real type. Define them as properties that can hold general objects</li>
+<li>use <code>privateState</code> for storing of the data</li>
+</ul>
+
+<p>
+Let's use our example of <code>JavaMethod</code> and <code>JavaMethodNode</code> that describes the method on AST level. In the method, we want to create a property named <code>ast</code> that will keep the method node. The method node will store information about the method in a property named =owningMethod=
+</p>
+<p>
+We want to keep the packages with Java and AST meta-models untouched so we will not store information about this relation using slots. Instead of it, we will use the <code>privateState</code> dictionary that every Moose element has.  All the following methods should be added to a separate package with name like <code>JavaASTMetamodelsBinding</code>. This relation is one to one.
+</p>
+<p>
+Firstly we will create a method named #ast in the method entity. This method will hold the description that this property can be any object.
+</p>
+<figure><pre><code>JavaMethod&gt;&gt;#ast 
+
+    &lt;MSEProperty: #ast type: #Object &gt; 
+    ^ self privateState 
+            attributeAt: #ast
+            ifAbsent: []</code></pre><figcaption></figcaption></figure>
+
+<p>
+We will do the very similar method in <code>JavaMethodNode</code> that will describe the property <code>owningMethod</code>.
+</p>
+<figure><pre><code>JavaMethodNode&gt;&gt;#owningMethod
+
+    &lt;MSEProperty: #owningMethod type: #Object&gt; &lt;subordinate&gt;
+    ^ self privateState 
+            attributeAt: #owningMethod
+            ifAbsent: []</code></pre><figcaption></figcaption></figure>
+
+<p class="note">This property is described as subordinate. That means that during export the information about this relation will be stored only on the opposite side of the relation.</p><p>
+ 
+The corresponding setter to the previous accessor will set the property in the private state and update the opposite side. 
+</p>
+<figure><pre><code>JavaMethodNode&gt;&gt;#owningMethod: anObject
+
+    self privateState 
+            attributeAt: #owningMethod
+            put: anObject.
+
+    anObject ast: self.</code></pre><figcaption></figcaption></figure>
+
+<p>
+The setter <code>ast:</code> will do the similar task but it needs to have a condition that will avoid the infinite loop.
+</p>
+<figure><pre><code>JavaMethod&gt;&gt;ast: anObject
+
+    (self privateState attributeAt: #ast ifAbsent: [nil]) == anObject ifTrue: [ ^ anObject ].
+    self privateState attributeAt: #ast put: anObject.
+            
+    anObject owningMethod: self.</code></pre><figcaption></figcaption></figure>
+
+<p>
+In case that we describe the relation one to many or many to one, we can use <code>FMMultivalueLink</code> for keeping the relation automatically updated.
+</p>
+<p>
+When we will create models that will work with both of the meta-models and the binding we created, we need to specify it during the model creation:
+</p>
+<figure><pre><code class="Smalltalk">    model := MooseModel new.
+    
+    model metamodel: (MooseModel metamodelComposedOf: { 
+        JavaMetamodelGenerator metamodel.
+        JavaASTMetamodelGenerator metamodel.
+    }).</code></pre><figcaption></figcaption></figure>
+
+<p>
+We will need to use the meta-model during the MSE export:
+</p>
+<figure><pre><code class="Smalltalk">    'mixed.mse' asFileReference ensureDelete writeStreamDo: [ :aStream |
+        MooseModel export: model withMetamodel: model metamodel to: aStream.
+    ].</code></pre><figcaption></figcaption></figure>
+
+<p>
+During the import of the MSE we need to specify the meta-models too. 
+</p>
+<figure><pre><code class="Smalltalk">repo := 'mixed.mse' asFileReference readStreamDo: [ :aStream |
+    MooseModel importFrom: aStream withMetamodel: (MooseModel metamodelComposedOf: { 
+        JavaMetamodelGenerator metamodel.
+        JavaASTMetamodelGenerator metamodel.
+    })
+].
+
+model := MooseModel new.
+model silentlyAddAll: repo elements.
+model entityStorage forRuntime.
+model name: 'Mixed'.
+model.</code></pre><figcaption></figcaption></figure>
+
+
+
+
+  </div>
+</div>
+</div>
+</section>
+	
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://code.jquery.com/jquery.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="_support/html/js/bootstrap.min.js"></script>
+
+    <!-- Syntax highlighting of code blocks -->
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    <!-- Prettify annotated paragraphs-->
+    <script src="_support/html/js/annotated-paragraphs.js"></script>
+
+	<footer class="site-footer">
+  <div class="container">
+    <p class="powered-by">
+
+      Powered by the
+      <a href="https://sourcethemes.com/academic/" target="_blank" rel="noopener">Academic theme</a> for
+      <a href="https://github.com/pillar-markup/pillar" target="_blank" rel="noopener">Pillar</a>.
+
+      <span class="pull-right" aria-hidden="true">
+        <a href="#" id="back_to_top">
+          <span class="button_icon">
+            <i class="fa fa-chevron-up fa-2x"></i>
+          </span>
+        </a>
+      </span>
+
+    </p>
+  </div>
+</footer>
+
+
+
+  </body>
+</html>

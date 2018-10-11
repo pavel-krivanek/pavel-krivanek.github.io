@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">  	
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+  	<meta name="theme" content="hugo-academic">
+    <meta name="theme-color" content="primary">
+	<title></title>
+
+    <!-- Highlight js -->
+    <link rel="stylesheet" href="_support/html/highlightjs/styles/default.css">
+    <link rel="stylesheet" href="_support/html/css/highlight-commands.css">
+    <script src="_support/html/highlightjs/highlight.pack.js"></script>
+    <script src="_support/html/js/highlight-commands.js"></script>
+
+    <!-- Bootstrap -->
+    <link href="_support/html/css/bootstrap.min.css" rel="stylesheet">
+    <link href="_support/html/css/bootstrap-theme.min.css" rel="stylesheet">
+    <link href="_support/html/css/square-braket-associates.css" rel="stylesheet">
+
+
+  	<link href="_support/html/css/font-awesome.min.css" rel="stylesheet">
+  	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css" media="screen">
+  	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/leaflet.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/academicons/1.8.4/css/academicons.min.css">
+    <link rel="stylesheet" href="_support/html/css/styles.css">
+    <link rel="icon" type="image/png" href="_support/html/img/icon.png">
+  	<link rel="apple-touch-icon" type="image/png" href="_support/html/img/icon-192.png">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:400,700%7cRoboto:400,400italic,700%7cRoboto+Mono">
+
+    <script>
+      window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+      ga('create', '', 'auto');
+      ga('require', 'eventTracker');
+      ga('require', 'outboundLinkTracker');
+      ga('require', 'urlChangeTracker');
+      ga('send', 'pageview');
+    </script>
+    <script async src="//www.google-analytics.com/analytics.js"></script>
+	
+
+    <style>
+/*        .container { max-width: 55em; } */
+    </style>
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+
+
+	<div class="article-header">
+	<span class="article-header-caption">Moose Famix</span>
+</div>
+
+	<nav class="navbar navbar-default navbar-fixed-top" id="navbar-main">
+  <div class="container">
+
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+              data-target=".navbar-collapse" aria-expanded="false">
+        <span class="sr-only"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="/">
+        Moose Famix
+      </a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse">
+
+      <ul class="nav navbar-nav navbar-right">
+		
+        <li class="nav-item">
+          <a href="/index.html#introduction">
+            <span>Introduction</span>
+          </a>
+        </li>
+		
+        <li class="nav-item">
+          <a href="/Catalog.html#catalog">
+            <span>Catalog</span>
+          </a>
+        </li>
+		
+        <li class="nav-item">
+          <a href="/Definition.html#meta-model definition">
+            <span>Meta-model definition</span>
+          </a>
+        </li>
+		
+        <li class="nav-item">
+          <a href="/CodeGeneration.html#code generation">
+            <span>Code generation</span>
+          </a>
+        </li>
+		
+        <li class="nav-item">
+          <a href="/Tutorial.html#tutorial">
+            <span>Tutorial</span>
+          </a>
+        </li>
+		
+      
+      </ul>
+      
+
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container -->
+</nav>
+
+
+<!-- Projects widget -->
+<section>
+<div class="container">
+<div class="row">
+  <div class="col-xs-12 col-md-4 section-heading">
+	<h1></h1>
+
+    
+  </div>
+  <div class="col-xs-12 col-md-8">
+
+	<h2>Introduction</h2>
+
+<h3>Rational</h3>
+<a id="ch:ngRational"></a>
+<p>
+The idea behind FamixNG is to allow the creation of meta-models by composing basic entities rather than using single inheritance.
+</p>
+<p>
+Take for example a simple model with Classes and Methods. A Class has a <em>name</em> and <em>contains</em> methods. A Method has a <em>name</em>. The Figure <a href="#simpleHierarchy"></a> shows a simple hierarchy of these classes.
+</p>
+<p>
+<a id="fig:simpleHierarchy"></a>
+<figure>
+	<img src="figures/intro1.eps" width="35%" id="fig:simpleHierarchy" alt="A simple meta-model entities hierarchy."/>
+	<figcaption>A simple meta-model entities hierarchy.</figcaption>
+</figure>
+</p>
+<p>
+However, if we introduce AnonymousClass we have a problem, it is a Class (thus a ContainerEntity, but it is not Named).
+With composition, we could say that there are named entities (that have a name) and there are container entities (that contain other entities). A Class is composed of NamedEntity and ContainerEntity, an AnonymousClass is a composition of ContainerEntity, and a Method is a composition of NamedEntity.
+</p>
+<p>
+FamixNG offers a collection of fundamental concepts (NamedEntities, ScopingEntities...) and a better mechanism to handle bi-directional associations to simplify the creation of new meta-models.
+</p>
+<h3>General Organisation</h3>
+<a id="ch:ngPhilosophy"></a>
+<p>
+The composition is implemented using Pharo (stateful) traits, and the concepts of the meta-model are implemented using Pharo classes.
+A new metamodel is generated using a <a href="">@Builder</a> by telling it how the new concepts are composed and what are their relationships.
+</p>
+<p>
+The FamixNG provides all fundamental concepts as a library of traits. When you create a custom meta-model, you compose the entities of your meta-models (represented by classes) from these traits. You may want to create own traits if you require reusability of a concept they provide.
+</p>
+<p>
+In the most basic usages, one should be able to create a new meta-model by composing the existing fundamental concepts without the need to create new ones.
+</p>
+<h3>Catalog of Concepts</h3>
+<a id="ch:ngCatalog"></a>
+<h4>Access</h4>
+
+<p>
+<a id="fig:Access"></a>
+<figure>
+	<img src="figures/Access.eps" width="50%" id="fig:Access" alt="Access"/>
+	<figcaption>Access</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:Access"></a>
+</p>
+
+
+<h4>AnnotationInstance</h4>
+
+<p>
+<a id="fig:AnnotationInstance"></a>
+<figure>
+	<img src="figures/AnnotationInstance.eps" width="36%" id="fig:AnnotationInstance" alt="AnnotationInstance"/>
+	<figcaption>AnnotationInstance</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:AnnotationInstance"></a>
+</p>
+
+
+<h4>AnnotationInstanceAttribute</h4>
+
+<p>
+<a id="fig:AnnotationInstanceAttribute"></a>
+<figure>
+	<img src="figures/AnnotationInstanceAttribute.eps" width="43%" id="fig:AnnotationInstanceAttribute" alt="AnnotationInstanceAttribute"/>
+	<figcaption>AnnotationInstanceAttribute</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:AnnotationInstanceAttribute"></a>
+</p>
+
+
+<h4>AnnotationType</h4>
+
+<p>
+<a id="fig:AnnotationType"></a>
+<figure>
+	<img src="figures/AnnotationType.eps" width="59%" id="fig:AnnotationType" alt="AnnotationType"/>
+	<figcaption>AnnotationType</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:AnnotationType"></a>
+</p>
+
+
+<h4>AnnotationTypeAttribute</h4>
+
+<p>
+<a id="fig:AnnotationTypeAttribute"></a>
+<figure>
+	<img src="figures/AnnotationTypeAttribute.eps" width="48%" id="fig:AnnotationTypeAttribute" alt="AnnotationTypeAttribute"/>
+	<figcaption>AnnotationTypeAttribute</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:AnnotationTypeAttribute"></a>
+</p>
+
+
+<h4>Association</h4>
+
+<p>
+<a id="fig:Association"></a>
+<figure>
+	<img src="figures/Association.eps" width="25%" id="fig:Association" alt="Association"/>
+	<figcaption>Association</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:Association"></a>
+</p>
+
+
+<h4>Attribute</h4>
+
+<p>
+<a id="fig:Attribute"></a>
+<figure>
+	<img src="figures/Attribute.eps" width="24%" id="fig:Attribute" alt="Attribute"/>
+	<figcaption>Attribute</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:Attribute"></a>
+</p>
+
+
+<h4>CaughtException</h4>
+
+<p>
+<a id="fig:CaughtException"></a>
+<figure>
+	<img src="figures/CaughtException.eps" width="30%" id="fig:CaughtException" alt="CaughtException"/>
+	<figcaption>CaughtException</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:CaughtException"></a>
+</p>
+
+
+<h4>Class</h4>
+
+<p>
+<a id="fig:Class"></a>
+<figure>
+	<img src="figures/Class.eps" width="11%" id="fig:Class" alt="Class"/>
+	<figcaption>Class</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:Class"></a>
+</p>
+
+
+<h4>ClassHierarchyNavigation</h4>
+
+<p>
+<a id="fig:ClassHierarchyNavigation"></a>
+<figure>
+	<img src="figures/ClassHierarchyNavigation.eps" width="28%" id="fig:ClassHierarchyNavigation" alt="ClassHierarchyNavigation"/>
+	<figcaption>ClassHierarchyNavigation</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:ClassHierarchyNavigation"></a>
+</p>
+
+
+<h4>ClassMetrics</h4>
+
+<p>
+<a id="fig:ClassMetrics"></a>
+<figure>
+	<img src="figures/ClassMetrics.eps" width="39%" id="fig:ClassMetrics" alt="ClassMetrics"/>
+	<figcaption>ClassMetrics</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:ClassMetrics"></a>
+</p>
+
+
+<h4>Comment</h4>
+
+<p>
+<a id="fig:Comment"></a>
+<figure>
+	<img src="figures/Comment.eps" width="25%" id="fig:Comment" alt="Comment"/>
+	<figcaption>Comment</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:Comment"></a>
+</p>
+
+
+<h4>CompilationUnit</h4>
+
+<p>
+<a id="fig:CompilationUnit"></a>
+<figure>
+	<img src="figures/CompilationUnit.eps" width="34%" id="fig:CompilationUnit" alt="CompilationUnit"/>
+	<figcaption>CompilationUnit</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:CompilationUnit"></a>
+</p>
+
+
+<h4>DeclaredException</h4>
+
+<p>
+<a id="fig:DeclaredException"></a>
+<figure>
+	<img src="figures/DeclaredException.eps" width="35%" id="fig:DeclaredException" alt="DeclaredException"/>
+	<figcaption>DeclaredException</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:DeclaredException"></a>
+</p>
+
+
+<h4>DereferencedInvocation</h4>
+
+<p>
+<a id="fig:DereferencedInvocation"></a>
+<figure>
+	<img src="figures/DereferencedInvocation.eps" width="42%" id="fig:DereferencedInvocation" alt="DereferencedInvocation"/>
+	<figcaption>DereferencedInvocation</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:DereferencedInvocation"></a>
+</p>
+
+
+<h4>EnumValue</h4>
+
+<p>
+<a id="fig:EnumValue"></a>
+<figure>
+	<img src="figures/EnumValue.eps" width="24%" id="fig:EnumValue" alt="EnumValue"/>
+	<figcaption>EnumValue</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:EnumValue"></a>
+</p>
+
+
+<h4>Exception</h4>
+
+<p>
+<a id="fig:Exception"></a>
+<figure>
+	<img src="figures/Exception.eps" width="26%" id="fig:Exception" alt="Exception"/>
+	<figcaption>Exception</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:Exception"></a>
+</p>
+
+
+<h4>File</h4>
+
+<p>
+<a id="fig:File"></a>
+<figure>
+	<img src="figures/File.eps" width="23%" id="fig:File" alt="File"/>
+	<figcaption>File</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:File"></a>
+</p>
+
+
+<h4>FileAnchor</h4>
+
+<p>
+<a id="fig:FileAnchor"></a>
+<figure>
+	<img src="figures/FileAnchor.eps" width="19%" id="fig:FileAnchor" alt="FileAnchor"/>
+	<figcaption>FileAnchor</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:FileAnchor"></a>
+</p>
+
+
+<h4>FileInclude</h4>
+
+<p>
+<a id="fig:FileInclude"></a>
+<figure>
+	<img src="figures/FileInclude.eps" width="56%" id="fig:FileInclude" alt="FileInclude"/>
+	<figcaption>FileInclude</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:FileInclude"></a>
+</p>
+
+
+<h4>Folder</h4>
+
+<p>
+<a id="fig:Folder"></a>
+<figure>
+	<img src="figures/Folder.eps" width="37%" id="fig:Folder" alt="Folder"/>
+	<figcaption>Folder</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:Folder"></a>
+</p>
+
+
+<h4>Function</h4>
+
+<p>
+<a id="fig:Function"></a>
+<figure>
+	<img src="figures/Function.eps" width="22%" id="fig:Function" alt="Function"/>
+	<figcaption>Function</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:Function"></a>
+</p>
+
+
+<h4>GlobalVariable</h4>
+
+<p>
+<a id="fig:GlobalVariable"></a>
+<figure>
+	<img src="figures/GlobalVariable.eps" width="27%" id="fig:GlobalVariable" alt="GlobalVariable"/>
+	<figcaption>GlobalVariable</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:GlobalVariable"></a>
+</p>
+
+
+<h4>Header</h4>
+
+<p>
+<a id="fig:Header"></a>
+<figure>
+	<img src="figures/Header.eps" width="20%" id="fig:Header" alt="Header"/>
+	<figcaption>Header</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:Header"></a>
+</p>
+
+
+<h4>ImplicitVariable</h4>
+
+<p>
+<a id="fig:ImplicitVariable"></a>
+<figure>
+	<img src="figures/ImplicitVariable.eps" width="34%" id="fig:ImplicitVariable" alt="ImplicitVariable"/>
+	<figcaption>ImplicitVariable</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:ImplicitVariable"></a>
+</p>
+
+
+<h4>Invocable</h4>
+
+<p>
+<a id="fig:Invocable"></a>
+<figure>
+	<img src="figures/Invocable.eps" width="63%" id="fig:Invocable" alt="Invocable"/>
+	<figcaption>Invocable</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:Invocable"></a>
+</p>
+
+
+<h4>LCOMMetrics</h4>
+
+<p>
+<a id="fig:LCOMMetrics"></a>
+<figure>
+	<img src="figures/LCOMMetrics.eps" width="17%" id="fig:LCOMMetrics" alt="LCOMMetrics"/>
+	<figcaption>LCOMMetrics</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:LCOMMetrics"></a>
+</p>
+
+
+<h4>LocalVariable</h4>
+
+<p>
+<a id="fig:LocalVariable"></a>
+<figure>
+	<img src="figures/LocalVariable.eps" width="33%" id="fig:LocalVariable" alt="LocalVariable"/>
+	<figcaption>LocalVariable</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:LocalVariable"></a>
+</p>
+
+
+<h4>Method</h4>
+
+<p>
+<a id="fig:Method"></a>
+<figure>
+	<img src="figures/Method.eps" width="23%" id="fig:Method" alt="Method"/>
+	<figcaption>Method</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:Method"></a>
+</p>
+
+
+<h4>Module</h4>
+
+<p>
+<a id="fig:Module"></a>
+<figure>
+	<img src="figures/Module.eps" width="26%" id="fig:Module" alt="Module"/>
+	<figcaption>Module</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:Module"></a>
+</p>
+
+
+<h4>Named</h4>
+
+<p>
+<a id="fig:Named"></a>
+<figure>
+	<img src="figures/Named.eps" width="16%" id="fig:Named" alt="Named"/>
+	<figcaption>Named</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:Named"></a>
+</p>
+
+
+<h4>Namespace</h4>
+
+<p>
+<a id="fig:Namespace"></a>
+<figure>
+	<img src="figures/Namespace.eps" width="49%" id="fig:Namespace" alt="Namespace"/>
+	<figcaption>Namespace</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:Namespace"></a>
+</p>
+
+
+<h4>Package</h4>
+
+<p>
+<a id="fig:Package"></a>
+<figure>
+	<img src="figures/Package.eps" width="25%" id="fig:Package" alt="Package"/>
+	<figcaption>Package</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:Package"></a>
+</p>
+
+
+<h4>Parameter</h4>
+
+<p>
+<a id="fig:Parameter"></a>
+<figure>
+	<img src="figures/Parameter.eps" width="36%" id="fig:Parameter" alt="Parameter"/>
+	<figcaption>Parameter</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:Parameter"></a>
+</p>
+
+
+<h4>ParameterizedType</h4>
+
+<p>
+<a id="fig:ParameterizedType"></a>
+<figure>
+	<img src="figures/ParameterizedType.eps" width="36%" id="fig:ParameterizedType" alt="ParameterizedType"/>
+	<figcaption>ParameterizedType</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:ParameterizedType"></a>
+</p>
+
+
+<h4>ParameterizedTypeUser</h4>
+
+<p>
+<a id="fig:ParameterizedTypeUser"></a>
+<figure>
+	<img src="figures/ParameterizedTypeUser.eps" width="47%" id="fig:ParameterizedTypeUser" alt="ParameterizedTypeUser"/>
+	<figcaption>ParameterizedTypeUser</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:ParameterizedTypeUser"></a>
+</p>
+
+
+<h4>PossibleStub</h4>
+
+<p>
+<a id="fig:PossibleStub"></a>
+<figure>
+	<img src="figures/PossibleStub.eps" width="17%" id="fig:PossibleStub" alt="PossibleStub"/>
+	<figcaption>PossibleStub</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:PossibleStub"></a>
+</p>
+
+
+<h4>PreprocessorDefine</h4>
+
+<p>
+<a id="fig:PreprocessorDefine"></a>
+<figure>
+	<img src="figures/PreprocessorDefine.eps" width="23%" id="fig:PreprocessorDefine" alt="PreprocessorDefine"/>
+	<figcaption>PreprocessorDefine</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:PreprocessorDefine"></a>
+</p>
+
+
+<h4>PreprocessorIfdef</h4>
+
+<p>
+<a id="fig:PreprocessorIfdef"></a>
+<figure>
+	<img src="figures/PreprocessorIfdef.eps" width="21%" id="fig:PreprocessorIfdef" alt="PreprocessorIfdef"/>
+	<figcaption>PreprocessorIfdef</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:PreprocessorIfdef"></a>
+</p>
+
+
+<h4>Reference</h4>
+
+<p>
+<a id="fig:Reference"></a>
+<figure>
+	<img src="figures/Reference.eps" width="50%" id="fig:Reference" alt="Reference"/>
+	<figcaption>Reference</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:Reference"></a>
+</p>
+
+
+<h4>ScopingEntity</h4>
+
+<p>
+<a id="fig:ScopingEntity"></a>
+<figure>
+	<img src="figures/ScopingEntity.eps" width="31%" id="fig:ScopingEntity" alt="ScopingEntity"/>
+	<figcaption>ScopingEntity</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:ScopingEntity"></a>
+</p>
+
+
+<h4>SourceAnchor</h4>
+
+<p>
+<a id="fig:SourceAnchor"></a>
+<figure>
+	<img src="figures/SourceAnchor.eps" width="46%" id="fig:SourceAnchor" alt="SourceAnchor"/>
+	<figcaption>SourceAnchor</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:SourceAnchor"></a>
+</p>
+
+
+<h4>SourceLanguage</h4>
+
+<p>
+<a id="fig:SourceLanguage"></a>
+<figure>
+	<img src="figures/SourceLanguage.eps" width="35%" id="fig:SourceLanguage" alt="SourceLanguage"/>
+	<figcaption>SourceLanguage</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:SourceLanguage"></a>
+</p>
+
+
+<h4>Sub</h4>
+
+<p>
+<a id="fig:Sub"></a>
+<figure>
+	<img src="figures/Sub.eps" width="14%" id="fig:Sub" alt="Sub"/>
+	<figcaption>Sub</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:Sub"></a>
+</p>
+
+
+<h4>SubInheritance</h4>
+
+<p>
+<a id="fig:SubInheritance"></a>
+<figure>
+	<img src="figures/SubInheritance.eps" width="30%" id="fig:SubInheritance" alt="SubInheritance"/>
+	<figcaption>SubInheritance</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:SubInheritance"></a>
+</p>
+
+
+<h4>SuperInheritance</h4>
+
+<p>
+<a id="fig:SuperInheritance"></a>
+<figure>
+	<img src="figures/SuperInheritance.eps" width="29%" id="fig:SuperInheritance" alt="SuperInheritance"/>
+	<figcaption>SuperInheritance</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:SuperInheritance"></a>
+</p>
+
+
+<h4>Template</h4>
+
+<p>
+<a id="fig:Template"></a>
+<figure>
+	<img src="figures/Template.eps" width="45%" id="fig:Template" alt="Template"/>
+	<figcaption>Template</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:Template"></a>
+</p>
+
+
+<h4>ThrownException</h4>
+
+<p>
+<a id="fig:ThrownException"></a>
+<figure>
+	<img src="figures/ThrownException.eps" width="32%" id="fig:ThrownException" alt="ThrownException"/>
+	<figcaption>ThrownException</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:ThrownException"></a>
+</p>
+
+
+<h4>Type</h4>
+
+<p>
+<a id="fig:Type"></a>
+<figure>
+	<img src="figures/Type.eps" width="63%" id="fig:Type" alt="Type"/>
+	<figcaption>Type</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:Type"></a>
+</p>
+
+
+<h4>TypeAlias</h4>
+
+<p>
+<a id="fig:TypeAlias"></a>
+<figure>
+	<img src="figures/TypeAlias.eps" width="24%" id="fig:TypeAlias" alt="TypeAlias"/>
+	<figcaption>TypeAlias</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:TypeAlias"></a>
+</p>
+
+
+<h4>TypedStructure</h4>
+
+<p>
+<a id="fig:TypedStructure"></a>
+<figure>
+	<img src="figures/TypedStructure.eps" width="39%" id="fig:TypedStructure" alt="TypedStructure"/>
+	<figcaption>TypedStructure</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:TypedStructure"></a>
+</p>
+
+
+<h4>WithClassScope</h4>
+
+<p>
+<a id="fig:WithClassScope"></a>
+<figure>
+	<img src="figures/WithClassScope.eps" width="20%" id="fig:WithClassScope" alt="WithClassScope"/>
+	<figcaption>WithClassScope</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:WithClassScope"></a>
+</p>
+
+
+<h4>WithModifiers</h4>
+
+<p>
+<a id="fig:WithModifiers"></a>
+<figure>
+	<img src="figures/WithModifiers.eps" width="17%" id="fig:WithModifiers" alt="WithModifiers"/>
+	<figcaption>WithModifiers</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:WithModifiers"></a>
+</p>
+
+
+<h4>WithSignature</h4>
+
+<p>
+<a id="fig:WithSignature"></a>
+<figure>
+	<img src="figures/WithSignature.eps" width="18%" id="fig:WithSignature" alt="WithSignature"/>
+	<figcaption>WithSignature</figcaption>
+</figure>
+</p>
+<p>
+TODO: This trait group requires description, see <a href="#fig:WithSignature"></a>
+</p>
+
+
+
+
+  </div>
+</div>
+</div>
+</section>
+	
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://code.jquery.com/jquery.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="_support/html/js/bootstrap.min.js"></script>
+
+    <!-- Syntax highlighting of code blocks -->
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    <!-- Prettify annotated paragraphs-->
+    <script src="_support/html/js/annotated-paragraphs.js"></script>
+
+	<footer class="site-footer">
+  <div class="container">
+    <p class="powered-by">
+
+      Powered by the
+      <a href="https://sourcethemes.com/academic/" target="_blank" rel="noopener">Academic theme</a> for
+      <a href="https://github.com/pillar-markup/pillar" target="_blank" rel="noopener">Pillar</a>.
+
+      <span class="pull-right" aria-hidden="true">
+        <a href="#" id="back_to_top">
+          <span class="button_icon">
+            <i class="fa fa-chevron-up fa-2x"></i>
+          </span>
+        </a>
+      </span>
+
+    </p>
+  </div>
+</footer>
+
+
+
+  </body>
+</html>

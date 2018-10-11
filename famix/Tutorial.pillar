@@ -16,14 +16,14 @@ FamixMetamodelGenerator subclass: #DemoStMetamodelGenerator
     package: 'DemoStMetamodelGenerator'
 ]]]
 
-@@note In this tutorial, we do not use any prepared language generator to keep things more clear and straightforward. Usually, the other generator class like ==FmxNGBasicInfrastructureGenerator== would be chosen as the superclass. 
+@@note In this tutorial, we do not use any prepared language generator to keep things more clear and straightforward. Usually, the other generator class like ==FamixBasicInfrastructureGenerator== would be chosen as the superclass. 
 
 Then we need to specify what is the package where the meta-model will be generated. For that purpose we will create a class-side method named ==packageName==. The package name must be always specified.
 
 [[[­lan­gua­ge=­Sma­lltalk
 DemoStMetamodelGenerator class >> packageName
 
-    ^ #'DemoSmalltalkMetamodel-Generated'
+    ^ #'DemoSmalltalkMetamodel-Entities'
 ]]]
 
 By default, the package name is used as the prefix of generated classes, but in our case, it is too long. So we will create a method ==prefix== on the generator side of the generator that will specify it.
@@ -62,7 +62,7 @@ Then we can try to create the first testing generation of our meta-model:
 DemoStMetamodelGenerator new generate.
 ]]]
 
-We see that the package ==DemoSmalltalkMetamodel-Generated== was created. For each entity, a class was created in the class category named ==Entities== 
+We see that the package ==DemoSmalltalkMetamodel-Entities== was created. For each entity, a class was created in the class category named ==Entities== 
 
 In the next step, we will specify the classes hierarchy in a method named ==defineHierarchy==:
 
@@ -82,7 +82,7 @@ defineHierarchy
 
 The UML description of the class hierarchy is shown in the figure *@figClassHierarchy*
 
-+figures/demoSt-classHierarchy.png|label=figClassHierarchy+
++Chapters/ExampleMetamodel/figures/demoSt-classHierarchy.png|label=figClassHierarchy+
 
 !!Properties and relations
 
@@ -132,7 +132,7 @@ As soon we assigned the class to the comment, the comment was automatically adde
 
 Our meta-model is now very incomplete. We, for example, cannot set the name of the class, it is missing most of the relations and so on. Moreover, if you build a model, you will not be able to use most of the advantages of Moose platform because your model classes have almost no tools support. To solve this issues, we will start to use some of the standard traits that Famix provides.
 
-The Famix traits are placed in the package named ''FmxNG-Traits''. As the first step, we need to tell to your meta-model generator, where to find them. We need to register them in your meta-model builder. The Famix traits are generated the same way as your meta-model classes - using a generator. We will take this generator and adopt its meta-model builder as a base for our own meta-model. To do that, we should override a generator's instance side method named ==newBuilder==. In this method, we take the builder from the existing generator and tell him that none of the existing entities should be generated. Builder will know about them but will not create real classes nor traits for them. The message ==builderWithStandardTraits== will do it.
+The Famix traits are placed in the package named ''Famix-Traits''. As the first step, we need to tell to your meta-model generator, where to find them. We need to register them in your meta-model builder. The Famix traits are generated the same way as your meta-model classes - using a generator. We will take this generator and adopt its meta-model builder as a base for our own meta-model. To do that, we should override a generator's instance side method named ==newBuilder==. In this method, we take the builder from the existing generator and tell him that none of the existing entities should be generated. Builder will know about them but will not create real classes nor traits for them. The message ==builderWithStandardTraits== will do it.
 
 [[[­lan­gua­ge=­Sma­lltalk
 DemoStMetamodelGenerator >> newBuilder
@@ -158,27 +158,74 @@ Then we can extend our meta-model classes definition (==defineHierarchy==).
     entity --|> #TNamed.
 ]]]
 
-This way we told to the generated class DemoSTEnitity that it should use a standard FamixNG trait named FmxNGTNamed. After re-generating of our meta-model, our tests should be green.
+This way we told to the generated class DemoSTEnitity that it should use a standard FamixNG trait named FamixTNamed. After re-generating of our meta-model, our tests should be green.
 
 Now let's create a relationship between method and entities that can hold them. In Smalltalk methods can belong to classes and to packages (extension methods).  We will open the tool named "Famix trait groups" from the Moose menu where we will find suitable trais in categories "Method" and "Package."
 
 +Method>Chapters/ExampleMetamodel/figures/Method.svg|width=23|label=Method+
 
-+Package>figures/Package.svg|width=25|label=Package+
++Package>Chapters/ExampleMetamodel/figures/Package.svg|width=25|label=Package+
 
-We will add a standard trait ==TMethod== to our ''method'' entity and a trait named ==TWithMethods== to the entity ''class''. Then we will say that methods and classes are ''packageable'' and the package uses a trait named ==TPackage==.
+Now we define in the method ==defineHierarchy== that the our method uses the ==TMethod== trait (==FamixTMethod==) and that its parent type will be the class.
+
+[[[­lan­gua­ge=­Sma­lltalk
+    (method asExisting: #TMethod)
+        link: #parentType to: class.
+]]]
+
+@@note notice that we use message ==asExisting:== that explicitly says that we want to use a trait that is already registered under this name in any of the packages registered in the builder. If we would use simple ==as:== then the builder would try to create a new trait named ==DemoStTMethod==.
+
+This expression is equivalen to 
 
 [[[­lan­gua­ge=­Sma­lltalk
     method --|> #TMethod.
     class --|> #TWithMethods.
-    package --|> #TPackage.
-    class --|> #TPackageable.
-    method --|> #TPackageable.
 ]]]
 
-You may ask why the ''package'' does not use the ==TWithMethods== trait too. The pair of traits ==TWithMethods== and ==TMethod== defines relationship ''methods'' - ''parentType''. Of course, the package is not a parent type for the method and because the method can belong to a class and package simultaneously, it would cause a collision.
+The first way of extending of the meta-model is more readable especially in cases when the trait defines relations to multiple entities.
 
-@@note Our meta-model has no entity that can contain packages. We will not apply the trait ==TWithPackages== to any class. The property ==packageOwner== of the DemoSTPackage will always return nil. 
+Now we will do the similar for the package. We will say that the package uses the standard trait ==#TPackage== and contains classes:
+
+[[[­lan­gua­ge=­Sma­lltalk
+    (package asExisting: #TPackage)
+        link: #childEntities to: class.
+]]]
+
+But moreover, the package contains methods too. Meaning the extension methods that belongs to classes that do not belong to the same package. 
+
+[[[­lan­gua­ge=­Sma­lltalk
+    (package asExisting: #TPackage)
+        link: #childEntities to: class;
+        link: #childEntities to: method.
+]]]
+
+But now the meta-model has one big issue. If we will try to regenerate it, we will get the following error: 
+
+[[[
+DemoStMethod defines more than one primary container: parentPackage, parentType
+]]]
+
+It is caused by the fact that both standard traits ==TClass== and ==TPackage== define their relations as containment relations. But in the meta-model, every method can have only one primary containment relation. The method cannot belong to a class and to a package in the same time. We need to choose only one - the class. So we will need to say that the method is stored in the package (is ''packageable'') but for us this relation will not be the relation of a container.
+
+[[[­lan­gua­ge=­Sma­lltalk
+    (package asExisting: #TPackage)
+        link: #childEntities to: class.
+	
+    method usesWithoutPrimaryContainer: #TPackageable.
+]]]
+
+Again, this code is equivalent to:
+
+[[[­lan­gua­ge=­Sma­lltalk
+    package --|> #TPackage.
+    class --|> #TPackageable.
+    method usesWithoutPrimaryContainer: #TPackageable.
+]]]
+
+
+You may ask why the ''package'' does not use the ==TWithMethods== trait too. The pair of traits ==TWithMethods== and ==TMethod== defines relationship ''methods'' - ''parentType''. Of course, the package is not a parent type for the method and because the method can belong to a class and package simultaneously, it would cause a collision. We would need the same method ''parentType'' for two different relations.
+
+@@note Our meta-model has no entity that can contain packages. We will not apply the trait ==TWithPackages== to any class because we have no entity that contains packages. The property ==packageOwner== of the DemoSTPackage will always return nil. 
 
 With such meta-model, we can start to build more complex models.
 
@@ -201,15 +248,13 @@ method2 parentPackage: package2.
 model addAll: { class. package1. package2. method1. method2 }.
 ]]]
 
-Notice that ==isStub== is a property added by the trait ==TNamed==. When we will inspect such model in Moose, the inspector will provide more advanced options like showing all methods in the meta-model, because we used the trait ==TMethod== on some of the elements and thus they are interpreted as methods. 
+When we will inspect such model in Moose, the inspector will provide more advanced options like showing all methods in the meta-model, because we used the trait ==TMethod== on some of the elements and thus they are interpreted as methods. 
 
 !!Custom extensions
 
 During generation of the meta-model classes, the generator touches only the methods and slots it knows they can be changed. In case we want to provide an alternative code for generated methods, we need to remove the pragma ==<generated>== else the generator will rewrite them during the next re-generation. 
 
-As we said, the generator creates for every meta-model entity two classes. One has a name with the suffix ''Generated'' and is the superclass of the other one. When such pair is created, the generator only checks if the class without suffix already exists and if yes, it stays untouched. That opens a possibility to move them to a separate package and extend such classes with own methods or instance variables if needed. 
-
-We want, for example, from methods to answer a package that owns method in case that the method package is not explicitly known. In this case we need to remove pragma ==<generated>== from the parentPackage accessor.
+We want, for example, from methods to answer a package that owns method in case that the method package is not explicitly known. In this case we need define custom code for it. 
 
 [[[­lan­gua­ge=­Sma­lltalk
 DemoStMethod >> parentPackage
@@ -229,24 +274,21 @@ Together with the classes for the meta-model entities, an importing context can 
 [[[­lan­gua­ge=­Sma­lltalk
 newBuilder
 
-    ^ self builderWithStandardTraits
-        generateImportingContext: true;
-        yourself
+    ^ self builderWithStandardTraits withImportingContext
 ]]]
 
 In our case, it is automatically named as ==DemoStImportingContext==. This class will be useful for you as soon as you will start to write or customize an importer for your models. 
 
-The main task we need to do is to set dependencies between the meta-model elements. Simply use the message ==requires:== that accepts a collection of entities required by another entity.
+The main task we need to do is to set dependencies between the meta-model elements. Simply use the message ==requires:== that accepts a collection of entities required by another entity. For the containment relationships, the requirement of the containing entity is automatic.
 
 [[[­lan­gua­ge=­Sma­lltalk
-method requires: { class }.
+method requires: { package }.
 ]]]
 
 Then a user of an importer of your models can create a related importing context like this:
 
 [[[­lan­gua­ge=­Sma­lltalk
 importerTask importingContext: (DemoStImportingContext new 
-    importPackage;
     importMethod;
     yourself).
 ]]]

@@ -1,0 +1,336 @@
+{
+	"profile" : [
+		{
+			"name": "Moose",
+	 		"avatar": "moose-icon.png",
+     			"post": "Famix",
+     			"firm": "General purpose meta-models building framework"
+		}
+	]
+
+}
+
+
+!Meta-model definition
+@ch:Definition
+
+The Moose provides a builder for a definition of meta-models. This builder defines a kind of domain specific language (DSL) that helps to create and customize meta-models of several types with the focus on programming language meta-models. 
+
+This chapter describes the usage of the Moose meta-model builder and related generators.
+
+!!Meta-model generator
+
+For every meta-model a new generator should be created. The meta-model generator is an object that manages process of meta-model generation and provides basic configuration information like in what package the meta-model should be created, what is the prefix of the meta-model class names and so on. 
+
+For a new met-model, own subclass of ==FamixMetamodelGenerator== will be created. In most cases it will be specialization of some of the more concrete generator class (like ==FamixBasicInfrastructureGenerator==, see *Generators>chapterGenerators*) that provides some basic predefined skeleton for your programming language meta-model. However, in case your meta-model is not describing a programming language of your programming language needs do not fit on some of the prepared generators, just use the ==FamixMetamodelGenerator== as the starting point. 
+
+[[[­lan­gua­ge=­Sma­lltalk
+FamixMetamodelGenerator subclass: #FortranMetamodelGenerator
+    instanceVariableNames: ''
+    classVariableNames: ''
+    package: 'Fortran-Generator'
+]]]
+
+The new generator class firlsty needs to be configured by overriding of these class side methods:
+
+|!method name|!description|!default value
+| ==packageName== | name of the package where the the classes of the meta-model will be generated| none, must be defined
+| ==prefix== | prefix of generated meta-model classes| same as ==packageName==
+
+The package where the generated meta-model be created, should be different from the package where the generator is placed, so if you are creating meta-model for Fortran langugae, the suitable package names will be =='Fortran-Generator'== for package with generator and =='Fortran-Entities'== for package where the meta-model entitities will be placed. The prefix then could be =='Fortran'==.
+
+The definition of the meta-model is placed in the instance side method named ==define==.
+
+[[[­lan­gua­ge=­Sma­lltalk
+FortranMetamodelGenerator >> define [
+	
+    "place your meta-model definition here"
+]
+]]]
+
+The primary class of the meta-model builder is named ==FamixMetamodelBuilder==. The generator provides by default one instance of it in an instance variable named ==builder==.
+
+!!!Meta-model generation
+
+The code is generated using the message ==generate== sent to the generator. If no element of the meta-model is defined then it will not do anything useful, it will just create an empty package defined by ==packageName==
+
+[[[­lan­gua­ge=­Sma­lltalk
+generator := FortranMetamodelGenerator new.
+generator generate.
+]]]
+
+By default the generator will keep the previous generated code on place and will try to merge it. If you want to be sure that the generated code is not affected by some previous version, you should firstly clear the previously generated package using the message ==cleanPackage==
+
+[[[­lan­gua­ge=­Sma­lltalk
+generator := FortranMetamodelGenerator new.
+generato cleanPackage.
+generator generate.
+]]]
+
+!!Classes
+
+The basic entities of the meta-models are classes and traits. For the meta-model generator, classes are entities with shared behavior that can be instantiated. They are used for description of meta-model elements like ''Package'', ''Method'', ''Class'', ''Table'' etc. We define them in the builder using a message ==newClassNamed:==. It is common practice to define them as instance variables of the generator.
+
+[[[­lan­gua­ge=­Sma­lltalk
+FamixMetamodelGenerator subclass: #FortranMetamodelGenerator
+    instanceVariableNames: 'function'
+    classVariableNames: ''
+    package: 'Fortran-Generator'
+
+FortranMetamodelGenerator >> define [
+    function := builder newClassNamed: #Function.
+]
+]]]
+
+They are physically not generated immediately, but they are created together with other defined entities when the builder receives message ==generate==. When the class is defined, the currently valid builder prefix is used for it and stored as a property of the class. Later change of the builder's prefix does not affect the classes that are already defined.
+
+@@note In the definition of the meta-model, the class names are used without the prefix which makes orientation in the code of the meta-model easier. However, the name of real classes includes the specified prefix. Keep that in mind when you use such classes from a non-generated code.
+
+!!Traits
+
+Traits are independent units of shared behavior. They are very similar to classes but they cannot be instantiated and they are used differently for generalization. The stateful traits introduced in Pharo 7.0 are used for them. That means that they can hold instance variables (''slots'') so, from that perspective, they act as standard Pharo classes and they provide most of their power. However, because they usually provide only a small unit of shared behavior, it is handy to place most of the meta-model behavior into the traits and let classes to only use them. Then such traits can be easily reused for other meta-models.
+
+Their name usually starts with the character ==T== and they are defined in the builder using a message ==newTraitNamed:==.
+
+[[[­lan­gua­ge=­Sma­lltalk
+tFunction := builder newTraitNamed: #TFunction.
+]]]
+
+!!Generalization 
+
+When the entities are defined in a builder, generalization relationships can be set between them using a binary message  ==\-\-\|\>== that tries to look like the standard UML generalization arrow.
+
+[[[­lan­gua­ge=­Sma­lltalk
+behaviouralEntity := builder newClassNamed: #BehaviouralEntity.
+function := builder newClassNamed: #Function.
+function --|> behaviouralEntity.
+]]]
+
+In this case it means that the class ==Function== is a subclass of the class ==BehaviouralEntity==. Alternatively a keyword messages ==subclassOf:== or ==generalization:== can be used with the same result.
+
+[[[­lan­gua­ge=­Sma­lltalk
+function subclassOf: behaviouralEntity.
+function generalization: behaviouralEntity.
+]]]
+
+Because ==\<\|\-\-== is a standard binary message, it can be used in a chain
+[[[­lan­gua­ge=­Sma­lltalk
+class --|> behavior --|> named
+]]]
+
+A message with opposite inheritance direction extists too ( ==\<\|\-\-==). 
+
+[[[­lan­gua­ge=­Sma­lltalk
+behaviouralEntity <|-- function.
+]]]
+
+Classes can have only one superclass. If no superclass is specified, a default superclass is used. Traits are ''never'' generalizations of other entities so they always inherit from the default superclass (''baseTrait''). Their class hierarchy is flat.
+
+!!Generalization from traits - multiple inheritance
+
+The meta-model classes can be the specialization of only one single class, but besides that, they can use none, one, or several traits.
+The notation for traits composition is the same as for the class generalization (==\<\|\-\-==).
+
+[[[­lan­gua­ge=­Sma­lltalk
+behavior := builder newClassNamed: #Behavior.    
+tBehavior := builder newTraitNamed: #TBehavior.
+tBehavior <|-- behavior.
+]]]
+
+This is the way how multiple inheritance can be expressed in the meta-model. Let's have classes ==A==, ==B== and ==C==. We want ==B== to be sublcass of ==A== and ==C==. It cannot be done directly. We need to make a trait ==TC== that provides all the behavior of the class ==C== and then let ==B== and ==C== use this trait.
+
++Multiple inheritance with classes>Chapters/MetamodelEntities/figures/multipleInheritance1.svg|width=18|label=multipleInheritance1+
+
++Multiple inheritance with classes and traits>Chapters/MetamodelEntities/figures/multipleInheritance2.svg|width=19|label=multipleInheritance2+
+
+[[[­lan­gua­ge=­Sma­lltalk
+a := builder newClassNamed: #A.    
+b := builder newClassNamed: #B.    
+c := builder newClassNamed: #C.
+tc := builder newTraitNamed: #TC.    
+a <|-- b.
+tc <|-- c.
+tc <|-- b.
+]]]
+
+Of course, creating a class for ==C== is necessary only in a case when the class ==C== needs to be instantiated. In other cases, one need only the trait ==TC==.
+
+!!Simple properties
+
+The non-relational properties of meta-model entities are defined using the method ==name:type:== that accepts as the first argument a symbolic name of the property and as the second argument a name of a type. This type can be any class name, but most likely it is a name of a primitive type like ==String==, ==Number==, or ==Boolean==.
+
+[[[­lan­gua­ge=­Sma­lltalk
+namedEntity property: #name type: #String.
+]]]
+
+Comment of the property can be set.
+
+[[[­lan­gua­ge=­Sma­lltalk
+(namedEntity property: #name type: #String)
+    comment: 'This is a comment'.
+]]]
+
+
+
+!!Relations
+@ch:relations
+
+Very often the meta-model entities contain properties that are in some kind of relation. For example, we have an entity for class comments and an entity for classes. Classes have a reference on their class comments, and the class comments have a reference on owning classes. In such cases, we connect such properties into a relation.
+
+The main advantage of properties connected with relations lies in their automatic update. When you assign a comment to a class, the class is automatically assigned to the comment. 
+
+Properties that are sides of relations are created with the message ==property:== sent to an entity. This message accepts a property name as an argument. The are two ways how to connect defined properties. One uses keyword messages that describe cardinality of particular relation sides: 
+
+[[[­lan­gua­ge=­Sma­lltalk
+(tClass property: #comment) oneToOne: (tComment property: #owningClass).
+]]]
+
+The second one uses binary messages that tries to be similar to UML connectors:
+
+[[[­lan­gua­ge=­Sma­lltalk
+tClass := builder newTraitNamed: #TClass. 
+tComment := builder newTraitNamed: #TComment. 
+(tClass property: #comment) - (tComment property: #owningClass).
+]]]
+
+!!!Cardinality - standard relations
+
+Every relation keyword message has an alternative binary message.
+
+|!binary |!keyword
+| ==\-== | ==oneToOne:==
+| ==\-\*== | ==oneToMany:==
+| ==*\-== | ==manyToOne:==
+| ==\*\-\*== | ==manyToMany:==
+
+
+!!!Cardinality - aggregation
+
+We can describe the aggregation relationship too by specifying which side of the relation is a container using similar messages like in case of the standard relations. For the binary messages, the "diamond" is always on the side of the owner. 
+
+|!binary |!keyword
+| ==<>-== | ==containsOne:==
+| ==<>-*== | ==containsMany:==
+| ==-<>== | ==oneBelongsTo:==
+| ==*-<>== | ==manyBelongTo:==
+
+Notice that there is no many-to-many aggregation relation. 
+
+!!!Properties of relations
+
+Other properties can be set to the relations, for example, to comment them. Such properties are always valid only for a particular side of the relation.
+
+[[[­lan­gua­ge=­Sma­lltalk
+((tAccess property: #accessor)
+        comment: 'Behavioural entity making the access to the variable';
+        source)
+    *-
+((tWithAccesses property: #accesses)
+        comment: 'Accesses to variables made by this behaviour.').
+]]]
+
+Besides the comment, several other boolean properties can be set: 
+
+- ==container==
+- ==derived==
+- ==source==
+- ==target==
+
+By default, none of these properties is assigned to the generated entities.
+
+
+!!Simplified definitions
+
+The meta-model builder provides ways to make the definition of some common constructs simpler. This chapter describes them.
+
+!!!Simplified traits generation
+@ch:simplifiedTraitsGeneration
+
+Because traits may be the primary providers of the behavior and classes often play only a role of entities composing traits, the classes offer a simple message ==as:== that can define traits related to them.
+
+[[[­lan­gua­ge=­Sma­lltalk
+behavior := builder newClassNamed: #Behavior.
+behavior as: #TBehavior.    
+]]]
+
+This code creates a new trait and then sets the class as a user of this new trait. So the code above is equivalent to: 
+
+[[[­lan­gua­ge=­Sma­lltalk
+behavior := builder newClassNamed: #Behavior.
+(builder newTraitNamed: #TBehavior) <|-- behavior
+]]]
+
+In most cases, a related construct (==as:property:==) is used for the description of relations between properties without the need to separately create traits:
+
+[[[­lan­gua­ge=­Sma­lltalk
+method := builder newClassNamed: #Method.    
+comment := builder newClassNamed: #Comment.    
+    
+(method as: #TMethod property: #comments) 
+    -*
+(comment as: #TComment property: #owningMethod).
+]]]
+
+Note that the object returned by the ==as:== message is not the trait created but an alias class. If you want to get the defined trait, you need to send the ==trait== message to it.
+
+[[[­lan­gua­ge=­Sma­lltalk
+behavior := builder newClassNamed: #Behavior.
+tBehavior := (behavior as: #TBehavior) trait.
+]]]
+
+Of course, such traits can then be used by other classes too (with messages like ==\<\|\-\-==).
+
+!!!Automatic properties generation
+
+Relations can be defined directly between classes. In that case, the corresponding properties are named automatically. 
+
+[[[­lan­gua­ge=­Sma­lltalk
+access := builder newClassNamed: #Access.    
+variable := builder newClassNamed: #Variable.    
+variable -* access.
+]]]
+
+The example above is equivalent to the following code:
+
+[[[­lan­gua­ge=­Sma­lltalk
+access := builder newClassNamed: #Access.    
+variable := builder newClassNamed: #Variable.    
+(variable property: #accesses) 
+    -*
+(accessproperty: #variable).
+]]]
+
+You can define relationships between any combination of classes, traits and class aliases (created using #as:) message.
+
+[[[­lan­gua­ge=­Sma­lltalk
+access := builder newClassNamed: #Access.    
+variable := builder newClassNamed: #Variable.
+(variable as: #TVariable) -* access.
+]]]
+
+!!!Associations generation
+@ch:AssociationsGeneration
+
+Often you have in a meta-model a relation of two entities where you want to be able to describe more detailed properties of such relations. For example, a variable can be used in a method and you want to be able to model concrete accesses within the method. You want to know where in the code the access takes place if it is reading or storing in the variable, etc. The meta-model builder provides the method ==link:throughAssociation:link:with:== that simplifies the definition of such relations that are named ''associations''. The message allows you to control the names of the properties. It will be clearer with an example:
+
+[[[­lan­gua­ge=­Sma­lltalk
+access := builder newClassNamed: #Access.    
+variable := builder newClassNamed: #Variable.    
+method := builder newClassNamed: #Method.    
+        
+(method as: #TWithAccesses)
+    link: #accesses -> #accessor
+    throughAssociation: (access as: #TAccess) 
+    link: #variable <- #incomingAccesses
+    with: (variable as: #TAccessible).
+]]]
+
+This will generate three traits named ==TWithAccesses==, ==TAccess== and ==TAccessible== and define two relations between them. A collection of four relation sides are returned as result of this message. It enables to set the other properties of such relations like comments.
+
+[[[­lan­gua­ge=­Sma­lltalk
+sides := (method as:...)
+sides first comment: 'This is a comment'.
+]]]
+
+This code will set the comment of a property named ==accesses== of the class ==TWithAccesses==. The ==source== and ==target== properties are set automatically.
+

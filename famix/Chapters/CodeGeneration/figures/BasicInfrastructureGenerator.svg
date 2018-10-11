@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="210px" preserveAspectRatio="none" style="width:470px;height:210px;" version="1.1" viewBox="0 0 470 210" width="470px" zoomAndPan="magnify"><defs/><g><!--class SourceAnchor--><rect fill="#FFFFFF" height="23.9688" id="SourceAnchor" style="stroke: #383838; stroke-width: 1.5;" width="94" x="75" y="92"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="88" x="78" y="108.1387">SourceAnchor</text><!--class Entity--><rect fill="#FFFFFF" height="23.9688" id="Entity" style="stroke: #383838; stroke-width: 1.5;" width="41" x="232.5" y="8"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="35" x="235.5" y="24.1387">Entity</text><!--class SourceLanguage--><rect fill="#FFFFFF" height="23.9688" id="SourceLanguage" style="stroke: #383838; stroke-width: 1.5;" width="112" x="335" y="92"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="106" x="338" y="108.1387">SourceLanguage</text><!--class SourcedEntity--><rect fill="#FFFFFF" height="23.9688" id="SourcedEntity" style="stroke: #383838; stroke-width: 1.5;" width="93" x="206.5" y="92"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="87" x="209.5" y="108.1387">SourcedEntity</text><!--class Association--><rect fill="#FFFFFF" height="23.9688" id="Association" style="stroke: #383838; stroke-width: 1.5;" width="78" x="161" y="176"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="72" x="164" y="192.1387">Association</text><!--class Comment--><rect fill="#FFFFFF" height="23.9688" id="Comment" style="stroke: #383838; stroke-width: 1.5;" width="65" x="274.5" y="176"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="59" x="277.5" y="192.1387">Comment</text><!--class NamedEntity--><rect fill="#FFFFFF" height="23.9688" id="NamedEntity" style="stroke: #383838; stroke-width: 1.5;" width="85" x="374.5" y="176"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="79" x="377.5" y="192.1387">NamedEntity</text><!--class SourceTextAnchor--><rect fill="#FFFFFF" height="23.9688" id="SourceTextAnchor" style="stroke: #383838; stroke-width: 1.5;" width="120" x="6" y="176"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacingAndGlyphs" textLength="114" x="9" y="192.1387">SourceTextAnchor</text><!--link Entity to SourceAnchor--><path d="M218.278,42.734 C193.031,58.538 159.887,79.284 139.806,91.854 " fill="none" id="Entity-SourceAnchor" style="stroke: #383838; stroke-width: 1.0;"/><polygon fill="none" points="214.666,36.737,235.333,32.059,222.094,48.604,214.666,36.737" style="stroke: #383838; stroke-width: 1.0;"/><!--link Entity to SourceLanguage--><path d="M289.188,42.503 C315.832,58.335 350.985,79.223 372.243,91.854 " fill="none" id="Entity-SourceLanguage" style="stroke: #383838; stroke-width: 1.0;"/><polygon fill="none" points="285.229,48.293,271.611,32.059,292.381,36.258,285.229,48.293" style="stroke: #383838; stroke-width: 1.0;"/><!--link Entity to SourcedEntity--><path d="M253,52.2 C253,66.136 253,81.676 253,91.854 " fill="none" id="Entity-SourcedEntity" style="stroke: #383838; stroke-width: 1.0;"/><polygon fill="none" points="246,52.059,253,32.059,260,52.059,246,52.059" style="stroke: #383838; stroke-width: 1.0;"/><!--link SourcedEntity to Association--><path d="M234.769,133.2058 C225.297,147.8609 214.258,164.9399 207.204,175.8544 " fill="none" id="SourcedEntity-Association" style="stroke: #383838; stroke-width: 1.0;"/><polygon fill="none" points="229.117,129.056,245.852,116.0589,240.875,136.6556,229.117,129.056" style="stroke: #383838; stroke-width: 1.0;"/><!--link SourcedEntity to Comment--><path d="M271.575,133.2058 C281.225,147.8609 292.473,164.9399 299.66,175.8544 " fill="none" id="SourcedEntity-Comment" style="stroke: #383838; stroke-width: 1.0;"/><polygon fill="none" points="265.436,136.6123,260.283,116.0589,277.129,128.9124,265.436,136.6123" style="stroke: #383838; stroke-width: 1.0;"/><!--link SourcedEntity to NamedEntity--><path d="M293.322,125.1608 C325.381,141.1906 369.019,163.0093 394.971,175.9857 " fill="none" id="SourcedEntity-NamedEntity" style="stroke: #383838; stroke-width: 1.0;"/><polygon fill="none" points="289.876,131.2642,275.118,116.0589,296.137,118.7422,289.876,131.2642" style="stroke: #383838; stroke-width: 1.0;"/><!--link SourceAnchor to SourceTextAnchor--><path d="M103.0743,132.7127 C92.9918,147.4763 81.1492,164.8172 73.6116,175.8544 " fill="none" id="SourceAnchor-SourceTextAnchor" style="stroke: #383838; stroke-width: 1.0;"/><polygon fill="none" points="97.3877,128.6272,114.448,116.0589,108.949,136.5227,97.3877,128.6272" style="stroke: #383838; stroke-width: 1.0;"/><!--
+@startuml
+skinparam shadowing false
+skinparam monochrome true
+hide circle
+skinparam class {
+	BackgroundColor White
+}
+hide empty members
+
+	SourceAnchor -up-|> Entity
+	SourceLanguage -up-|> Entity
+	SourcedEntity -up-|> Entity
+    Association -up-|> SourcedEntity
+	Comment -up-|> SourcedEntity
+	NamedEntity -up-|> SourcedEntity
+	SourceTextAnchor -up-|> SourceAnchor
+
+@enduml
+
+PlantUML version 1.2018.08(Sun Jun 24 14:31:00 CEST 2018)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK Server VM
+Java Version: 1.8.0_181-8u181-b13-0ubuntu0.16.04.1-b13
+Operating System: Linux
+OS Version: 4.4.0-130-generic
+Default Encoding: UTF-8
+Language: en
+Country: US
+--></g></svg>

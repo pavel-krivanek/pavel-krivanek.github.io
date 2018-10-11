@@ -91,11 +91,11 @@ The particular meta-model entities are not limited on only class group, they can
 
 @@note Remember: Famix trait groups are concept that allows reuseability of meta-model fragments and easy composition of custom meta-models.
 
-!!!Famix meta-model builder
+!!!Famix meta-model definition
 
-To make the composition of meta-models easier, Moose provides a builder. The builder uses custom Smalltalk-based domain specific language for meta-models description so when you create a custom meta-model, you describe it using this DSL and the Smalltalk classes of the meta-model will be automatically generated or updated. 
+To make the composition of meta-models easier, Moose provides a special builder. The builder uses custom Smalltalk-based domain specific language for meta-models definition so when you create a custom meta-model, you describe it using this DSL and the Smalltalk classes of the meta-model will be automatically generated or updated. 
 
-More in the chapter *Builder>Builder*
+More in the chapter *Meta-model Definition>Builder*
 
 
 

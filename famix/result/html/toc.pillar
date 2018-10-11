@@ -1,9 +1,0 @@
-
-${inputFile:path=index.pillar}$
-
-${inputFile:path=Catalog.pillar}$
-${inputFile:path=Definition.pillar}$
-${inputFile:path=CodeGeneration.pillar}$
-${inputFile:path=Tutorial.pillar}$
-
-

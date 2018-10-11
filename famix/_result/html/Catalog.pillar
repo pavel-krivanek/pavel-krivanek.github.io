@@ -1,0 +1,435 @@
+!Catalog
+@ch:ngCatalog
+
+!!!Access
+
++Access>Chapters/Introduction/figures/Access.svg|width=50|label=fig:Access+
+
+TODO: This trait group requires description, see *@fig:Access*
+
+
+
+!!!AnnotationInstance
+
++AnnotationInstance>Chapters/Introduction/figures/AnnotationInstance.svg|width=36|label=fig:AnnotationInstance+
+
+TODO: This trait group requires description, see *@fig:AnnotationInstance*
+
+
+
+!!!AnnotationInstanceAttribute
+
++AnnotationInstanceAttribute>Chapters/Introduction/figures/AnnotationInstanceAttribute.svg|width=43|label=fig:AnnotationInstanceAttribute+
+
+TODO: This trait group requires description, see *@fig:AnnotationInstanceAttribute*
+
+
+
+!!!AnnotationType
+
++AnnotationType>Chapters/Introduction/figures/AnnotationType.svg|width=59|label=fig:AnnotationType+
+
+TODO: This trait group requires description, see *@fig:AnnotationType*
+
+
+
+!!!AnnotationTypeAttribute
+
++AnnotationTypeAttribute>Chapters/Introduction/figures/AnnotationTypeAttribute.svg|width=48|label=fig:AnnotationTypeAttribute+
+
+TODO: This trait group requires description, see *@fig:AnnotationTypeAttribute*
+
+
+
+!!!Association
+
++Association>Chapters/Introduction/figures/Association.svg|width=25|label=fig:Association+
+
+TODO: This trait group requires description, see *@fig:Association*
+
+
+
+!!!Attribute
+
++Attribute>Chapters/Introduction/figures/Attribute.svg|width=24|label=fig:Attribute+
+
+TODO: This trait group requires description, see *@fig:Attribute*
+
+
+
+!!!CaughtException
+
++CaughtException>Chapters/Introduction/figures/CaughtException.svg|width=30|label=fig:CaughtException+
+
+TODO: This trait group requires description, see *@fig:CaughtException*
+
+
+
+!!!Class
+
++Class>Chapters/Introduction/figures/Class.svg|width=11|label=fig:Class+
+
+TODO: This trait group requires description, see *@fig:Class*
+
+
+
+!!!ClassHierarchyNavigation
+
++ClassHierarchyNavigation>Chapters/Introduction/figures/ClassHierarchyNavigation.svg|width=28|label=fig:ClassHierarchyNavigation+
+
+TODO: This trait group requires description, see *@fig:ClassHierarchyNavigation*
+
+
+
+!!!ClassMetrics
+
++ClassMetrics>Chapters/Introduction/figures/ClassMetrics.svg|width=39|label=fig:ClassMetrics+
+
+TODO: This trait group requires description, see *@fig:ClassMetrics*
+
+
+
+!!!Comment
+
++Comment>Chapters/Introduction/figures/Comment.svg|width=25|label=fig:Comment+
+
+TODO: This trait group requires description, see *@fig:Comment*
+
+
+
+!!!CompilationUnit
+
++CompilationUnit>Chapters/Introduction/figures/CompilationUnit.svg|width=34|label=fig:CompilationUnit+
+
+TODO: This trait group requires description, see *@fig:CompilationUnit*
+
+
+
+!!!DeclaredException
+
++DeclaredException>Chapters/Introduction/figures/DeclaredException.svg|width=35|label=fig:DeclaredException+
+
+TODO: This trait group requires description, see *@fig:DeclaredException*
+
+
+
+!!!DereferencedInvocation
+
++DereferencedInvocation>Chapters/Introduction/figures/DereferencedInvocation.svg|width=42|label=fig:DereferencedInvocation+
+
+TODO: This trait group requires description, see *@fig:DereferencedInvocation*
+
+
+
+!!!EnumValue
+
++EnumValue>Chapters/Introduction/figures/EnumValue.svg|width=24|label=fig:EnumValue+
+
+TODO: This trait group requires description, see *@fig:EnumValue*
+
+
+
+!!!Exception
+
++Exception>Chapters/Introduction/figures/Exception.svg|width=26|label=fig:Exception+
+
+TODO: This trait group requires description, see *@fig:Exception*
+
+
+
+!!!File
+
++File>Chapters/Introduction/figures/File.svg|width=23|label=fig:File+
+
+TODO: This trait group requires description, see *@fig:File*
+
+
+
+!!!FileAnchor
+
++FileAnchor>Chapters/Introduction/figures/FileAnchor.svg|width=19|label=fig:FileAnchor+
+
+TODO: This trait group requires description, see *@fig:FileAnchor*
+
+
+
+!!!FileInclude
+
++FileInclude>Chapters/Introduction/figures/FileInclude.svg|width=56|label=fig:FileInclude+
+
+TODO: This trait group requires description, see *@fig:FileInclude*
+
+
+
+!!!Folder
+
++Folder>Chapters/Introduction/figures/Folder.svg|width=37|label=fig:Folder+
+
+TODO: This trait group requires description, see *@fig:Folder*
+
+
+
+!!!Function
+
++Function>Chapters/Introduction/figures/Function.svg|width=22|label=fig:Function+
+
+TODO: This trait group requires description, see *@fig:Function*
+
+
+
+!!!GlobalVariable
+
++GlobalVariable>Chapters/Introduction/figures/GlobalVariable.svg|width=27|label=fig:GlobalVariable+
+
+TODO: This trait group requires description, see *@fig:GlobalVariable*
+
+
+
+!!!Header
+
++Header>Chapters/Introduction/figures/Header.svg|width=20|label=fig:Header+
+
+TODO: This trait group requires description, see *@fig:Header*
+
+
+
+!!!ImplicitVariable
+
++ImplicitVariable>Chapters/Introduction/figures/ImplicitVariable.svg|width=34|label=fig:ImplicitVariable+
+
+TODO: This trait group requires description, see *@fig:ImplicitVariable*
+
+
+
+!!!Invocable
+
++Invocable>Chapters/Introduction/figures/Invocable.svg|width=63|label=fig:Invocable+
+
+TODO: This trait group requires description, see *@fig:Invocable*
+
+
+
+!!!LCOMMetrics
+
++LCOMMetrics>Chapters/Introduction/figures/LCOMMetrics.svg|width=17|label=fig:LCOMMetrics+
+
+TODO: This trait group requires description, see *@fig:LCOMMetrics*
+
+
+
+!!!LocalVariable
+
++LocalVariable>Chapters/Introduction/figures/LocalVariable.svg|width=33|label=fig:LocalVariable+
+
+TODO: This trait group requires description, see *@fig:LocalVariable*
+
+
+
+!!!Method
+
++Method>Chapters/Introduction/figures/Method.svg|width=23|label=fig:Method+
+
+TODO: This trait group requires description, see *@fig:Method*
+
+
+
+!!!Module
+
++Module>Chapters/Introduction/figures/Module.svg|width=26|label=fig:Module+
+
+TODO: This trait group requires description, see *@fig:Module*
+
+
+
+!!!Named
+
++Named>Chapters/Introduction/figures/Named.svg|width=16|label=fig:Named+
+
+TODO: This trait group requires description, see *@fig:Named*
+
+
+
+!!!Namespace
+
++Namespace>Chapters/Introduction/figures/Namespace.svg|width=49|label=fig:Namespace+
+
+TODO: This trait group requires description, see *@fig:Namespace*
+
+
+
+!!!Package
+
++Package>Chapters/Introduction/figures/Package.svg|width=25|label=fig:Package+
+
+TODO: This trait group requires description, see *@fig:Package*
+
+
+
+!!!Parameter
+
++Parameter>Chapters/Introduction/figures/Parameter.svg|width=36|label=fig:Parameter+
+
+TODO: This trait group requires description, see *@fig:Parameter*
+
+
+
+!!!ParameterizedType
+
++ParameterizedType>Chapters/Introduction/figures/ParameterizedType.svg|width=36|label=fig:ParameterizedType+
+
+TODO: This trait group requires description, see *@fig:ParameterizedType*
+
+
+
+!!!ParameterizedTypeUser
+
++ParameterizedTypeUser>Chapters/Introduction/figures/ParameterizedTypeUser.svg|width=47|label=fig:ParameterizedTypeUser+
+
+TODO: This trait group requires description, see *@fig:ParameterizedTypeUser*
+
+
+
+!!!PossibleStub
+
++PossibleStub>Chapters/Introduction/figures/PossibleStub.svg|width=17|label=fig:PossibleStub+
+
+TODO: This trait group requires description, see *@fig:PossibleStub*
+
+
+
+!!!PreprocessorDefine
+
++PreprocessorDefine>Chapters/Introduction/figures/PreprocessorDefine.svg|width=23|label=fig:PreprocessorDefine+
+
+TODO: This trait group requires description, see *@fig:PreprocessorDefine*
+
+
+
+!!!PreprocessorIfdef
+
++PreprocessorIfdef>Chapters/Introduction/figures/PreprocessorIfdef.svg|width=21|label=fig:PreprocessorIfdef+
+
+TODO: This trait group requires description, see *@fig:PreprocessorIfdef*
+
+
+
+!!!Reference
+
++Reference>Chapters/Introduction/figures/Reference.svg|width=50|label=fig:Reference+
+
+TODO: This trait group requires description, see *@fig:Reference*
+
+
+
+!!!ScopingEntity
+
++ScopingEntity>Chapters/Introduction/figures/ScopingEntity.svg|width=31|label=fig:ScopingEntity+
+
+TODO: This trait group requires description, see *@fig:ScopingEntity*
+
+
+
+!!!SourceAnchor
+
++SourceAnchor>Chapters/Introduction/figures/SourceAnchor.svg|width=46|label=fig:SourceAnchor+
+
+TODO: This trait group requires description, see *@fig:SourceAnchor*
+
+
+
+!!!SourceLanguage
+
++SourceLanguage>Chapters/Introduction/figures/SourceLanguage.svg|width=35|label=fig:SourceLanguage+
+
+TODO: This trait group requires description, see *@fig:SourceLanguage*
+
+
+
+!!!Sub
+
++Sub>Chapters/Introduction/figures/Sub.svg|width=14|label=fig:Sub+
+
+TODO: This trait group requires description, see *@fig:Sub*
+
+
+
+!!!SubInheritance
+
++SubInheritance>Chapters/Introduction/figures/SubInheritance.svg|width=30|label=fig:SubInheritance+
+
+TODO: This trait group requires description, see *@fig:SubInheritance*
+
+
+
+!!!SuperInheritance
+
++SuperInheritance>Chapters/Introduction/figures/SuperInheritance.svg|width=29|label=fig:SuperInheritance+
+
+TODO: This trait group requires description, see *@fig:SuperInheritance*
+
+
+
+!!!Template
+
++Template>Chapters/Introduction/figures/Template.svg|width=45|label=fig:Template+
+
+TODO: This trait group requires description, see *@fig:Template*
+
+
+
+!!!ThrownException
+
++ThrownException>Chapters/Introduction/figures/ThrownException.svg|width=32|label=fig:ThrownException+
+
+TODO: This trait group requires description, see *@fig:ThrownException*
+
+
+
+!!!Type
+
++Type>Chapters/Introduction/figures/Type.svg|width=63|label=fig:Type+
+
+TODO: This trait group requires description, see *@fig:Type*
+
+
+
+!!!TypeAlias
+
++TypeAlias>Chapters/Introduction/figures/TypeAlias.svg|width=24|label=fig:TypeAlias+
+
+TODO: This trait group requires description, see *@fig:TypeAlias*
+
+
+
+!!!TypedStructure
+
++TypedStructure>Chapters/Introduction/figures/TypedStructure.svg|width=39|label=fig:TypedStructure+
+
+TODO: This trait group requires description, see *@fig:TypedStructure*
+
+
+
+!!!WithClassScope
+
++WithClassScope>Chapters/Introduction/figures/WithClassScope.svg|width=20|label=fig:WithClassScope+
+
+TODO: This trait group requires description, see *@fig:WithClassScope*
+
+
+
+!!!WithModifiers
+
++WithModifiers>Chapters/Introduction/figures/WithModifiers.svg|width=17|label=fig:WithModifiers+
+
+TODO: This trait group requires description, see *@fig:WithModifiers*
+
+
+
+!!!WithSignature
+
++WithSignature>Chapters/Introduction/figures/WithSignature.svg|width=18|label=fig:WithSignature+
+
+TODO: This trait group requires description, see *@fig:WithSignature*
+
+
+

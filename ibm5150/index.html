@@ -1,0 +1,181 @@
+
+<!DOCTYPE html><html lang='en' class=''>
+<head>
+
+<style class="cp-pen-styles">body {
+  background: #1b2838 none repeat scroll 0 0;
+  margin: 0;
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+}
+
+@font-face {
+  font-family: 'Terminal';
+}
+@font-face {
+  font-family: 'Sys';
+}
+
+
+.overlay2 {
+  pointer-events: none;
+  position: absolute;
+    z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("crt.png");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  content: "";
+}
+.overlay3 {
+  pointer-events: none;
+  position: absolute;
+    z-index: 999;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  content: " ";
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 0, 0, 0.25) 50%), 
+    linear-gradient(90deg, rgba(255, 0, 255, 0.06), 
+    rgba(0, 255, 0, 0.15), rgba(0, 0, 255, 0.06));
+  z-index: 2;
+  background-size: 100% 3px, 5px 100%;
+  pointer-events: none;
+}
+
+
+.pcjs-canvas {
+  -webkit-filter: blur(0px);
+          filter: blur(0px);
+}
+
+
+
+.pcjs-canvas {
+  -webkit-animation: blur 30ms infinite, jerk 50ms infinite;
+          animation: blur 30ms infinite, jerk 50ms infinite;
+}
+
+@-webkit-keyframes blur {
+  0% {
+    -webkit-filter: blur(0px);
+            filter: blur(0px);
+    opacity: 0.85;
+  }
+  50% {
+    -webkit-filter: blur(0px);
+            filter: blur(0px);
+    opacity: 1;
+  }
+  100% {
+    -webkit-filter: blur(0px);
+            filter: blur(0px);
+    opacity: 0.85;
+  }
+}
+
+@keyframes blur {
+  0% {
+    -webkit-filter: blur(0px);
+            filter: blur(0px);
+    opacity: 0.85;
+  }
+  50% {
+    -webkit-filter: blur(0px);
+            filter: blur(0px);
+    opacity: 1;
+  }
+  100% {
+    -webkit-filter: blur(0px);
+            filter: blur(0px);
+    opacity: 0.85;
+  }
+}
+@-webkit-keyframes jerk {
+  50% {
+    -webkit-transform: translateX(0.05%);
+            transform: translateX(0.05%);
+  }
+  51% {
+    -webkit-transform: translateX(0);
+            transform: translateX(0);
+  }
+}
+@keyframes jerk {
+  50% {
+    -webkit-transform: translateX(0.05%);
+            transform: translateX(0.05%);
+  }
+  51% {
+    -webkit-transform: translateX(0);
+            transform: translateX(0);
+  }
+}
+@-webkit-keyframes jerkup {
+  0% {
+    -webkit-transform: translateY(1px);
+            transform: translateY(1px);
+  }
+  100% {
+    -webkit-transform: translateY(0);
+            transform: translateY(0);
+  }
+}
+@keyframes jerkup {
+  0% {
+    -webkit-transform: translateY(1px);
+            transform: translateY(1px);
+  }
+  100% {
+    -webkit-transform: translateY(0);
+            transform: translateY(0);
+  }
+}
+
+
+
+.pcjs-screen {
+    padding: 14px;
+}
+
+#ibm5150 { 
+   width: 1100px;
+   margin: auto;
+}
+
+body {
+	background-color: white;
+}
+
+</style></head>
+
+<body>
+	
+<script src="pcx86.js"></script>
+	
+	<div>
+    <div id="ibm5150" ></div>
+            <div class="overlay2"></div>
+            <div class="overlay3"></div>
+        </div>
+</div>
+<script >
+	
+embedPCx86("ibm5150");	
+	
+var main = document.querySelector('main');
+
+var canvas = document.getElementsByClassName("pcjs-screen")[0];
+var overlay2 = document.getElementsByClassName("overlay2")[0];
+canvas.appendChild(overlay2);
+var overlay3 = document.getElementsByClassName("overlay3")[0];
+canvas.appendChild(overlay3);
+
+</script>
+</body></html>

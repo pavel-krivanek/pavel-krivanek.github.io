@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+<title>Pharo</title>
+<link rel="icon" type="image/png" href="pictures/squeakjs.png">
+<link rel="stylesheet" href="css/squeakjs.css">
+
+<!-- Include the SqueakJS virtual machine and its web browser interface. -->
+<script src="js/squeakjs/squeak.js"></script>
+
+<script>
+    function runDemo(imageName) {
+        SqueakJS.runSqueak(
+            "Pharo.image",
+            squeak,
+            {
+                zip: ["memories/Pharo.zip", "sources/Pharo8.0-32bit-27fab43.sources.zip"],
+          //      zip: ["memories/Pharo.zip", "sources/PharoV60.sources.zip"],
+                swapButtons: false,
+                spinner: sqSpinner
+            });
+    }
+
+    window.onhashchange = function() {
+        window.location.reload();
+    }
+    window.onload = function() {
+        window.document.getElementById("squeak").width = 976;
+        window.document.getElementById("squeak").height = 665;
+        window.document.getElementById("squeak").style.visibility = "visible";
+       window.document.getElementById("container").width = 976;
+    
+        // if we have a hash image then we just run Squeak with the options provided in the url
+        if (location.hash.match(/\.image/)) {
+            return runSqueak();
+        }
+        // otherwise we run the demo ...
+	runDemo();
+        setTimeout(function() {
+            Squeak.fsck(function(stats) {});
+        }, 0)
+    }
+</script>
+</head>
+
+<body>
+<div id="container">
+  <canvas id="squeak" width="10" height="10" style="visibility: 'invisible'; overflow: hidden;"></canvas>
+  <div id="statusBar">
+    <div id="sqSpinner">busy...</div>
+  </div>
+</div>
+</body>
+</html>

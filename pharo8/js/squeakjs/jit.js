@@ -139,7 +139,7 @@ to single-step.
 'accessing', {
     compile: function(method, optClass, optSel) {
 
-      //     console.log(this.vm.printMethod(method, optClass, optSel));
+       //    console.log(this.vm.printMethod(method, optClass, optSel));
         if (method.compiled === void 0) {
             // 1st time
             method.compiled = false;

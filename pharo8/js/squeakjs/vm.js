@@ -4469,8 +4469,9 @@ Object.subclass('Squeak.Primitives',
             case 156: if (this.oldPrims) return this.primitiveFileDelete(argCount);
             case 157: if (this.oldPrims) return this.primitiveFileSize(argCount);
             case 158: if (this.oldPrims) return this.primitiveFileWrite(argCount);
+                break;  // fail 150-158 if fell through
             case 159: if (this.oldPrims) return this.primitiveFileRename(argCount);
-                break;  // fail 150-159 if fell through
+                else return this.primitiveHashMultiply(argCount);
             case 160: if (this.oldPrims) return this.primitiveDirectoryCreate(argCount);
                 else return this.primitiveAdoptInstance(argCount);
             case 161: if (this.oldPrims) return this.primitiveDirectoryDelimitor(argCount); // new: primitiveSetIdentityHash
@@ -4971,6 +4972,9 @@ Object.subclass('Squeak.Primitives',
     },
     primitiveNotEqualLargeIntegers: function() {
         return this.pop2andPushBoolIfOK(this.stackSigned53BitInt(1) !== this.stackSigned53BitInt(0));
+    },
+    primitiveHashMultiply: function(numArgs) {
+        false;
     },
 },
 'utils', {

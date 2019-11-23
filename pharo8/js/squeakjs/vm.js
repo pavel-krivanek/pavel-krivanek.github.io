@@ -40,7 +40,7 @@ Object.extend(Squeak,
 "version", {
     // system attributes
     vmVersion: "SqueakJS 0.9.7",
-    vmDate: "2019-01-03",               // Maybe replace at build time?
+    vmDate: "2019-11-11",               // Maybe replace at build time?
     vmBuild: "unknown",                 // or replace at runtime by last-modified?
     vmPath: "/",
     vmFile: "vm.js",
@@ -4492,7 +4492,7 @@ Object.subclass('Squeak.Primitives',
             case 171: if (this.oldPrims) return this.namedPrimitive('SoundPlugin', 'primitiveSoundStartWithSemaphore', argCount);
                 else return this.popNandPushIfOK(argCount+1, this.stackNonInteger(0).hash); //primitiveImmediateAsInteger
             case 172: if (this.oldPrims) return this.namedPrimitive('SoundPlugin', 'primitiveSoundStop', argCount);
-                break;  // fail
+                else return this.popNandPushIfOK(argCount, this.vm.nilObj); //primitiveFetchMourner
             case 173: if (this.oldPrims) return this.namedPrimitive('SoundPlugin', 'primitiveSoundAvailableSpace', argCount);
                 else return this.popNandPushIfOK(argCount+1, this.objectAt(false,false,true)); // slotAt:
             case 174: if (this.oldPrims) return this.namedPrimitive('SoundPlugin', 'primitiveSoundPlaySamples', argCount);
@@ -6029,7 +6029,7 @@ Object.subclass('Squeak.Primitives',
         0 args: return an Array of VM parameter values;
         1 arg:  return the indicated VM parameter;
         2 args: set the VM indicated parameter. */
-        var paramsArraySize = this.vm.image.isSpur ? 54 : 44;
+        var paramsArraySize = this.vm.image.isSpur ? 71 : 44;
         switch (argCount) {
             case 0:
                 var arrayObj = this.vm.instantiateClass(this.vm.specialObjects[Squeak.splOb_ClassArray], paramsArraySize);
@@ -6089,6 +6089,7 @@ Object.subclass('Squeak.Primitives',
             case 44: return 0; // size of eden, in bytes
             // 45   desired size of eden, in bytes (stored in image file header; Cog VMs only, otherwise nil)
             // 46   size of machine code zone, in bytes (stored in image file header; Cog JIT VM only, otherwise nil)
+            case 46: return 0;
             // 47   desired size of machine code zone, in bytes (applies at startup only, stored in image file header; Cog JIT VM only)
             case 48: return 0;
             // 48   various properties of the Cog VM as an integer encoding an array of bit flags.
@@ -6100,6 +6101,7 @@ Object.subclass('Squeak.Primitives',
             //      Bit 3: in a muilt-threaded VM, if set, the Window system will only be accessed from the first VM thread
             //      Bit 4: in a Spur vm, if set, causes weaklings and ephemerons to be queued individually for finalization
             // 49   the size of the external semaphore table (read-write; Cog VMs only)
+            case 49: return null;
             // 50-51 reserved for VM parameters that persist in the image (such as eden above)
             // 52   root (remembered) table maximum size (read-only)
             // 53   the number of oldSpace segments (Spur only, otherwise nil)
@@ -6118,6 +6120,7 @@ Object.subclass('Squeak.Primitives',
             //      if non-zero bit 0 implies multiple bytecode set support;
             //      if non-zero bit 0 implies read-only object support
             //      (read-only; Cog VMs only; nil in older Cog VMs, a boolean answering multiple bytecode support in not so old Cog VMs)
+            case 65: return 0;
             // 66   the byte size of a stack page in the stack zone  (read-only; Cog VMs only)
             // 67   the maximum allowed size of old space in bytes, 0 implies no internal limit (Spur VMs only).
             // 68 - 69 reserved for more Cog-related info
@@ -7681,6 +7684,14 @@ Object.subclass('Squeak.Primitives',
     },    
 },
 'LocalePlugin', {
+    locale_primitiveTimezoneOffset: function(argCount) {
+        this.vm.popNandPush(argCount, 0);
+        return true;
+    },
+    locale_primitiveTimezoneOffset: function(argCount) {
+        this.vm.popNandPush(argCount, 0);
+        return true;
+    },
     locale_primitiveTimezoneOffset: function(argCount) {
         this.vm.popNandPush(argCount, 0);
         return true;

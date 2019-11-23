@@ -4215,6 +4215,8 @@ Object.subclass('Squeak.Primitives',
             SecurityPlugin: {
                 primitiveDisableImageWrite: this.fakePrimitive.bind(this, "SecurityPlugin.primitiveDisableImageWrite", 0),
             },
+            FileAttributesPlugin:   this.findPluginFunctions("fileAttr_"),
+            LocalePlugin:           this.findPluginFunctions("locale_"),
         };
         this.patchModules = {
             ScratchPlugin:          this.findPluginFunctions("scratch_"),
@@ -7580,6 +7582,108 @@ Object.subclass('Squeak.Primitives',
     },
     js_objectOrGlobal: function(sqObject) {
         return 'jsObject' in sqObject ? sqObject.jsObject : window;
+    },
+},
+'FileAttributesPlugin', { 
+    fileAttr_primitiveVersionString: function(argCount) {
+        console.log("Call FileAttributesPlugin: fileAttr_primitiveVersionString");
+        return true;
+    },    
+    fileAttr_primitiveClosedir: function(argCount) {
+        console.log("Call FileAttributesPlugin: fileAttr_primitiveClosedir");
+        return true;
+    },    
+    fileAttr_primitiveFileExists: function(argCount) {
+        var pathObj = this.stackNonInteger(0);
+        if (!this.success) return false;
+        var path = this.filenameFromSqueak(pathObj.bytesAsString());
+        if (!this.success) return false;
+        var result = Squeak.fileExists(path);
+        this.vm.popNandPush(argCount, result ? this.vm.trueObj : this.vm.falseObj);
+        return true;
+    },    
+    fileAttr_primitiveChangeMode: function(argCount) {
+        console.log("Call FileAttributesPlugin: fileAttr_primitiveChangeMode");
+        return true;
+    },    
+    fileAttr_primitiveSymlinkChangeOwner: function(argCount) {
+        console.log("Call FileAttributesPlugin: fileAttr_primitiveSymlinkChangeOwner");
+        return true;
+    },    
+    fileAttr_primitiveChangeOwner: function(argCount) {
+        console.log("Call FileAttributesPlugin: fileAttr_primitiveChangeOwner");
+        return true;
+    },    
+    fileAttr_primitiveFileAttribute: function(argCount) {
+        console.log("Call FileAttributesPlugin: fileAttr_primitiveFileAttribute");
+        var attributeNumber = this.stackInteger(0);
+        if (!this.success) return false;
+        var pathObj = this.stackNonInteger(1);
+        if (!this.success) return false;
+        var path = this.filenameFromSqueak(pathObj.bytesAsString());
+        var exists = Squeak.fileExists(path);
+        var entries = Squeak.dirList("/");
+        var isDir = exists && (entries != undefined) ? entries[path][3] : false;
+        if (path == "/") isDir = true;
+        console.log("path " + path)
+        console.log("isDir " + isDir)
+        var attributes = isDir ? 0x4000 : 0x8000;
+        console.log("attributes " + attributes)
+ 
+        var result = this.nilObj;
+        switch(attributeNumber) {
+            case 2: result = attributes; break;
+            case 8: result = 0; break;
+            case 13:
+            case 14:
+            case 15: result = exists ? this.vm.trueObj : this.vm.falseObj; break;
+        }
+        this.vm.popNandPush(argCount, result);
+        return true;
+    },    
+    fileAttr_primitiveFileAttributes: function(argCount) {
+        console.log("Call FileAttributesPlugin: fileAttr_primitiveFileAttributes");
+        return true;
+    },    
+    fileAttr_primitiveFileMasks: function(argCount) {
+        console.log("Call FileAttributesPlugin: fileAttr_primitiveFileMasks");
+        var fileMasks = [0xF000, 0xC000, 0xA000, 0x8000, 0x6000, 0x4000, 0x2000, 0x1000];
+        this.vm.popNandPush(argCount, this.makeStArray(fileMasks));
+        return true;
+    },    
+    fileAttr_primitivePlatToStPath: function(argCount) {
+        console.log("Call FileAttributesPlugin: fileAttr_primitivePlatToStPath");
+        return true;
+    },    
+    fileAttr_primitiveLogicalDrives: function(argCount) {
+        console.log("Call FileAttributesPlugin: fileAttr_primitiveLogicalDrives");
+        return true;
+    },    
+    fileAttr_primitiveOpendir: function(argCount) {
+        console.log("Call FileAttributesPlugin: fileAttr_primitiveOpendir");
+        return true;
+    },    
+    fileAttr_primitivePathMax: function(argCount) {
+        console.log("Call FileAttributesPlugin: fileAttr_primitivePathMax");
+        return true;
+    },    
+    fileAttr_primitiveReaddir: function(argCount) {
+        console.log("Call FileAttributesPlugin: fileAttr_primitiveReaddir");
+        return true;
+    },    
+    fileAttr_primitiveRewinddir: function(argCount) {
+        console.log("Call FileAttributesPlugin: fileAttr_primitiveRewinddir");
+        return true;
+    },    
+    fileAttr_primitiveStToPlatPath: function(argCount) {
+        console.log("Call FileAttributesPlugin: fileAttr_primitiveStToPlatPath");
+        return true;
+    },    
+},
+'LocalePlugin', {
+    locale_primitiveTimezoneOffset: function(argCount) {
+        this.vm.popNandPush(argCount, 0);
+        return true;
     },
 },
 'FFI', {

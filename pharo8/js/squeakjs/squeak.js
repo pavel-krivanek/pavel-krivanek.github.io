@@ -94,6 +94,8 @@ Function.prototype.subclass = function(classPath /* + more args */ ) {
         vmDir = squeakjs.src.replace(/[^\/]*$/, "");
     if (squeakjs.src.match(/squeak\.min\.js$/)) return;
     [   "vm.js",
+        "image.js",
+        "objects.js",
         "interpreter.js",
         "primitives.js",
         "interpreterProxy.js",

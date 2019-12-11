@@ -1,5 +1,7 @@
 module('users.bert.SqueakJS.image').requires("users.bert.SqueakJS.vm").toRun(function() {
 
+    "use strict";
+
     Object.subclass('Squeak.Image',
     'about', {
         about: function() {

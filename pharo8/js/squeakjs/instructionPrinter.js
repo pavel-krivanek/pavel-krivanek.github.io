@@ -2,8 +2,6 @@ module('users.bert.SqueakJS.instructionPrinter').requires("users.bert.SqueakJS.v
     
     "use strict";
 
-
-    
     Object.subclass('Squeak.InstructionPrinter',
     'initialization', {
         initialize: function(method, vm) {

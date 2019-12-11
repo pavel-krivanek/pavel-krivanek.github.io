@@ -1,5 +1,6 @@
 module('users.bert.SqueakJS.objects').requires("users.bert.SqueakJS.vm").toRun(function() {
 
+    "use strict";
 
     Object.subclass('Squeak.Object',
     'initialization', {

@@ -810,6 +810,8 @@ module('users.bert.SqueakJS.interpreter').requires("users.bert.SqueakJS.vm").toR
             return true;
         },
         primitivePerformWithArgs: function(argCount, supered) {
+           if (argCount !== 4)
+           {
             var rcvr = this.stackValue(argCount);
             var selector = this.stackValue(argCount - 1);
             var args = this.stackValue(argCount - 2);
@@ -833,6 +835,32 @@ module('users.bert.SqueakJS.interpreter').requires("users.bert.SqueakJS.vm").toR
             var entry = this.findSelectorInClass(selector, trueArgCount, lookupClass);
             this.executeNewMethod(rcvr, entry.method, entry.argCount, entry.primIndex, entry.mClass, selector);
             return true;
+        } else {
+            var rcvr = this.stackValue(argCount-1);
+            var selector = this.stackValue(argCount - 2);
+            var args = this.stackValue(argCount - 3);
+            if (args.sqClass !== this.specialObjects[Squeak.splOb_ClassArray])
+                return false;
+            var lookupClass = this.stackValue(argCount - 4);
+            if (supered) { // verify that lookupClass is in fact in superclass chain of receiver;
+                var cls = this.getClass(rcvr);
+                while (cls !== lookupClass) {
+                    cls = cls.pointers[Squeak.Class_superclass];
+                    if (cls.isNil) return false;
+                }
+            }
+            var trueArgCount = args.pointersSize();
+            var stack = this.activeContext.pointers;
+            var trueArgCount = args.pointersSize();
+            var trueArgStart = supered ? this.sp - 2 : this.sp - 1;
+            var stack = this.activeContext.pointers;
+            this.push(rcvr);
+            this.arrayCopy(args.pointers, 0, stack, trueArgStart, trueArgCount);
+            this.sp += trueArgCount - argCount; //pop selector and array then push args
+            var entry = this.findSelectorInClass(selector, trueArgCount, lookupClass);
+            this.executeNewMethod(rcvr, entry.method, entry.argCount, entry.primIndex, entry.mClass, selector);
+            return true;
+        }
         },
         primitiveInvokeObjectAsMethod: function(argCount, method) {
             // invoked from VM if non-method found in lookup

@@ -1,0 +1,580 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>Text To Speech</title>
+
+<style>
+body,table,td,span,select,input,textarea{
+	font-size:14px;
+	font-family: Arial, Helvetica, sans-serif, Verdana;
+}
+button{
+	font-size:14px;
+	font-family: Arial, Helvetica, sans-serif, Verdana;
+}
+
+body{background:#e3e3e3;}
+
+A:link    {color:#0860A8;text-decoration:none;}
+A:visited {color:#0860A8;text-decoration:none;}
+A:active  {color:#0860A8;text-decoration:underline;}
+A:hover  {color:#0860A8;text-decoration:underline;}
+.divopt{
+	-webkit-box-shadow: 0 0 10px #999;
+	-moz-box-shadow: 0 0 10px #999;
+	box-shadow: 0 0 10px #999;
+	/*border-radius:7px;
+	-moz-border-radius:7px;*/
+}
+.menulink{font-size:15px;}
+.input{width:630px;font-size:15px;}
+.small{font-size:13px;}
+</style>
+
+
+<script>
+var gadb=false;
+var g_expires=1000*60*60*6;
+function setstorage(name,value){
+	if (window.localStorage){
+		localStorage[name]=value+'';
+	}else{
+		//setCookie(name, value, 1000*60*60*24*365*10); 
+	}
+}
+function getstorage(name){
+	var s;
+	if (window.localStorage){
+		s=localStorage[name];
+	}else{
+		//s=getCookie(name);
+	}
+	return s;
+}
+function init(){
+	doInitVoices();
+}
+</script>
+<style>.picker-dialog-frame{width:100%;height:100%;border:0;overflow:hidden}.picker-dialog-bg{position:absolute;top:0;left:0;background-color:#fff;z-index:1000}.picker-dialog{position:absolute;top:0;left:0;background-color:#fff;border:1px solid #acacac;width:auto;padding:0;z-index:1001;overflow:auto;-moz-box-shadow:rgba(0,0,0,.2) 0 4px 16px;-webkit-box-shadow:rgba(0,0,0,.2) 0 4px 16px;box-shadow:rgba(0,0,0,.2) 0 4px 16px}.picker-dialog-content{font-size:0;padding:0}.picker-dialog-title,.picker-dialog-buttons{display:none} </style></head>
+<body onload="init()" data-gr-c-s-loaded="true"><div id="StayFocusd-infobar" style="display: none; top: 0px;">
+    <img src="chrome-extension://laankejkbhbdhmipfmgcngdelahlfoji/common/img/eye_19x19_red.png">
+    <span id="StayFocusd-infobar-msg"></span>
+    <span id="StayFocusd-infobar-links">
+        <a id="StayFocusd-infobar-never-show">hide forever</a>&nbsp;&nbsp;|&nbsp;&nbsp;
+        <a id="StayFocusd-infobar-hide">hide once</a>
+    </span>
+</div>
+
+<table align="center">
+<!--
+<tr><td height=1>
+<tr><td>
+	<center>
+	<a id="toptitle" href="./" title="Go Home" style="color:#000"><span style="font-size:29px;font-family:Verdana, Arial;">Text To Speech with Google Drive</span></a>
+	</center>
+//-->
+<tbody><tr><td height="10">
+</td></tr></tbody></table>
+
+<table id="maintable" width="800" border="0" align="center" class="divopt" style="background-color:white;padding:6px 6px 6px 6px;border: 0px solid #2E79DB;">
+<tbody><tr></tr><tr><td>
+
+</td></tr><tr><td>
+<script>
+function fillnumber(s){
+	s=String(s);
+	if ( s.length==1 ) { 
+		return '0'+s;  
+	}
+	return s;
+}	
+function datetimetostring(ts){
+	var t=new Date(ts);
+	var s='';
+	if(!isNaN(t)){
+		var y=t.getFullYear();
+		var m=t.getMonth()+1;
+		var d=t.getDate();
+		s=y+'-'+fillnumber(m)+'-'+fillnumber(d)+' '+fillnumber(t.getHours())+':'+fillnumber(t.getMinutes())+':'+fillnumber(t.getSeconds());
+	}
+	return s;
+}
+function validateURL(textval) {
+	var regexp = /^(?:(ftp|http|https):\/\/)?(?:[\w-]+\.)+([a-z]{2,6}|[0-9]{1,6})/i;	
+	return regexp.test(textval);
+}
+
+function getFileName(url) {
+  url = url.substring(0, (url.indexOf("#") == -1) ? url.length : url.indexOf("#"));
+  url = url.substring(0, (url.indexOf("?") == -1) ? url.length : url.indexOf("?"));
+  url = url.substring(url.lastIndexOf("/") + 1, url.length);
+  return url;
+}
+
+var gfileid,gfileresp;
+
+function proc_saveopt(){
+	var b=[];
+	var c;
+	var obj=_getid("optcontainer");
+	var a=obj.getElementsByTagName('INPUT');
+	for(var i = 0; i < a.length; i++){    
+		if(a[i].type=='checkbox' || a[i].type=='radio'){
+			c={};
+			c.id=a[i].id;
+			c.type=a[i].type;
+			c.checked=a[i].checked;
+			b.push(c);
+		}else if(a[i].type=='text' || a[i].type=='number'){
+			c={};
+			c.id=a[i].id;
+			c.type=a[i].type;
+			c.value=a[i].value;
+			b.push(c);
+		}
+	}
+	var a=obj.getElementsByTagName('SELECT');
+	for(var i = 0; i < a.length; i++){    
+		if(a[i].form && a[i].form.id){
+			c={};
+			c.id=a[i].id;
+			c.type='select';
+			c.value=a[i].value;
+			b.push(c);
+		}
+	}
+
+	if(window.JSON) setstorage('c_opt',JSON.stringify(b));
+}
+function proc_loadopt(){
+	var s=getstorage('c_opt');
+	var b=[];
+	try{
+		b=JSON.parse(s);
+	}catch(err){
+		b=[];
+	}
+	if(!b) b=[];
+
+	var c;
+	for(var i = 0; i < b.length; i++){    
+		if(b[i].type=='checkbox' || b[i].type=='radio'){
+			c=_getid(b[i].id);
+			if(c) c.checked=b[i].checked;
+		}else if(b[i].type=='select' || b[i].type=='text' || b[i].type=='number'){
+			c=_getid(b[i].id);
+			if(c) c.value=b[i].value;
+		}
+	}
+	/*var a=_getid("optcontainer").getElementsByTagName('*');
+	for(var i = 0; i < a.length; i++){    
+		if(a[i].tagName=='SELECT'){
+			a[i].onchange=proc_saveopt;
+		}else if(a[i].type=='checkbox'){
+			a[i].onclick=proc_saveopt;
+		}
+	}*/
+}
+</script>
+
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="http://iblogbox.github.io/js/texteditor/all513.js"></script>
+<link rel="stylesheet" href="./files/codemirror.css">
+<style>
+.searched {
+	background: #ffa;
+	background: rgba(255, 255, 0, .4);	
+}	
+.CodeMirror {
+	line-height: 1.1;
+	border: 1px solid #CDDCED;
+} 
+.breakpoints {width: .8em;}
+.CodeMirror-composing { border-bottom: 0px solid !important; }
+.CodeMirror-linenumber { min-width: 19px !important;}
+</style>
+
+</td></tr><tr><td align="center">
+	<div id="output" style="width:700px;margin:0px;border:0px solid red"></div>
+
+</td></tr><tr><td>
+<table><tbody><tr><td>
+Enter the texts below, and Click the "Speak" button. If you want to listen only part of the text, Please select that part.
+<div id="msg2" style="width:700px;margin:0px;border:0px solid red"></div>
+</td></tr></tbody></table>
+
+<table id="controls" style="white-space:nowrap"><tbody><tr>
+<td><button id="btn_speak" onclick="proc_speak()">Speak</button> <button id="btn_stop" onclick="proc_stop(true)">Stop</button> <button id="btn_pause" onclick="proc_pause()" title="Pause/Resume">P/R</button>
+</td><td>&nbsp;<select id="voice" style="width:200px"></select>
+</td><td></td><td></td><td>Volume
+</td><td><input id="volume" type="range" min="0" max="100" step="1" value="100" onchange="volume_onchange()" style="width:120px">
+</td><td><div id="volume2" style="width:32px">100</div>
+</td><td>Speed
+</td><td><input id="rate" type="text" value="1" style="width:40px" title="Default: 1 (1x, normal speed)"> (0.5, 1, 2..)
+</td></tr></tbody></table>
+
+<div id="div_scriptinject_script" style="width:830px;height:490px">
+	<textarea id="input" wrap="off" style="display: none;"></textarea>
+	
+</div>		
+
+<form id="form" style="display:none">
+<table id="optcontainer" align="center"><tbody><tr><td>
+</td></tr></tbody></table>
+</form>
+
+</td></tr><tr><td>
+</td></tr><tr><td align="center">
+
+
+</td></tr></tbody></table>
+
+<style>
+a.bottomlink:link{text-decoration:underline;}
+a.bottomlink:visited{text-decoration:underline;}
+a.bottomlink:active{text-decoration:underline;}
+a.bottomlink:hover{text-decoration:underline;}
+</style>
+
+<script>
+var gmaxlength=600000;
+var editor;
+function volume_onchange(){
+	var v=_getid('volume').value;
+	_getid('volume2').innerHTML=v;
+	setstorage('c_volume',v);
+}
+function div_scriptinject_script_onresize(){
+	if(!editor)return;
+	var a=_getid('div_scriptinject_script');
+	if(a) editor.setSize(a.clientWidth, a.clientHeight);
+}
+function init_load(){
+	_getid('volume').value=getstorage('c_volume') || 100;
+	volume_onchange();
+
+	proc_loadopt();
+	window.onunload=function(){
+		proc_saveopt();
+		proc_stop();
+		if(editor){
+			var s=editor.getValue();
+			if(s.length<200000) setstorage('c_lasttext',s);
+		}
+	}	
+
+	editor=CodeMirror.fromTextArea(_getid('input'),{
+		lineNumbers: true,
+		cursorScrollMargin: 12,
+		specialChars: /$^/,			
+		/*specialCharPlaceholder:function(ch){
+			var token = document.createTextNode("\u2022"); 
+			return token;
+		},*/
+		gutters: ["CodeMirror-linenumbers", "breakpoints"]
+	});		
+	//editor.on("gutterClick", editor_onGutterClick);
+	//editor.on("keydown", editor_onKeyEvent);
+	//editor.on("change", editor_onChange);
+	div_scriptinject_script_onresize();
+	editor.setOption("lineWrapping", true);
+	var s=getstorage('c_lasttext');
+	if(s && s.length<200000) editor.setValue(s);
+}
+init_load();
+
+function parsePhase0(s) {
+	var out = "";	
+	// Convert currency like "$1,000"  to "$1000"
+	for(var i = 0; i < s.length; i++) {
+		var ch = s.charAt(i);		
+		if(ch == ',' && i > 0 && (i+1) < s.length) {
+			// If we are "surrounded by numbers, simply remove the commas....
+			var prevChar = s.charAt(i-1);
+			var nextChar = s.charAt(i+1);
+			if(jQuery.isNumeric(prevChar) && jQuery.isNumeric(nextChar)) {
+				// "Swallow" the comma....
+			} else {
+				out += ch;
+			}
+		} else if(false) {
+		} else {
+			out += ch;
+		}
+	}
+	return out;
+}
+function parsePhase1(s) {
+	var out = "";	
+	// Take out URLs
+	var urlRegex =/(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+	out = s.replace(urlRegex, "{LINK}");
+	return out;
+}
+function getChunks(s) {
+	// First pass, convert/handle commas around currency, and various special characters
+	s = parsePhase0(s);	
+	// Second pass, take out URLs, etc
+	//s = parsePhase1(s);	
+	// Chunk up the data
+	var chunkList = [];
+	chunkList = chunker(s, 115*3);//115
+	return chunkList;
+}
+function chunker(s, max) {
+	var chunks = [];
+	var l = [];
+	l = s.split(/\.\s+|\n|,|、|。|，|।/);  // Split on: (period, comma, carriage-return)
+	for(var i = 0; i < l.length; i++) {
+		var chunk = l[i];
+		if(chunk == '') {
+	    continue;
+	  }
+	  var siz = chunk.length;
+	  if(siz <= max) {
+		  chunk=trim(chunk);
+		  if(chunk) chunks.push(chunk);
+	  }else{
+	  	while(chunk.length > 0) {
+	  		//var smallerChunk = chunk.substr(0, max);
+	  		var smallerChunk = subChunker(chunk, max);
+	  		chunks.push(smallerChunk);
+	  		chunk = chunk.substr(smallerChunk.length);
+	  	}
+	  }
+	}
+	return chunks;
+}
+function subChunker(s, max) {
+	var chunk = s.substr(0, max);
+	
+	if(chunk.charAt(max) == ' ') {  // Lucky...
+		return chunk;
+	}
+	
+	// Start 'rewinding' until a space is found{hopefully}
+	for(var i = chunk.length; i > 0; i--) {
+		if(chunk.charAt(i) == ' ') {	// Stop!
+			return chunk.substr(0, i);
+		}
+	}
+	// No space found-- last resort have to cut in mid-word
+	return chunk;
+}
+
+var gstop;
+function doSpeak(s) {
+	gstop=false;
+	var voiceSelect = _getid("voice");
+	var selectedVoice = null;
+	if(voiceSelect) {
+		selectedVoice = voiceSelect.value;
+	}
+	
+	var msg = new SpeechSynthesisUtterance();	
+	if(selectedVoice) {
+		msg.voice = window.speechSynthesis.getVoices().filter(function(voice) {
+	  	return voice.name == selectedVoice;
+	  })[0];
+	} 
+	
+	//msg.voiceURI = 'native';
+	msg.volume = _getid('volume').value/100; // 0 to 1		
+	var rate=parseFloat(_getid('rate').value);
+	if(!rate || isNaN(rate) || rate<0) rate=1;
+	if(rate>10) rate=10;
+	_getid('rate').value=rate;
+	msg.rate=rate;
+		msg.text = s;
+	//msg.lang = 'en-US';
+	
+	//console.log(s);
+	msg.onend = function(e){
+	  //console.log(e.target.text);
+	  if(!e || !e.target)return;
+	  //if(!window.speechSynthesis.speaking)return;
+	  if(gstop)return;
+	  var a=_findnext(chunkindex,e.target.text);
+	  if(a){
+		proc_highlight(a);
+	  }
+	}
+	/*msg.onstart = function(e){
+		console.log(e);
+	}
+	msg.onerror = function(e){
+		console.log(e);
+	}
+	msg.onboundary=function(e){
+		console.log(e);
+	}
+	msg.onmark=function(e){
+		console.log(e);
+	}*/
+	console.log(msg); //chrome fix
+	setTimeout(function(){
+		window.speechSynthesis.speak(msg);
+	},0);
+}
+
+function proc_highlight(a){
+		chunkindex=a.index;
+		//console.log(a.text);		
+		if(!chunklastpos){
+			editor.setCursor(0);
+			chunklastpos=editor.getCursor();
+		}		
+		var cursor = editor.getSearchCursor(a.text, chunklastpos);
+		if (!cursor.findNext()) {
+			cursor = editor.getSearchCursor(a.text,null);
+			if (!cursor.findNext()) return;
+		}
+		for (var i = 0; i < chunkmarked.length; ++i) chunkmarked[i].clear();
+		chunkmarked.length = 0;
+		chunkmarked.push(editor.markText(cursor.from(), cursor.to(), {className: "searched"}));
+		editor.setSelection(cursor.from(), cursor.to());  
+		chunklastpos=cursor.to();
+}
+function _findnext(index,s){
+	for(var i=index; i < chunkList.length; i++){
+		if(chunkList[i]==s){
+			if(chunkList[i+1]){
+				var a={};
+				a.index=i+1;
+				a.text=chunkList[i+1];
+				return a;
+			}
+		}
+	}
+}
+var chunkList, chunkindex, chunklastpos, speaktimer;
+var chunkmarked=[];
+var isspeaked;
+function proc_speak(){
+	if(gadb){alert('Please disable the adblock for free use.');return;}	if(!window.speechSynthesis)return;
+	//proc_saveopt();
+	proc_stop();
+	function go(){
+		var taInput=editor.getSelection();
+		if(taInput){
+			chunklastpos=editor.getCursor(true);
+		}else{
+			taInput = editor.getValue();
+			chunklastpos=null;
+		}
+		chunkList = getChunks(taInput);
+		chunkindex=0;
+		if(chunkList.length>0) proc_highlight({'index':0, 'text':chunkList[0]});
+		chunkList.forEach(function(chunk) {
+			doSpeak(chunk);
+		});			
+		/*if(!isspeaked){
+			isspeaked=true;
+			setTimeout(function(){
+				proc_stop();
+				proc_speak();
+			},1500);
+		}*/
+	}
+	clearInterval(speaktimer);
+	speaktimer=setTimeout(function(){
+		go();
+		proc_controls();
+	},100);	
+}
+var pauseResume = 'R';
+function proc_pause(){
+	if(pauseResume == 'R'){
+		window.speechSynthesis.pause();
+		pauseResume = 'P';
+	}else if(pauseResume == 'P'){
+		window.speechSynthesis.resume();
+		pauseResume = 'R';
+	}else{
+	}
+}
+function proc_stop(useract){
+	gstop=true;
+	pauseResume = 'R';
+	if(window.speechSynthesis){
+		window.speechSynthesis.cancel();
+	}
+	proc_controls();
+	if(useract){
+		var b=editor.getCursor();
+		if(b) editor.setCursor(b);
+		else editor.setCursor(0);
+	}
+}
+function proc_controls(){
+	/*var btn_speak=_getid('btn_speak');
+	var btn_pause=_getid('btn_pause');
+	var btn_stop=_getid('btn_stop');
+	if(window.speechSynthesis.speaking){
+		btn_speak.disabled=true;
+		btn_pause.disabled=false;
+		btn_stop.disabled=false;
+	}else{
+		btn_speak.disabled=false;
+		btn_pause.disabled=true;
+		btn_stop.disabled=true;
+	}*/
+}
+
+function initSpeech(){
+	if(!window.speechSynthesis){
+		_getid('msg2').innerHTML='<font style="color:#aa2222">Sorry your browser does not support speech synthesis. This app works well in the latest browser.</font>';
+		return;
+	}
+	//proc_controls();
+	var a=_getid('controls').getElementsByTagName('BUTTON');
+	for(var i = 0; i < a.length; i++){    
+		a[i].disabled=false;
+	}
+	//var msg = new SpeechSynthesisUtterance('');
+	//window.speechSynthesis.cancel();
+}
+function doInitVoices() {
+	if(!window.speechSynthesis)return;
+	var voiceSelect = _getid("voice");
+	for(var i=voiceSelect.options.length-1;i>=0;i--) voiceSelect.remove(i);
+
+	var voices = window.speechSynthesis.getVoices();
+	var option='';
+	voices.forEach(function (voice, i) {
+		var voiceName = voice.name;
+		var c=document.createElement("option");
+		c.value=voiceName;
+		c.appendChild(document.createTextNode(voiceName));		    
+		voiceSelect.appendChild(c);
+	});	
+	voiceSelect.onchange=function(){
+		setstorage('c_voice',this.value);
+	}
+	var s=getstorage('c_voice');
+	if(s) voiceSelect.value=s;
+	/*var msg = new SpeechSynthesisUtterance();
+	msg.voice = voices[0]; 
+	msg.text='this is a app.';
+	msg.volume=100;
+	window.speechSynthesis.speak(msg);*/
+}
+initSpeech();
+</script>
+
+<style>
+.gd_div{background-color:#FFFFE1;position:absolute;overflow:hidden;-webkit-box-shadow: 0 0 25px #999;-moz-box-shadow: 0 0 25px #999;box-shadow: 0 0 25px #999}
+</style>
+<div id="layer_message" class="gd_div" style="z-index:10001;display:none;"></div>
+<div id="gd_window" class="gd_div" style="z-index:10000001;display:none;"></div>
+<div id="gd_btn_login" class="gd_div" style="z-index:10000000;display:none;">
+
+</div>
+<script>
+
+setTimeout(function() {
+	doInitVoices();
+}, 700);
+doInitVoices();
+</script>

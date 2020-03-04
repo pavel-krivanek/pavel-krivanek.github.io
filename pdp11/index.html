@@ -3,7 +3,15 @@
 	<head>
 		<meta charset="utf-8"> 
 		<title>PDP-11</title>
-		<style type="text/css" media="all">
+		<style type="text/css" media="all">   4
+
+                       @font-face {
+				font-family: TeleType;
+				src: local("TeleType"), url('teletype.ttf');
+				font-weight: normal;
+				font-style: normal;
+			}
+
 			body {
 				font-family: Helvetica, sans-serif;
 				font-size: 14px;
@@ -14,7 +22,7 @@
 			h1 {
 				margin-top: 0;
 				margin-bottom: 0;
-				font-family: Courier, "Courier New", monospace;
+				font-family: TeleType, Courier, "Courier New", monospace;
 				font-weight: bold;
 				font-size: 40px;
 			}
@@ -70,7 +78,7 @@
 				font-size: 16px;
 			}
 			#Carriage {
-				font-family: Courier, "Courier New", monospace;
+				font-family: TeleType, Courier, "Courier New", monospace;
 				font-size: 20px;
 				line-height: 30px;
 				position: absolute;
@@ -123,13 +131,7 @@
 				margin: 4px 0 0 0;
 				text-align: center;
 			}
-			
-			@font-face {
-				font-family: 'TeleType';
-				src: url('teletype.ttf');
-				font-weight: normal;
-				font-style: normal;
-			}
+
 
       
 		#terminal {
@@ -887,10 +889,10 @@ if ((e.charCode != 10) && (e.charCode != 13)) {
 				});
 
 				// Handle font selector, and initialise font
-				$('.fontsel').change(function() {
+	/*			$('.fontsel').change(function() {
 					$('#Carriage').css('font-family', $(this).val());
 				});
-				$('#Carriage').css('font-family', $('.fontsel:checked').val());
+				$('#Carriage').css('font-family', $('.fontsel:checked').val());*/
 
 				// Sliders
 				$('#ctrl_brokenness').slider({
@@ -1024,7 +1026,7 @@ $(document).ready(function(){
 						<div>
 							<label>
 								<input class="fontsel" type="radio" name="font" value="Courier, 'Courier New', monospace" checked>
-								<span style="font-family: Courier, monospace">Courier</span>
+								<span style="font-family: TeleType, Courier, monospace">Courier</span>
 							</label>
 							<br>
 							<label>

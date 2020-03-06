@@ -363,8 +363,14 @@ $(function() {
         });
 
     $(document).ready(function() {
-        $('#Carriage').bind('mousewheel', function(e) {
-            y = Math.min(maxY, y - e.originalEvent.wheelDelta);
+        $('#Carriage').bind('wheel', function(e) {
+			var delta = event.deltaY;
+			if (event.deltaMode === 1)
+				delta *= char_height;
+			else if (event.deltaMode === 2)
+				delta *= char_height * 20;
+			
+            y = Math.min(maxY, y - delta);
             y = Math.max(minY, y);
             $(function() {
                 $('#Carriage').animate({

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta charset="utf-8">
+      <title>PDP-11</title>
+      <link rel="stylesheet" href="style.css" media="all">
+      <link rel="stylesheet" href="style-print.css" media="print">
+      <script type="text/javascript" src="jquery.min.js"></script>
+      <script type="text/javascript" src="ion.sound.min.js"></script>
+      <script src="teletype.js" type="text/javascript"></script>
+      <script src="forth.js" type="text/javascript"></script>
+   </head>
+   <body onload="printer(); run()">
+      <div class="controls">
+         <input type="button" value="reset" onclick="reset()" />
+         <input type="button" value="run" onclick="run()" />
+         <input type="button" value="stop" onclick="stop()" />
+         <span id="ips"> </span>
+         <span id="rkbusy" style='display: none'>hard disk busy</span>
+      </div>
+      <div class="introMessage">Forth</div>
+      <textarea id="terminal" readonly="readonly" onkeypress="addchar(event.which)" onkeyup="specialchar(event.which)"> </textarea>
+      <textarea id="debug" readonly="readonly"> </textarea>
+      <div id="Carriage">
+         <div class="output">
+         </div>
+         <div class="cursor"><img id="cursorImage" src="head.png"></div>
+      </div>
+   </body>
+</html>

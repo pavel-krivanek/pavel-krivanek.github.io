@@ -1,0 +1,127 @@
+<?xml version="1.0"  encoding="UTF-8"?>
+<?xml-stylesheet href="style.css" type="text/css"?>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Slepá mapa České republiky</title>
+  </head>
+
+<style>
+body {
+  font-size: 9pt;
+  font-family: Tahoma;
+}
+
+select {
+  font-size: 9pt;
+  font-family: Tahoma;
+}
+
+.rightColumn {
+  padding: 0px; 
+  margin: 5px; 
+  position:absolute; 
+  left:520px; 
+  width: 350px; 
+  top:0px;
+}
+
+.rightColumnContent {
+  padding: 0px; margin: 0px;
+  border: 1px solid black;
+  background: #dddddd;
+}
+
+.content {
+  margin: 5px;
+}
+
+.menu {
+  background-color: black;
+  color: white;
+  margin: 0px; padding: 2px;
+  font-weight:bold
+}
+
+.button:hover {
+  cursor: hand;
+  text-decoration: underline
+}
+
+#sumError {
+  color: red;
+}
+
+#message {
+  margin-top: 10px;
+  background-color: white;
+  padding: 4px; 
+  border: 2px solid #aaaaaa;
+  font-weight:bold;
+}
+
+h1 {
+  font-weight: bold;
+  font-size: 14pt;
+  font-family: Tahoma;
+  font-weight:bold;
+
+}
+
+
+
+</style>
+
+<script src="blind.js"></script>
+
+<script>
+
+
+//str_kriz = window['document']['getElementById']('kriz_select')['options'][window['document']['getElementById']('kriz_select')['selectedIndex']]['value'];
+
+</script>
+
+ <body onLoad="main()">
+  <div id="map" style="position:absolute; left:0px; top:0px; z-index:4"> 
+    <img id="cross" SRC="cross-red.gif" ALT="" BORDER=0 style="position:absolute; left:0px; top:0px; z-index:7; display: none" onclick="mapClick(event)"> 
+    <img id="cross2" SRC="cross-purple.gif" ALT="" BORDER=0 style="position:absolute; left:0px; top:0px; z-index:7; display: none" onclick="mapClick(event)"> 
+    <img SRC="blindmap-color.png" ALT="mapa" BORDER=0 id="map" onclick="mapClick(event)"> 
+  </div> 
+    
+  <div class="rightColumn">
+   <h1>Slepá mapa České republiky</h1>
+   <div class="rightColumnContent">
+    <div class="menu">
+      <span class="button" onClick="reset()">Nová hra</span>
+    </div>
+    <div class="content">
+      <div> Počet obyvatel od: <select id="populationSize" onChange="onPopulationSizeChange(this)"> 
+          <option VALUE="50000">50 tis.</option> 
+          <option VALUE="10000">10 tis.</option> 
+          <option VALUE="5000">5 tis.</option> 
+          <option VALUE="2500" selected>2500</option> 
+        </select>
+        <input type="checkbox" onChange="showDistrict=!showDistrict;update()"/> poraď okres
+        </div>
+      <div>
+        Pokus: <span id="attempt"/>
+      </div>
+      <div>
+        Celková chyba: <span id="sumError"/>
+      </div>
+      <div id="lastError">&nbsp;</div>
+      <div id="message"></div>
+    </div>
+    </div>
+  </div>
+</body> 
+
+<script>
+
+
+
+</script>
+
+
+<html>
+

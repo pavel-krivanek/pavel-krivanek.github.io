@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Z-Type</title>
+	<style type="text/css">
+		html,body {
+			background-color: #25272b;
+			background-position: 54px 105px;
+			background-attachment: fixed;
+			background-repeat: no-repeat;
+			color: #fff;
+			font-family: helvetica, arial, sans-serif;
+			margin: 0;
+			padding: 0;
+			font-size: 12pt;
+		}
+		
+		#canvas {
+			border: 1px solid #555;
+			xposition: absolute;
+			left: 0;
+			top: 0;
+			width: 360px;
+			height: 640px;
+			background-color: #000;
+		}
+		
+		#game {
+			position: absolute;
+			left: 0;
+			right: 0;
+			top: 0;
+			bottom: 0;
+			margin: auto;
+			width: 360px;
+			height: 640px;
+		}
+		
+		#nocanvas {
+			width: 360px;
+			margin: 150px auto;
+		}
+		
+		a {
+			color: #3388ff;
+		}
+		
+		img {
+			border: 0;
+		}
+		
+		.made-with-impact {
+			position: absolute;
+			text-align: center;
+			bottom: 32px;
+			right: 32px;
+		}
+		#sc-left {
+			width: 160px;
+			height: 600px;
+			position: absolute;
+			left: 32px;
+			top: 0;
+			bottom: 0;
+			margin: auto;
+		}
+		#sc-right {
+			width: 160px;
+			height: 600px;
+			position: absolute;
+			right: 32px;
+			top: 0;
+			bottom: 0;
+			margin: auto;
+		}
+	</style>
+	<meta name="description" content="Type To Shoot Game made with ImpactJS"/>
+	<script type="text/javascript" src="ztype.js"></script>
+
+</head>
+<body>
+	<div id="sc-left">
+	</div>
+	
+	</div>
+	
+	<div id="game">
+		<canvas id="canvas">
+			<div id="nocanvas">
+				To play this game you need a good Browser
+			</div>
+		</canvas>
+	</div>
+</body>
+</html>

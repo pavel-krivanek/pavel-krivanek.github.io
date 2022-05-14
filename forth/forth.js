@@ -5,7 +5,7 @@ class ForthMemory {
      constructor(forth) {
         this.forth = forth;
         this.resetStack();
-        this.rsp = this.r0();
+        this.resetReturnStack();
         this.resetMemory();
     }
 
@@ -14,6 +14,7 @@ class ForthMemory {
         this.memory.fill(0); 
     }
     resetStack() { this.dsp = this.s0(); }
+    resetReturnStack() { this.rsp = this.r0(); }
     s0() { return 0xEFFC; }
     r0() { return 0x7FFC; }
 
@@ -73,17 +74,30 @@ class ForthMemory {
 } 
 
 Number.prototype.asUnsigned16 = function() {
-    return this < 0 ? ((Math.abs(this+1) & 0xFFFF) ^ 0xFFFF)  : this & 0xFFFF ;
+    return this < 0 ? ((Math.abs(this+1) & 0xFFFF) ^ 0xFFFF) : this & 0xFFFF ;
+}
+Number.prototype.asUnsigned32 = function() {
+    if (this >= 0) return this & 0xFFFFFFFF;
+    let num = Math.abs(this+1) % 0x100000000;
+    return 0xFFFFFFFF - num; 
 }
 Number.prototype.asSigned16 = function() {
     return this > 0x7FFF ? 0 - (((this & 0xFFFF) ^ 0xFFFF) + 1) : this ;     
 }
 Number.prototype.asUnsigned2Bytes = function() {
     let num = this.asUnsigned16();
-    return [ (num & 0xFF00) >> 8, num & 0xFF ];  
+    return [ (num & 0xFF00) >>> 8, num & 0xFF ];  
+}
+Number.prototype.asUnsigned4Bytes = function() {
+    let num = this.asUnsigned32();
+    console.log("unsigned: "+num);
+    return [ (num & 0xFF000000) >>> 24, (num & 0xFF0000) >>> 16, (num & 0xFF00) >>> 8, num & 0xFF ];  
 }
 Array.prototype.asUnsigned16 = function() {
     return (this[1]+(this[0] << 8));
+}
+Array.prototype.asUnsigned32 = function() {
+    return (this[3]+(this[2] << 8)+(this[1] << 16)+(this[0] << 24));
 }
 Array.prototype.asSigned16 = function() {
     return this.asUnsigned16().asSigned16();
@@ -107,12 +121,14 @@ class Forth {
        this.initPos = 0;
    
        this.lastWord = 0;
-       this.inputBuffer = [];
-       this.outputBuffer = [];
-
+       this.resetBuffers(); 
        this.memoryInitializer().initializeMemory();
        
        this.state = "running";
+    }
+    resetBuffers() {
+        this.inputBuffer = [];
+        this.outputBuffer = []; 
     }
     input(aString) {
         for (var i = 0; i < aString.length; i++) {
@@ -125,7 +141,7 @@ class Forth {
         let aSet = this.unknownLabels[aLabel];
         if (aSet === undefined) {
             aSet = new Set();
-            this.unknownLabels[aLabel] =  aSet }
+            this.unknownLabels[aLabel] = aSet }
         aSet.add(address);            
     }
     addressForLabelInFutureSet(aLabel, anAddress) { 
@@ -192,6 +208,14 @@ class Forth {
     }
     makeRunning() { this.state = "running"; }
     noInput() { this.state = "noInput"; }
+    emergencyStop() { 
+        // na error occured
+        this.noInput();
+        this.resetBuffers();
+        this.memory.resetStack();
+        this.memory.resetReturnStack();  
+  
+    }
     memoryInitializer() { return new ForthStandardMemoryInitializer(this); }
     outputBufferoutputBufferString() { return this.outputBuffer.toByteString(); }
     privComma(value) {
@@ -210,16 +234,33 @@ class Forth {
         return ((asciiCode >= 48) && (asciiCode <= 57)) 
             || ((asciiCode >= 65) && (asciiCode <= 65+base-11))
             || ((asciiCode >= 97) && (asciiCode <= 97+base-11))
+            || ((asciiCode >= 44) && (asciiCode <= 47)) // ,-
+            || (asciiCode === 58)
+    }
+    isDoubleSeparator(asciiCode) {
+         return ((asciiCode >= 44) && (asciiCode <= 47)) // ,-./
+            || (asciiCode === 58) // :
     }
     privNumber(wordStringAddress, length) {
+        let isDouble = false;
         let base = this.varBaseValue();
+        let toParse = [];
         let bytes = this.memory.memoryCopyFromTo(wordStringAddress, wordStringAddress+length-1);
         for (let i = 0; i < bytes.length; i++) {
-            if (!this.allowedForBase(bytes[i], base)) return [0, i+1]
+            let isSeparator = (i > 0 && this.isDoubleSeparator(bytes[i]));
+            let allowed = this.allowedForBase(bytes[i], base) || isSeparator; 
+            if (!allowed) return [0, i+1];
+            if (isSeparator)  isDouble = true;
+                else toParse.push(bytes[i]);  
         }
-        let anInteger = parseInt(bytes.toByteString(), base);
-         anInteger = anInteger.asUnsigned2Bytes().asUnsigned16();
-        return [anInteger, 0];
+        let anInteger = parseInt(toParse.toByteString(), base);
+        if (isDouble) {
+            anInteger = anInteger.asUnsigned4Bytes();
+            console.log(anInteger);
+        } else 
+            anInteger = anInteger.asUnsigned2Bytes();
+        
+        return [anInteger, 0, isDouble];
     }
     isEndOfLine(asciiCode) { return (asciiCode === 10) || (asciiCode === 9) };
     isSeparator(asciiCode) {
@@ -235,6 +276,7 @@ class Forth {
         do {
             if (this.inputBufferEmpty()) {
                 this.noInput();
+                typeOk();
                 return [this.wordBufferAddress(), 0];
             }
             charCode = this.readInputBuffer();
@@ -247,16 +289,6 @@ class Forth {
                 true : this.isSeparator(charCode = this.readInputBuffer())
         } while (!atWordEnd); 
         
-        if (length === 1 && this.memory.byteAt(this.wordBufferAddress() === 92)) {// comment
-            do {
-                if (this.inputBufferEmpty()) {
-                    this.noInput();
-                    return [wordBufferAddress(), 0];
-                }
-                charCode = this.readInputBuffer();
-            } while (this.isEndOfLine(charCode));
-            return this.privWord()   
-        }
         return [this.wordBufferAddress(), length]
     }
 
@@ -1119,7 +1151,9 @@ class ForthCodeInterpret extends ForthCodeWithHead {
                 interpretIsLit = true;
                 aCodeword = this.forth.addressForLabel('codeword_LIT');
             } else {
-                throw new Error( "unknown word: " + toFind.toByteString() );
+                typeError("Unknown word: " + toFind.toByteString());
+                this.forth.emergencyStop();
+                return;
             }         
         } else {
             aCodeword = this.forth.codewordOf(resultOfFind);
@@ -1128,18 +1162,18 @@ class ForthCodeInterpret extends ForthCodeWithHead {
                 executeImmediate = true;
         }
         if ((this.forth.varStateValue() === 0) || executeImmediate) {
-        if (interpretIsLit) {
-                this.push(numberErrorPair[0]);
-                this.forth.privNext(); 
-            } else { 
-                this.forth.pc = this.memory().wordAt(aCodeword) - 1;    
-        } } else {
-                this.forth.privComma(aCodeword);
-                if (interpretIsLit) 
-                    this.forth.privComma(numberErrorPair[0]);
-                this.privNex;
-            }
-        
+            if (interpretIsLit) {
+                    this.memory().push(numberErrorPair[0]);
+                    this.forth.privNext(); 
+                } else { 
+                    this.forth.pc = this.memory().wordAt(aCodeword) - 1;    
+            } 
+        } else {
+            this.forth.privComma(aCodeword);
+            if (interpretIsLit) 
+                this.forth.privComma(numberErrorPair[0]);
+            this.privNex;
+        }
     }
 }
 
@@ -1237,7 +1271,7 @@ class ForthCodeNumber extends ForthCodeWithHead {
         let length = this.popSigned();
         let wordStringAddress = this.popUnsigned();
         let numberErrorPair = this.forth.privNumber(wordStringAddress, length);
-        this.push(numberErrorPair[0]);
+        this.memory().push(numberErrorPair[0]);
         this.push(numberErrorPair[1]); // error character index
     }
 }
@@ -1271,7 +1305,7 @@ class ForthCodeFromR extends ForthCodeWithHead {
 class ForthCodeRDrop extends ForthCodeWithHead {
     name() { return "rdrop"; }
     execute() {
-        this.forth.popFromReturnStack();
+        this.memory().popFromReturnStack();
     }
 }
 
@@ -1508,9 +1542,10 @@ forth.input(`
 ;
 
 ( Standard words for manipulating BASE. )
+: BINARY  ( -- )  2 BASE ! ;
+: OCTAL   ( -- )  8 BASE ! ;
 : DECIMAL ( -- ) 10 BASE ! ;
 : HEX     ( -- ) 16 BASE ! ;
-: BINARY  ( -- )  2 BASE ! ;
 
 ( This is the underlying recursive definition of U. )
 : U.		( u -- )
@@ -1616,7 +1651,7 @@ forth.input(`
 
 : DEPTH		( -- n )
 	S0 @ DSP@ -
-	2-			( adjust because S0 was on the stack when we pushed DSP )
+	2- 2 /			( adjust because S0 was on the stack when we pushed DSP )
 ;
 
 : ALIGNED	( addr -- addr )
@@ -1697,7 +1732,7 @@ forth.input(`
 	HERE +!		( adds n to HERE, after this the old value of HERE is still on the stack )
 ;
 
-: CELLS ( n -- n ) 4 * ;
+: CELLS ( n -- n ) 2 * ;
 
 : VARIABLE
 	1 CELLS ALLOT	( allocate 1 cell of memory, push the pointer to this memory )
@@ -1984,24 +2019,234 @@ forth.input(`
 	' LIT ,		( compile LIT )
 ;
 
+: DO IMMEDIATE  ['] SWAP , ['] >R , ['] >R , [COMPILE] BEGIN ;
+: LOOP IMMEDIATE ['] R> , ['] R> , ['] SWAP , ['] 1+ ,  ['] 2DUP ,  ['] = ,  
+    ['] -ROT , ['] SWAP , ['] >R , ['] >R , [COMPILE] UNTIL ['] RDROP , ['] RDROP , ;
+: +LOOP IMMEDIATE ['] R> , ['] R> , ['] SWAP , ['] ROT , ['] + ,  ['] 2DUP ,  ['] = ,  
+    ['] -ROT , ['] SWAP , ['] >R , ['] >R , [COMPILE] UNTIL ['] RDROP , ['] RDROP , ;
+: LEAVE R> R> R> DROP DUP 1+ >R >R >R ;
+
+: I RSP@ 2+ @ ;
+: I' RSP@ 4 + @ ;
+: J RSP@ 6 + @ ;
+
+0 CONSTANT 0
+1 CONSTANT 1
+: 0. 0 0 ;
+
+: ' WORD FIND >CFA ;
+
+: MAX 2DUP > IF DROP ELSE SWAP DROP THEN ;
+: MIN 2DUP > IF SWAP DROP ELSE DROP THEN ;
+
+: PAGE CR 34 0 DO  ." - " LOOP ." -" CR ; 
+
 ( ---------------- )
 
-: variable: variable latest @ >cfa execute ! ;
-: ->cell 4 swap +! ;
-: <-cell 4 swap -! ;
 
-32 cells allot variable: loopSP
-loopSP @ constant loopTop
-: >loop loopSP @ ! loopSP ->cell ;
-: loop> loopSP <-cell loopSP @ @ ; 
-: do immediate ' >loop , ' >loop , [compile] begin ;
-: loopCheck loop> loop> 1+  2dup =  -rot >loop >loop ;
-: loopFinish loop> drop loop> drop ;
-: loop immediate ' loopCheck , [compile] until ' loopFinish , ;
+: HASH
+ SWAP 1+ XOR
+;
 
-." READY" CR
+: HASH-N ( x1 x2 ... xn n -- h )
+ 0 >R
+ BEGIN
+ DUP 0 >
+ WHILE
+ SWAP R> HASH >R
+ 1-
+ REPEAT
+ DROP R>
+;
 
-: TEST 0  IF ." TRUE" ELSE ." FALSE" THEN ;
+VARIABLE TEST-NUMBER
+VARIABLE TDEPTH
+
+: TSTART
+    0 TEST-NUMBER !
+;
+
+: T{
+    TEST-NUMBER @ 1+ TEST-NUMBER !
+    DEPTH TDEPTH !
+;
+
+: ->
+    DEPTH TDEPTH @ -
+    HASH-N 
+    DEPTH TDEPTH !
+;
+
+: }T
+    DEPTH TDEPTH @ -
+    HASH-N
+    = 0= IF
+           ." TEST FAILED: " TEST-NUMBER @ . CR
+        QUIT 
+    THEN
+;
+
+: TEND ;
+
+TSTART
+    T{ 0 0 AND -> 0 }T
+    T{ 0 1 AND -> 0 }T
+    T{ 1 0 AND -> 0 }T
+    T{ 1 1 AND -> 1 }T 
+
+    T{ 0 INVERT 1 AND -> 1 }T
+    T{ 1 INVERT 1 AND -> 0 }T
+
+    T{ 1 2 DROP -> 1 }T
+    T{ 1 2 SWAP -> 2 1 }T
+
+    0    CONSTANT 0S
+    0 INVERT CONSTANT 1S
+    
+    T{ 0S INVERT -> 1S }T
+    T{ 1S INVERT -> 0S }T
+
+    T{ 0S 0S AND -> 0S }T
+    T{ 0S 1S AND -> 0S }T
+    T{ 1S 0S AND -> 0S }T
+    T{ 1S 1S AND -> 1S }T
+
+    T{ 0S 0S OR -> 0S }T
+    T{ 0S 1S OR -> 1S }T
+    T{ 1S 0S OR -> 1S }T
+    T{ 1S 1S OR -> 1S }T
+    
+    T{ 0S 0S XOR -> 0S }T
+    T{ 0S 1S XOR -> 1S }T
+    T{ 1S 0S XOR -> 1S }T
+    T{ 1S 1S XOR -> 0S }T
+
+    0S CONSTANT <FALSE>
+    1S CONSTANT <TRUE>
+
+    T{ 0 0= -> <TRUE> }T
+    T{ 1 0= -> <FALSE> }T
+    T{ 2 0= -> <FALSE> }T
+    T{ -1 0= -> <FALSE> }T   
+    
+    T{ 0 0 = -> <TRUE> }T
+    T{ 1 1 = -> <TRUE> }T
+    T{ -1 -1 = -> <TRUE> }T
+    T{ 1 0 = -> <FALSE> }T
+    T{ -1 0 = -> <FALSE> }T
+    T{ 0 1 = -> <FALSE> }T
+    T{ 0 -1 = -> <FALSE> }T
+
+    T{ 0 0< -> <FALSE> }T
+    T{ -1 0< -> <TRUE> }T
+    T{ 1 0< -> <FALSE> }T
+
+    T{ 0 1 < -> <TRUE> }T
+    T{ 1 2 < -> <TRUE> }T
+    T{ -1 0 < -> <TRUE> }T
+    T{ -1 1 < -> <TRUE> }T
+    T{ 0 0 < -> <FALSE> }T
+    T{ 1 1 < -> <FALSE> }T
+    T{ 1 0 < -> <FALSE> }T
+    T{ 2 1 < -> <FALSE> }T
+    T{ 0 -1 < -> <FALSE> }T
+    T{ 1 -1 < -> <FALSE> }T
+
+    T{ 0 1 > -> <FALSE> }T
+    T{ 1 2 > -> <FALSE> }T
+    T{ -1 0 > -> <FALSE> }T
+    T{ -1 1 > -> <FALSE> }T
+    T{ 0 0 > -> <FALSE> }T
+    T{ 1 1 > -> <FALSE> }T
+    T{ 1 0 > -> <TRUE> }T
+    T{ 2 1 > -> <TRUE> }T
+    T{ 0 -1 > -> <TRUE> }T
+    T{ 1 -1 > -> <TRUE> }T
+
+    T{ 0 1 MIN -> 0 }T
+    T{ 1 2 MIN -> 1 }T
+    T{ -1 0 MIN -> -1 }T
+    T{ -1 1 MIN -> -1 }T
+
+    T{ 0 0 MIN -> 0 }T
+    T{ 1 1 MIN -> 1 }T
+    T{ 1 0 MIN -> 0 }T
+    T{ 2 1 MIN -> 1 }T
+    T{ 0 -1 MIN -> -1 }T
+    T{ 1 -1 MIN -> -1 }T
+
+    T{ 0 1 MAX -> 1 }T
+    T{ 1 2 MAX -> 2 }T
+    T{ -1 0 MAX -> 0 }T
+    T{ -1 1 MAX -> 1 }T
+    T{ 0 0 MAX -> 0 }T
+    T{ 1 1 MAX -> 1 }T
+    T{ 1 0 MAX -> 1 }T
+    T{ 2 1 MAX -> 2 }T
+    T{ 0 -1 MAX -> 0 }T
+    T{ 1 -1 MAX -> 1 }T
+
+    T{ 1 2 2DROP -> }T
+    T{ 1 2 2DUP -> 1 2 1 2 }T
+    T{ 0 ?DUP -> 0 }T
+    T{ 1 ?DUP -> 1 1 }T
+    T{ -1 ?DUP -> -1 -1 }T
+    T{ DEPTH -> 0 }T
+    T{ 0 DEPTH -> 0 1 }T
+    T{ 0 1 DEPTH -> 0 1 2 }T    
+    T{ 0 DROP -> }T
+    T{ 1 2 DROP -> 1 }T
+    T{ 1 DUP -> 1 1 }T
+    T{ 1 2 OVER -> 1 2 1 }T
+    T{ 1 2 3 ROT -> 2 3 1 }T
+    T{ 1 2 SWAP -> 2 1 }T 
+
+    T{ : GR1 >R R> ; -> }T
+
+    T{ 123 GR1 -> 123 }T
+
+    T{ 1S GR1 -> 1S }T   ( RETURN STACK HOLDS CELLS )
+
+    T{ 0 5 + -> 5 }T
+    T{ 5 0 + -> 5 }T
+    T{ 0 -5 + -> -5 }T
+    T{ -5 0 + -> -5 }T
+    T{ 1 2 + -> 3 }T
+    T{ 1 -2 + -> -1 }T
+    T{ -1 2 + -> 1 }T
+    T{ -1 -2 + -> -3 }T
+    T{ -1 1 + -> 0 }T
+
+    T{ 0 5 - -> -5 }T
+    T{ 5 0 - -> 5 }T
+    T{ 0 -5 - -> 5 }T
+    T{ -5 0 - -> -5 }T
+    T{ 1 2 - -> -1 }T
+    T{ 1 -2 - -> 3 }T
+    T{ -1 2 - -> -3 }T
+    T{ -1 -2 - -> 1 }T
+    T{ 0 1 - -> -1 }T
+
+    T{ 0 1+ -> 1 }T
+    T{ -1 1+ -> 0 }T
+    T{ 1 1+ -> 2 }T
+
+    T{ 2 1- -> 1 }T
+    T{ 1 1- -> 0 }T
+    T{ 0 1- -> -1 }T
+
+    T{ 0 NEGATE -> 0 }T
+    T{ 1 NEGATE -> -1 }T
+    T{ -1 NEGATE -> 1 }T
+    T{ 2 NEGATE -> -2 }T
+    T{ -2 NEGATE -> 2 }T
+    
+TEND
+
+
+
+ ."  "
+
 
 : STAR 42 EMIT ;
 : STARS   0 DO STAR  LOOP ;
@@ -2010,10 +2255,11 @@ loopSP @ constant loopTop
 : BAR  MARGIN 5 STARS ;
 : F    BAR BLIP BAR BLIP BLIP CR ;
 
-F
+: TEST 4 0  do I . I' . ." hello"  CR 2 +LOOP ; 
 
-CR ." FINISHED" CR
+: TEST 10 0 DO I DUP . 5 = IF LEAVE THEN LOOP ; 
 
+( ." FINISHED" CR )
 
 `.toUpperCase() );
 //val = forth.memory;
@@ -2033,13 +2279,26 @@ console.log("finished!");
 
 function addchar(char)
 {
-    typeCharacter(char);
     forth.inputBuffer.push(char & 0xFF);
     if (char === 13) {
-        console.log("run");
+        typeCharacter(32);
         forth.makeRunning();
         forth.run();
+    } else {
+        typeCharacter(char);
     }
+}
+
+function typeError(aString)
+{
+    for (let i = 0; i < aString.length; i++)
+        typeCharacter(aString.charCodeAt(i));
+    typeCharacter(13);
+}
+
+function typeOk()
+{
+    typeError("OK");
 }
 
 function specialchar(char)

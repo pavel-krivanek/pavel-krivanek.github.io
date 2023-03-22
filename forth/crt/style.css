@@ -107,8 +107,6 @@ h3 {
 	font-family:  'IBM VGA 8x16', monospace;
 	font-size: 2.5vmin;
 	border: .3vmin solid #1a1209;
-
-S
 }
 
 
@@ -132,10 +130,11 @@ S
 	max-width: 94vh; /* 4/3 * 90 = 120 */
 	//border: 1px solid blue;
 	margin-left: 10%;	
-	margin-top: 8%;	
+	margin-top: 12%;	
 	//margin-left: -360px;
 	//left: 50%;
 	//transform: translateX(-50%);
+	
 }
 
 .char {
@@ -148,7 +147,7 @@ S
 	//font-size: calc(20px * (min(3vw, 3vh)));
 	height: 3.333%;
 	margin: 0px;
-
+	min-height: 3.333%;
 }
 
 .char:nth-child(odd) { 

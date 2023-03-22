@@ -118,9 +118,25 @@ Array.prototype.toByteString = function() {
     return String.fromCharCode.apply(null, this);
 }
 
+class ForthDisk {
+	constructor() {
+		this.content = new Uint8Array(1474560).fill(32);;
+	}
+	writeBlock(blockNumber, memory, address) {
+		let blockStart = 1024*blockNumber;
+		for (let i = 0; i < 1024; i++) {
+			memory.writeByteAt(this.content[blockStart+i], address+i); 
+		}
+	}
+	setByte(index, aByte) {
+		this.content[index] = aByte;
+	}
+}
+
 class Forth {
-    constructor(forth) {
+    constructor() {
        this.memory = new ForthMemory(this);
+       this.disk = new ForthDisk(this);
        this.labels = {};
        this.unknownLabels = {};
        this.pc = 0;
@@ -215,7 +231,10 @@ class Forth {
         return this.memory.byteAt(address) & this.flagLengthMask();
     }
     makeRunning() { this.state = "running"; }
-    noInput() { this.state = "noInput"; }
+    noInput() { 
+		this.setVarBlkValue(0);
+		this.state = "noInput"; 
+	}
     emergencyStop() { 
         // na error occured
         this.noInput();
@@ -225,7 +244,7 @@ class Forth {
   
     }
     memoryInitializer() { return new ForthStandardMemoryInitializer(this); }
-    outputBufferoutputBufferString() { return this.outputBuffer.toByteString(); }
+    outputBufferString() { return this.outputBuffer.toByteString(); }
     privComma(value) {
         this.memory.writeWordAt(value, this.varHereValue());
         this.setVarHereValue(this.varHereValue() + this.wordSize());
@@ -272,40 +291,68 @@ class Forth {
     isEndOfLine(asciiCode) { return (asciiCode === 10) || (asciiCode === 9) };
     isSeparator(asciiCode) {
         return (asciiCode === 32) 
-            || (asciiCode === 13) 
+            || (asciiCode === 10) 
             || (asciiCode === 12) 
             || this.isEndOfLine(asciiCode) ;
     }
     inputBufferEmpty() { return  this.inputBuffer.length === 0 }
+
     privWord() {
         let length = 0;
         let charCode;
+		let usesBlock = !(this.varBlkValue() === 0);
         do {
-            if (this.inputBufferEmpty()) {
+            if (this.atInputEnd(usesBlock)) {
                 this.noInput();
                 typeOk();
                 return [this.wordBufferAddress(), 0];
             }
-            charCode = this.readInputBuffer();
+            charCode = this.readCharacter(usesBlock);
         } while (this.isSeparator(charCode));
         let atWordEnd;
         do {
             this.memory.memoryAtPut(this.wordBufferAddress()+length, charCode);
             length += 1;
-            atWordEnd = this.inputBufferEmpty() ?
-                true : this.isSeparator(charCode = this.readInputBuffer())
+            atWordEnd = this.atInputEnd(usesBlock) ?
+                true : this.isSeparator(charCode = this.readCharacter(usesBlock))
         } while (!atWordEnd); 
         
         return [this.wordBufferAddress(), length]
     }
+	
+	readsFromBlock() {
+		return !(this.varBlkValue() === 0);
+	}
+	
+	readFromBlock() {
+		if (this.varToInValue() >= 1024) {
+			this.noInput();
+			debugger;
+			return 0;
+		}
+		let addr = 50000 + /*(1024*this.varBlkValue()) +*/ this.varToInValue();
+		let aByte = this.memory.memoryAt(addr);
+		this.setVarToInValue(this.varToInValue()+1);
+		console.log(aByte, String.fromCharCode(aByte));
+		return aByte;
+	}
+	
+	atInputEnd(usesBlock) {
+		return (usesBlock) ? this.varToInValue() >= 1024 : this.inputBufferEmpty();
+	}
+	
+	readCharacter(usesBlock) {
+		let aCharacter = (usesBlock) ? this.readFromBlock() : this.readInputBuffer();
+		return aCharacter;
+	}
 
     readInputBuffer() {
-        if(this.inputBuffer.length === 0) {
-            this.noInput();
-            return 0;
-        }
-        return this.inputBuffer.shift();
-    }
+		if(this.inputBuffer.length === 0) {
+			this.noInput();
+			return 0;
+		}
+		return this.inputBuffer.shift();
+	}
 
     run() {
         while (this.state === "running") {
@@ -339,6 +386,14 @@ class Forth {
     varBase() { return this.addressForLabel("var_BASE"); }
     varBaseValue() { return this.memory.signedWordAt(this.varBase()); }
     setVarBaseValue(aValue) { return this.memory.writeWordAt(aValue, this.varBase()); }
+
+    varToIn() { return this.addressForLabel("var_>IN"); }
+    varToInValue() { return this.memory.unsignedWordAt(this.varToIn()); }
+    setVarToInValue(aValue) { return this.memory.writeWordAt(aValue, this.varToIn()); }
+
+    varBlk() { return this.addressForLabel("var_BLK"); }
+    varBlkValue() { return this.memory.signedWordAt(this.varBlk()); }
+    setVarBlkValue(aValue) { return this.memory.writeWordAt(aValue, this.varBlk()); }
 
     wordBufferAddress() { return this.addressForLabel("word_buffer") };
     wordBufferSize() { return 32 };
@@ -390,10 +445,11 @@ class ForthStandardMemoryInitializer extends ForthMemoryInitializer {
         this.initializeCompilerExtendingPrimitives();
         this.initializeBranchingPrimitives();
         this.initializeStringLiteralsPrimitives();
+		this.initializeBlockPrimitives();
         this.initializeInterpreterPrimitives();  
         this.forth.setVarLatestValue(this.forth.addressForLabel("name_INTERPRET"));
         this.forth.setVarHereValue(this.initPos);
-        this.forth.fixUnknownLabels();      
+        this.forth.fixUnknownLabels();    
     };
     initializeBasicPrimitives() { this.installAll([
         ForthCodeDrop,
@@ -437,9 +493,9 @@ class ForthStandardMemoryInitializer extends ForthMemoryInitializer {
         this.addCode(new ForthCodeConstant(this.forth, "VERSION", 7));
         this.addCode(new ForthCodeConstant(this.forth, "DOCOL", this.forth.labels["DOCOL"]));
         this.addCode(new ForthCodeConstant(this.forth, "DODOES", this.forth.labels["DODOES"]));
-        this.addCode(new ForthCodeConstant(this.forth, "F_LENMASK", this.forth.flagLengthMask()));
-        this.addCode(new ForthCodeConstant(this.forth, "F_HIDDEN", this.forth.flagHidden()));
-        this.addCode(new ForthCodeConstant(this.forth, "F_IMMED", this.forth.flagImmediate()));
+        this.addCode(new ForthCodeConstant(this.forth, "F-LENMASK", this.forth.flagLengthMask()));
+        this.addCode(new ForthCodeConstant(this.forth, "F-HIDDEN", this.forth.flagHidden()));
+        this.addCode(new ForthCodeConstant(this.forth, "F-IMMED", this.forth.flagImmediate()));
         this.addCode(new ForthCodeConstant(this.forth, "R0", this.forth.memory.r0()));
     } 
     initializeBuitInVarialbes() {
@@ -448,6 +504,8 @@ class ForthStandardMemoryInitializer extends ForthMemoryInitializer {
         this.addCode(new ForthCodeVariable(this.forth, "latest", 0));
         this.addCode(new ForthCodeVariable(this.forth, "base", 10));
         this.addCode(new ForthCodeVariable(this.forth, "s0", this.forth.memory.s0()));
+        this.addCode(new ForthCodeVariable(this.forth, ">in", 0));
+        this.addCode(new ForthCodeVariable(this.forth, "blk", 0));
     } 
     initializeComparisonPrimitives() { this.installAll([
 		ForthCodeEqu,
@@ -532,14 +590,17 @@ class ForthStandardMemoryInitializer extends ForthMemoryInitializer {
     initializeStringLiteralsPrimitives() { this.installAll([
         ForthCodeLitString,
         ForthCodeChar
-        ]); }                                                 
+        ]); } 
+    initializeBlockPrimitives() { this.installAll([
+        ForthCodeBlock
+        ]); }                                                 		
 }
 
 class ForthCode {
     constructor(forth) {
         this.forth = forth;
     }
-    execude() { throw new Error("subclassResponsibility") };
+    execute() { throw new Error("subclassResponsibility") };
     installAt(initialPosition) {
         this.installLabelAt(initialPosition);
         this.forth.memory.memoryAtPut(initialPosition, this);
@@ -645,7 +706,7 @@ class ForthCodeDoDoes extends ForthCode {
         this.forth.pcNext = this.forth.pcCurrent;
         this.forth.memory.push(aPFA.asUnsigned2Bytes());
         this.forth.privNext();
-    }
+ }
 }
 
 class ForthCodeNext extends ForthCode {
@@ -1515,6 +1576,17 @@ class ForthCodeVariable extends ForthCodeWithHead {
     }
 }
 
+// Block primitives
+
+class ForthCodeBlock extends ForthCodeWithHead {
+    name() { return "block"; }
+    execute() {
+		let targetAddress = 50000;
+		this.forth.disk.writeBlock(this.popSigned(), this.memory(), targetAddress);
+		this.memory().push(targetAddress.asUnsigned2Bytes());
+		//this.memory().popFromReturnStack();
+	}
+}
 
 function run() {
 
@@ -1523,8 +1595,7 @@ let forth = new Forth();
 
 window.forth = forth;
 forth.init();
-forth.input(`
-
+let source = `
 : / /MOD SWAP DROP ;
 : MOD /MOD DROP ;
 
@@ -1533,7 +1604,7 @@ forth.input(`
 : 2* 2 * ;
 : 2/ 2 / ;
 
-: '\\n' 13 ;
+: '\\n' 10 ;
 : BL   32 ; 
 : CR '\\n' EMIT ;
 : SPACE BL EMIT ;
@@ -1912,7 +1983,7 @@ forth.input(`
 : ID.
 	2+		( skip over the link pointer )
 	DUP C@		( get the flags/length byte )
-	F_LENMASK AND	( mask out the flags - just want the length )
+	F-LENMASK AND	( mask out the flags - just want the length )
 
 	BEGIN
 		DUP 0>		( length > 0? )
@@ -1928,12 +1999,12 @@ forth.input(`
 : ?HIDDEN
 	2+		( skip over the link pointer )
 	C@		( get the flags/length byte )
-	F_HIDDEN AND	( mask the F_HIDDEN flag and return it (as a truth value) )
+	F-HIDDEN AND	( mask the F-HIDDEN flag and return it (as a truth value) )
 ;
 : ?IMMEDIATE
 	2+		( skip over the link pointer )
 	C@		( get the flags/length byte )
-	F_IMMED AND	( mask the F_IMMED flag and return it (as a truth value) )
+	F-IMMED AND	( mask the F-IMMED flag and return it (as a truth value) )
 ;
 
 : WORDS
@@ -2688,10 +2759,63 @@ FORGET TESTING
 
 ( ." FINISHED" CR )
 
-`.toUpperCase() );
-//val = forth.memory;
+
+
+
+
+: MYTEST 3 4 + . ;
+64 EMIT
+`.toUpperCase();
+
+
+let lines = source.replace(/\t/g, "    ").split(/\r?\n/);
+let blockContents = [];
+for (let i = 0; i < lines.length; i += 16) {
+  blockContents.push(lines.slice(i, i + 16));
+}
+
+blockContents.forEach((blockLines, blockIndex) => {
+  blockLines.forEach((blockLine, lineIndex) => {
+	let cutLine = blockLine.slice(0, 64);
+	for (let charIndex = 0; charIndex < cutLine.length; charIndex++) {
+		let diskAddress = (blockIndex*1024) + (lineIndex*64) + charIndex;
+		let aByte = blockLine.charCodeAt(charIndex) & 0xFF;
+		forth.disk.setByte(diskAddress, aByte); 
+	};
+  });
+});
+
+// forth.input(source);
+
+forth.input(source + `
+
+: L  ( n -- )
+CR
+	DUP ." SCREEN #" . CR
+	BLOCK
+	16 0 DO
+		I 10 < IF SPACE THEN 
+		I .
+		64 0 DO 
+			DUP C@ EMIT
+			1+
+		LOOP
+		CR
+	LOOP
+	CR
+	;
+
+73 L
+
+73 BLOCK 
+/ 1 BLK !
+
+
+`);
+
 forth.run();
-val = forth.outputBufferoutputBufferString();
+
+val = forth.outputBufferString();
 val = forth.memory.memoryCopyFromTo(forth.memory.dsp, forth.memory.s0()-1);
 
 //val = forth.memory.memoryCopyFromTo(1018, 1050);
@@ -2704,7 +2828,14 @@ console.log("finished!");
 function addchar(char)
 {
     forth.inputBuffer.push(char & 0xFF);
-    if (char === 13) {
+
+    if (char === 95) // underscore
+    {
+        forth.inputBuffer.pop();
+        forth.inputBuffer.pop();
+    }
+
+    if (char === 10) {
         typeCharacter(32);
         forth.makeRunning();
         forth.run();
@@ -2717,7 +2848,7 @@ function typeError(aString)
 {
     for (let i = 0; i < aString.length; i++)
         typeCharacter(aString.charCodeAt(i));
-    typeCharacter(13);
+    typeCharacter(10);
 }
 
 function typeOk()
@@ -2725,7 +2856,3 @@ function typeOk()
     typeError("OK");
 }
 
-function specialchar(char)
-{
- console.log(char)   
-}

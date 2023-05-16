@@ -1,110 +1,115 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-	<title>Split Text into Parts</title>
+    <title>Split Text into Parts</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            //justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
 
-	<style>
-		body {
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			//justify-content: center;
-			height: 100vh;
-			margin: 0;
-			padding: 0;
-		}
+        input {
+            width: 75%;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+        }
 
-		textarea {
-			width: 75%;
-			padding: 10px;
-			box-sizing: border-box;
-			border: 1px solid #ccc;
-			border-radius: 5px;
-                        min-height: 50px;
-		}
-                #output-text-boxes  {
-                padding: 20px;
-                background-color: #f5f5f5;
-                width: 90%;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                }
-                #output-text-boxes button { margin-bottom: 10px; margin-top: 2px; }
-		#output-text-boxes textarea {
-			width: 75%;
-			padding: 10px;
-			box-sizing: border-box;
-			border: 1px solid #ccc;
-			border-radius: 5px;
-		}
-	</style>
+        textarea {
+            width: 75%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            min-height: 50px;
+        }
+
+        #output-text-boxes {
+            padding: 20px;
+            background-color: #f5f5f5;
+            width: 90%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #output-text-boxes button {
+            margin-bottom: 10px;
+            margin-top: 2px;
+        }
+
+        #output-text-boxes textarea {
+            width: 75%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
 </head>
+
 <body>
-	<h1>Split Text into Parts</h1>
-	<label for="input-text">Input Text:</label>
-	<br>
-	<textarea id="input-text" rows="10" cols="50"></textarea>
-	<br>
-	<button onclick="splitAndDisplay()">Split</button>
-	<br>
-	<div id="output-text-boxes"></div>
-	<script>
-
+    <h1>Split Text into Parts</h1> <label for="input-text">Input Text:</label> <br> <textarea id="input-text" rows="10" cols="50"></textarea> <br> <input id="actionOption" list=actionOptions value="summary"> <datalist id=actionOptions>
+        <option value="summary"></option>
+        <option value="long summary"></option>
+        <option value="take following subtitles transcript and rewrite it to a text as close to the original as possible:"></option>
+    </datalist> <button onclick="splitAndDisplay()">Split</button> <br>
+    <div id="output-text-boxes"></div>
+    <script>
         function splitTextIntoParts(inputText) {
-  const lines = inputText.split("\n");
-  let parts = [];
-  let currentPart = "";
-  let wordCount = 0;
-  let i = 0;
+            const lines = inputText.split("\n");
+            let parts = [];
+            let currentPart = "";
+            let wordCount = 0;
+            let i = 0;
+            while (i < lines.length) {
+                const line = lines[i];
+                const lineWords = line.split(" ");
+                if (wordCount + lineWords.length <= 2000) {
+                    currentPart += line + "\n";
+                    wordCount += lineWords.length;
+                    i++;
+                } else {
+                    parts.push(currentPart);
+                    currentPart = line + "\n";
+                    wordCount = lineWords.length;
+                    i++;
+                }
+            }
+            if (currentPart) {
+                parts.push(currentPart);
+            }
+            return parts
+        }
 
-  while (i < lines.length) {
-    const line = lines[i];
-    const lineWords = line.split(" ");
-
-    if (wordCount + lineWords.length <= 2000) {
-      currentPart += line + "\n";
-      wordCount += lineWords.length;
-      i++;
-    } else {
-      parts.push(currentPart);
-      currentPart = line + "\n";
-      wordCount = lineWords.length;
-      i++;
-    }
-  }
-
-  if (currentPart) {
-    parts.push(currentPart);
-  }
-
-  return parts
-}
-
-		function splitAndDisplay() {
-			const inputText = document.getElementById("input-text").value;
-			const parts = splitTextIntoParts(inputText);
-			const outputTextBoxes = document.getElementById("output-text-boxes");
-			outputTextBoxes.innerHTML = ""; // clear any previous output text boxes
-
-			parts.forEach((part, index) => {
-				const textBox = document.createElement("textarea");
-				textBox.id = "output-text-" + index;
-				textBox.rows = "5";
-				textBox.cols = "50";
-
-				textBox.value = "summary:\n\n"+part;
-				outputTextBoxes.appendChild(textBox);
-
-				const copyButton = document.createElement("button");
-				copyButton.innerText = "Copy";
-				copyButton.addEventListener("click", () => {
-					textBox.select();
-					document.execCommand("copy");
-				});
-				outputTextBoxes.appendChild(copyButton);
-			});
-		}
-	</script>
+        function splitAndDisplay() {
+            const inputText = document.getElementById("input-text").value;
+            const parts = splitTextIntoParts(inputText);
+            const outputTextBoxes = document.getElementById("output-text-boxes");
+            const actionOption = document.getElementById("actionOption").value;
+            outputTextBoxes.innerHTML = ""; // clear any previous output text boxes
+            parts.forEach((part, index) => {
+                const textBox = document.createElement("textarea");
+                textBox.id = "output-text-" + index;
+                textBox.rows = "5";
+                textBox.cols = "50";
+                textBox.value = actionOption + ":\n\n" + part;
+                outputTextBoxes.appendChild(textBox);
+                const copyButton = document.createElement("button");
+                copyButton.innerText = "Copy";
+                copyButton.addEventListener("click", () => {
+                    textBox.select();
+                    document.execCommand("copy");
+                });
+                outputTextBoxes.appendChild(copyButton);
+            });
+        }
+    </script>
 </body>
+
 </html>

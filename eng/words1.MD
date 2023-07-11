@@ -1,820 +1,822 @@
-- The unexpected news left me **aback**. (zpìt)
-- He was forced to **abase** himself before his superiors. (poniovat)
-- The **abasement** of her position was evident. (poníení)
+- The unexpected news left me **aback**. (zpÄ›t)
+- He was forced to **abase** himself before his superiors. (poniÅ¾ovat)
+- The **abasement** of her position was evident. (ponÃ­Å¾enÃ­)
 - The embarrassing situation made her feel **abash**. (znejistit)
-- He looked down, feeling **abashed** by the attention. (zahanbenı)
+- He looked down, feeling **abashed** by the attention. (zahanbenÃ½)
 - The storm began to **abate** in the evening. (slabnout)
-- There was a temporary **abatement** in the noise. (zmírnìní)
-- The wise **abbess** guided the nuns in their spiritual journey. (abatyše)
-- The ancient **abbey** stood majestically on the hill. (opatství)
+- There was a temporary **abatement** in the noise. (zmÃ­rnÄ›nÃ­)
+- The wise **abbess** guided the nuns in their spiritual journey. (abatyÅ¡e)
+- The ancient **abbey** stood majestically on the hill. (opatstvÃ­)
 - The **abbot** led the daily prayers in the monastery. (opat)
-- She felt a pain in her **abdomen** after eating too much. (bøicho)
-- He underwent an **abdominal** surgery to remove the tumor. (bøišní)
+- She felt a pain in her **abdomen** after eating too much. (bÅ™icho)
+- He underwent an **abdominal** surgery to remove the tumor. (bÅ™iÅ¡nÃ­)
 - The unusual behavior was an **aberration** from his usual routine. (odchylka)
-- He was charged with aiding and **abetting** the criminal. (pomáhat a podporovat)
+- He was charged with aiding and **abetting** the criminal. (pomÃ¡hat a podporovat)
 - The suspect was arrested for his **abetment** in the crime. (pomoc)
 - The accomplice was found guilty as an **abettor** in the robbery. (spolupachatel)
 - I **abhor** violence and believe in peaceful solutions. (hnusit se)
 - His **abhorrence** for injustice motivated him to fight for equality. (hnus)
-- The behavior of the dictator was **abhorrent** to human rights. (ohavnı)
-- I will **abide** by the decision of the court. (dodret)
-- Her **abiding** love for literature shaped her career as a writer. (trvalı)
-- He lived in **abject** poverty for many years. (bídny)
-- The **abjection** of his condition moved everyone's heart. (poniování)
-- The monk chose to **abnegate** worldly possessions. (zøeknout se)
-- The **abnormity** of the situation made it difficult to comprehend. (vıjimeènost)
-- The government decided to **abolish** the outdated law. (zrušit)
-- The **abolition** of slavery was a significant milestone in history. (zrušení)
-- The crime committed was heinous and **abominable**. (ohavnı)
+- The behavior of the dictator was **abhorrent** to human rights. (ohavnÃ½)
+- I will **abide** by the decision of the court. (dodrÅ¾et)
+- Her **abiding** love for literature shaped her career as a writer. (trvalÃ½)
+- He lived in **abject** poverty for many years. (bÃ­dny)
+- The **abjection** of his condition moved everyone's heart. (poniÅ¾ovÃ¡nÃ­)
+- The monk chose to **abnegate** worldly possessions. (zÅ™eknout se)
+- The **abnormity** of the situation made it difficult to comprehend. (vÃ½jimeÄnost)
+- The government decided to **abolish** the outdated law. (zruÅ¡it)
+- The **abolition** of slavery was a significant milestone in history. (zruÅ¡enÃ­)
+- The crime committed was heinous and **abominable**. (ohavnÃ½)
 - She couldn't help but **abominate** the sight of blood. (hnusit se)
 - The act of cruelty was an **abomination** against humanity. (ohavnost)
-- The museum displayed artifacts from the **aboriginal** tribes. (domorodı)
-- The project was abandoned due to **abortive** attempts to make it work. (neúspìšnı)
-- The garden **abounded** with colorful flowers. (hojnì se vyskytovat)
-- The rough surface will **abrade** the skin if not careful. (odøít)
-- He had a minor **abrasion** on his knee from the fall. (odøenina)
-- She applied cream to soothe her dry **breast**. (kùe)
-- The editor had to **abridge** the lengthy article to fit the space. (zkrátit)
-- The government threatened to **abrogate** the treaty. (zrušit)
-- The **abrogation** of the law caused controversy among citizens. (zrušení)
-- His **abrupt** departure surprised everyone. (náhlı)
-- He **abruptly** stopped talking and walked away. (náhle)
+- The museum displayed artifacts from the **aboriginal** tribes. (domorodÃ½)
+- The project was abandoned due to **abortive** attempts to make it work. (neÃºspÄ›Å¡nÃ½)
+- The garden **abounded** with colorful flowers. (hojnÄ› se vyskytovat)
+- The rough surface will **abrade** the skin if not careful. (odÅ™Ã­t)
+- He had a minor **abrasion** on his knee from the fall. (odÅ™enina)
+- She applied cream to soothe her dry **breast**. (kÅ¯Å¾e)
+- The editor had to **abridge** the lengthy article to fit the space. (zkrÃ¡tit)
+- The government threatened to **abrogate** the treaty. (zruÅ¡it)
+- The **abrogation** of the law caused controversy among citizens. (zruÅ¡enÃ­)
+- His **abrupt** departure surprised everyone. (nÃ¡hlÃ½)
+- He **abruptly** stopped talking and walked away. (nÃ¡hle)
 - The thief **absconded** with the stolen money. (uprchnout)
-- She was so **absentminded** that she forgot her own name. (roztritı)
-- He sought **absolution** for his sins in the confessional. (odpuštìní)
-- The movie was so **absorbing** that I lost track of time. (pohlcující)
-- She decided to **abstain** from voting on that particular issue. (zdret se)
+- She was so **absentminded** that she forgot her own name. (roztrÅ¾itÃ½)
+- He sought **absolution** for his sins in the confessional. (odpuÅ¡tÄ›nÃ­)
+- The movie was so **absorbing** that I lost track of time. (pohlcujÃ­cÃ­)
+- She decided to **abstain** from voting on that particular issue. (zdrÅ¾et se)
 - The **abstainer** refused to partake in alcohol. (abstinent)
-- The company's decision to close the factory caused widespread **abstention** of workers. (zdrení se)
-- He seemed **abstracted** and lost in his own thoughts. (rozptılenı)
-- She stared at the wall **abstractedly** without really seeing it. (rozptılenì)
-- The professor explained the **abstruse** concepts in a simple manner. (záhadnı)
+- The company's decision to close the factory caused widespread **abstention** of workers. (zdrÅ¾enÃ­ se)
+- He seemed **abstracted** and lost in his own thoughts. (rozptÃ½lenÃ½)
+- She stared at the wall **abstractedly** without really seeing it. (rozptÃ½lenÄ›)
+- The professor explained the **abstruse** concepts in a simple manner. (zÃ¡hadnÃ½)
 - The farmer's market had an **abundance** of fresh fruits and vegetables. (hojnost)
-- His **abusive** language offended everyone in the room. (urálivı)
-- The bridge was supported by sturdy **abutments**. (opìry)
-- The movie received **abysmal** reviews and performed poorly at the box office. (hroznı)
+- His **abusive** language offended everyone in the room. (urÃ¡Å¾livÃ½)
+- The bridge was supported by sturdy **abutments**. (opÄ›ry)
+- The movie received **abysmal** reviews and performed poorly at the box office. (hroznÃ½)
 - The king agreed to **accede** to the demands of the rebels. (souhlasit)
-- She used makeup to **accentuate** her features. (zdùraznit)
-- The **accentuation** of economic inequality was a cause for concern. (zvıraznìní)
-- He was an **accessory** to the crime and was charged accordingly. (pomocník)
+- She used makeup to **accentuate** her features. (zdÅ¯raznit)
+- The **accentuation** of economic inequality was a cause for concern. (zvÃ½raznÄ›nÃ­)
+- He was an **accessory** to the crime and was charged accordingly. (pomocnÃ­k)
 - The crowd erupted in **acclaim** as the champion entered the stadium. (ovace)
 - The hikers struggled to climb the steep **acclivity**. (svah)
 - The hotel was able to **accommodate** all the guests. (ubytovat)
-- She was known for her **accommodating** nature and willingness to help. (vstøícnı)
+- She was known for her **accommodating** nature and willingness to help. (vstÅ™Ã­cnÃ½)
 - He offered to **accompany** her to the party. (doprovodit)
 - The suspect was arrested as an **accomplice** in the robbery. (spolupachatel)
 - The new law was passed in **accordance** with public opinion. (soulad)
 - He decided to **accost** the stranger and ask for directions. (oslovit)
-- The employees were held **accountable** for their actions. (zodpovìdnı)
-- She worked in the field of **accountancy** and managed the company's finances. (úèetnictví)
-- The organization was **accredited** for its high standards. (akreditovanı)
-- The river's flow caused **accretion** of sediment along its banks. (pøírùstek)
-- Over time, the benefits of exercise will **accrue**. (nabıt)
-- Over time, interest will **accrue** on the savings account. _(nabıvat)_
-- The false **accusation** ruined his reputation. (obvinìní)
+- The employees were held **accountable** for their actions. (zodpovÄ›dnÃ½)
+- She worked in the field of **accountancy** and managed the company's finances. (ÃºÄetnictvÃ­)
+- The organization was **accredited** for its high standards. (akreditovanÃ½)
+- The river's flow caused **accretion** of sediment along its banks. (pÅ™Ã­rÅ¯stek)
+- Over time, the benefits of exercise will **accrue**. (nabÃ½t)
+- Over time, interest will **accrue** on the savings account. _(nabÃ½vat)_
+- The false **accusation** ruined his reputation. (obvinÄ›nÃ­)
 - He decided to **accuse** his neighbor of stealing his mail. (obvinit)
-- The **accuser** presented compelling evidence against the defendant. (obalobce)
+- The **accuser** presented compelling evidence against the defendant. (obÅ¾alobce)
 - She needed time to **accustom** herself to the new environment. (zvyknout si)
-- He was **accustomed** to working long hours. (zvyklı)
+- He was **accustomed** to working long hours. (zvyklÃ½)
 - Her words were filled with bitterness and **acerbity**. (kyselost)
 - The persistent **ache** in his back made it difficult to sleep. (bolest)
 - The acid rain began to **acidify** the soil. (kyselit)
 - He was quick to **acknowledge** his mistake and apologize. (uznat)
 - The company reached the **acme** of success with its latest product. (vrchol)
-- She was self-conscious about her **acne** and tried various treatments. (akné)
-- He wanted to **acquaint** himself with the local customs. (seznámit)
-- She bumped into an old **acquaintance** at the grocery store. (známı)
+- She was self-conscious about her **acne** and tried various treatments. (aknÃ©)
+- He wanted to **acquaint** himself with the local customs. (seznÃ¡mit)
+- She bumped into an old **acquaintance** at the grocery store. (znÃ¡mÃ½)
 - After much deliberation, he decided to **acquiesce** to their demands. (souhlasit)
-- The **acquiescent** crowd silently accepted the new rules. (souhlasnı)
-- The project required the **acquirement** of additional funding. (získání)
+- The **acquiescent** crowd silently accepted the new rules. (souhlasnÃ½)
+- The project required the **acquirement** of additional funding. (zÃ­skÃ¡nÃ­)
 - The company announced the **acquisition** of its competitor. (akvizice)
-- He had an **acquisitive** nature and always wanted more. (lakotnı)
-- The jury found him not guilty and he was **acquitted** of all charges. (zproštìnı)
+- He had an **acquisitive** nature and always wanted more. (lakotnÃ½)
+- The jury found him not guilty and he was **acquitted** of all charges. (zproÅ¡tÄ›nÃ½)
 - The farm had a large **acreage** of fertile land. (rozloha)
-- The **acrid** smell of smoke filled the air. (pálivı)
-- The **acrimony** between the two neighbors was evident in their arguments. (nesvár)
-- His passionate speech was meant to **actuate** the audience into action. (pobídnout)
-- She displayed great **acumen** in solving complex problems. (bystrı úsudek)
+- The **acrid** smell of smoke filled the air. (pÃ¡livÃ½)
+- The **acrimony** between the two neighbors was evident in their arguments. (nesvÃ¡r)
+- His passionate speech was meant to **actuate** the audience into action. (pobÃ­dnout)
+- She displayed great **acumen** in solving complex problems. (bystrÃ½ Ãºsudek)
 - The knife missed its target and struck a nearby **adder**. (zmije)
-- He was an **addict** and struggled with substance abuse. (závislı)
-- She **adduced** evidence to support her claims. (uvést)
-- The **adequacy** of their response was questioned. (dostateènost)
-- The sticker wouldn't **adhere** to the surface. (pøilnout)
+- He was an **addict** and struggled with substance abuse. (zÃ¡vislÃ½)
+- She **adduced** evidence to support her claims. (uvÃ©st)
+- The **adequacy** of their response was questioned. (dostateÄnost)
+- The sticker wouldn't **adhere** to the surface. (pÅ™ilnout)
 - The **adhesiveness** of the glue ensured a strong bond. (lepivost)
-- She bid a tearful **adieu** to her departing friend. (rozlouèení)
-- The seal has a thick layer of **adipose** tissue for insulation. (tukovı)
-- The **adjective** "blue" describes the color of the sky. (pøídavné jméno)
+- She bid a tearful **adieu** to her departing friend. (rozlouÄenÃ­)
+- The seal has a thick layer of **adipose** tissue for insulation. (tukovÃ½)
+- The **adjective** "blue" describes the color of the sky. (pÅ™Ã­davnÃ© jmÃ©no)
 - The two buildings **adjoin** each other in the city center. (sousedit)
-- Our office is located in the building **adjoining** the park. (pøiléhající)
-- The meeting was **adjourned** until the next day. (odroèit)
-- The judge's **adjudication** settled the dispute. (rozhodnutí)
-- The extra features are an **adjunct** to the main product. (pøídavek)
-- The land was **admeasured** to determine its boundaries. (zamìøit)
-- The **admissibility** of the evidence was debated in court. (pøípustnost)
-- Her **admission** to the prestigious university was a dream come true. (pøijetí)
+- Our office is located in the building **adjoining** the park. (pÅ™ilÃ©hajÃ­cÃ­)
+- The meeting was **adjourned** until the next day. (odroÄit)
+- The judge's **adjudication** settled the dispute. (rozhodnutÃ­)
+- The extra features are an **adjunct** to the main product. (pÅ™Ã­davek)
+- The land was **admeasured** to determine its boundaries. (zamÄ›Å™it)
+- The **admissibility** of the evidence was debated in court. (pÅ™Ã­pustnost)
+- Her **admission** to the prestigious university was a dream come true. (pÅ™ijetÃ­)
 - The **admittance** to the concert was by invitation only. (vstup)
-- The ingredients were **admixed** to create the perfect blend. (smíchat)
-- The cake batter needed a **admixture** of flour and sugar. (smìs)
+- The ingredients were **admixed** to create the perfect blend. (smÃ­chat)
+- The cake batter needed a **admixture** of flour and sugar. (smÄ›s)
 - The teacher took a moment to **admonish** the misbehaving student. (napomenout)
-- His words of **admonition** were meant to prevent future mistakes. (upozornìní)
-- The sign served as an **admonitory** warning to potential trespassers. (vıstranı)
+- His words of **admonition** were meant to prevent future mistakes. (upozornÄ›nÃ­)
+- The sign served as an **admonitory** warning to potential trespassers. (vÃ½straÅ¾nÃ½)
 - There was much **ado** about the missing keys, but they were eventually found. (rozruch)
 - She loved to **adorn** herself with colorful jewelry. (ozdobit)
 - The room was decorated with beautiful **adornments**. (ozdoby)
-- They went on a cruise along the **Adriatic** Sea. (Jaderské moøe)
-- The boat drifted **adrift** in the open ocean. (uvázlı)
-- He was known for his **adroit** handling of difficult situations. (obratnı)
+- They went on a cruise along the **Adriatic** Sea. (JaderskÃ© moÅ™e)
+- The boat drifted **adrift** in the open ocean. (uvÃ¡zlÃ½)
+- He was known for his **adroit** handling of difficult situations. (obratnÃ½)
 - She **adulated** her favorite singer, hanging posters of him on her bedroom wall. (chlubit)
 - The actor received much **adulation** from his fans. (oslava)
-- The food was found to be **adulterated** with harmful chemicals. (zpálenı)
-- **Adulteration** of food products is illegal and poses health risks. (zpálení)
-- She accused her husband of committing **adultery**. (cizoloství)
-- The artist used shadows to **adumbrate** the figure. (naznaèit)
-- The unexpected rain was an **adventitious** occurrence during the picnic. (náhodnı)
-- He explained the concept using an **adverb** as an example. (pøíslovce)
-- The opposing team was a tough **adversary** to beat. (protivník)
-- The weather conditions were **adverse** to outdoor activities. (nevıhodnı)
-- It is **advisable** to bring an umbrella in case of rain. (vhodnı)
-- The **aerial** view of the city was breathtaking. (vzdušnı)
-- The sound of music carried from **afar**. (z dálky)
-- She had a warm and **affable** personality. (pøívìtivı)
-- The business **affair** required careful negotiation. (zákulisí)
+- The food was found to be **adulterated** with harmful chemicals. (zpÃ¡lenÃ½)
+- **Adulteration** of food products is illegal and poses health risks. (zpÃ¡lenÃ­)
+- She accused her husband of committing **adultery**. (cizoloÅ¾stvÃ­)
+- The artist used shadows to **adumbrate** the figure. (naznaÄit)
+- The unexpected rain was an **adventitious** occurrence during the picnic. (nÃ¡hodnÃ½)
+- He explained the concept using an **adverb** as an example. (pÅ™Ã­slovce)
+- The opposing team was a tough **adversary** to beat. (protivnÃ­k)
+- The weather conditions were **adverse** to outdoor activities. (nevÃ½hodnÃ½)
+- It is **advisable** to bring an umbrella in case of rain. (vhodnÃ½)
+- The **aerial** view of the city was breathtaking. (vzduÅ¡nÃ½)
+- The sound of music carried from **afar**. (z dÃ¡lky)
+- She had a warm and **affable** personality. (pÅ™Ã­vÄ›tivÃ½)
+- The business **affair** required careful negotiation. (zÃ¡kulisÃ­)
 - His words had a profound **affect** on me. (vliv)
-- She put on an **affectation** of indifference. (náchylka)
-- He tried to appear **affected** by the tragedy, but his true emotions showed. (dotèenı)
-- The child received **affectionate** hugs from his grandparents. (laskavı)
-- The movie had a profound **affective** impact on the audience, leaving many in tears. _(emocionální)_
+- She put on an **affectation** of indifference. (nÃ¡chylka)
+- He tried to appear **affected** by the tragedy, but his true emotions showed. (dotÄenÃ½)
+- The child received **affectionate** hugs from his grandparents. (laskavÃ½)
+- The movie had a profound **affective** impact on the audience, leaving many in tears. _(emocionÃ¡lnÃ­)_
 - The company decided to **affiliate** with a larger corporation. (spojit se)
-- She sought **affiliation** with a prestigious academic institution. (pøipojení)
-- They felt an immediate **affinity** for each other. (pøíbuznost)
+- She sought **affiliation** with a prestigious academic institution. (pÅ™ipojenÃ­)
+- They felt an immediate **affinity** for each other. (pÅ™Ã­buznost)
 - He wanted to **affirm** his commitment to the cause. (potvrdit)
-- Her **affirmation** of love brought tears to his eyes. (potvrzení)
-- He gave an **affirmative** response to the question. (kladnı)
-- She used a staple to **affix** the papers together. (pøipevnit)
+- Her **affirmation** of love brought tears to his eyes. (potvrzenÃ­)
+- He gave an **affirmative** response to the question. (kladnÃ½)
+- She used a staple to **affix** the papers together. (pÅ™ipevnit)
 - The disease began to **afflict** the entire population. (postihovat)
-- The **affliction** caused him great pain and discomfort. (utrpení)
-- They lived a life of **affluence** and luxury. (bohatství)
-- The neighborhood was known for its **affluent** residents. (bohatı)
+- The **affliction** caused him great pain and discomfort. (utrpenÃ­)
+- They lived a life of **affluence** and luxury. (bohatstvÃ­)
+- The neighborhood was known for its **affluent** residents. (bohatÃ½)
 - The river was filled with **affloux** after the heavy rain. (bahno)
 - The government decided to **afforest** the barren land. (zalesnit)
-- The king granted the people the right to **affranchise** themselves. (udìlit právo volit)
-- The bar fight turned into a chaotic **affray**. (potyèka)
-- His disrespectful comment was an **affront** to her. (uráka)
-- The building was set **afire** in a deliberate act of arson. (zapálit)
+- The king granted the people the right to **affranchise** themselves. (udÄ›lit prÃ¡vo volit)
+- The bar fight turned into a chaotic **affray**. (potyÄka)
+- His disrespectful comment was an **affront** to her. (urÃ¡Å¾ka)
+- The building was set **afire** in a deliberate act of arson. (zapÃ¡lit)
 - The building was set **aflame** by the angry mob. (v plamenech)
-- The boat was set **afloat** and sailed away. (na hladinì)
-- The project was set **afoot** and preparations began. (rozbìhnout)
+- The boat was set **afloat** and sailed away. (na hladinÄ›)
+- The project was set **afoot** and preparations began. (rozbÄ›hnout)
 - They decided to start **afresh** and leave the past behind. (od znova)
-- The issue was an **afterthought** and was not initially considered. (pozdní úvaha)
-- She looked at him with **agape** eyes, unable to speak. (otevøenı)
-- Her beauty seemed **ageless**, untouched by time. (bezvìkı)
+- The issue was an **afterthought** and was not initially considered. (pozdnÃ­ Ãºvaha)
+- She looked at him with **agape** eyes, unable to speak. (otevÅ™enÃ½)
+- Her beauty seemed **ageless**, untouched by time. (bezvÄ›kÃ½)
 - The glue was used to **agglutinate** the pieces together. (spojit)
-- The **agglutination** of the cells formed a solid mass. (slepení)
-- The company decided to **aggrandize** its operations by acquiring new businesses. (zvìtšit)
-- His constant complaints began to **aggravate** everyone around him. (zhoršovat)
+- The **agglutination** of the cells formed a solid mass. (slepenÃ­)
+- The company decided to **aggrandize** its operations by acquiring new businesses. (zvÄ›tÅ¡it)
+- His constant complaints began to **aggravate** everyone around him. (zhorÅ¡ovat)
 - The loss of her loved one **aggrieved** her deeply. (zarmoutit)
-- They stood **aghast** at the sight of the wreckage. (v zdìšení)
-- The news of the impending disaster began to **agitate** the public. (vzrušovat)
-- Her face was **aglow** with happiness. (záøící)
-- She accidentally caught her **agnail** on the door handle. (zarùstající nehtová kùièka)
-- The children were **agog** with excitement for the party. (nadhodnocování)
-- The proposal was **agreeable** to all parties involved. (souhlasnı)
-- He was **ail** with a persistent cough. (trápit)
-- The doctor diagnosed her with a minor **ailing**. (potíe)
+- They stood **aghast** at the sight of the wreckage. (v zdÄ›Å¡enÃ­)
+- The news of the impending disaster began to **agitate** the public. (vzruÅ¡ovat)
+- Her face was **aglow** with happiness. (zÃ¡Å™Ã­cÃ­)
+- She accidentally caught her **agnail** on the door handle. (zarÅ¯stajÃ­cÃ­ nehtovÃ¡ kÅ¯Å¾iÄka)
+- The children were **agog** with excitement for the party. (nadhodnocovÃ¡nÃ­)
+- The proposal was **agreeable** to all parties involved. (souhlasnÃ½)
+- He was **ail** with a persistent cough. (trÃ¡pit)
+- The doctor diagnosed her with a minor **ailing**. (potÃ­Å¾e)
 - The doctor prescribed medication to relieve his **ailment**. (nemoc)
-- Their actions seemed **aimless**, lacking a clear purpose. (bezúèelnı)
-- The air cushion provided a soft landing for the passengers. (vzduchovı polštáø)
-- She worked as an **airhostess** on international flights. (letecká prùvodèí)
-- He wore an **air-jacket** to protect himself from the cold. (nafukovací bunda)
-- The windows were sealed to make the room **airproof**. (nepropustnı pro vzduch)
-- The door was left slightly **ajar**. (na škvíøe)
+- Their actions seemed **aimless**, lacking a clear purpose. (bezÃºÄelnÃ½)
+- The air cushion provided a soft landing for the passengers. (vzduchovÃ½ polÅ¡tÃ¡Å™)
+- She worked as an **airhostess** on international flights. (leteckÃ¡ prÅ¯vodÄÃ­)
+- He wore an **air-jacket** to protect himself from the cold. (nafukovacÃ­ bunda)
+- The windows were sealed to make the room **airproof**. (nepropustnÃ½ pro vzduch)
+- The door was left slightly **ajar**. (na Å¡kvÃ­Å™e)
 - He stood with his hands on his hips, his arms **akimbo**. (na boky)
-- The two paintings had an **akin** style and subject matter. (pøíbuznı)
+- The two paintings had an **akin** style and subject matter. (pÅ™Ã­buznÃ½)
 - She acted with **alacrity**, responding quickly to the situation. (ochota)
 - **Alas**, I have lost my wallet. (ach jo)
-- The white rabbit had **albino** fur and red eyes. (albín)
-- The **albumen** of the egg provides protein. (bílek)
+- The white rabbit had **albino** fur and red eyes. (albÃ­n)
+- The **albumen** of the egg provides protein. (bÃ­lek)
 - The laboratory used **albumin** for various experiments. (albumin)
-- They sat in the cozy **alcove** by the window. (vıklenek)
-- The forest was filled with tall **alder** trees. (olše)
+- They sat in the cozy **alcove** by the window. (vÃ½klenek)
+- The forest was filled with tall **alder** trees. (olÅ¡e)
 - He enjoyed a glass of **ale** at the local pub. (pivo)
-- She ran with **alertness** to catch the bus. (bdìlost)
-- His **alienage** made it difficult for him to integrate into society. (cizí pùvod)
-- The divorce caused a sense of **alienation** between them. (osamìlost)
-- The bird landed **alight** on the branch. (pøistát)
-- The **alimentary** canal is responsible for digestion. (vıivovı)
-- The doctor explained the patient's **alimentation** needs. (vıiva)
+- She ran with **alertness** to catch the bus. (bdÄ›lost)
+- His **alienage** made it difficult for him to integrate into society. (cizÃ­ pÅ¯vod)
+- The divorce caused a sense of **alienation** between them. (osamÄ›lost)
+- The bird landed **alight** on the branch. (pÅ™istÃ¡t)
+- The **alimentary** canal is responsible for digestion. (vÃ½Å¾ivovÃ½)
+- The doctor explained the patient's **alimentation** needs. (vÃ½Å¾iva)
 - She received a monthly **alimony** payment after the divorce. (alimenty)
-- The solution turned **alkaline** when mixed with water. (zásaditı)
+- The solution turned **alkaline** when mixed with water. (zÃ¡saditÃ½)
 - The medication helps to **allay** the symptoms. (utlumit)
-- The **allegation** of fraud was investigated by the authorities. (obvinìní)
+- The **allegation** of fraud was investigated by the authorities. (obvinÄ›nÃ­)
 - He chose to **allege** his innocence in court. (tvrdit)
-- The **alleged** thief was caught on camera. (údajnı)
-- The medication will help **alleviate** the pain. (zmírnit)
-- They walked down the narrow **alley** between the buildings. (ulièka)
-- The land was **allotted** for farming purposes. (pøidìlit)
-- She received her fair **allotment** of the inheritance. (pøidìlení)
-- The expenses were within the **allowable** budget. (pøípustnı)
-- He received a monthly **allowance** from his parents. (kapesné)
-- The recipe called for a pinch of **allspice**. (nové koøení)
-- He chose to **allude** to the issue rather than addressing it directly. (naráet)
-- The mysterious **allure** of the abandoned mansion attracted adventurous explorers. _(pøitalivost)_
-- The picturesque view of the beach had a captivating **allurment**. (pøitalivost)
-- His speech made a subtle **allusion** to historical events. (naráka)
-- The novel was filled with **allusive** references to classic literature. (naráející)
+- The **alleged** thief was caught on camera. (ÃºdajnÃ½)
+- The medication will help **alleviate** the pain. (zmÃ­rnit)
+- They walked down the narrow **alley** between the buildings. (uliÄka)
+- The land was **allotted** for farming purposes. (pÅ™idÄ›lit)
+- She received her fair **allotment** of the inheritance. (pÅ™idÄ›lenÃ­)
+- The expenses were within the **allowable** budget. (pÅ™Ã­pustnÃ½)
+- He received a monthly **allowance** from his parents. (kapesnÃ©)
+- The recipe called for a pinch of **allspice**. (novÃ© koÅ™enÃ­)
+- He chose to **allude** to the issue rather than addressing it directly. (narÃ¡Å¾et)
+- The mysterious **allure** of the abandoned mansion attracted adventurous explorers. _(pÅ™itaÅ¾livost)_
+- The picturesque view of the beach had a captivating **allurment**. (pÅ™itaÅ¾livost)
+- His speech made a subtle **allusion** to historical events. (narÃ¡Å¾ka)
+- The novel was filled with **allusive** references to classic literature. (narÃ¡Å¾ejÃ­cÃ­)
 - She formed a strong **ally** with her business partner. (spojenec)
-- The **almond** tree blossomed in the spring. (mandloò)
+- The **almond** tree blossomed in the spring. (mandloÅˆ)
 - The birds flew **aloft** in the clear blue sky. (vzduchem)
-- He preferred to keep himself **aloof** from social gatherings. (vzdálenı)
-- The forest was **alight** with the glow of fireflies. (svítící)
-- The boat floated **afloat** on the calm water. (na hladinì)
+- He preferred to keep himself **aloof** from social gatherings. (vzdÃ¡lenÃ½)
+- The forest was **alight** with the glow of fireflies. (svÃ­tÃ­cÃ­)
+- The boat floated **afloat** on the calm water. (na hladinÄ›)
 - They decided to start **afresh** in a new city. (odznova)
-- The idea of going to the beach was an **afterthought**. (pozdìjší myšlenka)
-- The children looked at the magician with **agape** mouths. (roztvorenı)
-- The artist's work was timeless and **ageless**. (bezèasovı)
-- The glue was used to **agglutinate** the broken pieces. (spoji)
+- The idea of going to the beach was an **afterthought**. (pozdÄ›jÅ¡Ã­ myÅ¡lenka)
+- The children looked at the magician with **agape** mouths. (roztvorenÃ½)
+- The artist's work was timeless and **ageless**. (bezÄasovÃ½)
+- The glue was used to **agglutinate** the broken pieces. (spojiÅ¥)
 - The **agglutination** of blood cells can cause clots. (spojenie)
-- The company wanted to **aggrandize** its market share. (zväèši)
-- The constant noise began to **aggravate** her headache. (zhoršova)
-- The loss of her pet **aggrieved** her deeply. (sk¾úèi)
-- They stood **aghast** at the sight of the accident. (ohromenı)
-- The news began to **agitate** the public. (vyvola nepokoj)
-- Her face was **aglow** with excitement. (iarivı)
-- She accidentally cut her **agnail** while trimming her nails. (zakrivená koièka nechtu)
-- The children were **agog** with anticipation for the party. (v napätí)
-- The proposal was **agreeable** to all parties involved. (súhlasnı)
-- He was **ailing** from a persistent cough. (slabnúci)
+- The company wanted to **aggrandize** its market share. (zvÃ¤ÄÅ¡iÅ¥)
+- The constant noise began to **aggravate** her headache. (zhorÅ¡ovaÅ¥)
+- The loss of her pet **aggrieved** her deeply. (skÄ¾ÃºÄiÅ¥)
+- They stood **aghast** at the sight of the accident. (ohromenÃ½)
+- The news began to **agitate** the public. (vyvolaÅ¥ nepokoj)
+- Her face was **aglow** with excitement. (Å¾iarivÃ½)
+- She accidentally cut her **agnail** while trimming her nails. (zakrivenÃ¡ koÅ¾iÄka nechtu)
+- The children were **agog** with anticipation for the party. (v napÃ¤tÃ­)
+- The proposal was **agreeable** to all parties involved. (sÃºhlasnÃ½)
+- He was **ailing** from a persistent cough. (slabnÃºci)
 - The doctor diagnosed her with a minor **ailment**. (choroba)
-- Their actions seemed **aimless**, lacking direction. (bezcie¾ny)
-- The air cushion provided a soft landing. (vzduchovı vankúš)
-- She worked as an **airhostess** on international flights. (letecká sprievodkyòa)
-- He wore an **air-jacket** to stay warm in the cold weather. (vzduchová bunda)
-- The windows were sealed to be **airproof**. (nepriepustnı pre vzduch)
-- The door was left slightly **ajar**. (na škáre)
+- Their actions seemed **aimless**, lacking direction. (bezcieÄ¾ny)
+- The air cushion provided a soft landing. (vzduchovÃ½ vankÃºÅ¡)
+- She worked as an **airhostess** on international flights. (leteckÃ¡ sprievodkyÅˆa)
+- He wore an **air-jacket** to stay warm in the cold weather. (vzduchovÃ¡ bunda)
+- The windows were sealed to be **airproof**. (nepriepustnÃ½ pre vzduch)
+- The door was left slightly **ajar**. (na Å¡kÃ¡re)
 - He stood with his arms **akimbo**, a confident stance. (ruky na bokoch)
-- The two paintings had an **akin** style and theme. (príbuznı)
+- The two paintings had an **akin** style and theme. (prÃ­buznÃ½)
 - She acted with **alacrity**, showing enthusiasm. (ochota)
 - **Alas**, she couldn't find her lost keys. (ach)
-- The **albino** rabbit had white fur and pink eyes. (albín)
+- The **albino** rabbit had white fur and pink eyes. (albÃ­n)
 - The **albumen** of the egg is the white part. (bielko)
-- The laboratory used **albumin** in their experiments. (albumín)
-- They sat in the cozy **alcove** by the window. (vıklenok)
-- The river was lined with **alder** trees. (olša)
+- The laboratory used **albumin** in their experiments. (albumÃ­n)
+- They sat in the cozy **alcove** by the window. (vÃ½klenok)
+- The river was lined with **alder** trees. (olÅ¡a)
 - He enjoyed a pint of **ale** at the pub. (pivo)
-- She acted with **alertness**, ready to respond. (bdìlost)
-- His **alienage** made it difficult for him to fit in. (cudzineckı stav)
+- She acted with **alertness**, ready to respond. (bdÄ›lost)
+- His **alienage** made it difficult for him to fit in. (cudzineckÃ½ stav)
 - The divorce caused a sense of **alienation** between them. (odcudzenie)
-- The bird landed **alight** on the branch. (pristá)
-- The **alimentary** canal is responsible for digestion. (tráviaci)
-- The doctor explained her **alimentation** needs. (vıiva)
+- The bird landed **alight** on the branch. (pristÃ¡Å¥)
+- The **alimentary** canal is responsible for digestion. (trÃ¡viaci)
+- The doctor explained her **alimentation** needs. (vÃ½Å¾iva)
 - She received monthly **alimony** after the divorce. (alimenty)
-- The solution turned **alkaline** when mixed with water. (alkalickı)
-- The medication helps to **allay** the pain. (utíši)
+- The solution turned **alkaline** when mixed with water. (alkalickÃ½)
+- The medication helps to **allay** the pain. (utÃ­Å¡iÅ¥)
 - The **allegation** of fraud was investigated. (obvinenie)
-- He chose to **allege** his innocence in court. (tvrdi)
-- The **alleged** thief was caught by the police. (podozrivı)
-- The medication will help **alleviate** the symptoms. (zmierni)
-- They walked down the narrow **alley** between buildings. (ulièka)
-- The land was **allotted** for farming. (prideli)
+- He chose to **allege** his innocence in court. (tvrdiÅ¥)
+- The **alleged** thief was caught by the police. (podozrivÃ½)
+- The medication will help **alleviate** the symptoms. (zmierniÅ¥)
+- They walked down the narrow **alley** between buildings. (uliÄka)
+- The land was **allotted** for farming. (prideliÅ¥)
 - She received her fair **allotment** of the inheritance. (podiel)
-- The expenses were within the **allowable** budget. (povolenı)
-- He received a monthly **allowance** from his parents. (vreckové)
-- The recipe called for a pinch of **allspice**. (koreninovı klinèek)
-- He chose to **allude** to the topic rather than directly addressing it. (napomína)
-- The promise of a promotion was an **allure** to him. (pokušenie)
-- The view of the beach had a captivating **allurment**. (èarovné úèinky)
-- His speech made a subtle **allusion** to historical events. (naráka)
-- The novel was filled with **allusive** references to other works. (naráajúci)
+- The expenses were within the **allowable** budget. (povolenÃ½)
+- He received a monthly **allowance** from his parents. (vreckovÃ©)
+- The recipe called for a pinch of **allspice**. (koreninovÃ½ klinÄek)
+- He chose to **allude** to the topic rather than directly addressing it. (napomÃ­naÅ¥)
+- The promise of a promotion was an **allure** to him. (pokuÅ¡enie)
+- The view of the beach had a captivating **allurment**. (ÄarovnÃ© ÃºÄinky)
+- His speech made a subtle **allusion** to historical events. (narÃ¡Å¾ka)
+- The novel was filled with **allusive** references to other works. (narÃ¡Å¾ajÃºci)
 - She formed a strong **ally** with her coworker. (spojenec)
-- The **almond** tree blossomed beautifully in the spring. (mand¾ovı)
+- The **almond** tree blossomed beautifully in the spring. (mandÄ¾ovÃ½)
 - The birds flew **aloft** in the clear sky. (vzduchom)
-- He preferred to keep himself **aloof** from social gatherings. (vyhıba sa)
-- The forest was **alight** with the glow of fireflies. (osvetlenı)
+- He preferred to keep himself **aloof** from social gatherings. (vyhÃ½baÅ¥ sa)
+- The forest was **alight** with the glow of fireflies. (osvetlenÃ½)
 - The boat floated **afloat** on the calm water. (nad vodou)
 - They decided to start **afresh** in a new city. (odznova)
-- The issue was an **afterthought**, not originally planned. (náhodné rozhodnutie)
-- The children looked at the magician **agape**, amazed. (prekvapenı)
-- She had an **ageless** beauty that defied time. _(nestárnoucí)_
+- The issue was an **afterthought**, not originally planned. (nÃ¡hodnÃ© rozhodnutie)
+- The children looked at the magician **agape**, amazed. (prekvapenÃ½)
+- She had an **ageless** beauty that defied time. _(nestÃ¡rnoucÃ­)_
 - The glue was used to **agglutinate** the broken pieces of pottery. (lepiti)
 - The **agglutination** of blood cells is an important process in clot formation. (slepovanie)
-- The company's goal was to **aggrandize** its presence in the global market. (zväèši)
-- The constant noise began to **aggravate** her migraine. (zhoršova)
-- The loss of her beloved pet **aggrieved** her deeply. (sk¾úèenı)
-- They stood **aghast** at the horrifying sight before them. (ohromenı)
-- The news began to **agitate** the public, leading to protests. (vyvola nepokoj)
-- Her face was **aglow** with joy as she received the good news. (iarivı)
-- She accidentally cut her **agnail** while trimming her nails. (zapálená koièka)
-- The children were **agog** with excitement for the circus performance. (preniknutı)
-- The proposal was **agreeable** to all parties involved. (súhlasnı)
-- He was **ailing** from a persistent cough and fever. (trápi)
+- The company's goal was to **aggrandize** its presence in the global market. (zvÃ¤ÄÅ¡iÅ¥)
+- The constant noise began to **aggravate** her migraine. (zhorÅ¡ovaÅ¥)
+- The loss of her beloved pet **aggrieved** her deeply. (skÄ¾ÃºÄenÃ½)
+- They stood **aghast** at the horrifying sight before them. (ohromenÃ½)
+- The news began to **agitate** the public, leading to protests. (vyvolaÅ¥ nepokoj)
+- Her face was **aglow** with joy as she received the good news. (Å¾iarivÃ½)
+- She accidentally cut her **agnail** while trimming her nails. (zapÃ¡lenÃ¡ koÅ¾iÄka)
+- The children were **agog** with excitement for the circus performance. (preniknutÃ½)
+- The proposal was **agreeable** to all parties involved. (sÃºhlasnÃ½)
+- He was **ailing** from a persistent cough and fever. (trÃ¡piÅ¥)
 - The doctor diagnosed her with a minor **ailment** and prescribed medication. (ochorenie)
-- Their actions seemed **aimless**, lacking a clear purpose or direction. (bezcie¾ny)
-- The air cushion provided a soft and comfortable landing. (vzduchovı vankúš)
-- She worked as an **airhostess** on international flights. (letecká sprievodkyòa)
-- He wore an **air-jacket** to stay warm in the freezing temperatures. (vzduchová bunda)
-- The windows were sealed tightly to be **airproof** and prevent drafts. (nepriepustnı pre vzduch)
-- The door was left slightly **ajar** to allow some fresh air into the room. (vz¾ah)
+- Their actions seemed **aimless**, lacking a clear purpose or direction. (bezcieÄ¾ny)
+- The air cushion provided a soft and comfortable landing. (vzduchovÃ½ vankÃºÅ¡)
+- She worked as an **airhostess** on international flights. (leteckÃ¡ sprievodkyÅˆa)
+- He wore an **air-jacket** to stay warm in the freezing temperatures. (vzduchovÃ¡ bunda)
+- The windows were sealed tightly to be **airproof** and prevent drafts. (nepriepustnÃ½ pre vzduch)
+- The door was left slightly **ajar** to allow some fresh air into the room. (vzÄ¾ah)
 - He stood with his arms **akimbo**, exuding confidence. (na boky)
-- The two paintings had an **akin** style, showcasing the artist's signature brushstrokes. (podobnı)
+- The two paintings had an **akin** style, showcasing the artist's signature brushstrokes. (podobnÃ½)
 - She acted with **alacrity**, swiftly completing her tasks. (ochota)
 - **Alas**, they had missed the last train home. (ach)
-- The **albino** rabbit had snow-white fur and pink eyes. (albín)
+- The **albino** rabbit had snow-white fur and pink eyes. (albÃ­n)
 - The **albumen** of the egg provides a rich source of protein. (bielkovina)
-- The laboratory used **albumin** for various scientific experiments. (albumín)
-- They sat in the cozy **alcove** by the fireplace, enjoying their evening. (nástenka)
-- The riverbank was shaded by tall **alder** trees. (olša)
+- The laboratory used **albumin** for various scientific experiments. (albumÃ­n)
+- They sat in the cozy **alcove** by the fireplace, enjoying their evening. (nÃ¡stenka)
+- The riverbank was shaded by tall **alder** trees. (olÅ¡a)
 - He savored a glass of refreshing **ale** at the local pub. (pivo)
-- She acted with **alertness**, always aware of her surroundings. (bdìlost)
+- She acted with **alertness**, always aware of her surroundings. (bdÄ›lost)
 - His **alienage** made it challenging for him to adjust to a new country. (stav cudzinca)
-- The divorce caused a sense of **alienation** between the former partners. (odèlenenie)
-- The bird landed **alight** on the branch, its feathers shimmering in the sunlight. (pristá)
-- The **alimentary** canal is responsible for digestion in the human body. (tráviaci)
-- The doctor explained the importance of proper **alimentation** for a healthy lifestyle. (vıiva)
+- The divorce caused a sense of **alienation** between the former partners. (odÄlenenie)
+- The bird landed **alight** on the branch, its feathers shimmering in the sunlight. (pristÃ¡Å¥)
+- The **alimentary** canal is responsible for digestion in the human body. (trÃ¡viaci)
+- The doctor explained the importance of proper **alimentation** for a healthy lifestyle. (vÃ½Å¾iva)
 - She received monthly **alimony** payments following the divorce settlement. (alimenty)
-- The solution turned **alkaline** when mixed with water, indicating its basic pH. (alkalickı)
-- The medication helps to **allay** the symptoms and provide relief. (zmierni)
+- The solution turned **alkaline** when mixed with water, indicating its basic pH. (alkalickÃ½)
+- The medication helps to **allay** the symptoms and provide relief. (zmierniÅ¥)
 - The **allegation** of corruption sparked a heated debate among politicians. (obvinenie)
-- He chose to **allege** his innocence, firmly denying the accusations against him. (tvrdi)
-- The **alleged** thief was apprehended by the police based on eyewitness accounts. (podozrivı)
-- The medication will help **alleviate** the pain and discomfort. (zmieròova)
-- They walked down the narrow **alley** in the old town, exploring its hidden charm. (ulièka)
-- The land was **allotted** to different farmers for cultivation. (prideli)
+- He chose to **allege** his innocence, firmly denying the accusations against him. (tvrdiÅ¥)
+- The **alleged** thief was apprehended by the police based on eyewitness accounts. (podozrivÃ½)
+- The medication will help **alleviate** the pain and discomfort. (zmierÅˆovaÅ¥)
+- They walked down the narrow **alley** in the old town, exploring its hidden charm. (uliÄka)
+- The land was **allotted** to different farmers for cultivation. (prideliÅ¥)
 - She received her fair **allotment** of the inheritance, as specified in the will. (podiel)
-- The expenses were within the **allowable** budget, ensuring financial compliance. (povolenı)
-- He received a monthly **allowance** from his parents to cover his living expenses. (vreckové)
-- The recipe called for a pinch of aromatic **allspice** to enhance the flavor. (nové korenie)
-- He chose to **allude** to the topic indirectly, leaving room for interpretation. (naráa)
-- The promise of a promotion was an **allure** that motivated him to work harder. (zvábi)
-- The view of the ocean had a captivating **allurment**, drawing visitors from far and wide. (pôsobivos)
-- His speech made a subtle **allusion** to historical events, hinting at their significance. (naráka)
-- The novel was filled with **allusive** references to famous literary works, adding depth to the story. (naráajúci)
+- The expenses were within the **allowable** budget, ensuring financial compliance. (povolenÃ½)
+- He received a monthly **allowance** from his parents to cover his living expenses. (vreckovÃ©)
+- The recipe called for a pinch of aromatic **allspice** to enhance the flavor. (novÃ© korenie)
+- He chose to **allude** to the topic indirectly, leaving room for interpretation. (narÃ¡Å¾aÅ¥)
+- The promise of a promotion was an **allure** that motivated him to work harder. (zvÃ¡biÅ¥)
+- The view of the ocean had a captivating **allurment**, drawing visitors from far and wide. (pÃ´sobivosÅ¥)
+- His speech made a subtle **allusion** to historical events, hinting at their significance. (narÃ¡Å¾ka)
+- The novel was filled with **allusive** references to famous literary works, adding depth to the story. (narÃ¡Å¾ajÃºci)
 - She formed a strong **ally** with her colleagues to advocate for workplace equality. (spojenec)
-- The **almond** tree blossomed with delicate white flowers in the spring. (mand¾a)
+- The **almond** tree blossomed with delicate white flowers in the spring. (mandÄ¾a)
 - The birds flew **aloft** in graceful formations against the backdrop of the sunset. (vzduchom)
-- He preferred to keep himself **aloof** from social gatherings, enjoying solitude. (odstrèenı)
-- The forest was **alight** with the warm glow of fireflies, creating a magical atmosphere. (oiarovanı)
+- He preferred to keep himself **aloof** from social gatherings, enjoying solitude. (odstrÄenÃ½)
+- The forest was **alight** with the warm glow of fireflies, creating a magical atmosphere. (oÅ¾iarovanÃ½)
 - The boat floated **afloat** on the calm waters of the lake, gently rocking with the waves. (nad hladinou)
 - They decided to start **afresh** in a new city, leaving their old lives behind. (odznova)
-- The issue was an **afterthought**, brought up in the final stages of the discussion. (nápad po)
-- The children looked at the magician **agape**, amazed by his tricks. (prekvapenı)
-- The artist's work was timeless and **ageless**, resonating with people of all generations. (veènı)
-- The glue was used to **agglutinate** the pieces of the broken vase. (lepí)
+- The issue was an **afterthought**, brought up in the final stages of the discussion. (nÃ¡pad po)
+- The children looked at the magician **agape**, amazed by his tricks. (prekvapenÃ½)
+- The artist's work was timeless and **ageless**, resonating with people of all generations. (veÄnÃ½)
+- The glue was used to **agglutinate** the pieces of the broken vase. (lepÃ­Å¥)
 - The **agglutination** of blood cells is an important part of the clotting process. (spojenie)
-- The company aimed to **aggrandize** its brand by expanding into international markets. (zvìtšit)
-- The constant noise from the construction site began to **aggravate** the residents. (drádit)
-- The loss of her job **aggrieved** her deeply, leaving her feeling frustrated and helpless. (rozhoøèit)
-- They stood **aghast** as they witnessed the destructive power of the storm. (v hrùze)
+- The company aimed to **aggrandize** its brand by expanding into international markets. (zvÄ›tÅ¡it)
+- The constant noise from the construction site began to **aggravate** the residents. (drÃ¡Å¾dit)
+- The loss of her job **aggrieved** her deeply, leaving her feeling frustrated and helpless. (rozhoÅ™Äit)
+- They stood **aghast** as they witnessed the destructive power of the storm. (v hrÅ¯ze)
 - The news of the impending layoffs began to **agitate** the employees. (znepokojovat)
-- Her face was **aglow** with happiness as she celebrated her graduation. (záøící)
-- She accidentally injured her **agnail** while filing her nails. (vøídek)
-- The children were **agog** with excitement as they opened their Christmas presents. (vyjevenı)
-- The proposal was **agreeable** to all parties involved, leading to a successful agreement. (souhlasnı)
-- He was **ailing** from a persistent cough and fever, so he decided to see a doctor. (trpící)
-- The doctor diagnosed her with a minor **ailment** and prescribed medication to treat it. (onemocnìní)
-- Their actions seemed **aimless** as they wandered through the park without a clear purpose. (bezcílnı)
-- The air cushion provided a soft landing for the skydivers. (vzduchovı polštáø)
-- She worked as an **airhostess** on a major airline, serving passengers during flights. (letecká prùvodèí)
-- He wore an **air-jacket** to protect himself from the cold winds. (zateplená bunda)
-- The windows were sealed tightly to be **airproof**, preventing any drafts from entering. (nepropustnı pro vzduch)
-- The door was left slightly **ajar** to allow some fresh air into the room. (nepoøádnì zavøenı)
+- Her face was **aglow** with happiness as she celebrated her graduation. (zÃ¡Å™Ã­cÃ­)
+- She accidentally injured her **agnail** while filing her nails. (vÅ™Ã­dek)
+- The children were **agog** with excitement as they opened their Christmas presents. (vyjevenÃ½)
+- The proposal was **agreeable** to all parties involved, leading to a successful agreement. (souhlasnÃ½)
+- He was **ailing** from a persistent cough and fever, so he decided to see a doctor. (trpÃ­cÃ­)
+- The doctor diagnosed her with a minor **ailment** and prescribed medication to treat it. (onemocnÄ›nÃ­)
+- Their actions seemed **aimless** as they wandered through the park without a clear purpose. (bezcÃ­lnÃ½)
+- The air cushion provided a soft landing for the skydivers. (vzduchovÃ½ polÅ¡tÃ¡Å™)
+- She worked as an **airhostess** on a major airline, serving passengers during flights. (leteckÃ¡ prÅ¯vodÄÃ­)
+- He wore an **air-jacket** to protect himself from the cold winds. (zateplenÃ¡ bunda)
+- The windows were sealed tightly to be **airproof**, preventing any drafts from entering. (nepropustnÃ½ pro vzduch)
+- The door was left slightly **ajar** to allow some fresh air into the room. (nepoÅ™Ã¡dnÄ› zavÅ™enÃ½)
 - He stood with his arms **akimbo**, displaying confidence and authority. (na boky)
-- The two paintings had an **akin** style, indicating the influence of the same artistic movement. (pøíbuznı)
+- The two paintings had an **akin** style, indicating the influence of the same artistic movement. (pÅ™Ã­buznÃ½)
 - She acted with **alacrity**, quickly responding to the emergency situation. (ochota)
 - **Alas**, their vacation plans were canceled due to unforeseen circumstances. (ach)
-- The **albino** squirrel had white fur and pink eyes. (albín)
-- The **albumen** of the egg is rich in protein. (bílek)
+- The **albino** squirrel had white fur and pink eyes. (albÃ­n)
+- The **albumen** of the egg is rich in protein. (bÃ­lek)
 - The laboratory used **albumin** for various scientific experiments. (albumin)
-- They sat in the cozy **alcove** by the fireplace, enjoying a warm cup of tea. (vıklenek)
-- The river was lined with majestic **alder** trees. (olše)
+- They sat in the cozy **alcove** by the fireplace, enjoying a warm cup of tea. (vÃ½klenek)
+- The river was lined with majestic **alder** trees. (olÅ¡e)
 - He enjoyed a glass of cold **ale** at the local pub. (pivo)
-- She acted with **alertness**, always paying attention to her surroundings. (bdìlost)
-- His **alienage** made it challenging for him to adapt to a new culture. (cizineckı pùvod)
-- The divorce caused a sense of **alienation** between the former spouses. (osamìlost)
-- The bird landed **alight** on the branch, chirping happily. (pøistát)
-- The **alimentary** canal is responsible for the digestion of food. (trávicí)
-- The doctor explained the importance of proper **alimentation** for maintaining good health. (vıiva)
+- She acted with **alertness**, always paying attention to her surroundings. (bdÄ›lost)
+- His **alienage** made it challenging for him to adapt to a new culture. (cizineckÃ½ pÅ¯vod)
+- The divorce caused a sense of **alienation** between the former spouses. (osamÄ›lost)
+- The bird landed **alight** on the branch, chirping happily. (pÅ™istÃ¡t)
+- The **alimentary** canal is responsible for the digestion of food. (trÃ¡vicÃ­)
+- The doctor explained the importance of proper **alimentation** for maintaining good health. (vÃ½Å¾iva)
 - She received monthly **alimony** payments following the divorce settlement. (alimenty)
-- The solution turned **alkaline** when mixed with water, indicating a high pH level. (alkalickı)
+- The solution turned **alkaline** when mixed with water, indicating a high pH level. (alkalickÃ½)
 - The medication helped to **allay** her anxiety and promote a sense of calm. (utlumit)
-- The **allegation** of fraud led to an investigation by the authorities. (obvinìní)
+- The **allegation** of fraud led to an investigation by the authorities. (obvinÄ›nÃ­)
 - He chose to **allege** that he was innocent of the crime. (tvrdit)
-- The **alleged** thief was apprehended by the police and taken into custody. (domnìlı)
-- The medication will help **alleviate** the symptoms and provide relief. (zmírnit)
-- They walked down the narrow **alley** between the buildings, exploring the hidden shops. (ulièka)
-- The land was **allotted** to different farmers for agricultural purposes. (pøidìlit)
-- She received her fair **allotment** of the inheritance as stated in the will. (podíl)
-- The expenses were within the **allowable** budget, ensuring financial stability. (povolenı)
-- He received a monthly **allowance** from his parents to cover his living expenses. (kapesné)
-- The recipe called for a pinch of **allspice** to enhance the flavor of the dish. (nové koøení)
-- He chose to **allude** to their shared past without explicitly mentioning it. (naráet)
-- The promise of a better future was an **allure** that motivated her to keep going. (pøitalivost)
-- The view of the sunset over the ocean had a captivating **allurment**. (pùsobení)
-- His speech made a subtle **allusion** to historical events, hinting at their significance. (naráka)
-- The novel was filled with **allusive** references to famous works of literature. (naráející)
+- The **alleged** thief was apprehended by the police and taken into custody. (domnÄ›lÃ½)
+- The medication will help **alleviate** the symptoms and provide relief. (zmÃ­rnit)
+- They walked down the narrow **alley** between the buildings, exploring the hidden shops. (uliÄka)
+- The land was **allotted** to different farmers for agricultural purposes. (pÅ™idÄ›lit)
+- She received her fair **allotment** of the inheritance as stated in the will. (podÃ­l)
+- The expenses were within the **allowable** budget, ensuring financial stability. (povolenÃ½)
+- He received a monthly **allowance** from his parents to cover his living expenses. (kapesnÃ©)
+- The recipe called for a pinch of **allspice** to enhance the flavor of the dish. (novÃ© koÅ™enÃ­)
+- He chose to **allude** to their shared past without explicitly mentioning it. (narÃ¡Å¾et)
+- The promise of a better future was an **allure** that motivated her to keep going. (pÅ™itaÅ¾livost)
+- The view of the sunset over the ocean had a captivating **allurment**. (pÅ¯sobenÃ­)
+- His speech made a subtle **allusion** to historical events, hinting at their significance. (narÃ¡Å¾ka)
+- The novel was filled with **allusive** references to famous works of literature. (narÃ¡Å¾ejÃ­cÃ­)
 - She formed a strong **ally** with her colleagues to advocate for change. (spojenec)
-- The **almond** tree bloomed with beautiful pink flowers in the spring. (mandlovı)
+- The **almond** tree bloomed with beautiful pink flowers in the spring. (mandlovÃ½)
 - The birds flew **aloft** in graceful patterns, creating a mesmerizing spectacle. (ve vzduchu)
-- He preferred to keep himself **aloof** from social gatherings, finding solace in solitude. (odstupnı)
-- The forest was **alight** with the glow of fireflies, creating a magical ambiance. (rozzáøenı)
-- The boat floated **afloat** on the calm waters of the lake, gently rocking with the waves. (na hladinì)
+- He preferred to keep himself **aloof** from social gatherings, finding solace in solitude. (odstupnÃ½)
+- The forest was **alight** with the glow of fireflies, creating a magical ambiance. (rozzÃ¡Å™enÃ½)
+- The boat floated **afloat** on the calm waters of the lake, gently rocking with the waves. (na hladinÄ›)
 - They decided to start **afresh** in a new city, leaving behind their old lives. (znovu)
-- The issue was an **afterthought**, not initially considered in the discussion. (pøidaná myšlenka)
-- The children looked at the magician **agape**, amazed by his tricks. (údivem)
-- The artist's work was timeless and **ageless**, resonating with people across generations. (vìènı)
+- The issue was an **afterthought**, not initially considered in the discussion. (pÅ™idanÃ¡ myÅ¡lenka)
+- The children looked at the magician **agape**, amazed by his tricks. (Ãºdivem)
+- The artist's work was timeless and **ageless**, resonating with people across generations. (vÄ›ÄnÃ½)
 - The glue was used to **agglutinate** the broken pieces of the sculpture. (spojit)
-- The **agglutination** of the cells formed a solid mass. (slepení)
-- The company aimed to **aggrandize** its market share by acquiring competitors. (zvìtšit)
-- The company's CEO used exaggerated language to **aggrandize** their accomplishments. _(pøikrásnit, zdùraznit)_
-- The constant noise from construction work only served to **aggravate** my headache. _(zhoršit)_
+- The **agglutination** of the cells formed a solid mass. (slepenÃ­)
+- The company aimed to **aggrandize** its market share by acquiring competitors. (zvÄ›tÅ¡it)
+- The company's CEO used exaggerated language to **aggrandize** their accomplishments. _(pÅ™ikrÃ¡snit, zdÅ¯raznit)_
+- The constant noise from construction work only served to **aggravate** my headache. _(zhorÅ¡it)_
 - Dealing with the difficult customer was a source of constant **aggravation** for the salesperson. _(druh pocity, otrava)_
-- The unfair treatment of the employees was enough to **aggrieve** even the most patient among them. _(sáhnout, poníit)_
-- The hiker was **aghast** when she came across a bear on the trail. _(zdìšenı, ohromenı)_
+- The unfair treatment of the employees was enough to **aggrieve** even the most patient among them. _(sÃ¡hnout, ponÃ­Å¾it)_
+- The hiker was **aghast** when she came across a bear on the trail. _(zdÄ›Å¡enÃ½, ohromenÃ½)_
 - The protesters gathered outside the government building to **agitate** for change. _(pobouzet, vyburcovat)_
-- The sky was **aglow** with the colors of the sunset. _(záøící)_
-- She accidentally cut her **agnail** while trimming her nails. _(nehtovı vøed)_
-- The children were **agog** with excitement as they waited for the magician's performance to begin. _(unešenı, nadšenı)_
-- The friendly waiter provided **agreeable** service throughout the meal. _(pøíjemnı)_
-- The flu left her feeling **ailing** and weak. _(chorı, trápenı)_
+- The sky was **aglow** with the colors of the sunset. _(zÃ¡Å™Ã­cÃ­)_
+- She accidentally cut her **agnail** while trimming her nails. _(nehtovÃ½ vÅ™ed)_
+- The children were **agog** with excitement as they waited for the magician's performance to begin. _(uneÅ¡enÃ½, nadÅ¡enÃ½)_
+- The friendly waiter provided **agreeable** service throughout the meal. _(pÅ™Ã­jemnÃ½)_
+- The flu left her feeling **ailing** and weak. _(chorÃ½, trÃ¡penÃ½)_
 - The doctor diagnosed her with a respiratory **ailment**. _(nemoc)_
-- Without a clear goal, the team wandered around in an **aimless** manner. _(bezcílnı)_
-- The inflatable raft had an **air-cushion** to provide extra comfort. _(vzduchovı polštáø)_
-- The flight attendant greeted the passengers with a smile as they boarded the plane. _(letuška)_
-- The athlete wore a protective **air-jacket** during the competition. _(vzduchová bunda)_
-- She made sure all the windows were **airproof** to prevent any drafts. _(propustnı vzduch)_
-- He left the door slightly **ajar** so he could hear if anyone approached. _(nepatrnì otevøenı)_
-- She stood with her hands on her hips, **akimbo**, and surveyed the scene. _(ve svıch bocích)_
-- The two brothers had an **akin** love for music. _(podobnı)_
-- He responded with **alacrity** when asked to help with the project. _(ochotnì)_
+- Without a clear goal, the team wandered around in an **aimless** manner. _(bezcÃ­lnÃ½)_
+- The inflatable raft had an **air-cushion** to provide extra comfort. _(vzduchovÃ½ polÅ¡tÃ¡Å™)_
+- The flight attendant greeted the passengers with a smile as they boarded the plane. _(letuÅ¡ka)_
+- The athlete wore a protective **air-jacket** during the competition. _(vzduchovÃ¡ bunda)_
+- She made sure all the windows were **airproof** to prevent any drafts. _(propustnÃ½ vzduch)_
+- He left the door slightly **ajar** so he could hear if anyone approached. _(nepatrnÄ› otevÅ™enÃ½)_
+- She stood with her hands on her hips, **akimbo**, and surveyed the scene. _(ve svÃ½ch bocÃ­ch)_
+- The two brothers had an **akin** love for music. _(podobnÃ½)_
+- He responded with **alacrity** when asked to help with the project. _(ochotnÄ›)_
 - **Alas**, the restaurant was already closed when they arrived. _(ach)_
-- The rare white peacock was an **albino**. _(albín)_
-- The **albumen** of the egg provides important nutrients. _(bílek)_
+- The rare white peacock was an **albino**. _(albÃ­n)_
+- The **albumen** of the egg provides important nutrients. _(bÃ­lek)_
 - The protein **albumin** is found in egg whites. _(albumin)_
-- The reading nook in the library was nestled in an **alcove**. _(vıklenek)_
-- The path through the forest was lined with **alder** trees. _(olše)_
+- The reading nook in the library was nestled in an **alcove**. _(vÃ½klenek)_
+- The path through the forest was lined with **alder** trees. _(olÅ¡e)_
 - They ordered a pint of **ale** at the local pub. _(pivo)_
-- The lifeguard's **alertness** saved a swimmer from drowning. _(bdìlost)_
-- His **alienage** prevented him from receiving certain benefits. _(cizineckı status)_
-- The bitter divorce led to the **alienation** of their children. _(odcizení)_
-- The lanterns were **alight** along the path, guiding the way. _(rozsvícenı)_
-- The digestive system is responsible for **alimentary** functions in the body. _(potravinovı)_
-- Proper **alimentation** is essential for maintaining good health. _(vıiva)_
+- The lifeguard's **alertness** saved a swimmer from drowning. _(bdÄ›lost)_
+- His **alienage** prevented him from receiving certain benefits. _(cizineckÃ½ status)_
+- The bitter divorce led to the **alienation** of their children. _(odcizenÃ­)_
+- The lanterns were **alight** along the path, guiding the way. _(rozsvÃ­cenÃ½)_
+- The digestive system is responsible for **alimentary** functions in the body. _(potravinovÃ½)_
+- Proper **alimentation** is essential for maintaining good health. _(vÃ½Å¾iva)_
 - He had to pay **alimony** to his ex-wife after their divorce. _(alimenty)_
-- The solution had an **alkaline** pH level. _(alkalickı)_
-- The medicine helped to **allay** her pain. _(utìšit)_
-- The politician denied the **allegation** of corruption. _(obvinìní)_
+- The solution had an **alkaline** pH level. _(alkalickÃ½)_
+- The medicine helped to **allay** her pain. _(utÄ›Å¡it)_
+- The politician denied the **allegation** of corruption. _(obvinÄ›nÃ­)_
 - He continued to **allege** that he was innocent despite the evidence against him. _(tvrdit)_
-- The **alleged** thief was caught on camera stealing from the store. _(údajnı)_
-- The medication helped to **alleviate** her symptoms. _(zmírnit)_
-- They walked down the dark **alley** in search of the hidden club. _(ulièka)_
-- The land was **allot** to different farmers for cultivation. _(rozdìlit)_
-- Each student received an equal **allotment** of time to complete the exam. _(pøidìlení)_
-- The use of cell phones during the exam was not **allowable**. _(povolenı)_
-- The children were given a small **allowance** for doing their chores. _(kapesné)_
+- The **alleged** thief was caught on camera stealing from the store. _(ÃºdajnÃ½)_
+- The medication helped to **alleviate** her symptoms. _(zmÃ­rnit)_
+- They walked down the dark **alley** in search of the hidden club. _(uliÄka)_
+- The land was **allot** to different farmers for cultivation. _(rozdÄ›lit)_
+- Each student received an equal **allotment** of time to complete the exam. _(pÅ™idÄ›lenÃ­)_
+- The use of cell phones during the exam was not **allowable**. _(povolenÃ½)_
+- The children were given a small **allowance** for doing their chores. _(kapesnÃ©)_
 - The recipe called for a pinch of **allspice** to add flavor. _(piment)_
-- He didn't directly mention the issue but **alluded** to it in his speech. _(naznaèit)_
-- The beautiful scenery **allured** visitors from all over the world. _(svést)_
-- The promise of a better life was an **allurment** to many immigrants. _(pokouzlení)_
-- Her comment was a subtle **allusion** to their shared past. _(naráka)_
-- The author's writing style was often **allusive**, requiring the reader to make connections. _(naráející)_
+- He didn't directly mention the issue but **alluded** to it in his speech. _(naznaÄit)_
+- The beautiful scenery **allured** visitors from all over the world. _(svÃ©st)_
+- The promise of a better life was an **allurment** to many immigrants. _(pokouzlenÃ­)_
+- Her comment was a subtle **allusion** to their shared past. _(narÃ¡Å¾ka)_
+- The author's writing style was often **allusive**, requiring the reader to make connections. _(narÃ¡Å¾ejÃ­cÃ­)_
 - The two countries were strong **allies** in the fight against terrorism. _(spojenec)_
 - She snacked on a handful of **almonds**. _(mandle)_
 - The birds flew **aloft** in the clear blue sky. _(vzduchu)_
 - He kept **aloof** from the rest of the group, preferring solitude. _(stranou)_
 - The **allofness** of the situation was overwhelming. _(komplexnost)_
-- They placed fresh flowers on the **altar** for the wedding ceremony. _(oltáø)_
-- The **alteration** of the dress made it fit perfectly. _(úprava)_
-- The couple started to **altercate** over the smallest things. _(hádat se)_
-- The argument escalated into a heated **altercation**. _(vıhrunı konflikt)_
-- The **amalgamation** of the two companies created a new industry giant. _(slouèení)_
+- They placed fresh flowers on the **altar** for the wedding ceremony. _(oltÃ¡Å™)_
+- The **alteration** of the dress made it fit perfectly. _(Ãºprava)_
+- The couple started to **altercate** over the smallest things. _(hÃ¡dat se)_
+- The argument escalated into a heated **altercation**. _(vÃ½hruÅ¾nÃ½ konflikt)_
+- The **amalgamation** of the two companies created a new industry giant. _(slouÄenÃ­)_
 - Over the years, she managed to **amass** a small fortune. _(nahromadit)_
-- The romantic letter was full of **amatory** expressions. _(láskyplnı)_
-- The talented pianist was **ambidextrous** and could play with both hands equally well. _(obouruèní)_
+- The romantic letter was full of **amatory** expressions. _(lÃ¡skyplnÃ½)_
+- The talented pianist was **ambidextrous** and could play with both hands equally well. _(obouruÄnÃ­)_
 - The statement was intentionally vague, causing **ambiguity** regarding its meaning. _(nejasnost)_
-- His **ambiguous** response left everyone uncertain about his intentions. _(dvojznaènı)_
+- His **ambiguous** response left everyone uncertain about his intentions. _(dvojznaÄnÃ½)_
 - The project had a broad **ambit** and required input from multiple departments. _(rozsah)_
-- They decided to take a leisurely **amble** through the park. _(procházka)_
-- The new policies brought **amelioration** to the working conditions. _(zlepšení)_
-- He was always **amenable** to suggestions and open to feedback. _(ochotnı)_
-- She promised to **amend** her behavior and make things right. _(zmìnit)_
+- They decided to take a leisurely **amble** through the park. _(prochÃ¡zka)_
+- The new policies brought **amelioration** to the working conditions. _(zlepÅ¡enÃ­)_
+- He was always **amenable** to suggestions and open to feedback. _(ochotnÃ½)_
+- She promised to **amend** her behavior and make things right. _(zmÄ›nit)_
 - The proposed **amendment** to the law faced opposition from several lawmakers. _(novela)_
-- He apologized for his mistake and offered to make **amends**. _(odškodnìní)_
-- The hotel had many amenities, including a swimming pool and a fitness center. _(vybavení)_
-- Her **amiability** made her popular among her colleagues. _(pøívìtivost)_
-- He had an **amiable** personality and was well-liked by everyone. _(milı)_
-- They reached an **amicable** agreement regarding the division of assets. _(kamarádskı)_
-- The couple walked hand in hand **amidst** the bustling crowd. _(uprostøed)_
-- Her comment was taken the wrong way, and she quickly realized she had misspoke and was **amiss**. _(chybnı)_
-- The two countries maintained a relationship of peace and **amity**. _(pøátelství)_
-- The love letter was filled with **amorous** expressions of affection. _(láskyplnı)_
-- The frog is an **amphibian** that can live both in water and on land. _(obojivelnı)_
-- She had an **ample** supply of food to feed the guests. _(dostateènı)_
+- He apologized for his mistake and offered to make **amends**. _(odÅ¡kodnÄ›nÃ­)_
+- The hotel had many amenities, including a swimming pool and a fitness center. _(vybavenÃ­)_
+- Her **amiability** made her popular among her colleagues. _(pÅ™Ã­vÄ›tivost)_
+- He had an **amiable** personality and was well-liked by everyone. _(milÃ½)_
+- They reached an **amicable** agreement regarding the division of assets. _(kamarÃ¡dskÃ½)_
+- The couple walked hand in hand **amidst** the bustling crowd. _(uprostÅ™ed)_
+- Her comment was taken the wrong way, and she quickly realized she had misspoke and was **amiss**. _(chybnÃ½)_
+- The two countries maintained a relationship of peace and **amity**. _(pÅ™Ã¡telstvÃ­)_
+- The love letter was filled with **amorous** expressions of affection. _(lÃ¡skyplnÃ½)_
+- The frog is an **amphibian** that can live both in water and on land. _(obojÅ¾ivelnÃ½)_
+- She had an **ample** supply of food to feed the guests. _(dostateÄnÃ½)_
 - The nurse injected the patient with an **ampoule** of medication. _(ampulka)_
 - The comedian's jokes never failed to **amuse** the audience. _(bavit)_
 - The painkiller provided effective **analgesic** relief. _(analgetikum)_
-- The harbor provided a safe **anchorage** for the boats. _(kotvištì)_
-- The pizza was topped with **anchovy** fillets. _(anèovièka)_
-- The vibrant colors of the **anemone** caught the diver's attention. _(moøská sasanka)_
-- After their disagreement, they decided to start **anew** and rebuild their friendship. _(od zaèátku)_
-- She was in **anguish** over the loss of her pet dog. _(trápení)_
-- The recipe called for a teaspoon of **aniseed** for flavor. _(anız)_
-- She twisted her **ankle** while running in the park. _(kotník)_
+- The harbor provided a safe **anchorage** for the boats. _(kotviÅ¡tÄ›)_
+- The pizza was topped with **anchovy** fillets. _(anÄoviÄka)_
+- The vibrant colors of the **anemone** caught the diver's attention. _(moÅ™skÃ¡ sasanka)_
+- After their disagreement, they decided to start **anew** and rebuild their friendship. _(od zaÄÃ¡tku)_
+- She was in **anguish** over the loss of her pet dog. _(trÃ¡penÃ­)_
+- The recipe called for a teaspoon of **aniseed** for flavor. _(anÃ½z)_
+- She twisted her **ankle** while running in the park. _(kotnÃ­k)_
 - The dancer moved with **annais** and grace. _(elegance)_
-- The country decided to **annex** the neighboring territory. _(pøipojit)_
-- The **annexation** of the territory sparked international controversy. _(pøipojení)_
-- The angel's **annunciation** brought news of great joy. _(oznámení)_
-- The strange occurrence was considered an **anomalous** event. _(atypickı)_
+- The country decided to **annex** the neighboring territory. _(pÅ™ipojit)_
+- The **annexation** of the territory sparked international controversy. _(pÅ™ipojenÃ­)_
+- The angel's **annunciation** brought news of great joy. _(oznÃ¡menÃ­)_
+- The strange occurrence was considered an **anomalous** event. _(atypickÃ½)_
 - He wore a warm **anorak** to protect himself from the cold weather. _(bunda)_
-- The hero faced a powerful **antagonist** in the final battle. _(protivník)_
-- The detective searched for clues to uncover the **antecedent** of the crime. _(pøedchùdce)_
-- They waited in the **antechamber** before being called into the meeting. _(pøedsíò)_
+- The hero faced a powerful **antagonist** in the final battle. _(protivnÃ­k)_
+- The detective searched for clues to uncover the **antecedent** of the crime. _(pÅ™edchÅ¯dce)_
+- They waited in the **antechamber** before being called into the meeting. _(pÅ™edsÃ­Åˆ)_
 - The graceful **antelope** bounded across the savannah. _(antilopa)_
-- The project's **anterior** deadline required them to work efficiently. _(pøední)_
-- She could **anticipate** his every move, having known him for years. _(pøedvídat)_
+- The project's **anterior** deadline required them to work efficiently. _(pÅ™ednÃ­)_
+- She could **anticipate** his every move, having known him for years. _(pÅ™edvÃ­dat)_
 - Drinking milk is a common **antidote** for relieving heartburn. _(protijed)_
 - The substance contained traces of **antimony**. _(antimon)_
 - She felt an instant **antipathy** towards her new coworker. _(antipatie)_
 - The two cities are located on opposite **antipode** of the world. _(antipod)_
-- The historian specialized in **antiquarian** research and artifacts. _(antikváø)_
-- The **antiquary** shared his knowledge of ancient civilizations. _(staroitník)_
-- The museum housed a collection of ancient **antiquities**. _(staroitnost)_
+- The historian specialized in **antiquarian** research and artifacts. _(antikvÃ¡Å™)_
+- The **antiquary** shared his knowledge of ancient civilizations. _(staroÅ¾itnÃ­k)_
+- The museum housed a collection of ancient **antiquities**. _(staroÅ¾itnost)_
 - The deer's **antler** reached an impressive size. _(paroh)_
 - The horse galloped **apace** towards the finish line. _(rychle)_
-- They decided to live **apart** while they figured out their relationship. _(oddìlenì)_
+- They decided to live **apart** while they figured out their relationship. _(oddÄ›lenÄ›)_
 - The scientist conducted an **experiment** to test her hypothesis. _(experiment)_
 - The camera lens had an adjustable **aperture** for controlling the amount of light. _(clona)_
 - The mountaintop was the **apex** of their hiking adventure. _(vrchol)_
-- The **aphis** infestation caused damage to the crops. _(mšice)_
-- The beekeeper tended to his **apiary** and collected honey from the hives. _(vèelín)_
+- The **aphis** infestation caused damage to the crops. _(mÅ¡ice)_
+- The beekeeper tended to his **apiary** and collected honey from the hives. _(vÄelÃ­n)_
 - They each received a fair **apiece** of the cake. _(na kus)_
 - His behavior was **apish**, imitating the actions of others. _(opo)_
 - The lawyer acted as an **apologist** for his client, defending his actions. _(apolog)_
-- The news of the tragedy **appalled** the entire community. _(ohorèit)_
-- The truth became **apparent** once all the facts were revealed. _(zøejmı)_
-- The ghostly figure appeared as an **apparition** in the old mansion. _(pøízrak)_
+- The news of the tragedy **appalled** the entire community. _(ohorÄit)_
+- The truth became **apparent** once all the facts were revealed. _(zÅ™ejmÃ½)_
+- The ghostly figure appeared as an **apparition** in the old mansion. _(pÅ™Ã­zrak)_
 - The lawyer made an **appeal** to the jury to consider his client's innocence. _(apel)_
 - The mediator worked to **appease** both parties and find a compromise. _(uklidnit)_
-- The government made several concessions in an attempt to achieve **appeasement**. _(ukojení)_
-- The product received a new **appellation** in the international market. _(oznaèení)_
-- The property came with a large **appurtenance** of land. _(pøíslušenství)_
+- The government made several concessions in an attempt to achieve **appeasement**. _(ukojenÃ­)_
+- The product received a new **appellation** in the international market. _(oznaÄenÃ­)_
+- The property came with a large **appurtenance** of land. _(pÅ™Ã­sluÅ¡enstvÃ­)_
 - The aroma of freshly baked bread served as an **appetizer** for the hungry guests. _(aperitiv)_
 - The audience erupted in applause after the performance. _(potlesk)_
-- The kitchen is equipped with modern **appliances** for cooking and baking. _(spotøebièe)_
-- The job **applicant** submitted their resume and cover letter for consideration. _(uchazeè)_
+- The kitchen is equipped with modern **appliances** for cooking and baking. _(spotÅ™ebiÄe)_
+- The job **applicant** submitted their resume and cover letter for consideration. _(uchazeÄ)_
 - The manager decided to **appoint** a new team leader. _(jmenovat)_
-- The supervisor **apportioned** the workload evenly among the team members. _(rozdìlit)_
-- The company had a list of **allowable** expenses for reimbursement. _(povolenı)_
-- The monthly budget included a small **allowance** for entertainment. _(povolená èástka)_
+- The supervisor **apportioned** the workload evenly among the team members. _(rozdÄ›lit)_
+- The company had a list of **allowable** expenses for reimbursement. _(povolenÃ½)_
+- The monthly budget included a small **allowance** for entertainment. _(povolenÃ¡ ÄÃ¡stka)_
 - The recipe called for a pinch of **allspice** to add flavor. _(piment)_
-- The speaker **alluded** to a recent scandal but did not mention it directly. _(naráet)_
-- The luxurious resort **allured** vacationers with its pristine beaches and stunning views. _(svádìt)_
-- The promise of a better future **allured** him into taking the job. _(svádìl)_
-- Her comment contained a subtle **allusion** to their shared history. _(naráka)_
-- The writer's style was often **allusive**, leaving room for interpretation. _(naráející)_
+- The speaker **alluded** to a recent scandal but did not mention it directly. _(narÃ¡Å¾et)_
+- The luxurious resort **allured** vacationers with its pristine beaches and stunning views. _(svÃ¡dÄ›t)_
+- The promise of a better future **allured** him into taking the job. _(svÃ¡dÄ›l)_
+- Her comment contained a subtle **allusion** to their shared history. _(narÃ¡Å¾ka)_
+- The writer's style was often **allusive**, leaving room for interpretation. _(narÃ¡Å¾ejÃ­cÃ­)_
 - The two nations formed an **alliance** to strengthen their defense capabilities. _(alianc)_
 - She snacked on a handful of **almonds** for a quick energy boost. _(mandle)_
 - The kite soared **aloft** in the clear blue sky. _(vzduchem)_
 - He preferred to keep **aloof** from the crowd and observe from a distance. _(stranou)_
 - The complexity of the situation overwhelmed them with a sense of **allofness**. _(komplexnost)_
-- The wedding ceremony took place at the foot of the **altar**. _(oltáø)_
-- The **alteration** of the dress made it fit perfectly. _(zmìna)_
-- The couple had an **altercation** over a trivial matter. _(svár)_
-- The merger resulted in the **amalgamation** of two major companies. _(slouèení)_
+- The wedding ceremony took place at the foot of the **altar**. _(oltÃ¡Å™)_
+- The **alteration** of the dress made it fit perfectly. _(zmÄ›na)_
+- The couple had an **altercation** over a trivial matter. _(svÃ¡r)_
+- The merger resulted in the **amalgamation** of two major companies. _(slouÄenÃ­)_
 - Over the years, she managed to **amass** a fortune through her successful investments. _(nahromadit)_
-- The love letter was filled with **amatory** expressions of affection. _(láskyplnı)_
-- Being **ambidextrous**, she could write equally well with both hands. _(obouruè)_
+- The love letter was filled with **amatory** expressions of affection. _(lÃ¡skyplnÃ½)_
+- Being **ambidextrous**, she could write equally well with both hands. _(obouruÄ)_
 - The **ambiguity** of his statement left everyone confused about his intentions. _(nejasnost)_
-- Her response was intentionally **ambiguous**, making it difficult to discern her true meaning. _(dvojznaènı)_
+- Her response was intentionally **ambiguous**, making it difficult to discern her true meaning. _(dvojznaÄnÃ½)_
 - The project's success lies within the **ambit** of effective collaboration. _(rozsah)_
-- They decided to take an evening **amble** through the park. _(procházka)_
-- The new policies brought about **amelioration** in the workplace environment. _(zlepšení)_
-- He was always **amenable** to suggestions and open to feedback. _(ochotnı)_
+- They decided to take an evening **amble** through the park. _(prochÃ¡zka)_
+- The new policies brought about **amelioration** in the workplace environment. _(zlepÅ¡enÃ­)_
+- He was always **amenable** to suggestions and open to feedback. _(ochotnÃ½)_
 - She vowed to **amend** her behavior and make things right. _(opravit)_
 - The proposed **amendment** to the law faced opposition from various interest groups. _(novela)_
 - He apologized for his mistake and offered to make **amends**. _(napravit)_
-- The hotel offers various **amenities** such as a swimming pool and a spa. _(vybavení)_
-- Her **amiability** made her a popular figure in the community. _(pøívìtivost)_
-- He had an **amiable** personality and was well-liked by his colleagues. _(milı)_
-- The two parties reached an **amicable** agreement in settling their dispute. _(kamarádskı)_
-- They walked **amidst** the bustling crowd, trying to find each other. _(uprostøed)_
-- Something felt **amiss** about the situation, but she couldn't quite put her finger on it. _(nepoøádek)_
-- The two countries maintained an atmosphere of peace and **amity**. _(pøátelství)_
-- The young couple shared an **amorous** embrace under the moonlight. _(milostnı)_
-- The **amphibian** frog can live both in water and on land. _(obojivelnı)_
-- She had an **ample** supply of food to feed the hungry guests. _(dostateènı)_
+- The hotel offers various **amenities** such as a swimming pool and a spa. _(vybavenÃ­)_
+- Her **amiability** made her a popular figure in the community. _(pÅ™Ã­vÄ›tivost)_
+- He had an **amiable** personality and was well-liked by his colleagues. _(milÃ½)_
+- The two parties reached an **amicable** agreement in settling their dispute. _(kamarÃ¡dskÃ½)_
+- They walked **amidst** the bustling crowd, trying to find each other. _(uprostÅ™ed)_
+- Something felt **amiss** about the situation, but she couldn't quite put her finger on it. _(nepoÅ™Ã¡dek)_
+- The two countries maintained an atmosphere of peace and **amity**. _(pÅ™Ã¡telstvÃ­)_
+- The young couple shared an **amorous** embrace under the moonlight. _(milostnÃ½)_
+- The **amphibian** frog can live both in water and on land. _(obojÅ¾ivelnÃ½)_
+- She had an **ample** supply of food to feed the hungry guests. _(dostateÄnÃ½)_
 - The medicine was stored in a small **ampoule** for easy administration. _(ampule)_
 - The clown's performance never failed to **amuse** the audience. _(bavit)_
 - The topical cream served as an effective **analgesic** for relieving pain. _(analgetikum)_
-- The harbor provided a safe **anchorage** for the ships during the storm. _(kotvištì)_
-- The pizza was topped with **anchovy** fillets for a salty flavor. _(anèovièka)_
-- The vibrant colors of the **anemone** caught the attention of passersby. _(moøská sasanka)_
+- The harbor provided a safe **anchorage** for the ships during the storm. _(kotviÅ¡tÄ›)_
+- The pizza was topped with **anchovy** fillets for a salty flavor. _(anÄoviÄka)_
+- The vibrant colors of the **anemone** caught the attention of passersby. _(moÅ™skÃ¡ sasanka)_
 - After their argument, they decided to start **anew** and rebuild their relationship. _(znovu)_
 - She was filled with **anguish** upon hearing the news of her father's passing. _(bolest)_
-- The recipe called for a sprinkle of **aniseed** to enhance the flavor. _(anız)_
-- She twisted her **ankle** while playing basketball and had to use crutches. _(kotník)_
+- The recipe called for a sprinkle of **aniseed** to enhance the flavor. _(anÃ½z)_
+- She twisted her **ankle** while playing basketball and had to use crutches. _(kotnÃ­k)_
 - The **annais** of the actress captivated the audience during her performance. _(elegance)_
-- The country decided to **annex** the neighboring territory to expand its borders. _(pøipojit)_
-- The **annexation** of the territory was met with both support and opposition. _(pøipojení)_
-- The angel's **annunciation** brought news of hope and joy to the world. _(oznámení)_
-- The strange occurrence was considered an **anomalous** event by the researchers. _(atypickı)_
+- The country decided to **annex** the neighboring territory to expand its borders. _(pÅ™ipojit)_
+- The **annexation** of the territory was met with both support and opposition. _(pÅ™ipojenÃ­)_
+- The angel's **annunciation** brought news of hope and joy to the world. _(oznÃ¡menÃ­)_
+- The strange occurrence was considered an **anomalous** event by the researchers. _(atypickÃ½)_
 - He put on his **anorak** to protect himself from the cold winter wind. _(anorak)_
-- The hero faced a powerful **antagonist** in the final battle. _(protivník)_
-- The detective searched for the **antecedent** of the crime to uncover the motive. _(pøedchùdce)_
-- They waited in the **antechamber** before being called into the meeting room. _(pøedsíò)_
+- The hero faced a powerful **antagonist** in the final battle. _(protivnÃ­k)_
+- The detective searched for the **antecedent** of the crime to uncover the motive. _(pÅ™edchÅ¯dce)_
+- They waited in the **antechamber** before being called into the meeting room. _(pÅ™edsÃ­Åˆ)_
 - We spotted a graceful **antelope** grazing on the savannah. _(antilopa)_
-- He had an **amiable** personality and was well-liked by everyone he met. _(pøíjemnı)_
-- The two parties reached an **amicable** agreement, avoiding a lengthy legal battle. _(mírovı)_
-- They strolled **amidst** the colorful market, taking in the sights and sounds. _(uprostøed)_
-- Something felt **amiss** about the situation, but she couldn't quite put her finger on it. _(nìco bylo špatnì)_
-- The two countries maintained a relationship of peace and **amity** for decades. _(pøátelství)_
-- The love letter was filled with **amorous** expressions of affection and desire. _(láskyplnı)_
-- The frog is an **amphibian** that can live both on land and in water. _(obojivelnı)_
-- She had an **ample** supply of food to feed the hungry guests at the party. _(dostateènı)_
+- He had an **amiable** personality and was well-liked by everyone he met. _(pÅ™Ã­jemnÃ½)_
+- The two parties reached an **amicable** agreement, avoiding a lengthy legal battle. _(mÃ­rovÃ½)_
+- They strolled **amidst** the colorful market, taking in the sights and sounds. _(uprostÅ™ed)_
+- Something felt **amiss** about the situation, but she couldn't quite put her finger on it. _(nÄ›co bylo Å¡patnÄ›)_
+- The two countries maintained a relationship of peace and **amity** for decades. _(pÅ™Ã¡telstvÃ­)_
+- The love letter was filled with **amorous** expressions of affection and desire. _(lÃ¡skyplnÃ½)_
+- The frog is an **amphibian** that can live both on land and in water. _(obojÅ¾ivelnÃ½)_
+- She had an **ample** supply of food to feed the hungry guests at the party. _(dostateÄnÃ½)_
 - The medicine was stored in a small **ampoule** for easy administration. _(ampule)_
 - The clown's performance never failed to **amuse** the children at the circus. _(bavit)_
 - The painkiller provided effective **analgesic** relief for her headache. _(analgetikum)_
-- The harbor served as a safe **anchorage** for the boats during the storm. _(kotvištì)_
-- The pizza was topped with delicious **anchovy** fillets for added flavor. _(sardelovı)_
-- The vibrant colors of the **anemone** caught the diver's attention underwater. _(moøská sasanka)_
+- The harbor served as a safe **anchorage** for the boats during the storm. _(kotviÅ¡tÄ›)_
+- The pizza was topped with delicious **anchovy** fillets for added flavor. _(sardelovÃ½)_
+- The vibrant colors of the **anemone** caught the diver's attention underwater. _(moÅ™skÃ¡ sasanka)_
 - After their argument, they decided to start **anew** and rebuild their friendship. _(znovu)_
 - She was filled with **anguish** upon hearing the tragic news of her friend's accident. _(bolest)_
-- The recipe called for a hint of **aniseed** to enhance the flavor of the dish. _(anız)_
-- She twisted her **ankle** while hiking in the mountains and had to be carried down. _(kotník)_
+- The recipe called for a hint of **aniseed** to enhance the flavor of the dish. _(anÃ½z)_
+- She twisted her **ankle** while hiking in the mountains and had to be carried down. _(kotnÃ­k)_
 - The actress captivated the audience with her **annais** and grace on stage. _(elegance)_
-- The country decided to **annex** the neighboring territory to expand its borders. _(pøipojit)_
-- The **annexation** of the disputed territory led to increased tensions between the two nations. _(pøipojení)_
-- The angel's **annunciation** brought news of hope and joy to the world. _(oznámení)_
-- The strange occurrence was considered **anomalous** and could not be easily explained. _(atypickı)_
+- The country decided to **annex** the neighboring territory to expand its borders. _(pÅ™ipojit)_
+- The **annexation** of the disputed territory led to increased tensions between the two nations. _(pÅ™ipojenÃ­)_
+- The angel's **annunciation** brought news of hope and joy to the world. _(oznÃ¡menÃ­)_
+- The strange occurrence was considered **anomalous** and could not be easily explained. _(atypickÃ½)_
 - He put on his warm **anorak** before heading out into the snowstorm. _(anorak)_
-- The hero faced a formidable **antagonist** in the final battle for justice. _(protivník)_
-- The detective carefully examined the **antecedent** events leading up to the crime. _(pøedchùdce)_
-- They waited in the elegant **antechamber** before being called into the grand hall. _(pøedsíò)_
+- The hero faced a formidable **antagonist** in the final battle for justice. _(protivnÃ­k)_
+- The detective carefully examined the **antecedent** events leading up to the crime. _(pÅ™edchÅ¯dce)_
+- They waited in the elegant **antechamber** before being called into the grand hall. _(pÅ™edsÃ­Åˆ)_
 - The graceful **antelope** leaped across the savannah with ease. _(antilopa)_
-- The **anterior** part of the building was adorned with intricate architectural details. _(pøední)_
-- She could accurately **anticipate** his reactions based on their long history together. _(pøedvídat)_
+- The **anterior** part of the building was adorned with intricate architectural details. _(pÅ™ednÃ­)_
+- She could accurately **anticipate** his reactions based on their long history together. _(pÅ™edvÃ­dat)_
 - The doctor prescribed an effective **antidote** to counteract the poison's effects. _(protijed)_
 - The substance was found to contain traces of **antimony**, a toxic element. _(antimon)_
 - She felt an instant **antipathy** towards her new colleague, without knowing why. _(antipatie)_
 - The two cities were located on opposite **antipodes** of the globe. _(antipody)_
-- The historian specialized in **antiquarian** research, studying ancient civilizations. _(antikváø)_
-- The **antiquary** had an extensive collection of ancient artifacts in his museum. _(staroitník)_
-- The museum displayed a variety of **antiquities** from different historical periods. _(staroitnosti)_
+- The historian specialized in **antiquarian** research, studying ancient civilizations. _(antikvÃ¡Å™)_
+- The **antiquary** had an extensive collection of ancient artifacts in his museum. _(staroÅ¾itnÃ­k)_
+- The museum displayed a variety of **antiquities** from different historical periods. _(staroÅ¾itnosti)_
 - The deer's majestic **antlers** were a symbol of its strength and dominance. _(parohy)_
 - He walked **apace** to catch up with his friends who were already ahead. _(rychle)_
-- They decided to live **apart** while they sorted out their differences. _(oddìlenì)_
+- They decided to live **apart** while they sorted out their differences. _(oddÄ›lenÄ›)_
 - The scientist conducted a series of **experiments** to test her hypothesis. _(experimenty)_
 - The camera's **aperture** controlled the amount of light entering the lens. _(clona)_
 - The mountaineer reached the **apex** of the mountain and celebrated his achievement. _(vrchol)_
-- The **aphids** infested the garden, damaging the plants. _(mšice)_
-- The beekeeper carefully tended to his **apiary**, ensuring the health of his bees. _(vèelín)_
+- The **aphids** infested the garden, damaging the plants. _(mÅ¡ice)_
+- The beekeeper carefully tended to his **apiary**, ensuring the health of his bees. _(vÄelÃ­n)_
 - They each received a fair **apiece** share of the profits. _(na kus)_
 - His behavior was **apish**, imitating others in a silly manner. _(opo)_
-- The lawyer served as an **apologist** for his client, defending their actions. _(obhájce)_
-- The news of the accident **appalled** everyone in the community. _(ohorèit)_
-- The truth became **apparent** once all the facts were examined. _(zøejmı)_
-- The ghostly figure appeared as an **apparition** in the old, abandoned house. _(pøízrak)_
+- The lawyer served as an **apologist** for his client, defending their actions. _(obhÃ¡jce)_
+- The news of the accident **appalled** everyone in the community. _(ohorÄit)_
+- The truth became **apparent** once all the facts were examined. _(zÅ™ejmÃ½)_
+- The ghostly figure appeared as an **apparition** in the old, abandoned house. _(pÅ™Ã­zrak)_
 - The lawyer made a passionate **appeal** to the jury in defense of his client. _(apel)_
 - The mediator worked to **appease** both parties and find a peaceful resolution. _(uklidnit)_
-- The government made several concessions to achieve **appeasement** and avoid conflict. _(ukojení)_
-- The wine received a new **appellation** to highlight its unique characteristics. _(oznaèení)_
-- The property came with various **appurtenances** such as a garage and a garden. _(pøíslušenství)_
-- The regulations **appertain** to all employees within the company. _(tıkat se)_
-- The **appetizer** consisted of bite-sized pieces of cheese and crackers. _(pøedkrm)_
+- The government made several concessions to achieve **appeasement** and avoid conflict. _(ukojenÃ­)_
+- The wine received a new **appellation** to highlight its unique characteristics. _(oznaÄenÃ­)_
+- The property came with various **appurtenances** such as a garage and a garden. _(pÅ™Ã­sluÅ¡enstvÃ­)_
+- The regulations **appertain** to all employees within the company. _(tÃ½kat se)_
+- The **appetizer** consisted of bite-sized pieces of cheese and crackers. _(pÅ™edkrm)_
 - The audience erupted in thunderous **applause** at the end of the performance. _(potlesk)_
-- The kitchen was equipped with modern **appliances** for efficient cooking. _(spotøebièe)_
-- The job **applicant** submitted their resume and cover letter for consideration. _(uchazeè)_
+- The kitchen was equipped with modern **appliances** for efficient cooking. _(spotÅ™ebiÄe)_
+- The job **applicant** submitted their resume and cover letter for consideration. _(uchazeÄ)_
 - The manager decided to **appoint** her as the new team leader.
-- The **applicant** brought all the necessary documents for the job application. _(uchazeè)_
-- They **appoint** a new manager for the department. _(jmenují)_
-- The funds will be **apportioned** among the various projects. _(rozdìleny)_
-- Her comment was **apposite** to the topic of discussion. _(vhodnı)_
+- The **applicant** brought all the necessary documents for the job application. _(uchazeÄ)_
+- They **appoint** a new manager for the department. _(jmenujÃ­)_
+- The funds will be **apportioned** among the various projects. _(rozdÄ›leny)_
+- Her comment was **apposite** to the topic of discussion. _(vhodnÃ½)_
 - In English grammar, **apposition** is a relationship between two nouns or noun phrases. _(apozice)_
-- The performance review included a detailed **appraisal** of the employee's work. _(hodnocení)_
-- The audience gave an **appreciative** applause after the concert. _(ocenitelskı)_
+- The performance review included a detailed **appraisal** of the employee's work. _(hodnocenÃ­)_
+- The audience gave an **appreciative** applause after the concert. _(ocenitelskÃ½)_
 - The police managed to **apprehend** the suspect. _(zatknout)_
-- The concept of time can be difficult to grasp but it is **apprehensible** with study and practice. _(pochopitelnı)_
+- The concept of time can be difficult to grasp but it is **apprehensible** with study and practice. _(pochopitelnÃ½)_
 - She felt a sense of **apprehension** before the exam. _(obava)_
-- The students were **apprehensive** about the upcoming test. _(obávající se)_
-- He started working as an **apprentice** at a local bakery. _(uèeò)_
-- The carpenter completed his **apprenticeship** and became a skilled craftsman. _(uèení)_
+- The students were **apprehensive** about the upcoming test. _(obÃ¡vajÃ­cÃ­ se)_
+- He started working as an **apprentice** at a local bakery. _(uÄeÅˆ)_
+- The carpenter completed his **apprenticeship** and became a skilled craftsman. _(uÄenÃ­)_
 - The teacher will **apprise** the students of any changes in the schedule. _(informovat)_
-- The proposal was **approbated** by the board of directors. _(schválen)_
-- The artist received **approbation** for his latest painting. _(schválení)_
-- The government announced the **appropriation** of funds for infrastructure development. _(pøidìlení)_
-- I bought a basket of fresh **apricots** from the market. _(meruòky)_
-- She tied her apron around her waist before starting to cook. _(zástìra)_
-- His comment was **apropos** to the current discussion. _(vhodnı)_
-- She is an **apt** student who quickly grasps new concepts. _(schopnı)_
-- His **aptitude** for music was evident from a young age. _(pøedpoklady)_
+- The proposal was **approbated** by the board of directors. _(schvÃ¡len)_
+- The artist received **approbation** for his latest painting. _(schvÃ¡lenÃ­)_
+- The government announced the **appropriation** of funds for infrastructure development. _(pÅ™idÄ›lenÃ­)_
+- I bought a basket of fresh **apricots** from the market. _(meruÅˆky)_
+- She tied her apron around her waist before starting to cook. _(zÃ¡stÄ›ra)_
+- His comment was **apropos** to the current discussion. _(vhodnÃ½)_
+- She is an **apt** student who quickly grasps new concepts. _(schopnÃ½)_
+- His **aptitude** for music was evident from a young age. _(pÅ™edpoklady)_
 - She painted a beautiful **aquarelle** of the seaside landscape. _(akvarel)_
-- The swimming pool is used for both recreational and **aquatic** activities. _(vodní)_
-- The fertile land is suitable for **arable** farming. _(orná)_
+- The swimming pool is used for both recreational and **aquatic** activities. _(vodnÃ­)_
+- The fertile land is suitable for **arable** farming. _(ornÃ¡)_
 - The dispute will be resolved by an independent arbitrator. _(rozhodce)_
-- The park is filled with **arboreous** trees and lush greenery. _(stromovitı)_
-- The gazebo in the garden provided a shaded **arbour** for relaxation. _(altánek)_
-- The entrance to the garden was adorned with **arched** gates. _(obloukovitı)_
-- He had an **ardent** desire to succeed in his career. _(prchlivı)_
+- The park is filled with **arboreous** trees and lush greenery. _(stromovitÃ½)_
+- The gazebo in the garden provided a shaded **arbour** for relaxation. _(altÃ¡nek)_
+- The entrance to the garden was adorned with **arched** gates. _(obloukovitÃ½)_
+- He had an **ardent** desire to succeed in his career. _(prchlivÃ½)_
 - Her **ardour** for the project was evident in her dedication and enthusiasm. _(horlivost)_
-- Climbing Mount Everest is an **arduous** task that requires physical and mental strength. _(nároènı)_
+- Climbing Mount Everest is an **arduous** task that requires physical and mental strength. _(nÃ¡roÄnÃ½)_
 - The slang used by a particular group is known as **argot**. _(slang)_
-- The desert region has a dry and **arid** climate. _(suchı)_
+- The desert region has a dry and **arid** climate. _(suchÃ½)_
 - The issue at hand **arose** from a misunderstanding. _(vyvstal)_
-- The military is strengthening its **armament** in response to rising tensions. _(zbrojení)_
-- The electrical system of the car includes an **armature** that converts electrical energy into mechanical energy. _(štìtec)_
-- He carried an **armful** of firewood into the house. _(náruè)_
-- The countries signed an **armistice** to cease hostilities. _(pøímìøí)_
-- She wore a delicate gold **armlet** on her wrist. _(pás)_
-- He held his arm against his side to protect his injured **armpit**. _(podpaí)_
+- The military is strengthening its **armament** in response to rising tensions. _(zbrojenÃ­)_
+- The electrical system of the car includes an **armature** that converts electrical energy into mechanical energy. _(Å¡tÄ›tec)_
+- He carried an **armful** of firewood into the house. _(nÃ¡ruÄ)_
+- The countries signed an **armistice** to cease hostilities. _(pÅ™Ã­mÄ›Å™Ã­)_
+- She wore a delicate gold **armlet** on her wrist. _(pÃ¡s)_
+- He held his arm against his side to protect his injured **armpit**. _(podpaÅ¾Ã­)_
 - The loud noise from the construction site **aroused** the neighbors' complaints. _(vyvolat)_
-- She helped to **arrange** the chairs for the meeting. _(uspoøádat)_
-- His behavior was an **arrant** display of disrespect. _(úplnı)_
-- The company fell into **arrears** with its payments. _(dlunı)_
+- She helped to **arrange** the chairs for the meeting. _(uspoÅ™Ã¡dat)_
+- His behavior was an **arrant** display of disrespect. _(ÃºplnÃ½)_
+- The company fell into **arrears** with its payments. _(dluÅ¾nÃ½)_
 - The dictator tried to **arrogate** power for himself. _(usvojit)_
-- The building was set on fire in an act of **arson**. _(háøství)_
+- The building was set on fire in an act of **arson**. _(Å¾hÃ¡Å™stvÃ­)_
 - The **artery** supplies blood to the heart and other organs. _(tepna)_
 - The magician used **artifice** to create the illusion of a disappearing coin. _(lstivost)_
-- The skilled **artisan** crafted a beautiful wooden sculpture. _(øemeslník)_
-- He spoke in an **artless** manner, with no pretense or deceit. _(neumìlı)_
+- The skilled **artisan** crafted a beautiful wooden sculpture. _(Å™emeslnÃ­k)_
+- He spoke in an **artless** manner, with no pretense or deceit. _(neumÄ›lÃ½)_
 - The hikers began to **ascend** the steep mountain trail. _(vystoupat)_
-- The older generation has had an **ascendant** influence on the cultural traditions. _(dominantní)_
-- The hot air balloon made a smooth **ascent** into the sky. _(vıstup)_
+- The older generation has had an **ascendant** influence on the cultural traditions. _(dominantnÃ­)_
+- The hot air balloon made a smooth **ascent** into the sky. _(vÃ½stup)_
 - The detective must **ascertain** the facts before making an arrest. _(zjistit)_
-- The design of the building is **ascerical** in shape. _(èoèkovitı)_
-- He wanted to **ascribe** his success to hard work and determination. _(pøièítat)_
-- She was **ashamed** of her behavior at the party. _(styï se)_
-- His face turned **ashen** as he heard the shocking news. _(popelavı)_
+- The design of the building is **ascerical** in shape. _(ÄoÄkovitÃ½)_
+- He wanted to **ascribe** his success to hard work and determination. _(pÅ™iÄÃ­tat)_
+- She was **ashamed** of her behavior at the party. _(styÄ se)_
+- His face turned **ashen** as he heard the shocking news. _(popelavÃ½)_
 - They enjoyed a day at the beach and then went **ashore** to explore the town. _(na pevninu)_
 - The leaves on the tree shimmered in the breeze, showing their **aspen** undersides. _(osika)_
 - He spoke with **asperity** in his voice, expressing his annoyance. _(surovost)_
 - The gossip magazine tried to **asperse** the actress's reputation. _(pomlouvat)_
 - The army prepared to **assail** the enemy stronghold. _(napadnout)_
-- The fortress was **assailable** from the south due to its weak defenses. _(zranitelnı)_
-- The police arrested the **assailant** responsible for the robbery. _(útoèník)_
+- The fortress was **assailable** from the south due to its weak defenses. _(zranitelnÃ½)_
+- The police arrested the **assailant** responsible for the robbery. _(ÃºtoÄnÃ­k)_
 - The museum displayed an **assemblage** of ancient artifacts. _(soubor)_
 - He nodded in **assent** to show his agreement with the proposal. _(souhlas)_
 
 - She confidently **asserted** her opinion during the debate. _(tvrdit)_
-- His **assertion** that he was innocent was met with skepticism. _(tvrzení)_
+- His **assertion** that he was innocent was met with skepticism. _(tvrzenÃ­)_
 - The donkey's stubbornness was **asses** to their slow progress. _(osel)_
 - Real estate is considered a valuable **asset** for investment. _(majetek)_
-- He wanted to **asseverate** his commitment to the cause. _(prohlásit)_
+- He wanted to **asseverate** his commitment to the cause. _(prohlÃ¡sit)_
 - The success of the project required **assiduity** and hard work. _(usilovnost)_
-- She was known for her **assiduous** attention to detail. _(pilnı)_
-- They had a secret **assignation** in a secluded park. _(schùzka)_
+- She was known for her **assiduous** attention to detail. _(pilnÃ½)_
+- They had a secret **assignation** in a secluded park. _(schÅ¯zka)_
 - The process of learning a new language involves **assimilation** of vocabulary and grammar. _(asimilace)_
 - A warm cup of tea can **assuage** the pain of a sore throat. _(zklidnit)_
-- The actor had an **assuming** attitude despite his fame. _(skromnı)_
-- She will **assuredly** be successful in her new venture. _(jistì)_
-- The garden was filled with vibrant **asters** in various colors. _(hvìzdnice)_
+- The actor had an **assuming** attitude despite his fame. _(skromnÃ½)_
+- She will **assuredly** be successful in her new venture. _(jistÄ›)_
+- The garden was filled with vibrant **asters** in various colors. _(hvÄ›zdnice)_
 - His magic trick never failed to **astonish** the audience. _(ohromit)_
-- The look of **astonishment** on her face was priceless. _(údiv)_
+- The look of **astonishment** on her face was priceless. _(Ãºdiv)_
 - The unexpected news **astounded** everyone in the room. _(ohromit)_
-- The lost hiker found himself **astray** in the dense forest. _(ztracenı)_
+- The lost hiker found himself **astray** in the dense forest. _(ztracenÃ½)_
 - She sat **astride** the horse, ready to ride off into the sunset. _(na sedle)_
-- He was known for his **astute** observations and insights. _(bystrı)_
+- He was known for his **astute** observations and insights. _(bystrÃ½)_
 - The coral reef is home to a diverse array of marine life, including colorful **atoll** fish. _(atol)_
 - He wanted to **atone** for his past mistakes. _(vynahradit)_
-- The crime was described as **atrocious** due to its heinous nature. _(ohavnı)_
-- The war crimes committed during the conflict were acts of **atrocity**. _(zrùdnost)_
+- The crime was described as **atrocious** due to its heinous nature. _(ohavnÃ½)_
+- The war crimes committed during the conflict were acts of **atrocity**. _(zrÅ¯dnost)_
 - Lack of exercise can lead to muscle **atrophy**. _(atrofie)_
-- The diplomat was accompanied by his **attaché** during official visits. _(atašé)_
-- He worked hard to **attain** his goals. _(dosáhnout)_
-- The conference attendees were asked to **attend** all sessions. _(úèastnit se)_
-- She was a diligent and **attentive** student. _(pozornı)_
+- The diplomat was accompanied by his **attachÃ©** during official visits. _(ataÅ¡Ã©)_
+- He worked hard to **attain** his goals. _(dosÃ¡hnout)_
+- The conference attendees were asked to **attend** all sessions. _(ÃºÄastnit se)_
+- She was a diligent and **attentive** student. _(pozornÃ½)_
 - The medication can help **attenuate** the symptoms of the disease. _(oslabit)_
-- The **attenuation** of the radio signal caused a loss of reception. _(oslabení)_
-- The witness was asked to **attest** to the truth of the statement. _(doloit)_
-- The old books were stored in the dusty **attic** of the house. _(pùda)_
-- The lawyer represented his client in court as the **attorney**. _(advokát)_
-- The **attribution** of the painting to the famous artist was confirmed. _(pøipisování)_
-- The constant stress led to the **attrition** of his mental and physical health. _(opotøebení)_
-- Her hair had a beautiful **auburn** color. _(hnìdavı)_
-- The **auctioneer** began the bidding for the antique furniture. _(draitel)_
-- He had the **audacious** idea to start his own business. _(smìlı)_
+- The **attenuation** of the radio signal caused a loss of reception. _(oslabenÃ­)_
+- The witness was asked to **attest** to the truth of the statement. _(doloÅ¾it)_
+- The old books were stored in the dusty **attic** of the house. _(pÅ¯da)_
+- The lawyer represented his client in court as the **attorney**. _(advokÃ¡t)_
+- The **attribution** of the painting to the famous artist was confirmed. _(pÅ™ipisovÃ¡nÃ­)_
+- The constant stress led to the **attrition** of his mental and physical health. _(opotÅ™ebenÃ­)_
+- Her hair had a beautiful **auburn** color. _(hnÄ›davÃ½)_
+- The **auctioneer** began the bidding for the antique furniture. _(draÅ¾itel)_
+- He had the **audacious** idea to start his own business. _(smÄ›lÃ½)_
 - The young gymnast performed her routine with confidence and **audacity**. _(odvaha)_
 - The speaker's voice had excellent **audibility** throughout the auditorium. _(srozumitelnost)_
-- The music playing in the background was barely **audible**. _(slyšitelnı)_
-- The students participated in an **auditory** learning activity. _(sluchovı)_
-- He used an **auger** to drill holes in the wood. _(vrták)_
-- The **aural** experience of listening to live music is incomparable. _(sluchovı)_
-- The jewelry store displayed an exquisite diamond **auricle**. _(ušní boltce)_
-- The room had a simple and **austere** design. _(strohı)_
+- The music playing in the background was barely **audible**. _(slyÅ¡itelnÃ½)_
+- The students participated in an **auditory** learning activity. _(sluchovÃ½)_
+- He used an **auger** to drill holes in the wood. _(vrtÃ¡k)_
+- The **aural** experience of listening to live music is incomparable. _(sluchovÃ½)_
+- The jewelry store displayed an exquisite diamond **auricle**. _(uÅ¡nÃ­ boltce)_
+- The room had a simple and **austere** design. _(strohÃ½)_
 - The cause of death was determined through an **autopsy**. _(pitva)_
-- We should make the most of the available resources and **avail** ourselves of every opportunity. _(vyuít)_
+- We should make the most of the available resources and **avail** ourselves of every opportunity. _(vyuÅ¾Ã­t)_
 - The skiers were caught in an unexpected **avalanche**. _(lavina)_
 - His **avarice** for wealth and power was insatiable. _(chamtivost)_
-- The **avaricious** businessman always sought to maximize his profits. _(chamtivı)_
-- He wanted to **avenge** his friend's betrayal. _(mstít)_
-- She was **averse** to taking risks and preferred a safe approach. _(nepøející)_
-- He managed to **avert** a potential disaster with his quick thinking. _(odvrátit)_
-- She was an **avid** reader, devouring books in a single sitting. _(zalíbenı)_
+- The **avaricious** businessman always sought to maximize his profits. _(chamtivÃ½)_
+- He wanted to **avenge** his friend's betrayal. _(mstÃ­t)_
+- She was **averse** to taking risks and preferred a safe approach. _(nepÅ™ejÃ­cÃ­)_
+- He managed to **avert** a potential disaster with his quick thinking. _(odvrÃ¡tit)_
+- She was an **avid** reader, devouring books in a single sitting. _(zalÃ­benÃ½)_
 - The young musician played with great **avidity** and passion. _(horlivost)_
-- Gardening was her favorite **avocation** outside of work. _(koníèek)_
-- He was ready to **avouch** for his friend's honesty. _(ruèit)_
-- She decided to **avow** her true feelings for him. _(pøiznat)_
-- He made a public **avowal** of his support for the cause. _(prohlášení)_
-- The majestic view of the mountains filled them with **awe**. _(úas)_
-- The fireworks display was truly **awesome**. _(úasnı)_
-- He used an **awl** to punch holes in the leather. _(šídlo)_
-- The store had colorful **awnings** that provided shade for the customers. _(markıza)_
-- The painting was slightly **awry** and needed adjustment. _(šikmo)_
+- Gardening was her favorite **avocation** outside of work. _(konÃ­Äek)_
+- He was ready to **avouch** for his friend's honesty. _(ruÄit)_
+- She decided to **avow** her true feelings for him. _(pÅ™iznat)_
+- He made a public **avowal** of his support for the cause. _(prohlÃ¡Å¡enÃ­)_
+- The majestic view of the mountains filled them with **awe**. _(ÃºÅ¾as)_
+- The fireworks display was truly **awesome**. _(ÃºÅ¾asnÃ½)_
+- He used an **awl** to punch holes in the leather. _(Å¡Ã­dlo)_
+- The store had colorful **awnings** that provided shade for the customers. _(markÃ½za)_
+- The painting was slightly **awry** and needed adjustment. _(Å¡ikmo)_
 - The garden was filled with blooming **azaleas**. _(azalka)_
+
+

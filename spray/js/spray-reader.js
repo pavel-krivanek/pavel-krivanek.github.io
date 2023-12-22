@@ -1,5 +1,6 @@
 var SprayReader = function(container){
   this.container = $(container);
+  this.inputDiv = $('#input-text'); // Reference to the contenteditable div
 };
 SprayReader.prototype = {
   afterDoneCallback: null,
@@ -71,11 +72,10 @@ SprayReader.prototype = {
   
   
   setInput: function(input) {
-
-    this.input = input;
-    this.wordRecords = this.getWordRecords(input);
-
+    var inputString = this.inputDiv.text(); // Get text from contenteditable div
+    this.wordRecords = this.getWordRecords(inputString);
     this.wordIdx = 0;
+
   },
   
   setWpm: function(wpm) {
@@ -116,21 +116,31 @@ scrollToLine: function(textarea, lineNumber) {
     textarea.scrollTop = lineNumber * lineHeight;
 },
 
-  
+
+highlightWord: function(startIdx, endIdx) {
+    var text = this.inputDiv.text();
+    var before = text.substring(0, startIdx);
+    var word = text.substring(startIdx, endIdx + 1);
+    var after = text.substring(endIdx + 1);
+
+    this.inputDiv.html(before + '<span class="highlighted">' + word + '</span>' + after);
+
+    // Scroll to highlighted word
+    this.inputDiv.find('.highlighted').get(0).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  },
+
+
   displayWordAndIncrement: function() {
 
     this.delay--;
     if (this.delay > 0) return;
-    let rec = this.wordRecords[this.wordIdx];
+
+    var rec = this.wordRecords[this.wordIdx];
     this.delay = rec.complexity;
     var pivotedWord = pivot(rec.word);
 
-   var textarea = $('#input-text')[0];
-    textarea.focus();
-    textarea.setSelectionRange(rec.startIdx, rec.endIdx+1);
-    //this.scrollToLine(textarea, this.getLineNumber(textarea, rec.startIdx));
-
-  
+    // Highlight and scroll to the word in the contenteditable div
+    this.highlightWord(rec.startIdx, rec.endIdx);
     this.container.html(pivotedWord);
 
     this.wordIdx++;

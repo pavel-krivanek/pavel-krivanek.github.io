@@ -51,3 +51,18 @@ body {
 .tt-suggestion p {
     margin: 0;
 }
+
+.content-editable {
+    border: 1px solid #ccc;
+    overflow-y: auto;
+    min-height: 100px;
+    max-height: 300px;
+    resize: both;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.highlighted {
+    background-color: yellow;
+    display: inline; /* Ensure inline display for proper formatting */
+}

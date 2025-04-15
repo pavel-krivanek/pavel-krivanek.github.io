@@ -1,181 +1,89 @@
 @font-face {
-	font-family: TeleType;
-	src: local("TeleType"), url('teletype.ttf');
-	font-weight: normal;
-	font-style: normal;
+  font-family: 'IBM VGA 8x16';
+  src: local("IBM VGA 8x16"), url('WebPlus_IBM_VGA_8x16.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
 }
 
-body {
-	font-family: Helvetica, sans-serif;
-	font-size: 14px;
-	line-height: 20px;
-	background-color: #333;
-	margin: 0;
-        overflow: hidden;
-}
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: sans-serif;
+      background: #160e07;
+    }
+    .container {
+      display: flex;
+      height: 100vh;
+    }
+    .editor-container, .repl-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #060e07;
+    }
+    .repl-container {
+      border-right: none;
 
-h1 {
-	margin-top: 0;
-	margin-bottom: 0;
-	font-family: TeleType, Courier, "Courier New", monospace;
-	font-weight: bold;
-	font-size: 40px;
-}
+      background-color: #160e07;
+      background-image: radial-gradient(
+        rgba(255, 208, 15, 0.25), black 120%
+      );
+    }
+    .editor-header {
+      background: #160e07;
+      padding: 5px;
+      display: flex;
+      align-items: center;
+      color: gray;
+    }
+    #editor {
+      flex: 1;
+    }
+    .unsaved-indicator {
+      color: red;
+      margin-left: 10px;
+      font-weight: bold;
+    }
+    .repl-output {
+      flex: 1;
+      background: #160e07;  
+      padding: 5px;
+      overflow-y: auto;
+      white-space: pre-wrap;
 
-h2 {
-	margin-top: 0;
-	font-size: 20px;
-}
+      background: transparent;
+      font-family:  'IBM VGA 8x16', monospace;
+      font-size: 2.5vmin;
+ 
+      color: #ffd00e; 
+      padding: 3vmin;
 
-h3 {
-	font-size: 16px;
-}
+      text-shadow: 0 0 16px #ffd00e; 
+    }
+    .repl-input {
+      padding: 5px;
+      
+    }
+    .repl-input input {
+      width: 100%;
+      padding: 5px;
+      box-sizing: border-box;
+      font-family: monospace;
+      background: transparent;
+      border: 0px solid transparent;
 
-.bars {
-	position: fixed;
-	top: 0;
-	left: 0;
-	z-index: 9;
-	width: 100%;
-}
+      font-family:  'IBM VGA 8x16', monospace;
+      font-size: 2.5vmin;
+      color: #ffd00e; 
+      text-shadow: 0 0 16px #ffd00e; 
+      outline: none;
+      
+      border-bottom: 2px solid #1a1209; /* or any color you like */
+    }
 
-.topbar {
-	padding: 1ex 0% 2px 1%;
-	background-color: white;
-	height: auto;
-	display: none;
-}
-
-.info {
-	font-family: Courier, 'Courier New', monospace;
-	top: 6em;
-	padding: 8em 4em;
-	max-width: 900px;
-	margin-left: auto;
-	margin-right: auto;
-	background-color: #eee;
-	display: none;
-}
-
-.buttonbar {
-	clear: both;
-	background-color: #eee;
-}
-
-.buttons {
-	display: none;
-}
-
-.buttons.left {
-	float: left;
-}
-
-.buttons.right {
-	float: right;
-}
-
-.instruct {
-	font-size: 18px;
-	color: #666;
-	background-color: #eee;
-}
-
-.instruct ul ul {
-	font-size: 16px;
-}
-
-#Carriage {
-	font-family: TeleType, Courier, "Courier New", monospace;
-	font-size: 20px;
-	line-height: 30px;
-	position: absolute;
-	left: 50%;
-	margin-left: -26em;
-	top: 0;
-	//height: 165ex;
-	height: 20ex;
-}
-
-.output {
-	margin-bottom: 2em;
-	position: relative;
-	/* within position:absolute #Carriage */
-	width: 52em;
-	//height: 160ex;
-	height: 20ex;
-	left: 0;
-	top: 0;
-	background-color: white;
-	background-image: url(handmadepaper.png);
-	border: 1px solid black;
-	/*  box-shadow: 8px 8px 4px #888; */
-	white-space: nowrap;
-	z-index: 2;
-}
-
-.cursor {
-	position: absolute;
-	z-index: 4;
-	/*border: 2px solid red;
-				display: none;*/
-}
-
-.title {
-	float: left;
-	width: 550px;
-}
-
-.controls {
-	margin: 0 1em;
-	float: right;
-}
-
-.control {
-	float: left;
-	width: 150px;
-	margin: 0 1ex;
-}
-
-.control h4 {
-	margin: 0 0 8px 0;
-	text-align: center;
-}
-
-.control .disp {
-	margin: 4px 0 0 0;
-	text-align: center;
-}
-
-#terminal {
-	font-family: TeleType;
-	width: 100%;
-	height: 10cm;
-	position: absolute;
-	top: 200px;
-	opacity: 0.1;
-	display: none;
-}
-
-#debug {
-	font-family: TeleType;
-	width: 100%;
-	height: 5cm;
-	display: none;
-}
-
-.controls {
-	position: absolute;
-	z-index: 100;
-	display: none;
-}
-
-.introMessage {
-        color: #aaa;
-        margin: auto;
-        width: 40%;
-        padding: 10px;
-}
-
-.introMessage tt {
-              color: white ;
-              }
+    .repl-input input:focus
+    {
+      border-bottom: 2px solid #574c20; /* or any color you like */
+    
+    }

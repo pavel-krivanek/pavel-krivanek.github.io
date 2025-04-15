@@ -1,0 +1,1031 @@
+<html lang="cs"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiddly Flashcard</title>
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #f5a623;
+            --background-color: #f4f7f6;
+            --card-background: #ffffff;
+            --card-background-flipped: #fafffa;
+            --text-color: #333;
+            --border-color: #ddd;
+            --button-hover: #3a7bc8;
+            --bookmark-active: #e74c3c;
+            --action-button-bg: #e8e8e8;
+            --action-button-hover: #dcdcdc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%; /* Ensure body takes full height */
+            overflow-x: hidden; /* Prevent horizontal scroll on body */
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            padding: 1em;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 1em;
+            border-bottom: 2px solid var(--border-color);
+            flex-shrink: 0; /* Prevent tabs from shrinking */
+        }
+
+        .tab-button {
+            padding: 0.8em 1.5em;
+            cursor: pointer;
+            border: none;
+            background-color: transparent;
+            font-size: 1em;
+            font-weight: bold;
+            color: var(--text-color);
+            border-bottom: 3px solid transparent;
+            transition: border-color 0.3s ease, color 0.3s ease;
+        }
+
+        .tab-button.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .tab-button:hover:not(.active) {
+            color: var(--button-hover);
+        }
+
+        .tab-content {
+            display: none; /* Hidden by default */
+            flex-grow: 1; /* Allow content to take remaining space */
+            flex-direction: column; /* Stack children vertically */
+            /* overflow: auto; */ /* Prevent content itself from causing body scroll if possible */
+             min-height: 0; /* Important for flex children */
+        }
+
+        .tab-content.active {
+            display: flex; /* Show active tab */
+        }
+
+        /* Study Tab Styles */
+        #study-tab {
+           align-items: center; /* Center card container horizontally */
+        }
+
+        #study-options-bar {
+            display: flex;
+            justify-content: space-between; /* Space out options and buttons */
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1em;
+            margin-bottom: 1em;
+            width: 100%;
+            max-width: 650px; /* Limit width of options bar */
+            flex-shrink: 0;
+        }
+        #study-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1em;
+            align-items: center;
+        }
+         #study-actions {
+            display: flex;
+            gap: 0.5em;
+        }
+
+
+        #study-options label {
+            display: flex;
+            align-items: center;
+            gap: 0.3em;
+            cursor: pointer;
+        }
+
+        #card-container {
+            perspective: 1000px;
+            width: 100%;
+            max-width: 500px; /* Max card width */
+            min-height: 250px; /* Ensure minimum height */
+            margin-bottom: 1em;
+            flex-grow: 1; /* Allow container to grow vertically */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: pan-y; /* Allow vertical scroll but capture horizontal */
+             position: relative; /* Needed for absolute positioning of card */
+        }
+
+        #card {
+            width: 100%;
+            height: 100%; /* Fill the container */
+            min-height: 250px; /* Match container */
+            position: relative; /* Changed from absolute to relative within container */
+            transform-style: preserve-3d;
+            transition: transform 0.2s ease-in-out; /* Faster flip */
+            cursor: pointer;
+            background-color: var(--card-background);
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column; /* Stack content */
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        #card.flipped {
+            transform: rotateY(180deg);
+			background-color: var(--card-background-flipped);           
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5em;
+            overflow-wrap: break-word;
+            word-wrap: break-word; /* Ensure long words break */
+            hyphens: auto; /* Add hyphens if needed */
+             overflow-y: auto; /* Allow scroll if content overflows */
+        }
+
+        #card-front {
+            /* Styles specific to front if needed */
+        }
+
+        #card-back {
+            transform: rotateY(180deg);
+        }
+
+        .word {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 0.5em;
+            color: var(--primary-color);
+        }
+
+        .ipa {
+            font-family: "Lucida Sans Unicode", "Arial Unicode MS", sans-serif; /* Better IPA font */
+            color: #666;
+            margin-bottom: 0.8em;
+        }
+
+        .sentence {
+            font-size: 1.1em;
+            color: #555;
+            margin-top: 0.8em;
+        }
+
+        .cloze-test {
+             font-family: monospace;
+             font-weight: bold;
+             color: var(--secondary-color);
+        }
+
+        #study-controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 0; /* Removed top margin, rely on card container margin */
+             flex-shrink: 0; /* Prevent controls shrinking */
+             margin-bottom: 1em; /* Space below bookmark button */
+        }
+
+        .action-button {
+            padding: 0.7em 1.2em;
+            font-size: 0.95em;
+            cursor: pointer;
+            background-color: var(--action-button-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+            white-space: nowrap;
+        }
+        .action-button:hover {
+            background-color: var(--action-button-hover);
+        }
+        .action-button:disabled {
+             cursor: not-allowed;
+             opacity: 0.6;
+        }
+
+        #bookmark-button.bookmarked {
+            background-color: var(--bookmark-active);
+            color: white;
+            border-color: var(--bookmark-active);
+        }
+         #bookmark-button.bookmarked:hover {
+            background-color: #c0392b; /* Darker red on hover */
+        }
+
+        /* Edit Tab Styles */
+        #edit-tab {
+            flex-direction: column;
+        }
+         #edit-actions {
+             margin-bottom: 1em;
+             display: flex;
+             gap: 0.5em;
+             flex-shrink: 0;
+         }
+
+
+        #card-data-input {
+            width: 100%;
+            flex-grow: 1; /* Take available vertical space */
+            /* min-height: 300px; */ /* Rely on flex-grow instead */
+            font-family: monospace;
+            font-size: 0.95em;
+            padding: 0.8em;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            margin-bottom: 1em;
+            line-height: 1.5;
+            white-space: pre;
+            overflow: auto; /* Add scrollbars if needed */
+            resize: vertical; /* Allow user resizing */
+        }
+
+        #save-button-edit {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+        }
+
+        #save-button-edit:hover {
+            background-color: var(--button-hover);
+        }
+
+
+        /* Mobile Responsiveness */
+        @media (max-width: 600px) {
+            body {
+                padding: 0.5em;
+            }
+            .tabs {
+                margin-bottom: 0.5em;
+            }
+            .tab-button {
+                padding: 0.6em 1em;
+                font-size: 0.9em;
+            }
+             #study-options-bar {
+                 flex-direction: column; /* Stack options and actions vertically */
+                 align-items: flex-start; /* Align items left */
+                 max-width: 100%;
+                 gap: 0.8em;
+             }
+             #study-actions {
+                 width: 100%; /* Make action buttons take full width */
+                 justify-content: flex-start; /* Align left */
+             }
+             #card-container, #card {
+                min-height: 200px; /* Smaller min-height on mobile */
+            }
+            .word {
+                font-size: 1.5em;
+            }
+            .sentence {
+                font-size: 1em;
+            }
+            #study-options {
+                font-size: 0.9em;
+                gap: 0.8em;
+            }
+            .action-button {
+                 padding: 0.7em 1.2em;
+                 font-size: 0.9em;
+            }
+             #card-data-input {
+                 font-size: 0.9em;
+             }
+             #edit-actions {
+                 flex-wrap: wrap; /* Allow buttons to wrap */
+             }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="tabs">
+        <button class="tab-button" data-tabid="study-tab">Study</button>
+        <button class="tab-button active" data-tabid="edit-tab">Edit Data</button>
+    </div>
+
+    <div id="study-tab" class="tab-content" style="display: none;">
+        <div id="study-options-bar">
+            <div id="study-options">
+                <label>
+                    <input type="checkbox" id="start-side-checkbox"> Start Foreign
+                </label>
+                <label>
+                    <input type="checkbox" id="bookmarks-only-checkbox"> Bookmarked Only
+                </label>
+            </div>
+             <div id="study-actions">
+                 <button id="save-button-study" class="action-button" title="Save changes and download HTML">Save Changes</button>
+            </div>
+        </div>
+
+        <div id="card-container" style="display: flex;">
+            <div id="card" class="">
+                <div id="card-front" class="card-face">
+                <div class="word">chlad</div>
+                <div class="sentence">There's a definite <span class="cloze-test">....</span> in the air this morning.</div>
+            </div>
+                <div id="card-back" class="card-face">
+                <div class="word">chill</div>
+                <div class="ipa">[tʃɪl]</div>
+                <div class="sentence">There's a definite <strong>chill</strong> in the air this morning.</div>
+            </div>
+            </div>
+        </div>
+
+        <div id="study-controls">
+             <button id="bookmark-button" class="action-button" title="Toggle bookmark for this card">Bookmark</button>
+        </div>
+    </div>
+
+    <div id="edit-tab" class="tab-content active" style="display: flex;">
+         <div id="edit-actions">
+             <button id="shuffle-button-edit" class="action-button" title="Shuffle lines in the text area below">Shuffle Data</button>
+             <button id="save-button-edit" class="action-button" title="Save changes and download HTML">Save Changes &amp; Download</button>
+         </div>
+        <p style="margin-bottom: 0.5em; font-size: 0.9em; color: #555; flex-shrink: 0;">
+            Enter card data below. Each line represents one card.<br>
+            Format: <code>CzechWord;ForeignWord;IPA;ExampleSentenceWith[Word];bookmark(true/false - optional)</code><br>
+            Example: <code>křehký;fragile;ˈfrædʒaɪl;The [fragile] ecosystem needs protection.;true</code>
+        </p>
+        <textarea id="card-data-input">ctnost;virtue;ˈvɜːrtʃuː;Patience is considered a [virtue].
+domorodý;indigenous;ɪnˈdɪdʒənəs;The museum focused on the art of [indigenous] peoples.
+bezprecedentní;unprecedented;ʌnˈpresɪdentɪd;The company achieved [unprecedented] growth last year.
+přesvědčivý;compelling;kəmˈpelɪŋ;The evidence presented was quite [compelling].
+ohromný;tremendous;trəˈmendəs;She has made [tremendous] progress.
+přesvědčit;persuade;pərˈsweɪd;Can you [persuade] him to join us?</textarea>
+        <!-- Save button moved to #edit-actions -->
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const studyTab = document.getElementById('study-tab');
+        const editTab = document.getElementById('edit-tab');
+        const cardDataInput = document.getElementById('card-data-input');
+        // Save buttons
+        const saveButtonEdit = document.getElementById('save-button-edit');
+        const saveButtonStudy = document.getElementById('save-button-study');
+        // Shuffle buttons
+        const shuffleButtonEdit = document.getElementById('shuffle-button-edit');
+        // Study elements
+        const cardContainer = document.getElementById('card-container');
+        const cardElement = document.getElementById('card');
+        const cardFront = document.getElementById('card-front');
+        const cardBack = document.getElementById('card-back');
+        const startSideCheckbox = document.getElementById('start-side-checkbox');
+        const bookmarksOnlyCheckbox = document.getElementById('bookmarks-only-checkbox');
+        const bookmarkButton = document.getElementById('bookmark-button');
+
+        // --- State Variables ---
+        let cards = [];
+        let currentCardIndex = -1;
+        let currentCardPoolIndices = [];
+        let currentPoolPosition = -1;
+        let isFlipped = false;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
+        const swipeThreshold = 50;
+
+        // --- Core Functions ---
+
+        function parseCardData(dataText) {
+            const lines = dataText.trim().split('\n');
+            const parsedCards = [];
+            lines.forEach((line, index) => {
+                const trimmedLine = line.trim();
+                if (!trimmedLine) return;
+
+                const parts = trimmedLine.split(';').map(part => part.trim());
+                if (parts.length < 4) {
+                    console.warn(`Skipping invalid line ${index + 1}: Not enough fields.`);
+                    return;
+                }
+
+                const [czech, foreign, ipa, sentenceTemplate] = parts;
+                const bookmarked = parts.length > 4 && parts[4].toLowerCase() === 'true';
+
+                const wordRegex = /\[([^\]]+)\]/i;
+                const match = sentenceTemplate.match(wordRegex);
+                let sentenceCloze = sentenceTemplate;
+                let sentenceFull = sentenceTemplate;
+                let actualForeignWord = foreign; // Default to provided foreign word
+
+                if (match) {
+                    // Use the word found inside the brackets as the definitive foreign word
+                    actualForeignWord = match[1];
+                    if (foreign.toLowerCase() !== actualForeignWord.toLowerCase()) {
+                        console.warn(`Mismatch between ForeignWord field ('${foreign}') and word in brackets ('${actualForeignWord}') on line ${index + 1}. Using word from brackets.`);
+                    }
+                    sentenceCloze = sentenceTemplate.replace(wordRegex, '<span class="cloze-test">....</span>');
+                    sentenceFull = sentenceTemplate.replace(wordRegex, `<strong>${actualForeignWord}</strong>`);
+                } else {
+                    console.warn(`Missing or invalid brackets '[]' in sentence on line ${index + 1}. Displaying full sentence, cloze may be incorrect.`);
+                    // Try to find the foreign word case-insensitively in the sentence to bold it
+                    const boldRegex = new RegExp(`\\b(${actualForeignWord.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})\\b`, 'gi'); // Escape regex chars
+                    if (sentenceTemplate.match(boldRegex)) {
+                       sentenceFull = sentenceTemplate.replace(boldRegex, `<strong>$1</strong>`);
+                    } else {
+                        sentenceFull = `${sentenceTemplate} (<strong>${actualForeignWord}</strong>)`; // Add word in bold if not found
+                    }
+                    sentenceCloze = `${sentenceTemplate} (<span class="cloze-test">....</span>)`; // Fallback cloze
+                }
+
+
+                parsedCards.push({
+                    id: index, // Use line index as temporary ID during parse
+                    czech: czech || 'N/A',
+                    foreign: actualForeignWord || 'N/A', // Use the potentially corrected word
+                    ipa: ipa || '',
+                    sentenceCloze: sentenceCloze || 'N/A',
+                    sentenceFull: sentenceFull || 'N/A',
+                    bookmarked: bookmarked
+                    // Removed originalLine - less reliable, reconstruct instead
+                });
+            });
+            // Re-assign stable IDs based on final array position
+             return parsedCards.map((card, index) => ({ ...card, id: index }));
+        }
+
+         function updateTextarea() {
+             // Regenerate lines based on current 'cards' state
+             console.log("Updating textarea from cards array...");
+             const lines = cards.map(card => {
+                 // Try to reconstruct the template sentence format from sentenceFull
+                 let template = card.sentenceFull.replace(/<strong>(.*?)<\/strong>/gi, `[$1]`);
+
+                 // Basic fallback if the above fails (e.g., edited manually or missing brackets initially)
+                 // Check if the expected '[word]' format is present
+                 const bracketWordRegex = new RegExp(`\\[${card.foreign.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\]`, 'i');
+                 if (!template.match(bracketWordRegex)) {
+                     // Attempt reconstruction from cloze (less reliable)
+                     const clozePlaceholder = '<span class="cloze-test">....</span>';
+                     if (card.sentenceCloze.includes(clozePlaceholder)) {
+                         template = card.sentenceCloze.replace(clozePlaceholder, `[${card.foreign}]`).trim();
+                          // Remove potential extra text added during fallback
+                          if(template.endsWith(` (<span class="cloze-test">....</span>)`)) {
+                              template = template.substring(0, template.length - ` (<span class="cloze-test">....</span>)`.length).trim();
+                          }
+                     } else {
+                         // If still no luck, use a reasonable default - might lose original format slightly
+                         template = `${card.sentenceCloze.replace(' (<span class="cloze-test">....</span>)','')}`; // Use cloze sentence as base
+                         if (!template.toLowerCase().includes(card.foreign.toLowerCase())) {
+                            template += ` [${card.foreign}]`; // Append foreign word if missing
+                         }
+                         console.warn(`Could not reliably reconstruct original sentence template for card ID ${card.id} ('${card.foreign}'). Please check data format in textarea.`);
+                      }
+                 }
+
+                 const bookmarkString = card.bookmarked ? ';true' : ''; // Add bookmark only if true
+                 const ipaString = card.ipa || ''; // Ensure IPA is included
+                 return `${card.czech};${card.foreign};${ipaString};${template}${bookmarkString}`;
+             });
+             cardDataInput.value = lines.join('\n');
+         }
+
+
+        function displayCard(cardIndex) {
+            if (cardIndex < 0 || cardIndex >= cards.length) {
+                 showEmptyState();
+                 return;
+            }
+
+            currentCardIndex = cardIndex;
+            const card = cards[currentCardIndex];
+
+            if (!card) {
+                showEmptyState();
+                return;
+            }
+
+            cardFront.innerHTML = `
+                <div class="word">${card.czech}</div>
+                <div class="sentence">${card.sentenceCloze}</div>
+            `;
+            cardBack.innerHTML = `
+                <div class="word">${card.foreign}</div>
+                ${card.ipa ? `<div class="ipa">[${card.ipa}]</div>` : ''}
+                <div class="sentence">${card.sentenceFull}</div>
+            `;
+
+            // Set initial flip state based on checkbox when loading card
+            isFlipped = startSideCheckbox.checked;
+            updateFlipStateVisual(); // Apply visual flip
+
+            updateBookmarkButtonVisual();
+            cardContainer.style.display = 'flex'; // Ensure container is visible
+            bookmarkButton.disabled = false; // Enable bookmark button
+        }
+
+         function updateFlipStateVisual() {
+            if (isFlipped) {
+                cardElement.classList.add('flipped');
+            } else {
+                cardElement.classList.remove('flipped');
+            }
+        }
+
+
+        function showEmptyState() {
+             cardFront.innerHTML = `<div class="sentence" style="padding: 1em; text-align: center;">No cards available for the current filter.<br>Add cards in 'Edit Data' or adjust filters.</div>`;
+             cardBack.innerHTML = ``;
+             cardElement.classList.remove('flipped');
+             bookmarkButton.classList.remove('bookmarked');
+             bookmarkButton.disabled = true;
+             currentCardIndex = -1;
+             currentPoolPosition = -1;
+             currentCardPoolIndices = [];
+             cardContainer.style.display = 'flex'; // Keep container visible for message
+        }
+
+
+        function flipCard() {
+            if (currentCardIndex === -1) return; // Don't flip if no card
+            isFlipped = !isFlipped;
+            updateFlipStateVisual();
+        }
+
+        // --- Navigation Logic ---
+
+        function moveToNextCardInPool() {
+             if (currentCardPoolIndices.length === 0) {
+                 generateCardPool(); // Regenerate if empty
+                 if (currentCardPoolIndices.length === 0) {
+                     showEmptyState();
+                     return; // Still no cards
+                 }
+             }
+
+             currentPoolPosition++;
+             if (currentPoolPosition >= currentCardPoolIndices.length) {
+                 // End of pool, regenerate and restart
+                 console.log("Reshuffling card pool...");
+                 generateCardPool();
+                 if (currentCardPoolIndices.length === 0) {
+                     showEmptyState(); return; // Check again after regeneration
+                 }
+                 currentPoolPosition = 0;
+             }
+
+             const nextCardOriginalIndex = currentCardPoolIndices[currentPoolPosition];
+             displayCard(nextCardOriginalIndex); // This resets flip state based on checkbox
+         }
+
+         function moveToPrevCardInPool() {
+             if (currentCardPoolIndices.length === 0) {
+                 generateCardPool();
+                 if (currentCardPoolIndices.length === 0) {
+                     showEmptyState(); return;
+                 }
+             }
+
+             currentPoolPosition--;
+             if (currentPoolPosition < 0) {
+                 // Wrap around to the end
+                 currentPoolPosition = currentCardPoolIndices.length - 1;
+                 if (currentPoolPosition < 0) { // Pool might have become empty
+                     showEmptyState(); return;
+                 }
+             }
+
+             const prevCardOriginalIndex = currentCardPoolIndices[currentPoolPosition];
+             displayCard(prevCardOriginalIndex); // Resets flip state
+         }
+
+
+        function triggerNextAction() {
+             if (currentCardIndex === -1) return; // No card to act on
+			 
+             if (!isFlipped) {
+                 // If front is showing, flip it
+                 flipCard();
+             } else {
+                 // If back is showing, move to the next card
+                 moveToNextCardInPool();
+             }
+         }
+
+        // --- End Navigation Logic ---
+
+
+        function generateCardPool() {
+             console.log("Generating card pool...");
+             const showOnlyBookmarked = bookmarksOnlyCheckbox.checked;
+             let eligibleCards = cards;
+
+             if (showOnlyBookmarked) {
+                 eligibleCards = cards.filter(card => card.bookmarked);
+             }
+
+             if (eligibleCards.length === 0) {
+                  console.log("No eligible cards found for pool.");
+                  currentCardPoolIndices = [];
+                  currentPoolPosition = -1;
+                  if (studyTab.classList.contains('active')) {
+                      showEmptyState();
+                  }
+                  return;
+             }
+
+             // Get the IDs of eligible cards
+             const eligibleCardIds = eligibleCards.map(card => card.id);
+
+             // Shuffle the eligible IDs directly (no weighting needed for now, keep it simple)
+            // Fisher-Yates shuffle
+            for (let i = eligibleCardIds.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [eligibleCardIds[i], eligibleCardIds[j]] = [eligibleCardIds[j], eligibleCardIds[i]];
+            }
+
+            currentCardPoolIndices = eligibleCardIds; // Store the shuffled IDs
+            currentPoolPosition = -1; // Reset position
+            console.log("New pool generated (indices):", currentCardPoolIndices);
+        }
+
+
+        function toggleBookmark() {
+            if (currentCardIndex === -1 || currentCardIndex >= cards.length) return;
+            const card = cards[currentCardIndex];
+            if (!card) return; // Safety check
+
+            card.bookmarked = !card.bookmarked;
+            console.log(`Card ID ${card.id} bookmarked: ${card.bookmarked}`);
+            updateBookmarkButtonVisual();
+
+            // Update the textarea in the background so the change is reflected there
+            // This allows the state to be saved correctly later.
+            // This might overwrite manual edits if user switches back and forth,
+            // but ensures bookmark state is preserved for saving.
+            updateTextarea();
+        }
+
+        function updateBookmarkButtonVisual() {
+             if (currentCardIndex !== -1 && cards[currentCardIndex]) {
+                 bookmarkButton.disabled = false;
+                 if (cards[currentCardIndex].bookmarked) {
+                     bookmarkButton.classList.add('bookmarked');
+                     bookmarkButton.textContent = 'Bookmarked';
+                 } else {
+                     bookmarkButton.classList.remove('bookmarked');
+                     bookmarkButton.textContent = 'Bookmark';
+                 }
+             } else {
+                 bookmarkButton.disabled = true;
+                 bookmarkButton.classList.remove('bookmarked');
+                 bookmarkButton.textContent = 'Bookmark';
+             }
+        }
+
+
+        function showTab(tabId) {
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+                content.style.display = 'none'; // Explicitly hide
+            });
+            tabButtons.forEach(button => {
+                button.classList.remove('active');
+            });
+
+            const activeTab = document.getElementById(tabId);
+            // Find button using data attribute
+            const activeButton = document.querySelector(`.tab-button[data-tabid="${tabId}"]`);
+
+            if (activeTab) {
+                activeTab.classList.add('active');
+                activeTab.style.display = 'flex'; // Explicitly show as flex container
+            }
+            if (activeButton) {
+                activeButton.classList.add('active');
+            }
+
+            // If switching to study tab, ensure pool exists and card is displayed
+            if (tabId === 'study-tab') {
+                 // Check if cards data might have changed (e.g. by editing)
+                 // A simple check: compare textarea value with a hypothetical reconstruction
+                 // This is complex, maybe just re-parse if coming FROM edit tab?
+                 // Or simpler: always regenerate pool when switching to study?
+                console.log("Switched to Study Tab. Regenerating pool.");
+                // --- Reparse from textarea IF coming from Edit tab? ---
+                // This ensures edits made in textarea are used for studying.
+                // Find out which tab *was* active before switching.
+                // Let's try reparsing always before generating pool when switching to study.
+                cards = parseCardData(cardDataInput.value);
+                console.log(`Reparsed ${cards.length} cards from textarea before generating pool.`);
+
+                generateCardPool();
+
+                if (currentCardPoolIndices.length > 0) {
+                    // Try to find the previously viewed card ID in the new pool
+                    const previousCardId = currentCardIndex; // Store ID before potentially resetting
+                    let foundPrevious = false;
+                    if (previousCardId !== -1) {
+                       const positionInNewPool = currentCardPoolIndices.indexOf(previousCardId);
+                       if (positionInNewPool !== -1) {
+                           currentPoolPosition = positionInNewPool;
+                           displayCard(previousCardId);
+                           foundPrevious = true;
+                           console.log(`Restored previous card (ID: ${previousCardId}) in new pool.`);
+                       }
+                    }
+                    // If previous card wasn't found or wasn't set, show first card of new pool
+                    if (!foundPrevious) {
+                        moveToNextCardInPool();
+                         console.log("Displaying first card of the new pool.");
+                    }
+                } else {
+                    showEmptyState(); // Show empty if no cards/pool
+                }
+            }
+             // *** CHANGE: Do NOT update textarea when switching TO edit tab ***
+             // if (tabId === 'edit-tab') {
+             //    updateTextarea(); // REMOVED - Prevents overwriting manual edits
+             // }
+        }
+
+         function shuffleData() {
+             console.log("Shuffling data in textarea...");
+             const lines = cardDataInput.value.trim().split('\n');
+             const nonEmptyLines = lines.filter(line => line.trim() !== '');
+
+             // Fisher-Yates shuffle on lines
+             for (let i = nonEmptyLines.length - 1; i > 0; i--) {
+                 const j = Math.floor(Math.random() * (i + 1));
+                 [nonEmptyLines[i], nonEmptyLines[j]] = [nonEmptyLines[j], nonEmptyLines[i]];
+             }
+
+             // Update textarea directly
+             cardDataInput.value = nonEmptyLines.join('\n') + '\n'; // Add trailing newline for consistency
+
+             // Reparse cards from the shuffled textarea content
+             cards = parseCardData(cardDataInput.value);
+             console.log(`Reparsed ${cards.length} cards after shuffle.`);
+
+             // Regenerate study pool based on new order/content
+             generateCardPool();
+
+             // Display the first card from the new pool if on study tab
+             if (studyTab.classList.contains('active')) {
+                 if (currentCardPoolIndices.length > 0) {
+                     moveToNextCardInPool();
+                 } else {
+                     showEmptyState();
+                 }
+             }
+             // REMOVED alert("Card data shuffled!");
+             console.log("Card data shuffled!"); // Log instead of alert
+         }
+
+
+        function savePage() {
+            console.log("Saving page...");
+            // 1. Get the CURRENT live value from the textarea
+            const currentData = cardDataInput.value;
+
+            // 2. IMPORTANT: Re-parse the cards array from the current textarea data
+            // This ensures the internal state (`cards`) matches exactly what's being saved.
+            cards = parseCardData(currentData);
+            console.log(`Reparsed ${cards.length} cards from textarea before saving.`);
+
+            // 3. Get the entire current HTML structure
+            const currentHtml = document.documentElement.outerHTML;
+
+            // 4. Find the textarea in the HTML string and replace its content reliably
+            const textareaRegex = /(<textarea\s+id="card-data-input"[^>]*>)([\s\S]*?)(<\/textarea>)/i;
+
+            // Check if the textarea was found
+            if (!currentHtml.match(textareaRegex)) {
+                console.error("Error saving: Could not find the <textarea id='card-data-input'> tag in the HTML.");
+                // Optional: Add user feedback here, e.g. temporary message on page
+                // alert("Error: Could not find the data area to save. Cannot save.");
+                return; // Stop the function
+            }
+
+            const updatedHtml = currentHtml.replace(textareaRegex, (match, openingTag, oldContent, closingTag) => {
+                // We need to escape HTML characters within the textarea content for safe embedding
+                const escapeHtml = (unsafe) => {
+                    return unsafe
+                         .replace(/&/g, "&")
+                         .replace(/</g, "<")
+                         .replace(/>/g, ">")
+                         .replace(/"/g, "\"")
+                         .replace(/'/g, "'");
+                 };
+                const escapedData = escapeHtml(currentData);
+                return `${openingTag}${escapedData}${closingTag}`;
+            });
+
+            // 5. Create a Blob with the *modified* HTML
+            const blob = new Blob([updatedHtml], { type: 'text/html;charset=utf-8' }); // Specify charset
+
+            // 6. Create a download link
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            // Generate a more readable filename
+            const now = new Date();
+            const timestamp = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}`;
+            link.download = `tiddly-flashcards-${timestamp}.html`;
+
+            // 7. Trigger download
+            document.body.appendChild(link);
+            link.click();
+
+            // 8. Clean up
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+
+            // REMOVED alert("Page saved with current card data! Open the downloaded HTML file to continue.");
+            console.log("Page saved successfully!"); // Log instead of alert
+        }
+
+        // --- Event Handlers ---
+
+        function handleKeydown(event) {
+            // Ignore key events if focus is within the textarea or if not on study tab
+            if (document.activeElement === cardDataInput || !studyTab.classList.contains('active')) {
+                return;
+            }
+
+            switch (event.key) {
+                case ' ': // Space
+                case 'ArrowRight':
+                    event.preventDefault();
+                    triggerNextAction(); // Use the combined flip/next logic
+                    break;
+                case 'ArrowLeft':
+                    event.preventDefault();
+                    flipCard();
+                    break;
+                 case 'ArrowUp':
+                     event.preventDefault();
+                     moveToPrevCardInPool(); // Up for previous card
+                     break;
+                 case 'ArrowDown':
+                     event.preventDefault();
+                     moveToNextCardInPool(); // Down also triggers flip/next
+                     break;
+                 case 'b': // Add 'b' for bookmark toggle
+                 case 'B':
+                     event.preventDefault();
+                     toggleBookmark();
+                     break;
+            }
+        }
+
+        function handleCardClick() {
+            if (currentCardIndex === -1) return;
+            triggerNextAction(); // Click also uses the combined flip/next logic
+        }
+
+         function handleTouchStart(event) {
+             const firstTouch = event.touches[0];
+             touchStartX = firstTouch.clientX;
+             touchStartY = firstTouch.clientY;
+             // Reset end points at the start of a new touch
+             touchEndX = touchStartX;
+             touchEndY = touchStartY;
+         }
+
+         function handleTouchMove(event) {
+             if (event.touches.length === 1) {
+                 // Update end points continuously during move
+                 touchEndX = event.touches[0].clientX;
+                 touchEndY = event.touches[0].clientY;
+             }
+         }
+
+         function handleTouchEndCorrected(event) {
+             if (!studyTab.classList.contains('active') || currentCardIndex < 0) return;
+
+             // Calculate differences using the final end points
+             const diffX = touchEndX - touchStartX;
+             const diffY = touchEndY - touchStartY;
+             const absDiffX = Math.abs(diffX);
+             const absDiffY = Math.abs(diffY);
+
+             // Check for minimal movement (tap vs swipe) - adjust threshold if needed
+             if (absDiffX < 10 && absDiffY < 10) {
+                 // Considered a tap - use click logic (flip/next)
+                 //triggerNextAction();
+                 console.log("Tap detected");
+             }
+             // Check for horizontal swipe dominance
+             else if (absDiffX > swipeThreshold && absDiffX > absDiffY * 0.8) {
+                 console.log("Horizontal swipe detected");
+                 if (diffX > 0) { // Swiped Right (positive X difference)
+                     flipCard();            
+                 } else { // Swiped Left (negative X difference)
+					 console.log("swipe left")
+                     triggerNextAction(); // Treat left swipe like spacebar/click/down arrow
+                 }
+             }
+             // Check for vertical swipe dominance
+             else if (absDiffY > swipeThreshold && absDiffY > absDiffX * 0.8) {
+                 console.log("Vertical swipe detected");
+                 if (diffY < 0) { // Swiped Up (negative Y difference)
+                     moveToPrevCardInPool();
+                 } else { // Swiped Down (positive Y difference)
+                     moveToNextCardInPool(); // Treat down swipe like spacebar/click/down arrow
+                 }
+             }
+             // Reset touch coordinates after processing
+             touchStartX = 0; touchStartY = 0; touchEndX = 0; touchEndY = 0;
+         }
+
+
+        // --- Initialization ---
+
+        function initApp() {
+            console.log("Initializing Flashcard App v2 Fixed...");
+            // Parse initial data from textarea
+            cards = parseCardData(cardDataInput.value);
+            console.log(`Initialized with ${cards.length} cards.`);
+
+            // Set up event listeners using data attributes for tabs
+            tabButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const tabId = e.currentTarget.dataset.tabid;
+                    if (tabId) {
+                        showTab(tabId);
+                    } else {
+                        console.error("Could not determine tab ID for button:", button);
+                    }
+                });
+            });
+
+            // Study options listeners
+            startSideCheckbox.addEventListener('change', () => {
+                 if (currentCardIndex !== -1) {
+                     isFlipped = startSideCheckbox.checked;
+                     updateFlipStateVisual();
+                 }
+            });
+
+            bookmarksOnlyCheckbox.addEventListener('change', () => {
+                // Filter change requires regenerating the pool and showing a card
+                generateCardPool();
+                if(currentCardPoolIndices.length > 0) {
+                     moveToNextCardInPool(); // Show first card of new pool
+                } else {
+                     showEmptyState(); // Handle case where filter results in no cards
+                }
+            });
+
+            // Card interaction listeners
+            cardElement.addEventListener('click', handleCardClick);
+            bookmarkButton.addEventListener('click', toggleBookmark);
+
+            // Action button listeners
+            saveButtonStudy.addEventListener('click', savePage);
+            saveButtonEdit.addEventListener('click', savePage); // Both save buttons trigger the same function
+            shuffleButtonEdit.addEventListener('click', shuffleData); // Both shuffle buttons trigger the same function
+
+            // Global listeners
+            document.addEventListener('keydown', handleKeydown);
+            cardContainer.addEventListener('touchstart', handleTouchStart, { passive: true });
+            cardContainer.addEventListener('touchmove', handleTouchMove, { passive: true });
+            cardContainer.addEventListener('touchend', handleTouchEndCorrected);
+
+            // Initial setup: Activate study tab and display first card
+            // Use setTimeout to ensure initial display happens after potential layout reflows
+             setTimeout(() => {
+                showTab('study-tab');
+            }, 0);
+        }
+
+        // --- Run Initialization ---
+        document.addEventListener('DOMContentLoaded', initApp);
+
+    </script>
+
+
+
+</body></html>

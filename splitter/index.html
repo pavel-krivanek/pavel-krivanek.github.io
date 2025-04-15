@@ -54,7 +54,8 @@
 </head>
 
 <body>
-    <h1>Split Text into Parts</h1> <label for="input-text">Input Text:</label> <br> <textarea id="input-text" rows="10" cols="50"></textarea> <br> <input id="actionOption" list=actionOptions value="Transfrom the following text into a set of main questions and answers it provides."> <datalist id=actionOptions>
+    <h1>Split Text into Parts</h1> <label for="input-text">Input Text:</label> <br> <textarea id="input-text" rows="10" cols="50"></textarea> <br>
+         <input id="actionOption" list=actionOptions value="Sumarize:"> <datalist id=actionOptions>
          <option value="Transfrom the following text into a set of main questions and answers it provides."></option>
         <option value="The following text contains a part of a book. Please, summary the key points and most interesting and important ideas in it:"></option>
         <option value="summary"></option>
@@ -71,7 +72,7 @@
             while (i < lines.length) {
                 const line = lines[i];
                 const lineWords = line.split(" ");
-                if (wordCount + lineWords.length <= 4000) {
+                if (wordCount + lineWords.length <= 10240) {
                     currentPart += line + "\n";
                     wordCount += lineWords.length;
                     i++;

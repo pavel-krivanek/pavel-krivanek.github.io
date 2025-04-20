@@ -116,30 +116,32 @@
         #card-container {
             perspective: 1000px;
             width: 100%;
-            max-width: 500px; /* Max card width */
-            min-height: 250px; /* Ensure minimum height */
+            max-width: 500px;
+            min-height: 250px;
             margin-bottom: 1em;
-            flex-grow: 1; /* Allow container to grow vertically */
+            flex-grow: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            touch-action: pan-y; /* Allow vertical scroll but capture horizontal */
-             position: relative; /* Needed for absolute positioning of card */
+            touch-action: pan-y;
+            position: relative;
         }
 
         #card {
             width: 100%;
-            height: 100%; /* Fill the container */
-            min-height: 250px; /* Match container */
-            position: relative; /* Changed from absolute to relative within container */
+            height: 100%;
+            min-height: 250px;
+            position: relative;
             transform-style: preserve-3d;
-            transition: transform 0.2s ease-in-out; /* Faster flip */
+            -webkit-transform-style: preserve-3d;
+            -moz-transform-style: preserve-3d;
+            transition: transform 0.2s ease-in-out;
             cursor: pointer;
             background-color: var(--card-background);
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             display: flex;
-            flex-direction: column; /* Stack content */
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
@@ -147,7 +149,7 @@
 
         #card.flipped {
             transform: rotateY(180deg);
-			background-color: var(--card-background-flipped);           
+            background-color: var(--card-background-flipped);
         }
 
         .card-face {
@@ -156,25 +158,26 @@
             height: 100%;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
+            -moz-backface-visibility: hidden;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             padding: 1.5em;
             overflow-wrap: break-word;
-            word-wrap: break-word; /* Ensure long words break */
-            hyphens: auto; /* Add hyphens if needed */
-             overflow-y: auto; /* Allow scroll if content overflows */
+            word-wrap: break-word;
+            hyphens: auto;
+            overflow-y: auto;
         }
 
+        /* Add transform explicitly to fix Firefox rendering */
         #card-front {
-            /* Styles specific to front if needed */
+            transform: rotateY(0deg);
         }
 
         #card-back {
             transform: rotateY(180deg);
         }
-
         .word {
             font-size: 1.8em;
             font-weight: bold;
@@ -371,7 +374,7 @@
          </div>
         <p style="margin-bottom: 0.5em; font-size: 0.9em; color: #555; flex-shrink: 0;">
             Enter card data below. Each line represents one card.<br>
-            Format: <code>CzechWord;ForeignWord;IPA;ExampleSentenceWith[Word];bookmark(true/false - optional)</code><br>
+            Format: <code>NativeWord;ForeignWord;IPA;ExampleSentenceWith[Word];bookmark(true/false - optional)</code><br>
             Example: <code>křehký;fragile;ˈfrædʒaɪl;The [fragile] ecosystem needs protection.;true</code>
         </p>
         <textarea id="card-data-input">ctnost;virtue;ˈvɜːrtʃuː;Patience is considered a [virtue].
@@ -431,7 +434,7 @@ přesvědčit;persuade;pərˈsweɪd;Can you [persuade] him to join us?</textarea
                     return;
                 }
 
-                const [czech, foreign, ipa, sentenceTemplate] = parts;
+                const [native, foreign, ipa, sentenceTemplate] = parts;
                 const bookmarked = parts.length > 4 && parts[4].toLowerCase() === 'true';
 
                 const wordRegex = /\[([^\]]+)\]/i;
@@ -463,7 +466,7 @@ přesvědčit;persuade;pərˈsweɪd;Can you [persuade] him to join us?</textarea
 
                 parsedCards.push({
                     id: index, // Use line index as temporary ID during parse
-                    czech: czech || 'N/A',
+                    native: native || 'N/A',
                     foreign: actualForeignWord || 'N/A', // Use the potentially corrected word
                     ipa: ipa || '',
                     sentenceCloze: sentenceCloze || 'N/A',
@@ -507,7 +510,7 @@ přesvědčit;persuade;pərˈsweɪd;Can you [persuade] him to join us?</textarea
 
                  const bookmarkString = card.bookmarked ? ';true' : ''; // Add bookmark only if true
                  const ipaString = card.ipa || ''; // Ensure IPA is included
-                 return `${card.czech};${card.foreign};${ipaString};${template}${bookmarkString}`;
+                 return `${card.native};${card.foreign};${ipaString};${template}${bookmarkString}`;
              });
              cardDataInput.value = lines.join('\n');
          }
@@ -528,7 +531,7 @@ přesvědčit;persuade;pərˈsweɪd;Can you [persuade] him to join us?</textarea
             }
 
             cardFront.innerHTML = `
-                <div class="word">${card.czech}</div>
+                <div class="word">${card.native}</div>
                 <div class="sentence">${card.sentenceCloze}</div>
             `;
             cardBack.innerHTML = `
@@ -622,17 +625,32 @@ přesvědčit;persuade;pərˈsweɪd;Can you [persuade] him to join us?</textarea
          }
 
 
-        function triggerNextAction() {
-             if (currentCardIndex === -1) return; // No card to act on
-			 
-             if (!isFlipped) {
-                 // If front is showing, flip it
-                 flipCard();
-             } else {
-                 // If back is showing, move to the next card
-                 moveToNextCardInPool();
-             }
-         }
+         function triggerNextAction() {
+            if (currentCardIndex === -1) return;
+
+            const startForeign = startSideCheckbox.checked;
+
+            if (startForeign) {
+                // If starting on the foreign side, first click should flip to the native side,
+                // then subsequent click moves to the next card.
+                if (isFlipped) {
+                    // Currently showing foreign → flip to native
+                    flipCard();
+                } else {
+                    // Currently showing native → advance to next card
+                    moveToNextCardInPool();
+                }
+            } else {
+                // Default behavior: start on native, first click flips to foreign, next advances
+                if (!isFlipped) {
+                    // Currently showing native → flip to foreign
+                    flipCard();
+                } else {
+                    // Currently showing foreign → advance to next card
+                    moveToNextCardInPool();
+                }
+            }
+        }
 
         // --- End Navigation Logic ---
 

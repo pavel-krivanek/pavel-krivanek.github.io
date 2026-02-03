@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nano Lander</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Courier New', Courier, monospace; }
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
+            display: flex; flex-direction: column; justify-content: space-between; p-4;
+        }
+        .hud-text { color: #0f0; text-shadow: 0 0 5px #0f0; font-weight: bold; padding: 20px; font-size: 18px; }
+        #overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center;
+            flex-direction: column; color: white; pointer-events: auto;
+        }
+        h1 { margin-bottom: 10px; color: #ff0055; text-transform: uppercase; letter-spacing: 5px; }
+        .controls-list { text-align: left; background: #111; padding: 20px; border: 1px solid #444; }
+        button { margin-top: 20px; padding: 10px 30px; background: #ff0055; border: none; color: white; font-size: 20px; cursor: pointer; }
+        button:hover { background: #ff4488; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="ui-layer">
+        <div class="hud-text" id="score-display">SCORE: 0</div>
+        <div class="hud-text" id="damage-display">DAMAGE: 0%</div>
+        <div class="hud-text" id="status-display">SYSTEMS: ONLINE</div>
+    </div>
+
+    <div id="overlay">
+        <h1>Nano Lander</h1>
+        <div class="controls-list">
+            <div><b>Mouse</b>: High Speed Tilt</div>
+            <div><b>LMB</b>: Main Thrust</div>
+            <div><b>C / V</b>: Yaw Left/Right</div>
+            <div><b>Q / E</b>: Look Camera Left/Right</div>
+            <div><b>W</b>: Stabilise</div>
+            <div><b>X</b>: Fire Laser</div>
+            <div><b>A / Z</b>: Camera Height (Wide Range)</div>
+            <div><b>P</b>: Pause | <b>ESC</b>: Exit</div>
+        </div>
+        <button id="start-btn">ENGAGE</button>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+                "cannon-es": "https://unpkg.com/cannon-es@0.20.0/dist/cannon-es.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import * as CANNON from 'cannon-es';
+
+        // --- GAME STATE ---
+        let gameActive = false;
+        let isPaused = false;
+        let score = 0;
+        let lastTime = 0;
+        let objectsToRemove = [];
+        let explosions = [];
+
+        // --- CONFIGURATION ---
+        const SETTINGS = {
+            enableShadows: true,
+
+            thrustPower: 100,
+            rotSpeed: 50.0,
+            yawSpeed: 50.5,
+            stabilizeFactor: 2.1,
+
+            cameraDistance: 12,
+            cameraHeight: 6,
+
+            laserSpeed: 40,
+            gravity: -4.9,
+
+            // Damage
+            damageEnabled: true,
+            bottomHitSafeSpeed: 8,           // Impact speed along normal below this (on bottom hits) causes no damage
+            damageMinImpactSpeed: 1.0,       // Ignore very gentle scrapes
+            damageScale: 3.0,                // Damage per (m/s) above min impact
+            damageCooldown: 0.15,            // Seconds between damage ticks while scraping
+
+            // Reticles
+            reticleNearDist: 5,
+            reticleNearSize: 1.5,
+            reticleFarDist: 7,
+            reticleFarSize: 0.8,
+            reticleFarOpacity: 0.5,
+
+            // Main thrust light (no shadows)
+            thrustLightIntensity: 20.5,   // PointLight intensity when main nozzle is active
+            thrustLightDistance: 20,      // 0 = infinite
+            thrustLightDecay: 2,         // physically-correct-ish falloff
+            thrustLightColor: 0x00ffff,
+
+            // Corridor wall visuals
+            wallTextureEnabled: true,
+            wallTextureScale: 0.05,      // UV repeats per world unit (higher = more tiling)
+            wallInnerVisible: true,      // show solid wall from inside (front side)
+            wallInnerOpacity: 1.0,       // 0..1
+            wallWireFrontVisible: false , // show wireframe overlay on inside
+            wallWireFrontOpacity: 0.15   // 0..1
+        };                         
+
+        const keys = {
+            w: false, a: false, s: false, d: false,
+            c: false, v: false, q: false, e: false,
+            x: false, z: false, p: false, thrust: false
+        };
+        const mouse = { x: 0, y: 0 };
+
+        // --- THREE JS SETUP ---
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x050510, 0.006);
+        scene.background = new THREE.Color(0x050510);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        if (SETTINGS.enableShadows) {
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        }
+        document.body.appendChild(renderer.domElement);
+
+        // --- LIGHTING ---
+        const ambLight = new THREE.AmbientLight(0x404050, 10.8);
+        scene.add(ambLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight.position.set(50, 100, 50);
+        if (SETTINGS.enableShadows) {
+            dirLight.castShadow = true;
+            const d = 150;
+            dirLight.shadow.camera.left = -d;
+            dirLight.shadow.camera.right = d;
+            dirLight.shadow.camera.top = d;
+            dirLight.shadow.camera.bottom = -d;
+            dirLight.shadow.camera.near = 0.5;
+            dirLight.shadow.camera.far = 1000;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            dirLight.shadow.bias = -0.0005;
+        }
+        scene.add(dirLight);
+
+        const spotLight = new THREE.SpotLight(0x0088ff, 6);
+        spotLight.position.set(-40, 60, -40);
+        spotLight.lookAt(0,0,0);
+        scene.add(spotLight);
+
+        // --- THRUST LIGHT (added at main nozzle when thrust is active) ---
+        const thrustLight = new THREE.PointLight(
+            SETTINGS.thrustLightColor,
+            0,
+            SETTINGS.thrustLightDistance,
+            SETTINGS.thrustLightDecay
+        );
+        thrustLight.castShadow = false; // explicitly no shadows
+        thrustLight.visible = false;
+        scene.add(thrustLight);
+
+        // --- CANNON JS SETUP ---
+        const world = new CANNON.World({ gravity: new CANNON.Vec3(0, SETTINGS.gravity, 0) });
+        const defaultMaterial = new CANNON.Material('default');
+        const defaultContactMaterial = new CANNON.ContactMaterial(defaultMaterial, defaultMaterial, {
+            friction: 0.55,
+            restitution: 0.15
+        });
+        world.addContactMaterial(defaultContactMaterial);
+
+        // --- RANDOM HELPERS ---
+        const randInt = (min, max) => Math.floor(min + Math.random() * (max - min + 1));
+        const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+        // --- VISUAL FX ---
+        function spawnExplosion(position) {
+            const geo = new THREE.SphereGeometry(0.5, 16, 16);
+            const mat = new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 1 });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.copy(position);
+            scene.add(mesh);
+            explosions.push({ mesh: mesh, age: 0, life: 0.5 });
+        }
+
+        function updateExplosions(dt) {
+            for (let i = explosions.length - 1; i >= 0; i--) {
+                const ex = explosions[i];
+                ex.age += dt;
+                const progress = ex.age / ex.life;
+                ex.mesh.scale.setScalar(1 + progress * 5);
+                ex.mesh.material.opacity = 1 - progress;
+                if (ex.age >= ex.life) {
+                    scene.remove(ex.mesh);
+                    ex.mesh.geometry.dispose();
+                    ex.mesh.material.dispose();
+                    explosions.splice(i, 1);
+                }
+            }
+        }
+
+        // --- SHIP ---
+        const shipGroup = new THREE.Group();
+        scene.add(shipGroup);
+
+        // Ship collision size (also used as "ship size unit" for corridor generation)
+        const SHIP_HALF = new THREE.Vector3(1, 0.5, 1.5);
+        const SHIP_UNIT = Math.max(SHIP_HALF.x, SHIP_HALF.y, SHIP_HALF.z) * 2;
+
+        const shipShape = new CANNON.Box(new CANNON.Vec3(SHIP_HALF.x, SHIP_HALF.y, SHIP_HALF.z));
+        const shipBody = new CANNON.Body({ mass: 5, material: defaultMaterial });
+        shipBody.addShape(shipShape);
+        shipBody.linearDamping = 0.12;
+        shipBody.angularDamping = 0.82;
+        world.addBody(shipBody);
+
+        const rcsFlames = {};
+
+        function createReticleRect(width, height, color, opacity) {
+            const hw = width / 2; const hh = height / 2;
+            const points = [
+                new THREE.Vector3(-hw, hh, 0), new THREE.Vector3(hw, hh, 0),
+                new THREE.Vector3(hw, -hh, 0), new THREE.Vector3(-hw, -hh, 0)
+            ];
+            const geo = new THREE.BufferGeometry().setFromPoints(points);
+            const mat = new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: opacity });
+            return new THREE.LineLoop(geo, mat);
+        }
+
+        function buildShipVisuals() {
+            const vOffset = new THREE.Group();
+            vOffset.position.y = 0.1;
+            shipGroup.add(vOffset);
+
+            // Hull
+            const hull = new THREE.Mesh(
+                new THREE.BoxGeometry(1.8, 0.8, 3),
+                new THREE.MeshStandardMaterial({ color: 0x445566, roughness: 0.3 })
+            );
+            if(SETTINGS.enableShadows) { hull.castShadow = true; hull.receiveShadow = true; }
+            vOffset.add(hull);
+
+            // Cabin
+            const cabin = new THREE.Mesh(
+                new THREE.BoxGeometry(1.4, 0.6, 1.0),
+                new THREE.MeshPhysicalMaterial({ color: 0x00ccff, metalness: 0.1, transmission: 0.5, transparent: true })
+            );
+            cabin.position.set(0, 0.1, -1.6);
+            vOffset.add(cabin);
+
+            // Skis
+            const skiGeo = new THREE.BoxGeometry(0.3, 0.2, 4.0);
+            const skiMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+            const skiL = new THREE.Mesh(skiGeo, skiMat); skiL.position.set(-1.0, -0.6, 0);
+            const skiR = new THREE.Mesh(skiGeo, skiMat); skiR.position.set(1.0, -0.6, 0);
+            if(SETTINGS.enableShadows) { skiL.castShadow = true; skiR.castShadow = true; }
+            vOffset.add(skiL); vOffset.add(skiR);
+
+            // Main Nozzle
+            const nozzle = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.5, 0.6, 0.5, 16),
+                new THREE.MeshStandardMaterial({ color: 0x111111 })
+            );
+            nozzle.position.set(0, -0.6, 0);
+            vOffset.add(nozzle);
+            shipGroup.userData.nozzle = nozzle;
+
+            // Main Flame
+            const flameGeo = new THREE.ConeGeometry(0.4, 2.0, 16);
+            const flameMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.6, depthWrite: false });
+            const mainFlame = new THREE.Mesh(flameGeo, flameMat);
+            mainFlame.rotation.x = Math.PI;
+            mainFlame.position.set(0, -1.6, 0);
+            mainFlame.visible = false;
+            vOffset.add(mainFlame);
+            shipGroup.userData.mainFlame = mainFlame;
+
+            // Reticles
+            const r1 = createReticleRect(SETTINGS.reticleNearSize, SETTINGS.reticleNearSize, 0x00ff00, 0.8);
+            r1.position.z = -SETTINGS.reticleNearDist;
+            vOffset.add(r1);
+            const r2 = createReticleRect(SETTINGS.reticleFarSize, SETTINGS.reticleFarSize, 0x00ff00, SETTINGS.reticleFarOpacity);
+            r2.position.z = -SETTINGS.reticleFarDist;
+            vOffset.add(r2);
+
+            // RCS
+            const createRCS = (name, x, y, z, rotX, rotY, rotZ) => {
+                const n = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), skiMat);
+                n.position.set(x, y, z);
+                vOffset.add(n);
+                const container = new THREE.Group();
+                container.position.set(x, y, z);
+                container.rotation.set(rotX, rotY, rotZ);
+                const f = new THREE.Mesh(
+                    new THREE.ConeGeometry(0.15, 1.2, 8),
+                    new THREE.MeshBasicMaterial({color: 0xffaa00, transparent: true, opacity: 0.8})
+                );
+                f.position.y = -0.6; f.rotation.x = Math.PI;
+                container.add(f); container.visible = false;
+                vOffset.add(container);
+                rcsFlames[name] = container;
+            };
+
+            createRCS('pitchUp', 0, -0.5, 1.4, 0, 0, 0);
+            createRCS('pitchDown', 0, -0.5, -1.4, 0, 0, 0);
+            createRCS('rollLeft', 1.1, -0.5, 0, 0, 0, 0);
+            createRCS('rollRight', -1.1, -0.5, 0, 0, 0, 0);
+            createRCS('yawLeft', 1.0, 0, -1.0, 0, 0, Math.PI/2);
+            createRCS('yawRight', -1.0, 0, -1.0, 0, 0, -Math.PI/2);
+        }
+        buildShipVisuals();
+
+        // --- CORRIDOR ENVIRONMENT ---
+        const corridorGroup = new THREE.Group();
+        scene.add(corridorGroup);
+
+        const CORRIDOR = {
+            // Cross-section dimensions per segment (variable): 5..15x ship size
+            minExtentMul: 5,
+            maxExtentMul: 15,
+
+            // Abrupt extent change happens at this fraction of the segment length
+            extentBreakFrac: 2/3,
+
+            // Each section length: 10..50 ship sizes
+            minSectionLen: 10 * SHIP_UNIT,
+            maxSectionLen: 50 * SHIP_UNIT,
+
+            // Section sequence: random dir section, then straight +Z section
+            randomSections: 10,
+
+            wallThickness: Math.max(0.25, 0.20 * SHIP_UNIT),
+            wallColor: 0x2b2b44,
+            wireOpacity: 0.35,
+
+            overlapAttempts: 40
+        };
+
+        const corridorBodies = [];
+        let corridorSegments = [];
+
+        // --- WALL MATERIALS / TEXTURES ---
+// Solid is the inward-facing surface (front side, since we orient planes so normals point into the corridor).
+// Wire is the outward-facing surface (back side), plus an optional wire overlay on the inward-facing side.
+// Textures (external assets). These files must live next to this HTML: wall.jpg and floor.jpg
+const texLoader = new THREE.TextureLoader();
+
+const wallTex = texLoader.load('wall.jpg');
+wallTex.wrapS = wallTex.wrapT = THREE.RepeatWrapping;
+wallTex.colorSpace = THREE.SRGBColorSpace;
+wallTex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy?.() ?? 8);
+
+const floorTex = texLoader.load('floor.jpg');
+floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
+floorTex.colorSpace = THREE.SRGBColorSpace;
+floorTex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy?.() ?? 8);
+
+
+// Base materials (we clone per-wall to set per-wall UV tiling).
+const wallMatSolidBase = new THREE.MeshStandardMaterial({
+    color: CORRIDOR.wallColor,
+    roughness: 0.65,
+    metalness: 0.15,
+    side: THREE.FrontSide,
+    transparent: true,
+    opacity: SETTINGS.wallInnerVisible ? SETTINGS.wallInnerOpacity : 0.0
+});const floorMatSolidBase = new THREE.MeshStandardMaterial({
+    color: CORRIDOR.wallColor,
+    roughness: 0.75,
+    metalness: 0.05,
+    side: THREE.FrontSide,
+    transparent: true,
+    opacity: SETTINGS.wallInnerVisible ? SETTINGS.wallInnerOpacity : 0.0
+});
+
+
+if (SETTINGS.wallTextureEnabled) {
+    wallMatSolidBase.map = wallTex;
+    floorMatSolidBase.map = floorTex;
+    // Don't tint textures with the corridor base color; keep texture albedo intact.
+    wallMatSolidBase.color.set(0xffffff);
+    floorMatSolidBase.color.set(0xffffff);
+}
+
+const wallMatWireBack = new THREE.MeshBasicMaterial({
+    color: 0x5566aa,
+    wireframe: true,
+    transparent: true,
+    opacity: CORRIDOR.wireOpacity,
+    side: THREE.BackSide,
+    depthWrite: false
+});
+
+const wallMatWireFront = new THREE.MeshBasicMaterial({
+    color: 0x88aaff,
+    wireframe: true,
+    transparent: true,
+    opacity: SETTINGS.wallWireFrontOpacity,
+    side: THREE.FrontSide,
+    depthWrite: false
+});
+
+        function basisFromForward(forward) {
+            const f = forward.clone().normalize();
+            let upRef = new THREE.Vector3(0, 1, 0);
+            if (Math.abs(f.dot(upRef)) > 0.90) upRef = new THREE.Vector3(0, 0, 1);
+            const right = new THREE.Vector3().crossVectors(upRef, f).normalize();
+            const up = new THREE.Vector3().crossVectors(f, right).normalize();
+
+            const m = new THREE.Matrix4().makeBasis(right, up, f);
+            const q = new THREE.Quaternion().setFromRotationMatrix(m);
+            return { right, up, forward: f, q };
+        }
+
+        function makeQuatFromBasis(right, up, forward) {
+            const m = new THREE.Matrix4().makeBasis(right, up, forward);
+            return new THREE.Quaternion().setFromRotationMatrix(m);
+        }
+
+        // Build a stable segment frame by rotating the previous segment frame to the new forward (prevents random roll flips).
+        function basisFromForwardContinuous(forward, prevSeg) {
+            const f = forward.clone().normalize();
+            if (!prevSeg) {
+                const b = basisFromForward(f);
+                return b;
+            }
+
+            const pf = prevSeg.forward.clone().normalize();
+            const dot = clamp(pf.dot(f), -1, 1);
+
+            // Same direction: keep the previous frame
+            if (dot > 0.999) {
+                return {
+                    right: prevSeg.right.clone(),
+                    up: prevSeg.up.clone(),
+                    forward: f,
+                    q: makeQuatFromBasis(prevSeg.right.clone(), prevSeg.up.clone(), f)
+                };
+            }
+
+            // 90-degree turns in our generator
+            const axis = new THREE.Vector3().crossVectors(pf, f);
+            if (axis.length() < 1e-6) {
+                // Shouldn't happen (we never go backwards), but fall back safely.
+                const b = basisFromForward(f);
+                return b;
+            }
+            axis.normalize();
+
+            const angle = Math.acos(dot);
+            const qTurn = new THREE.Quaternion().setFromAxisAngle(axis, angle);
+
+            const right = prevSeg.right.clone().applyQuaternion(qTurn).normalize();
+            const up = prevSeg.up.clone().applyQuaternion(qTurn).normalize();
+            const q = makeQuatFromBasis(right, up, f);
+
+            return { right, up, forward: f, q };
+        }
+
+        function dirsEqual(a, b) {
+            return a.x === b.x && a.y === b.y && a.z === b.z;
+        }
+
+        function segEndWorld(seg) {
+            return localToWorld(seg, new THREE.Vector3(0, 0, seg.length));
+        }
+
+        // How much of the last part of the segment we "reserve" for a side opening (turn). This also defines turn placement.
+        function desiredTurnOpenLen(prevSeg, nextSeg) {
+            // prev forward aligns with either next.right (width) or next.up (height)
+            // use the PREVIOUS segment's END extents (w1/h1), since the opening is near the end
+            const alignR = Math.abs(nextSeg.right.dot(prevSeg.forward));
+            return (alignR > 0.5) ? prevSeg.w1 : prevSeg.h1;
+        }
+
+        function clampTurnOpenLen(L, desired, minKeepStart = null) {
+            // Leave at least 2 ship sizes of straight runway before the opening begins (avoids tiny segments getting fully "opened").
+            const maxOpen = Math.max(SHIP_UNIT, L - 2 * SHIP_UNIT);
+            let open = Math.min(desired, maxOpen);
+
+            // If the segment has an extent-change breakpoint, keep the side opening in the final span
+            // so the turn aligns with the segment's END extents (w1/h1).
+            if (minKeepStart !== null) {
+                const maxOpenByKeep = Math.max(SHIP_UNIT, L - minKeepStart);
+                open = Math.min(open, maxOpenByKeep);
+            }
+            return open;
+        }
+
+        function computeTurnStart(prevSeg, nextDir, nextBasis, openLen) {
+            const end = segEndWorld(prevSeg);
+
+            const localNext = new THREE.Vector3(
+                nextDir.dot(prevSeg.right),
+                nextDir.dot(prevSeg.up),
+                nextDir.dot(prevSeg.forward)
+            );
+
+            // Straight (should be handled elsewhere)
+            if (localNext.z > 0.5) return end.clone();
+
+            // Use the previous segment END extents to offset the turned segment so it touches without overlap.
+            const wEnd = prevSeg.w1;
+            const hEnd = prevSeg.h1;
+
+            const side = new THREE.Vector3(0, 0, 0);
+
+            if (localNext.x > 0.5) {
+                side.copy(prevSeg.right).multiplyScalar(wEnd / 2);
+            } else if (localNext.x < -0.5) {
+                side.copy(prevSeg.right).multiplyScalar(-wEnd / 2);
+            } else if (localNext.y > 0.5) {
+                side.copy(prevSeg.up).multiplyScalar(hEnd / 2);
+            } else if (localNext.y < -0.5) {
+                side.copy(prevSeg.up).multiplyScalar(-hEnd / 2);
+            }
+
+            // Pull back along the previous forward so that the new segment cross-section fully covers the opening window
+            const back = prevSeg.forward.clone().multiplyScalar(-openLen / 2);
+
+            return end.clone().add(side).add(back);
+        }
+
+        function localToWorld(seg, localPos) {
+            return seg.start.clone()
+                .add(seg.right.clone().multiplyScalar(localPos.x))
+                .add(seg.up.clone().multiplyScalar(localPos.y))
+                .add(seg.forward.clone().multiplyScalar(localPos.z));
+        }
+
+        function quatMul(a, b) {
+            return a.clone().multiply(b);
+        }
+
+        function aabbForSegment(seg) {
+            // Exact AABB for an oriented box whose axes are axis-aligned unit vectors (right/up/forward will be +/- world axes)
+            const halfRight = (seg.wMax ?? (CORRIDOR.maxExtentMul * SHIP_UNIT)) * 0.5;
+            const halfUp = (seg.hMax ?? (CORRIDOR.maxExtentMul * SHIP_UNIT)) * 0.5;
+            const halfF = seg.length * 0.5;
+
+            const center = localToWorld(seg, new THREE.Vector3(0, 0, halfF));
+
+            const ex = Math.abs(seg.right.x) * halfRight + Math.abs(seg.up.x) * halfUp + Math.abs(seg.forward.x) * halfF;
+            const ey = Math.abs(seg.right.y) * halfRight + Math.abs(seg.up.y) * halfUp + Math.abs(seg.forward.y) * halfF;
+            const ez = Math.abs(seg.right.z) * halfRight + Math.abs(seg.up.z) * halfUp + Math.abs(seg.forward.z) * halfF;
+
+            return {
+                min: new THREE.Vector3(center.x - ex, center.y - ey, center.z - ez),
+                max: new THREE.Vector3(center.x + ex, center.y + ey, center.z + ez)
+            };
+        }
+
+        function aabbIntersects(a, b, padding = 0) {
+            return (
+                a.min.x - padding <= b.max.x && a.max.x + padding >= b.min.x &&
+                a.min.y - padding <= b.max.y && a.max.y + padding >= b.min.y &&
+                a.min.z - padding <= b.max.z && a.max.z + padding >= b.min.z
+            );
+        }
+
+        function addPlaneWall(seg, planeGeo, localPos, localEuler, solidBaseMat = wallMatSolidBase) {
+            const localQ = new THREE.Quaternion().setFromEuler(localEuler);
+            const worldPos = localToWorld(seg, localPos);
+            const worldQ = quatMul(seg.q, localQ);
+
+            // PlaneGeometry is +Z facing in local space. We orient planes so this +Z normal points INTO the corridor.
+            const worldNormal = new THREE.Vector3(0, 0, 1).applyQuaternion(worldQ);
+
+            // Small separation to avoid z-fighting and to ensure the "outside" wire does not bleed through from inside.
+            const WIRE_OFFSET = 0.02;
+
+            // Solid (inside)
+            const solidMat = solidBaseMat.clone();
+
+            // Per-wall texture tiling based on real dimensions
+            if (solidMat.map) {
+                const w = planeGeo.parameters?.width ?? 1;
+                const h = planeGeo.parameters?.height ?? 1;
+                // repeats = (world size) * scale
+                solidMat.map = solidMat.map.clone();
+                solidMat.map.repeat.set(
+                    Math.max(1e-3, w * SETTINGS.wallTextureScale),
+                    Math.max(1e-3, h * SETTINGS.wallTextureScale)
+                );
+                solidMat.map.needsUpdate = true;
+            }
+
+            // Respect visibility/opacity toggles
+            solidMat.opacity = SETTINGS.wallInnerVisible ? SETTINGS.wallInnerOpacity : 0.0;
+
+            // Keep depth writes on as long as the wall is visible. This prevents the outside wire from showing through.
+            solidMat.depthWrite = (solidMat.opacity > 0.0);
+
+            const solid = new THREE.Mesh(planeGeo, solidMat);
+            solid.position.copy(worldPos);
+            solid.quaternion.copy(worldQ);
+            if (SETTINGS.enableShadows) { solid.receiveShadow = true; }
+
+            // Wire (outside) — offset slightly OUT of the corridor (opposite the inward normal)
+            const wireBack = new THREE.Mesh(planeGeo, wallMatWireBack);
+            wireBack.position.copy(worldPos).addScaledVector(worldNormal, -WIRE_OFFSET);
+            wireBack.quaternion.copy(worldQ);
+
+            corridorGroup.add(solid);
+            corridorGroup.add(wireBack);
+
+            // Optional wire overlay (inside) — offset slightly INTO the corridor (along the inward normal)
+            if (SETTINGS.wallWireFrontVisible && SETTINGS.wallWireFrontOpacity > 0) {
+                const wfMat = wallMatWireFront.clone();
+                wfMat.opacity = SETTINGS.wallWireFrontOpacity;
+
+                const wireFront = new THREE.Mesh(planeGeo, wfMat);
+                wireFront.position.copy(worldPos).addScaledVector(worldNormal, +WIRE_OFFSET);
+                wireFront.quaternion.copy(worldQ);
+                // Make sure it draws after solids.
+                wireFront.renderOrder = 10;
+
+                corridorGroup.add(wireFront);
+            }
+        }
+
+        function addColliderBox(seg, localPos, localEuler, sx, sy, sz) {
+            const localQ = new THREE.Quaternion().setFromEuler(localEuler);
+            const worldPos = localToWorld(seg, localPos);
+            const worldQ = quatMul(seg.q, localQ);
+
+            const shape = new CANNON.Box(new CANNON.Vec3(sx/2, sy/2, sz/2));
+            const body = new CANNON.Body({ mass: 0, material: defaultMaterial });
+            body.addShape(shape);
+            body.userData = { kind: "corridorWall" }; // for damage filtering
+            body.position.set(worldPos.x, worldPos.y, worldPos.z);
+            body.quaternion.set(worldQ.x, worldQ.y, worldQ.z, worldQ.w);
+            world.addBody(body);
+            corridorBodies.push(body);
+            return body;
+        }
+
+        
+        function addExtentStepFrame(seg, zPlane, wA, hA, wB, hB, t) {
+    // Build "lip" faces at zPlane to seal abrupt extent changes.
+    // We add rectangular strips (a ring) around the overlap of the two rectangles.
+    const aX = wA * 0.5, aY = hA * 0.5;
+    const bX = wB * 0.5, bY = hB * 0.5;
+    const oX = Math.min(aX, bX);
+    const oY = Math.min(aY, bY);
+    const eps = 1e-6;
+
+    const addStrip = (xC, yC, wStrip, hStrip, owner) => {
+        if (wStrip <= eps || hStrip <= eps) return;
+
+        const geo = new THREE.PlaneGeometry(wStrip, hStrip);
+        // owner 'A' => interior is before the plane (z < zPlane) so inward normal is -forward
+        // owner 'B' => interior is after the plane  (z > zPlane) so inward normal is +forward
+        const inwardToB = (owner === 'B');
+        const euler = inwardToB ? new THREE.Euler(0, 0, 0) : new THREE.Euler(0, Math.PI, 0);
+
+        addPlaneWall(seg, geo, new THREE.Vector3(xC, yC, zPlane), euler);
+
+        // Collider: place thickness on the OUTSIDE of the corridor volume
+        const zc = zPlane + (inwardToB ? -t/2 : +t/2);
+        addColliderBox(seg, new THREE.Vector3(xC, yC, zc), new THREE.Euler(0,0,0), wStrip + 2*t, hStrip + 2*t, t);
+    };
+
+    // Width difference -> left/right strips
+    if (Math.abs(aX - bX) > eps) {
+        const owner = (bX > aX) ? 'B' : 'A';
+        const bigX = Math.max(aX, bX);
+        const bigY = (owner === 'B') ? bY : aY;
+        const stripW = bigX - oX;
+        const stripH = 2 * bigY;
+
+        // Right
+        addStrip((oX + bigX) / 2, 0, stripW, stripH, owner);
+        // Left
+        addStrip(-(oX + bigX) / 2, 0, stripW, stripH, owner);
+    }
+
+    // Height difference -> top/bottom strips (only across overlap width to avoid double-covering corners)
+    if (Math.abs(aY - bY) > eps) {
+        const owner = (bY > aY) ? 'B' : 'A';
+        const bigY = Math.max(aY, bY);
+        const stripH = bigY - oY;
+        const stripW = 2 * oX;
+
+        // Top
+        addStrip(0, (oY + bigY) / 2, stripW, stripH, owner);
+        // Bottom
+        addStrip(0, -(oY + bigY) / 2, stripW, stripH, owner);
+    }
+}
+
+function buildSegmentWalls(seg, isFirst, isLast, nextSeg) {
+    const L = seg.length;
+    const t = CORRIDOR.wallThickness;
+
+    // Segment extents
+    const w0 = seg.w0, h0 = seg.h0;
+    const w1 = seg.w1, h1 = seg.h1;
+
+    const breakZ = clamp(seg.breakZ ?? (L * CORRIDOR.extentBreakFrac), 0, L);
+    const spanA = { z: 0,     len: breakZ,     w: w0, h: h0 };
+    const spanB = { z: breakZ, len: L-breakZ, w: w1, h: h1 };
+
+    // Determine if we need a side opening (turn, style A)
+    let open = null;
+    if (!isLast && nextSeg) {
+        const localNext = new THREE.Vector3(
+            nextSeg.dir.dot(seg.right),
+            nextSeg.dir.dot(seg.up),
+            nextSeg.dir.dot(seg.forward)
+        );
+
+        if (localNext.z < 0.5) {
+            const desired = desiredTurnOpenLen(seg, nextSeg);
+            const openLen = clampTurnOpenLen(L, desired, breakZ);
+            const keepLen = Math.max(0, L - openLen);
+
+            open = {
+                localNext,
+                openLen,
+                keepLen,
+                onRight: (localNext.x > 0.5),
+                onLeft: (localNext.x < -0.5),
+                onCeil: (localNext.y > 0.5),
+                onFloor: (localNext.y < -0.5)
+            };
+        }
+    }
+
+    const keepLen = open ? open.keepLen : L;
+
+    // Helpers for walls and colliders per-span
+    const wallLenForSide = (span, isOpenSide) => {
+        if (!isOpenSide) return span.len;
+        // This side is open after keepLen
+        const remaining = keepLen - span.z;
+        return Math.max(0, Math.min(span.len, remaining));
+    };
+
+    const addWallsForSpan = (span) => {
+        if (span.len <= 0) return;
+
+        const w = span.w, h = span.h, z0 = span.z;
+
+        const leftLen  = wallLenForSide(span, open && open.onLeft);
+        const rightLen = wallLenForSide(span, open && open.onRight);
+        const floorLen = wallLenForSide(span, open && open.onFloor);
+        const ceilLen  = wallLenForSide(span, open && open.onCeil);
+
+        const addLeftWall = (len) => {
+            if (len <= 0) return;
+            const geo = new THREE.PlaneGeometry(len, h);
+            addPlaneWall(seg, geo, new THREE.Vector3(-w/2, 0, z0 + len/2), new THREE.Euler(0, +Math.PI/2, 0));
+        };
+        const addRightWall = (len) => {
+            if (len <= 0) return;
+            const geo = new THREE.PlaneGeometry(len, h);
+            addPlaneWall(seg, geo, new THREE.Vector3(+w/2, 0, z0 + len/2), new THREE.Euler(0, -Math.PI/2, 0));
+        };
+        const addFloor = (len) => {
+            if (len <= 0) return;
+            const geo = new THREE.PlaneGeometry(w, len);
+            addPlaneWall(seg, geo, new THREE.Vector3(0, -h/2, z0 + len/2), new THREE.Euler(-Math.PI/2, 0, 0), floorMatSolidBase);
+        };
+        const addCeiling = (len) => {
+            if (len <= 0) return;
+            const geo = new THREE.PlaneGeometry(w, len);
+            addPlaneWall(seg, geo, new THREE.Vector3(0, +h/2, z0 + len/2), new THREE.Euler(+Math.PI/2, 0, 0));
+        };
+
+        addLeftWall(leftLen);
+        addRightWall(rightLen);
+        addFloor(floorLen);
+        addCeiling(ceilLen);
+
+        // Colliders
+        const wc = w + 2*t;
+        const hc = h + 2*t;
+
+        const addSideCollider = (side, len, isOpenSide) => {
+            if (len <= 0) return;
+
+            const overlapOnlyBack = isOpenSide; // don't intrude into the opening
+            const Lc = len + (overlapOnlyBack ? t : 2*t);
+            const zc = (z0 + len/2) + (overlapOnlyBack ? -t/2 : 0);
+
+            if (side === 'left') {
+                addColliderBox(seg, new THREE.Vector3(-(w/2 + t/2), 0, zc), new THREE.Euler(0,0,0), t, hc, Lc);
+            } else if (side === 'right') {
+                addColliderBox(seg, new THREE.Vector3(+(w/2 + t/2), 0, zc), new THREE.Euler(0,0,0), t, hc, Lc);
+            } else if (side === 'floor') {
+                addColliderBox(seg, new THREE.Vector3(0, -(h/2 + t/2), zc), new THREE.Euler(0,0,0), wc, t, Lc);
+            } else if (side === 'ceil') {
+                addColliderBox(seg, new THREE.Vector3(0, +(h/2 + t/2), zc), new THREE.Euler(0,0,0), wc, t, Lc);
+            }
+        };
+
+        addSideCollider('left',  leftLen,  open && open.onLeft);
+        addSideCollider('right', rightLen, open && open.onRight);
+        addSideCollider('floor', floorLen, open && open.onFloor);
+        addSideCollider('ceil',  ceilLen,  open && open.onCeil);
+    };
+
+    // Build walls for each span
+    addWallsForSpan(spanA);
+    addWallsForSpan(spanB);
+
+    // Add a sealing "lip" at the abrupt extent change (skip for connectors or if no change)
+    if (!seg.isConnector && spanB.len > 0 && (Math.abs(w0 - w1) > 1e-6 || Math.abs(h0 - h1) > 1e-6)) {
+        addExtentStepFrame(seg, breakZ, w0, h0, w1, h1, t);
+    }
+
+    // Start cap: fully closed, so the ship can never exit backwards
+    if (isFirst) {
+        const capGeo = new THREE.PlaneGeometry(w0, h0);
+        // At z=0, inward normal +z
+        addPlaneWall(seg, capGeo, new THREE.Vector3(0, 0, 0), new THREE.Euler(0, 0, 0));
+        addColliderBox(seg, new THREE.Vector3(0, 0, -t/2), new THREE.Euler(0,0,0), w0 + 2*t, h0 + 2*t, t);
+    }
+
+    // End cap:
+    // - last segment: always fully closed
+    // - turn (style A): fully close the end plane (forward is blocked; turn is via side opening)
+    // - straight: no cap
+    const needsEndCap = isLast || !nextSeg || (open !== null);
+
+    if (needsEndCap) {
+        const capGeo = new THREE.PlaneGeometry(w1, h1);
+        // At z=L, inward normal -z
+        addPlaneWall(seg, capGeo, new THREE.Vector3(0, 0, L), new THREE.Euler(0, Math.PI, 0));
+        addColliderBox(seg, new THREE.Vector3(0, 0, L + t/2), new THREE.Euler(0,0,0), w1 + 2*t, h1 + 2*t, t);
+    }
+}
+
+
+        function clearCorridor() {
+            corridorGroup.clear();
+            corridorBodies.forEach(b => world.removeBody(b));
+            corridorBodies.length = 0;
+            corridorSegments = [];
+        }
+
+        
+        function generateCorridorSegments() {
+    const dirs = [
+        new THREE.Vector3(0,0,1),  // straight
+        new THREE.Vector3(-1,0,0), // left
+        new THREE.Vector3(1,0,0),  // right
+        new THREE.Vector3(0,1,0),  // top
+        new THREE.Vector3(0,-1,0)  // down
+    ];
+
+    const STRAIGHT = new THREE.Vector3(0,0,1);
+
+    const pickExtent = (prevW = null, prevH = null) => {
+        const minMul = CORRIDOR.minExtentMul;
+        const maxMul = CORRIDOR.maxExtentMul;
+
+        let w = randInt(minMul, maxMul) * SHIP_UNIT;
+        let h = randInt(minMul, maxMul) * SHIP_UNIT;
+
+        // Encourage a visible change if prev is provided
+        if (prevW !== null && prevH !== null) {
+            let tries = 0;
+            while (tries < 12 && Math.abs(w - prevW) < 0.75 * SHIP_UNIT && Math.abs(h - prevH) < 0.75 * SHIP_UNIT) {
+                w = randInt(minMul, maxMul) * SHIP_UNIT;
+                h = randInt(minMul, maxMul) * SHIP_UNIT;
+                tries++;
+            }
+        }
+        return { w, h };
+    };
+
+    const makeSeg = (start, dir, len, basis, w0, h0, w1, h1, isConnector = false) => {
+        const breakZ = isConnector ? len : (len * CORRIDOR.extentBreakFrac);
+        return {
+            start: start.clone(),
+            dir: dir.clone(),
+            length: len,
+            right: basis.right.clone(),
+            up: basis.up.clone(),
+            forward: basis.forward.clone(),
+            q: basis.q.clone(),
+            w0, h0, w1, h1,
+            wMax: Math.max(w0, w1),
+            hMax: Math.max(h0, h1),
+            breakZ,
+            isConnector
+        };
+    };
+
+    for (let attempt = 0; attempt < CORRIDOR.overlapAttempts; attempt++) {
+        const segs = [];
+        const aabbs = [];
+
+        let prevSeg = null;
+
+        function tryPush(seg) {
+            const bb = aabbForSegment(seg);
+
+            for (let j = 0; j < aabbs.length; j++) {
+                // Adjacent segments will touch at joints; allow those.
+                if (Math.abs(j - segs.length) <= 1) continue;
+                if (aabbIntersects(bb, aabbs[j], CORRIDOR.wallThickness * 2)) return false;
+            }
+
+            segs.push(seg);
+            aabbs.push(bb);
+            prevSeg = seg;
+            return true;
+        }
+
+        function appendSection(dir, len) {
+            const d = dir.clone().normalize();
+
+            // First ever segment: place at origin, and force it to be straight (+Z)
+            if (!prevSeg) {
+                const b0 = basisFromForwardContinuous(STRAIGHT, null);
+                const e0 = pickExtent();
+                const e1 = pickExtent(e0.w, e0.h);
+                const seg0 = makeSeg(new THREE.Vector3(0,0,0), STRAIGHT, len, b0, e0.w, e0.h, e1.w, e1.h, false);
+                return tryPush(seg0);
+            }
+
+            // Same direction -> leave a 1 ship-size gap and bridge it with a connector tube segment
+            if (dirsEqual(d, prevSeg.dir)) {
+                const connBasis = basisFromForwardContinuous(prevSeg.dir, prevSeg);
+                const connStart = segEndWorld(prevSeg);
+                const w = prevSeg.w1;
+                const h = prevSeg.h1;
+                const conn = makeSeg(connStart, prevSeg.dir, SHIP_UNIT, connBasis, w, h, w, h, true);
+                if (!tryPush(conn)) return false;
+            }
+
+            // Build basis continuously from the last segment
+            const nextBasis = basisFromForwardContinuous(d, prevSeg);
+            const nextTmp = { right: nextBasis.right, up: nextBasis.up, forward: nextBasis.forward };
+
+            // Determine whether this is a turn relative to prevSeg
+            const localNext = new THREE.Vector3(
+                d.dot(prevSeg.right),
+                d.dot(prevSeg.up),
+                d.dot(prevSeg.forward)
+            );
+
+            let start = segEndWorld(prevSeg);
+
+            if (localNext.z < 0.5) {
+                // Turn: style A = side opening near the end of prevSeg
+                const desired = desiredTurnOpenLen(prevSeg, nextTmp);
+                const openLen = clampTurnOpenLen(prevSeg.length, desired, prevSeg.breakZ ?? (prevSeg.length * CORRIDOR.extentBreakFrac));
+                start = computeTurnStart(prevSeg, d, nextBasis, openLen);
+            }
+
+            // Extents must connect at joints: next start extent = prev end extent
+            const wStart = prevSeg.w1;
+            const hStart = prevSeg.h1;
+            const eEnd = pickExtent(wStart, hStart);
+
+            const seg = makeSeg(start, d, len, nextBasis, wStart, hStart, eEnd.w, eEnd.h, false);
+            return tryPush(seg);
+        }
+
+        // --- Build the corridor sequence ---
+        // First section is ALWAYS straight (+Z)
+        const firstLen = randInt(CORRIDOR.minSectionLen, CORRIDOR.maxSectionLen);
+        if (!appendSection(STRAIGHT, firstLen)) continue;
+
+        for (let i = 0; i < CORRIDOR.randomSections; i++) {
+            // Random section
+            const dir = dirs[randInt(0, dirs.length - 1)];
+            const len = randInt(CORRIDOR.minSectionLen, CORRIDOR.maxSectionLen);
+            if (!appendSection(dir, len)) { prevSeg = null; break; }
+
+            // Forced straight section (+Z)
+            const len2 = randInt(CORRIDOR.minSectionLen, CORRIDOR.maxSectionLen);
+            if (!appendSection(STRAIGHT, len2)) { prevSeg = null; break; }
+        }
+
+        if (segs.length > 0 && prevSeg) return segs;
+    }
+
+    // Fallback: straight corridor if overlap attempts fail
+    const straightLen = 60 * SHIP_UNIT;
+    const b = basisFromForwardContinuous(new THREE.Vector3(0,0,1), null);
+    const e0 = { w: randInt(CORRIDOR.minExtentMul, CORRIDOR.maxExtentMul) * SHIP_UNIT,
+                 h: randInt(CORRIDOR.minExtentMul, CORRIDOR.maxExtentMul) * SHIP_UNIT };
+    const e1 = { w: randInt(CORRIDOR.minExtentMul, CORRIDOR.maxExtentMul) * SHIP_UNIT,
+                 h: randInt(CORRIDOR.minExtentMul, CORRIDOR.maxExtentMul) * SHIP_UNIT };
+    return [{
+        start: new THREE.Vector3(0,0,0),
+        dir: new THREE.Vector3(0,0,1),
+        length: straightLen,
+        right: b.right, up: b.up, forward: b.forward, q: b.q,
+        w0: e0.w, h0: e0.h, w1: e1.w, h1: e1.h,
+        wMax: Math.max(e0.w, e1.w),
+        hMax: Math.max(e0.h, e1.h),
+        breakZ: straightLen * CORRIDOR.extentBreakFrac,
+        isConnector: false
+    }];
+}
+
+
+        function buildCorridor() {
+            clearCorridor();
+            corridorSegments = generateCorridorSegments();
+
+            // Build meshes + colliders
+            for (let i = 0; i < corridorSegments.length; i++) {
+                const seg = corridorSegments[i];
+                const nextSeg = corridorSegments[i+1] || null;
+                buildSegmentWalls(seg, i === 0, i === corridorSegments.length - 1, nextSeg);
+            }
+        }
+
+        buildCorridor();
+
+// --- DAMAGE / RUN STATE ---
+let damage = 0;
+let damageCooldownRemaining = 0;
+let gameOver = false;
+
+function updateDamageHUD() {
+    document.getElementById('damage-display').innerText = `DAMAGE: ${Math.round(damage)}%`;
+}
+
+function setStatus(text) {
+    document.getElementById('status-display').innerText = text;
+}
+
+function triggerGameOver() {
+    if (gameOver) return;
+    gameOver = true;
+    gameActive = false;
+    isPaused = true;
+    document.exitPointerLock();
+    setStatus('SYSTEMS: FAILURE');
+    document.getElementById('overlay').classList.remove('hidden');
+    // Keep the HUD visible; user can click ENGAGE to restart.
+}
+
+function resetShipToStart() {
+    shipBody.position.set(0, 0, 2 * SHIP_UNIT);
+    shipBody.velocity.set(0, 0, 0);
+    shipBody.angularVelocity.set(0, 0, 0);
+
+    // Rotate 180° so the ship faces down the initial +Z corridor instead of the start wall.
+    const q = new CANNON.Quaternion();
+    q.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), Math.PI);
+    shipBody.quaternion.copy(q);
+}
+
+function resetGame() {
+    // Full restart (used after game over / initial engage)
+    score = 0;
+    document.getElementById('score-display').innerText = `SCORE: ${score}`;
+    damage = 0;
+    damageCooldownRemaining = 0;
+    gameOver = false;
+    setStatus('SYSTEMS: ONLINE');
+
+    // Rebuild corridor + respawn ship/target
+    buildCorridor();
+    resetShipToStart();
+    rebuildTargetPath();
+    placeTargetAtCurrentSegment();
+    updateDamageHUD();
+}
+
+// Place ship in corridor (initial)
+resetShipToStart();
+updateDamageHUD();
+
+// Collision-based damage
+const _cpWorld = new CANNON.Vec3();
+const _cpLocal = new CANNON.Vec3();
+
+shipBody.addEventListener('collide', (e) => {
+    if (!SETTINGS.damageEnabled || gameOver) return;
+    if (damageCooldownRemaining > 0) return;
+
+    const other = e.body;
+    if (!other || !other.userData || other.userData.kind !== 'corridorWall') return;
+
+    const c = e.contact;
+    if (!c || typeof c.getImpactVelocityAlongNormal !== 'function') return;
+
+    const impact = Math.abs(c.getImpactVelocityAlongNormal());
+    if (impact < SETTINGS.damageMinImpactSpeed) return;
+
+    // Contact point on the ship (world)
+    if (c.bi === shipBody) shipBody.position.vadd(c.ri, _cpWorld);
+    else if (c.bj === shipBody) shipBody.position.vadd(c.rj, _cpWorld);
+    else return;
+
+    shipBody.pointToLocalFrame(_cpWorld, _cpLocal);
+
+    // Bottom hit test: y is "up" in ship local frame; bottom is near -SHIP_HALF.y
+    const isBottomHit = (_cpLocal.y <= (-SHIP_HALF.y + 0.08));
+
+    // Slow bottom taps (landing) are safe
+    if (isBottomHit && impact <= SETTINGS.bottomHitSafeSpeed) return;
+
+    const delta = Math.max(0, (impact - SETTINGS.damageMinImpactSpeed) * SETTINGS.damageScale);
+    if (delta <= 0) return;
+
+    damage = clamp(damage + delta, 0, 100);
+    damageCooldownRemaining = SETTINGS.damageCooldown;
+    updateDamageHUD();
+
+    if (damage >= 100) triggerGameOver();
+});
+
+        // --- TARGET ---
+const targetGroup = new THREE.Group();
+targetGroup.add(new THREE.Mesh(new THREE.OctahedronGeometry(2), new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true })));
+targetGroup.add(new THREE.Mesh(new THREE.OctahedronGeometry(1), new THREE.MeshBasicMaterial({ color: 0xffff00 })));
+targetGroup.add(new THREE.PointLight(0xff0000, 2, 25));
+scene.add(targetGroup);
+
+const targetBody = new CANNON.Body({ mass: 0, isTrigger: true });
+targetBody.addShape(new CANNON.Sphere(2.5));
+world.addBody(targetBody);
+
+let targetPath = [];
+let targetPathIndex = 0;
+let targetHit = false;
+
+function rebuildTargetPath() {
+    // Targets only on "real" segments (skip connector tubes)
+    targetPath = [];
+    for (let i = 0; i < corridorSegments.length; i++) {
+        if (!corridorSegments[i].isConnector) targetPath.push(i);
+    }
+    targetPathIndex = 0;
+}
+
+function placeTargetAtCurrentSegment() {
+    if (targetPath.length === 0) return;
+
+    const seg = corridorSegments[targetPath[targetPathIndex]];
+    const p = localToWorld(seg, new THREE.Vector3(0, 0, seg.length / 2));
+    targetBody.position.set(p.x, p.y, p.z);
+}
+
+function advanceTarget() {
+    // score for each hit
+    score += 100;
+    document.getElementById('score-display').innerText = `SCORE: ${score}`;
+
+    targetPathIndex++;
+
+    if (targetPathIndex >= targetPath.length) {
+        // Finished the corridor run -> generate a new one and continue.
+        buildCorridor();
+        resetShipToStart();
+        rebuildTargetPath();
+        targetPathIndex = 0;
+    }
+
+    placeTargetAtCurrentSegment();
+}
+
+// Initial target placement
+rebuildTargetPath();
+placeTargetAtCurrentSegment();
+
+// --- LASERS ---
+        const lasers = [];
+        const laserGeo = new THREE.BoxGeometry(0.1, 0.1, 2);
+        const laserMat = new THREE.MeshBasicMaterial({ color: 0xff0088 });
+
+        function fireLaser() {
+            const spawnOffset = new THREE.Vector3(0, 0, -2.5);
+            spawnOffset.applyQuaternion(shipGroup.quaternion);
+            const spawnPos = shipGroup.position.clone().add(spawnOffset);
+
+            const mesh = new THREE.Mesh(laserGeo, laserMat);
+            mesh.position.copy(spawnPos);
+            mesh.quaternion.copy(shipGroup.quaternion);
+            scene.add(mesh);
+
+            const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(shipGroup.quaternion).multiplyScalar(SETTINGS.laserSpeed);
+            fwd.add(new THREE.Vector3(shipBody.velocity.x, shipBody.velocity.y, shipBody.velocity.z));
+
+            const body = new CANNON.Body({ mass: 0.1, isTrigger: true });
+            body.addShape(new CANNON.Box(new CANNON.Vec3(0.1, 0.1, 1)));
+            body.position.set(spawnPos.x, spawnPos.y, spawnPos.z);
+            body.quaternion.set(shipGroup.quaternion.x, shipGroup.quaternion.y, shipGroup.quaternion.z, shipGroup.quaternion.w);
+            body.velocity.set(fwd.x, fwd.y, fwd.z);
+
+            const l = { mesh, body, life: 2.0, dead: false };
+            body.addEventListener("collide", (e) => {
+                if (l.dead) return;
+                spawnExplosion(l.mesh.position);
+                if (e.body === targetBody) targetHit = true;
+                if (e.body !== shipBody) objectsToRemove.push(l);
+            });
+            world.addBody(body);
+            lasers.push(l);
+        }
+
+        // --- INPUT ---
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'KeyP') togglePause();
+            if (e.code === 'Escape') {
+                document.exitPointerLock();
+                isPaused = true;
+                document.getElementById('overlay').classList.remove('hidden');
+            }
+            if (gameActive && !isPaused) {
+                switch(e.code) {
+                    case 'KeyW': keys.w = true; break;
+                    case 'KeyC': keys.c = true; break;
+                    case 'KeyV': keys.v = true; break;
+                    case 'KeyQ': keys.q = true; break;
+                    case 'KeyE': keys.e = true; break;
+                    case 'KeyX': if(!keys.x) fireLaser(); keys.x = true; break;
+                    case 'KeyA': keys.a = true; break;
+                    case 'KeyZ': keys.z = true; break;
+                }
+            }
+        });
+        document.addEventListener('keyup', (e) => {
+            switch(e.code) {
+                case 'KeyW': keys.w = false; break;
+                case 'KeyC': keys.c = false; break;
+                case 'KeyV': keys.v = false; break;
+                case 'KeyQ': keys.q = false; break;
+                case 'KeyE': keys.e = false; break;
+                case 'KeyX': keys.x = false; break;
+                case 'KeyA': keys.a = false; break;
+                case 'KeyZ': keys.z = false; break;
+            }
+        });
+        document.addEventListener('mousedown', (e) => { if (gameActive && !isPaused && e.button === 0) keys.thrust = true; });
+        document.addEventListener('mouseup', (e) => { if (e.button === 0) keys.thrust = false; });
+        document.addEventListener('mousemove', (e) => {
+            if (gameActive && !isPaused && document.pointerLockElement === renderer.domElement) {
+                mouse.x += e.movementX;
+                mouse.y += e.movementY;
+            }
+        });
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            // If we are not active yet (first start) or we ended (damage 100%), start a fresh run.
+            if (!gameActive || gameOver) resetGame();
+
+            document.getElementById('overlay').classList.add('hidden');
+            renderer.domElement.requestPointerLock();
+            gameActive = true;
+            isPaused = false;
+            lastTime = performance.now();
+            animate();
+        });
+
+        function togglePause() {
+            isPaused = !isPaused;
+            if (isPaused) {
+                document.exitPointerLock();
+                document.getElementById('overlay').classList.remove('hidden');
+            } else {
+                document.getElementById('overlay').classList.add('hidden');
+                renderer.domElement.requestPointerLock();
+                lastTime = performance.now();
+                animate();
+            }
+        }
+
+        let heightOffsetValue = SETTINGS.cameraHeight;
+
+        function updatePhysics(dt) {
+            Object.values(rcsFlames).forEach(f => f.visible = false);
+
+            if (keys.thrust) {
+                shipBody.applyLocalForce(new CANNON.Vec3(0, SETTINGS.thrustPower, 0), new CANNON.Vec3(0, 0, 0));
+                shipGroup.userData.mainFlame.visible = true;
+                const s = 1 + Math.random() * 0.5;
+                shipGroup.userData.mainFlame.scale.set(s, s, s);
+
+                // No-shadow light at the nozzle position
+                if (shipGroup.userData.nozzle) {
+                    thrustLight.intensity = SETTINGS.thrustLightIntensity;
+                    thrustLight.distance = SETTINGS.thrustLightDistance;
+                    thrustLight.decay = SETTINGS.thrustLightDecay;
+
+                    const wp = new THREE.Vector3();
+                    shipGroup.userData.nozzle.getWorldPosition(wp);
+                    thrustLight.position.copy(wp);
+                    thrustLight.visible = (SETTINGS.thrustLightIntensity > 0);
+                }
+            } else {
+                shipGroup.userData.mainFlame.visible = false;
+                thrustLight.visible = false;
+                thrustLight.intensity = 0;
+            }
+
+            const torque = new CANNON.Vec3(0, 0, 0);
+            const pitchInput = mouse.y * SETTINGS.rotSpeed * dt;
+            const rollInput = -mouse.x * SETTINGS.rotSpeed * dt;
+
+            if (mouse.y > 0.1) rcsFlames['pitchUp'].visible = true;
+            if (mouse.y < -0.1) rcsFlames['pitchDown'].visible = true;
+            if (mouse.x < -0.1) rcsFlames['rollLeft'].visible = true;
+            if (mouse.x > 0.1) rcsFlames['rollRight'].visible = true;
+
+            torque.x = pitchInput;
+            torque.z = rollInput;
+
+            if (keys.c) { torque.y = SETTINGS.yawSpeed; rcsFlames['yawLeft'].visible = true; }
+            if (keys.v) { torque.y = -SETTINGS.yawSpeed; rcsFlames['yawRight'].visible = true; }
+
+            shipBody.torque.vadd(shipBody.quaternion.vmult(torque), shipBody.torque);
+
+            mouse.x = 0;
+            mouse.y = 0;
+
+            if (keys.w) {
+                shipBody.angularVelocity.scale(0.8, shipBody.angularVelocity);
+                const localUp = shipBody.quaternion.vmult(new CANNON.Vec3(0, 1, 0));
+                const correction = localUp.cross(new CANNON.Vec3(0, 1, 0));
+                correction.scale(SETTINGS.stabilizeFactor * 20, correction);
+                shipBody.torque.vadd(correction, shipBody.torque);
+                if (Math.random() > 0.5) Object.values(rcsFlames).forEach(f => f.visible = true);
+            }
+        }
+
+        function animate() {
+            if (!gameActive || isPaused) return;
+
+            const time = performance.now();
+            const dt = Math.min((time - lastTime) / 1000, 0.1);
+            lastTime = time;
+
+            if (objectsToRemove.length > 0) {
+                objectsToRemove.forEach(l => {
+                    if(!l.dead) {
+                        l.dead = true;
+                        world.removeBody(l.body);
+                        scene.remove(l.mesh);
+                        lasers.splice(lasers.indexOf(l), 1);
+                    }
+                });
+                objectsToRemove = [];
+            }
+            // Cooldowns
+            damageCooldownRemaining = Math.max(0, damageCooldownRemaining - dt);
+
+            if (targetHit) {
+                targetHit = false;
+                spawnExplosion(targetGroup.position);
+                advanceTarget();
+            }
+
+            updatePhysics(dt);
+            world.step(1/60, dt, 3);
+
+            shipGroup.position.copy(shipBody.position);
+            shipGroup.quaternion.copy(shipBody.quaternion);
+
+            targetGroup.position.copy(targetBody.position);
+            targetGroup.rotation.y += dt;
+            targetGroup.rotation.z += dt * 0.5;
+
+            updateExplosions(dt);
+
+            // Lasers update
+            for (let i = lasers.length - 1; i >= 0; i--) {
+                const l = lasers[i];
+                l.life -= dt;
+                l.mesh.position.copy(l.body.position);
+                l.mesh.quaternion.copy(l.body.quaternion);
+                if (l.life <= 0 && !l.dead) objectsToRemove.push(l);
+            }
+
+            // Camera
+            if (keys.a) heightOffsetValue = Math.min(heightOffsetValue + 10 * dt, 20);
+            if (keys.z) heightOffsetValue = Math.max(heightOffsetValue - 10 * dt, -20);
+
+            const baseOffset = new THREE.Vector3(0, heightOffsetValue, SETTINGS.cameraDistance);
+            let yawOffsetAngle = 0;
+            if (keys.q) yawOffsetAngle = Math.PI / 4;
+            if (keys.e) yawOffsetAngle = -Math.PI / 4;
+
+            baseOffset.applyAxisAngle(new THREE.Vector3(0,1,0), yawOffsetAngle);
+            baseOffset.applyQuaternion(shipGroup.quaternion);
+
+            const targetPos = shipGroup.position.clone().add(baseOffset);
+            camera.position.lerp(targetPos, 0.12);
+            camera.lookAt(shipGroup.position);
+
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

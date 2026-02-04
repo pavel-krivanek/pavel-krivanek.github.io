@@ -139,7 +139,23 @@
             towSpringDamping: 45,
 
             // Tow link cancel gate
-            towLinkMinLifetimeMs: 500
+            towLinkMinLifetimeMs: 500,
+
+            // Audio
+            musicEnabled: true,       // background.mp3 loop
+            musicVolume: 0.35,        // 0..1
+
+            sfxEnabled: true,         // sound effects on/off
+            sfxVolume: 0.80,          // 0..1
+
+            // Loop volumes are multiplied by sfxVolume
+            beamVolumeMul: 0.60,      // beam.mp3 loop volume multiplier
+            thrustVolumeMul: 0.75,    // thrust.mp3 loop volume multiplier
+            rcsVolumeMul: 0.55,       // rcs.mp3 loop volume multiplier
+
+            // If a single damage increment is > this threshold, use damage.mp3 else scrape-1.mp3
+            damageBigThreshold: 5
+
         };                         
 
         const keys = {
@@ -215,8 +231,156 @@
         const randInt = (min, max) => Math.floor(min + Math.random() * (max - min + 1));
         const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
+        // --- AUDIO (files must sit next to this HTML) ---
+        const AUDIO_FILES = {
+            music: 'background.mp3',
+            beam: 'beam.mp3',
+            thrust: 'thrust.mp3',
+            rcs: 'rcs.mp3',
+            bleep: 'bleep.mp3',
+            laser: 'laserfire01.mp3',
+            scrape: 'scrape-1.mp3',
+            damage: 'damage.mp3',
+            explosion: 'explosion.mp3'
+        };
+
+        const AudioMgr = (() => {
+            let unlocked = false;
+
+            const music = new Audio(AUDIO_FILES.music);
+            music.loop = true;
+            music.preload = 'auto';
+
+            const beam = new Audio(AUDIO_FILES.beam);
+            beam.loop = true;
+            beam.preload = 'auto';
+
+            const thrust = new Audio(AUDIO_FILES.thrust);
+            thrust.loop = true;
+            thrust.preload = 'auto';
+
+            const rcs = new Audio(AUDIO_FILES.rcs);
+            rcs.loop = true;
+            rcs.preload = 'auto';
+
+            function safePlay(a) {
+                if (!a) return;
+                try {
+                    const p = a.play();
+                    if (p && typeof p.catch === 'function') p.catch(() => {});
+                } catch (_) {}
+            }
+
+            function safePause(a) { try { a.pause(); } catch (_) {} }
+
+            function applyVolumes() {
+                const mv = clamp(SETTINGS.musicVolume ?? 0.35, 0, 1);
+                const sv = clamp(SETTINGS.sfxVolume ?? 0.80, 0, 1);
+
+                const bv = clamp(SETTINGS.beamVolumeMul ?? 0.60, 0, 1);
+                const tv = clamp(SETTINGS.thrustVolumeMul ?? 0.75, 0, 1);
+                const rv = clamp(SETTINGS.rcsVolumeMul ?? 0.55, 0, 1);
+
+                music.volume = mv;
+                beam.volume = clamp(sv * bv, 0, 1);
+                thrust.volume = clamp(sv * tv, 0, 1);
+                rcs.volume = clamp(sv * rv, 0, 1);
+            }
+
+            function syncMusic() {
+                applyVolumes();
+                if (!unlocked) return;
+
+                if (SETTINGS.musicEnabled) {
+                    if (music.paused) safePlay(music);
+                } else {
+                    safePause(music);
+                    music.currentTime = 0;
+                }
+
+                // If SFX were disabled at runtime, ensure loops are not left running
+                if (!SETTINGS.sfxEnabled) {
+                    beamOff();
+                    thrustOff();
+                    rcsOff();
+                }
+            }
+
+            function unlockFromUserGesture() {
+                if (unlocked) { syncMusic(); return; }
+                unlocked = true;
+                syncMusic();
+            }
+
+            function beamOn() {
+                applyVolumes();
+                if (!unlocked) return;
+                if (!SETTINGS.sfxEnabled) { beamOff(); return; }
+                if (beam.paused) {
+                    beam.currentTime = 0;
+                    safePlay(beam);
+                }
+            }
+
+            function beamOff() {
+                safePause(beam);
+                beam.currentTime = 0;
+            }
+
+            function thrustOn() {
+                applyVolumes();
+                if (!unlocked) return;
+                if (!SETTINGS.sfxEnabled) { thrustOff(); return; }
+                if (thrust.paused) {
+                    thrust.currentTime = 0;
+                    safePlay(thrust);
+                }
+            }
+
+            function thrustOff() {
+                safePause(thrust);
+                thrust.currentTime = 0;
+            }
+
+            function rcsOn() {
+                applyVolumes();
+                if (!unlocked) return;
+                if (!SETTINGS.sfxEnabled) { rcsOff(); return; }
+                if (rcs.paused) {
+                    rcs.currentTime = 0;
+                    safePlay(rcs);
+                }
+            }
+
+            function rcsOff() {
+                safePause(rcs);
+                rcs.currentTime = 0;
+            }
+
+            function playSfx(src, volumeMul = 1) {
+                if (!unlocked || !SETTINGS.sfxEnabled) return;
+
+                // clone-per-play allows overlaps (explosions, rapid hits, etc.)
+                const a = new Audio(src);
+                a.preload = 'auto';
+                a.volume = clamp((SETTINGS.sfxVolume ?? 0.80) * volumeMul, 0, 1);
+                safePlay(a);
+            }
+
+            const sfx = {
+                bleep: () => playSfx(AUDIO_FILES.bleep, 1),
+                laser: () => playSfx(AUDIO_FILES.laser, 1),
+                scrape: () => playSfx(AUDIO_FILES.scrape, 1),
+                damage: () => playSfx(AUDIO_FILES.damage, 1),
+                explosion: () => playSfx(AUDIO_FILES.explosion, 1)
+            };
+
+            return { unlockFromUserGesture, syncMusic, beamOn, beamOff, thrustOn, thrustOff, rcsOn, rcsOff, sfx };
+        })();
+
         // --- VISUAL FX ---
         function spawnExplosion(position) {
+            AudioMgr.sfx.explosion();
             const geo = new THREE.SphereGeometry(0.5, 16, 16);
             const mat = new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 1 });
             const mesh = new THREE.Mesh(geo, mat);
@@ -1190,9 +1354,13 @@ function attachTow(nowMs) {
     towConnectedAtMs = (nowMs !== undefined && nowMs !== null) ? nowMs : performance.now();
     towPendingDetach = false;
     towConnected = true;
+
+    AudioMgr.sfx.bleep();
 }
 
-function detachTow() {
+function detachTow(silent = false) {
+    const wasConnected = towConnected;
+
     towConnected = false;
     towConnectedAtMs = 0;
     towPendingDetach = false;
@@ -1205,10 +1373,17 @@ function detachTow() {
         towLinkMesh.material.dispose();
         towLinkMesh = null;
     }
+
+    if (wasConnected && !silent) {
+        AudioMgr.sfx.bleep();
+    }
+
+    // Ensure any "beam held" loop is not left playing due to pause/menu transitions.
+    AudioMgr.beamOff();
 }
 
 function clearCargo() {
-    detachTow();
+    detachTow(true);
     if (cargoBody) {
         world.removeBody(cargoBody);
         cargoBody = null;
@@ -1265,6 +1440,7 @@ function spawnCargoInFirstSegment() {
 }
 
 function towBeamDown(nowMs) {
+    AudioMgr.beamOn();
     // Pressing Space again cancels an existing tow link (after a minimum lifetime).
     if (towConnected) {
         const minLife = SETTINGS.towLinkMinLifetimeMs ?? 0;
@@ -1282,6 +1458,7 @@ function towBeamDown(nowMs) {
 }
 
 function towBeamUp(nowMs) {
+    AudioMgr.beamOff();
     towBeamHeld = false;
 
     const minOff = towBeamStartMs + SETTINGS.towBeamMinLifetimeMs;
@@ -1393,6 +1570,9 @@ function triggerGameOver() {
     gameActive = false;
     isPaused = true;
     document.exitPointerLock();
+    AudioMgr.thrustOff();
+    AudioMgr.rcsOff();
+    AudioMgr.beamOff();
     setStatus('SYSTEMS: FAILURE');
     showEndOverlay('Ship Destroyed', `Final score: ${score}`);
 }
@@ -1403,6 +1583,9 @@ function triggerGameWin() {
     gameActive = false;
     isPaused = true;
     document.exitPointerLock();
+    AudioMgr.thrustOff();
+    AudioMgr.rcsOff();
+    AudioMgr.beamOff();
     setStatus('SYSTEMS: SUCCESS');
     showEndOverlay('Mission Complete', `Final score: ${score}`);
 }
@@ -1420,6 +1603,10 @@ function resetShipToStart() {
 
 function resetGame() {
     // Full restart (used after game over / initial engage)
+    keys.thrust = false;
+    AudioMgr.thrustOff();
+    AudioMgr.rcsOff();
+    AudioMgr.beamOff();
     score = 0;
     document.getElementById('score-display').innerText = `SCORE: ${score}`;
     damage = 0;
@@ -1511,6 +1698,10 @@ shipBody.addEventListener('collide', (e) => {
     damageCooldownRemaining = SETTINGS.damageCooldown;
     updateDamageHUD();
 
+    const bigThr = (SETTINGS.damageBigThreshold ?? 5);
+    if (delta > bigThr) AudioMgr.sfx.damage();
+    else AudioMgr.sfx.scrape();
+
     if (damage >= 100) triggerGameOver();
 });
 
@@ -1573,6 +1764,7 @@ placeTargetAtCurrentSegment();
         const laserMat = new THREE.MeshBasicMaterial({ color: 0xff0088 });
 
         function fireLaser() {
+            AudioMgr.sfx.laser();
             const spawnOffset = new THREE.Vector3(0, 0, -2.5);
             spawnOffset.applyQuaternion(shipGroup.quaternion);
             const spawnPos = shipGroup.position.clone().add(spawnOffset);
@@ -1650,6 +1842,9 @@ placeTargetAtCurrentSegment();
         });
 
         document.getElementById('start-btn').addEventListener('click', () => {
+            // Unlock audio playback (required by most browsers).
+            AudioMgr.unlockFromUserGesture();
+            AudioMgr.syncMusic();
             // If we are not active yet (first start) or we ended (damage 100%), start a fresh run.
             if (!gameActive || gameOver || gameWon) resetGame();
 
@@ -1665,6 +1860,10 @@ placeTargetAtCurrentSegment();
             isPaused = !isPaused;
             if (isPaused) {
                 document.exitPointerLock();
+                keys.thrust = false;
+                AudioMgr.thrustOff();
+                AudioMgr.rcsOff();
+                AudioMgr.beamOff();
                 document.getElementById('overlay').classList.remove('hidden');
                 if (keys.space) { keys.space = false; towBeamUp(performance.now()); }
             } else {
@@ -1713,6 +1912,7 @@ placeTargetAtCurrentSegment();
 
     Object.values(rcsFlames).forEach(f => f.visible = false);
 if (keys.thrust) {
+                AudioMgr.thrustOn();
                 shipBody.applyLocalForce(new CANNON.Vec3(0, SETTINGS.thrustPower, 0), new CANNON.Vec3(0, 0, 0));
                 shipGroup.userData.mainFlame.visible = true;
                 const s = 1 + Math.random() * 0.5;
@@ -1730,6 +1930,7 @@ if (keys.thrust) {
                     thrustLight.visible = (SETTINGS.thrustLightIntensity > 0);
                 }
             } else {
+                AudioMgr.thrustOff();
                 shipGroup.userData.mainFlame.visible = false;
                 thrustLight.visible = false;
                 thrustLight.intensity = 0;
@@ -1749,6 +1950,14 @@ if (keys.thrust) {
 
             if (keys.c) { torque.y = SETTINGS.yawSpeed; rcsFlames['yawLeft'].visible = true; }
             if (keys.v) { torque.y = -SETTINGS.yawSpeed; rcsFlames['yawRight'].visible = true; }
+
+            const rcsActiveNow =
+                (mouse.y > 0.1) || (mouse.y < -0.1) ||
+                (mouse.x < -0.1) || (mouse.x > 0.1) ||
+                keys.c || keys.v;
+
+            if (rcsActiveNow) AudioMgr.rcsOn();
+            else AudioMgr.rcsOff();
 
             shipBody.torque.vadd(shipBody.quaternion.vmult(torque), shipBody.torque);
 

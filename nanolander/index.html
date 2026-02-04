@@ -17,9 +17,11 @@
             flex-direction: column; color: white; pointer-events: auto;
         }
         h1 { margin-bottom: 10px; color: #ff0055; text-transform: uppercase; letter-spacing: 5px; }
+        .instructions { text-align: center; padding: 20px; }
         .controls-list { text-align: left; background: #111; padding: 20px; border: 1px solid #444; }
         button { margin-top: 20px; padding: 10px 30px; background: #ff0055; border: none; color: white; font-size: 20px; cursor: pointer; }
         button:hover { background: #ff4488; }
+                .result-text { color: #fff; font-size: 18px; margin-bottom: 12px; text-align: center; }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -33,13 +35,16 @@
 
     <div id="overlay">
         <h1>Nano Lander</h1>
+        <div id="result-text" class="result-text hidden"></div>
+        <div class="instructions"><b>Mission</b>: Transport cargo to the end of the corridor</div>
         <div class="controls-list">
-            <div><b>Mouse</b>: High Speed Tilt</div>
+            <div><b>Mouse</b>: Lander Tilt</div>
             <div><b>LMB</b>: Main Thrust</div>
             <div><b>C / V</b>: Yaw Left/Right</div>
             <div><b>Q / E</b>: Look Camera Left/Right</div>
             <div><b>W</b>: Stabilise</div>
-            <div><b>X</b>: Fire Laser</div>
+                        <div><b>Space</b>: Towing Beam</div>
+<div><b>X</b>: Fire Laser</div>
             <div><b>A / Z</b>: Camera Height (Wide Range)</div>
             <div><b>P</b>: Pause | <b>ESC</b>: Exit</div>
         </div>
@@ -109,13 +114,38 @@
             wallInnerVisible: true,      // show solid wall from inside (front side)
             wallInnerOpacity: 1.0,       // 0..1
             wallWireFrontVisible: false , // show wireframe overlay on inside
-            wallWireFrontOpacity: 0.15   // 0..1
+            wallWireFrontOpacity: 0.15,  // 0..1
+
+            // Towing beam (Space)
+            towBeamLengthMul: 2.0,          // Cone length in ship units
+            towBeamEndRadiusMul: 1.0,       // Cone radius at end in ship units
+            towBeamOpacity: 0.22,           // 0..1
+            towBeamFlicker: 0.25,           // 0..1 (opacity + width flicker)
+            towBeamColor: 0x00ffaa,
+            towBeamMinLifetimeMs: 500,      // Minimum cone visible time after press
+
+            // Cargo
+            cargoRadiusMul: 0.125,          // Sphere radius in ship units (diameter = 0.25 ship units)
+            cargoMassMul: 0.5,              // Relative to ship mass
+            cargoLockTimeMs: 1000,          // Time inside cone to lock towing
+
+            // Stable tow link visual (violet cylinder)
+            towLinkRadiusMul: 0.06,         // Cylinder radius in ship units
+            towLinkOpacity: 0.35,           // 0..1
+            towLinkColor: 0xaa00ff,
+
+            // Spring physics (ship <-> cargo)
+            towSpringStiffness: 600,        // Higher = less stretch (less "elastic")
+            towSpringDamping: 45,
+
+            // Tow link cancel gate
+            towLinkMinLifetimeMs: 500
         };                         
 
         const keys = {
             w: false, a: false, s: false, d: false,
             c: false, v: false, q: false, e: false,
-            x: false, z: false, p: false, thrust: false
+            x: false, z: false, p: false, space: false, thrust: false
         };
         const mouse = { x: 0, y: 0 };
 
@@ -338,7 +368,10 @@
             minSectionLen: 10 * SHIP_UNIT,
             maxSectionLen: 50 * SHIP_UNIT,
 
-            // Section sequence: random dir section, then straight +Z section
+            // Total number of corridor segments in the map (approx. map length)
+            segmentCount: 21,
+
+            // Legacy: kept for compatibility (segmentCount is used instead)
             randomSections: 10,
 
             wallThickness: Math.max(0.25, 0.20 * SHIP_UNIT),
@@ -978,15 +1011,19 @@ function buildSegmentWalls(seg, isFirst, isLast, nextSeg) {
         const firstLen = randInt(CORRIDOR.minSectionLen, CORRIDOR.maxSectionLen);
         if (!appendSection(STRAIGHT, firstLen)) continue;
 
-        for (let i = 0; i < CORRIDOR.randomSections; i++) {
-            // Random section
-            const dir = dirs[randInt(0, dirs.length - 1)];
+        const totalSegments = Math.max(1, Math.floor(
+            (CORRIDOR.segmentCount ?? (1 + 2 * (CORRIDOR.randomSections ?? 10)))
+        ));
+
+        const sideDirs = dirs.slice(1); // exclude STRAIGHT
+
+        for (let idx = 1; idx < totalSegments; idx++) {
+            const dir = (idx % 2 === 1)
+                ? sideDirs[randInt(0, sideDirs.length - 1)]
+                : STRAIGHT;
+
             const len = randInt(CORRIDOR.minSectionLen, CORRIDOR.maxSectionLen);
             if (!appendSection(dir, len)) { prevSeg = null; break; }
-
-            // Forced straight section (+Z)
-            const len2 = randInt(CORRIDOR.minSectionLen, CORRIDOR.maxSectionLen);
-            if (!appendSection(STRAIGHT, len2)) { prevSeg = null; break; }
         }
 
         if (segs.length > 0 && prevSeg) return segs;
@@ -1013,7 +1050,288 @@ function buildSegmentWalls(seg, isFirst, isLast, nextSeg) {
 }
 
 
+// --- TOWING / CARGO SYSTEM (Space) ---
+// Space shows a flickering semi-transparent cone under the ship.
+// Keeping the cargo sphere inside the cone for SETTINGS.cargoLockTimeMs locks a tow spring + violet link cylinder.
+
+let cargoMesh = null;
+let cargoBody = null;
+
+let towBeamMesh = null;
+let towLinkMesh = null;
+let towSpring = null;
+
+let towBeamHeld = false;
+let towBeamStartMs = 0;
+let towBeamOffAtMs = 0;
+
+let towInConeMs = 0;
+let towConnected = false;
+let towConnectedAtMs = 0;
+let towPendingDetach = false;
+
+const _tow_nozzleW = new THREE.Vector3();
+const _tow_cargoW  = new THREE.Vector3();
+const _tow_axisW   = new THREE.Vector3();
+const _tow_v       = new THREE.Vector3();
+const _tow_radial  = new THREE.Vector3();
+const _tow_mid     = new THREE.Vector3();
+const _tow_yAxis   = new THREE.Vector3(0, 1, 0);
+
+const _tow_cTmpA = new CANNON.Vec3();
+const _tow_cTmpB = new CANNON.Vec3();
+
+function getNozzleWorldPos(out) {
+    if (shipGroup.userData.nozzle) {
+        shipGroup.userData.nozzle.getWorldPosition(out);
+    } else {
+        out.copy(shipGroup.position);
+        const off = new THREE.Vector3(0, -(SHIP_HALF.y + 0.1), 0).applyQuaternion(shipGroup.quaternion);
+        out.add(off);
+    }
+    return out;
+}
+
+function ensureTowBeamVisual() {
+    if (towBeamMesh) return;
+
+    const len = SETTINGS.towBeamLengthMul * SHIP_UNIT;
+    const rEnd = SETTINGS.towBeamEndRadiusMul * SHIP_UNIT;
+
+    const geo = new THREE.ConeGeometry(rEnd, len, 24, 1, true);
+    // Put the tip at (0,0,0) and extend along -Y.
+    geo.translate(0, -len / 2, 0);
+
+    const mat = new THREE.MeshBasicMaterial({
+        color: SETTINGS.towBeamColor,
+        transparent: true,
+        opacity: SETTINGS.towBeamOpacity,
+        side: THREE.DoubleSide,
+        depthWrite: false
+    });
+
+    towBeamMesh = new THREE.Mesh(geo, mat);
+    towBeamMesh.renderOrder = 25;
+    towBeamMesh.visible = false;
+    scene.add(towBeamMesh);
+}
+
+function setTowBeamVisible(visible) {
+    ensureTowBeamVisual();
+    towBeamMesh.visible = visible;
+}
+
+function updateTowBeamLifetime(nowMs) {
+    if (!towBeamHeld && towBeamMesh && towBeamMesh.visible && nowMs >= towBeamOffAtMs) {
+        towBeamMesh.visible = false;
+    }
+}
+
+function isCargoInTowCone() {
+    if (!cargoBody) return false;
+
+    const len = SETTINGS.towBeamLengthMul * SHIP_UNIT;
+    const rEnd = SETTINGS.towBeamEndRadiusMul * SHIP_UNIT;
+    const cargoR = SETTINGS.cargoRadiusMul * SHIP_UNIT;
+
+    getNozzleWorldPos(_tow_nozzleW);
+    _tow_cargoW.set(cargoBody.position.x, cargoBody.position.y, cargoBody.position.z);
+
+    // Ship-local down axis in world space.
+    _tow_axisW.set(0, -1, 0).applyQuaternion(shipGroup.quaternion).normalize();
+
+    _tow_v.copy(_tow_cargoW).sub(_tow_nozzleW);
+
+    const t = _tow_v.dot(_tow_axisW); // axial distance from tip
+    if (t < 0 || t > len) return false;
+
+    // radial distance to cone axis
+    _tow_radial.copy(_tow_v).addScaledVector(_tow_axisW, -t);
+    const d = _tow_radial.length();
+
+    const rAt = (t / len) * rEnd + cargoR; // include sphere radius
+    return d <= rAt;
+}
+
+function attachTow(nowMs) {
+    if (towConnected || !cargoBody) return;
+
+    // Spring anchor on ship: nozzle position converted to ship local frame.
+    getNozzleWorldPos(_tow_nozzleW);
+    _tow_cTmpA.set(_tow_nozzleW.x, _tow_nozzleW.y, _tow_nozzleW.z);
+    shipBody.pointToLocalFrame(_tow_cTmpA, _tow_cTmpB);
+    const localAnchorA = new CANNON.Vec3(_tow_cTmpB.x, _tow_cTmpB.y, _tow_cTmpB.z);
+
+    const restLength = _tow_cTmpA.vsub(cargoBody.position).length();
+
+    towSpring = new CANNON.Spring(shipBody, cargoBody, {
+        localAnchorA,
+        localAnchorB: new CANNON.Vec3(0, 0, 0),
+        restLength,
+        stiffness: SETTINGS.towSpringStiffness,
+        damping: SETTINGS.towSpringDamping
+    });
+
+    // Stable link cylinder (visual)
+    const r = SETTINGS.towLinkRadiusMul * SHIP_UNIT;
+    const geo = new THREE.CylinderGeometry(r, r, 1, 16, 1, true);
+    const mat = new THREE.MeshBasicMaterial({
+        color: SETTINGS.towLinkColor,
+        transparent: true,
+        opacity: SETTINGS.towLinkOpacity,
+        side: THREE.DoubleSide,
+        depthWrite: false
+    });
+
+    towLinkMesh = new THREE.Mesh(geo, mat);
+    towLinkMesh.renderOrder = 26;
+    scene.add(towLinkMesh);
+
+    towConnectedAtMs = (nowMs !== undefined && nowMs !== null) ? nowMs : performance.now();
+    towPendingDetach = false;
+    towConnected = true;
+}
+
+function detachTow() {
+    towConnected = false;
+    towConnectedAtMs = 0;
+    towPendingDetach = false;
+    towSpring = null;
+    towInConeMs = 0;
+
+    if (towLinkMesh) {
+        scene.remove(towLinkMesh);
+        towLinkMesh.geometry.dispose();
+        towLinkMesh.material.dispose();
+        towLinkMesh = null;
+    }
+}
+
+function clearCargo() {
+    detachTow();
+    if (cargoBody) {
+        world.removeBody(cargoBody);
+        cargoBody = null;
+    }
+    if (cargoMesh) {
+        scene.remove(cargoMesh);
+        cargoMesh.geometry.dispose();
+        cargoMesh.material.dispose();
+        cargoMesh = null;
+    }
+}
+
+function spawnCargoInFirstSegment() {
+    clearCargo();
+
+    if (!corridorSegments || corridorSegments.length === 0) return;
+
+    const seg = corridorSegments[0];
+    const cargoR = SETTINGS.cargoRadiusMul * SHIP_UNIT;
+
+    // Keep it comfortably inside segment 0, above the floor.
+    const zLocal = clamp(8 * SHIP_UNIT, 5 * SHIP_UNIT, seg.length - 5 * SHIP_UNIT);
+    const yLocal = (-seg.h0 / 2) + cargoR + 0.35;
+
+    const p = localToWorld(seg, new THREE.Vector3(0, yLocal, zLocal));
+
+    // Visual
+    const geo = new THREE.SphereGeometry(cargoR, 24, 18);
+    const mat = new THREE.MeshStandardMaterial({
+        color: 0xffcc33,
+        roughness: 0.35,
+        metalness: 0.15,
+        emissive: 0x331100
+    });
+
+    cargoMesh = new THREE.Mesh(geo, mat);
+    cargoMesh.position.copy(p);
+    if (SETTINGS.enableShadows) {
+        cargoMesh.castShadow = true;
+        cargoMesh.receiveShadow = true;
+    }
+    scene.add(cargoMesh);
+
+    // Physics
+    const shape = new CANNON.Sphere(cargoR);
+    const mass = shipBody.mass * SETTINGS.cargoMassMul;
+
+    cargoBody = new CANNON.Body({ mass, material: defaultMaterial });
+    cargoBody.addShape(shape);
+    cargoBody.linearDamping = 0.12;
+    cargoBody.angularDamping = 0.40;
+    cargoBody.position.set(p.x, p.y, p.z);
+    world.addBody(cargoBody);
+}
+
+function towBeamDown(nowMs) {
+    // Pressing Space again cancels an existing tow link (after a minimum lifetime).
+    if (towConnected) {
+        const minLife = SETTINGS.towLinkMinLifetimeMs ?? 0;
+        if ((nowMs - towConnectedAtMs) >= minLife) {
+            detachTow();
+        } else {
+            towPendingDetach = true;
+        }
+    }
+
+    towBeamHeld = true;
+    towBeamStartMs = nowMs;
+    towBeamOffAtMs = Number.POSITIVE_INFINITY;
+    setTowBeamVisible(true);
+}
+
+function towBeamUp(nowMs) {
+    towBeamHeld = false;
+
+    const minOff = towBeamStartMs + SETTINGS.towBeamMinLifetimeMs;
+    towBeamOffAtMs = Math.max(minOff, nowMs);
+    updateTowBeamLifetime(nowMs);
+}
+
+function updateTowVisuals(nowMs) {
+    // Cone beam visual (flicker)
+    if (towBeamMesh && towBeamMesh.visible) {
+        getNozzleWorldPos(_tow_nozzleW);
+        towBeamMesh.position.copy(_tow_nozzleW);
+        towBeamMesh.quaternion.copy(shipGroup.quaternion);
+
+        const baseOp = SETTINGS.towBeamOpacity;
+        const flick = SETTINGS.towBeamFlicker;
+        towBeamMesh.material.opacity = clamp(baseOp * (1 + (Math.random() * 2 - 1) * flick), 0, 1);
+
+        const s = 0.985 + Math.random() * 0.04;
+        towBeamMesh.scale.set(s, 1, s);
+    }
+
+    // Stable link cylinder visual
+    if (towLinkMesh && towConnected && cargoBody) {
+        getNozzleWorldPos(_tow_nozzleW);
+        _tow_cargoW.set(cargoBody.position.x, cargoBody.position.y, cargoBody.position.z);
+
+        const dir = _tow_v.copy(_tow_cargoW).sub(_tow_nozzleW);
+        const dist = dir.length();
+
+        if (dist > 1e-3) {
+            dir.multiplyScalar(1 / dist);
+            _tow_mid.copy(_tow_nozzleW).addScaledVector(dir, dist * 0.5);
+
+            towLinkMesh.position.copy(_tow_mid);
+            towLinkMesh.quaternion.setFromUnitVectors(_tow_yAxis, dir);
+            towLinkMesh.scale.set(1, dist, 1);
+            towLinkMesh.visible = true;
+        } else {
+            towLinkMesh.visible = false;
+        }
+    } else if (towLinkMesh) {
+        towLinkMesh.visible = false;
+    }
+}
+
+
         function buildCorridor() {
+            // Corridor rebuild cancels towing and respawns cargo
+            clearCargo();
             clearCorridor();
             corridorSegments = generateCorridorSegments();
 
@@ -1023,6 +1341,9 @@ function buildSegmentWalls(seg, isFirst, isLast, nextSeg) {
                 const nextSeg = corridorSegments[i+1] || null;
                 buildSegmentWalls(seg, i === 0, i === corridorSegments.length - 1, nextSeg);
             }
+
+            spawnCargoInFirstSegment();
+
         }
 
         buildCorridor();
@@ -1031,6 +1352,32 @@ function buildSegmentWalls(seg, isFirst, isLast, nextSeg) {
 let damage = 0;
 let damageCooldownRemaining = 0;
 let gameOver = false;
+let gameWon = false;
+
+const overlayEl = document.getElementById('overlay');
+const overlayTitleEl = overlayEl.querySelector('h1');
+const resultTextEl = document.getElementById('result-text');
+const startBtnEl = document.getElementById('start-btn');
+const overlayDefaultTitle = overlayTitleEl ? overlayTitleEl.innerText : 'Nano Lander';
+
+function showEndOverlay(title, message) {
+    if (overlayTitleEl) overlayTitleEl.innerText = title;
+    if (resultTextEl) {
+        resultTextEl.innerText = message;
+        resultTextEl.classList.remove('hidden');
+    }
+    if (startBtnEl) startBtnEl.innerText = 'RESTART';
+    overlayEl.classList.remove('hidden');
+}
+
+function clearEndOverlay() {
+    if (overlayTitleEl) overlayTitleEl.innerText = overlayDefaultTitle;
+    if (resultTextEl) {
+        resultTextEl.innerText = '';
+        resultTextEl.classList.add('hidden');
+    }
+    if (startBtnEl) startBtnEl.innerText = 'ENGAGE';
+}
 
 function updateDamageHUD() {
     document.getElementById('damage-display').innerText = `DAMAGE: ${Math.round(damage)}%`;
@@ -1041,14 +1388,23 @@ function setStatus(text) {
 }
 
 function triggerGameOver() {
-    if (gameOver) return;
+    if (gameOver || gameWon) return;
     gameOver = true;
     gameActive = false;
     isPaused = true;
     document.exitPointerLock();
     setStatus('SYSTEMS: FAILURE');
-    document.getElementById('overlay').classList.remove('hidden');
-    // Keep the HUD visible; user can click ENGAGE to restart.
+    showEndOverlay('Ship Destroyed', `Final score: ${score}`);
+}
+
+function triggerGameWin() {
+    if (gameOver || gameWon) return;
+    gameWon = true;
+    gameActive = false;
+    isPaused = true;
+    document.exitPointerLock();
+    setStatus('SYSTEMS: SUCCESS');
+    showEndOverlay('Mission Complete', `Final score: ${score}`);
 }
 
 function resetShipToStart() {
@@ -1069,6 +1425,8 @@ function resetGame() {
     damage = 0;
     damageCooldownRemaining = 0;
     gameOver = false;
+    gameWon = false;
+    clearEndOverlay();
     setStatus('SYSTEMS: ONLINE');
 
     // Rebuild corridor + respawn ship/target
@@ -1082,6 +1440,39 @@ function resetGame() {
 // Place ship in corridor (initial)
 resetShipToStart();
 updateDamageHUD();
+
+// Segment containment helpers (used for end-of-map victory)
+const _segLocalTmp = new THREE.Vector3();
+function worldToSegLocal(seg, worldPos, out = _segLocalTmp) {
+    out.copy(worldPos).sub(seg.start);
+    const x = out.dot(seg.right);
+    const y = out.dot(seg.up);
+    const z = out.dot(seg.forward);
+    out.set(x, y, z);
+    return out;
+}
+
+function segmentExtentsAt(seg, z) {
+    return (z < (seg.breakZ ?? seg.length)) ? { w: seg.w0, h: seg.h0 } : { w: seg.w1, h: seg.h1 };
+}
+
+function pointInsideSegment(seg, worldPos) {
+    const local = worldToSegLocal(seg, worldPos);
+    if (local.z < 0 || local.z > seg.length) return false;
+
+    const ex = segmentExtentsAt(seg, local.z);
+    const margin = 0.5 * SHIP_UNIT; // avoid edge ambiguity near walls/openings
+    return (Math.abs(local.x) <= (ex.w * 0.5 - margin)) && (Math.abs(local.y) <= (ex.h * 0.5 - margin));
+}
+
+function findContainingSegmentIndex(worldPos) {
+    if (!corridorSegments || corridorSegments.length === 0) return -1;
+    // Scan from end to start so joints prefer the later segment.
+    for (let i = corridorSegments.length - 1; i >= 0; i--) {
+        if (pointInsideSegment(corridorSegments[i], worldPos)) return i;
+    }
+    return -1;
+}
 
 // Collision-based damage
 const _cpWorld = new CANNON.Vec3();
@@ -1163,11 +1554,10 @@ function advanceTarget() {
     targetPathIndex++;
 
     if (targetPathIndex >= targetPath.length) {
-        // Finished the corridor run -> generate a new one and continue.
-        buildCorridor();
-        resetShipToStart();
-        rebuildTargetPath();
-        targetPathIndex = 0;
+        // No corridor regeneration anymore (map length is fixed). Keep the last target in place.
+        targetPathIndex = Math.max(0, targetPath.length - 1);
+        placeTargetAtCurrentSegment();
+        return;
     }
 
     placeTargetAtCurrentSegment();
@@ -1214,11 +1604,13 @@ placeTargetAtCurrentSegment();
 
         // --- INPUT ---
         document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') e.preventDefault();
             if (e.code === 'KeyP') togglePause();
             if (e.code === 'Escape') {
                 document.exitPointerLock();
                 isPaused = true;
                 document.getElementById('overlay').classList.remove('hidden');
+                if (keys.space) { keys.space = false; towBeamUp(performance.now()); }
             }
             if (gameActive && !isPaused) {
                 switch(e.code) {
@@ -1230,10 +1622,12 @@ placeTargetAtCurrentSegment();
                     case 'KeyX': if(!keys.x) fireLaser(); keys.x = true; break;
                     case 'KeyA': keys.a = true; break;
                     case 'KeyZ': keys.z = true; break;
+                    case 'Space': if (!keys.space) towBeamDown(performance.now()); keys.space = true; break;
                 }
             }
         });
         document.addEventListener('keyup', (e) => {
+            if (e.code === 'Space') e.preventDefault();
             switch(e.code) {
                 case 'KeyW': keys.w = false; break;
                 case 'KeyC': keys.c = false; break;
@@ -1243,6 +1637,7 @@ placeTargetAtCurrentSegment();
                 case 'KeyX': keys.x = false; break;
                 case 'KeyA': keys.a = false; break;
                 case 'KeyZ': keys.z = false; break;
+                case 'Space': keys.space = false; towBeamUp(performance.now()); break;
             }
         });
         document.addEventListener('mousedown', (e) => { if (gameActive && !isPaused && e.button === 0) keys.thrust = true; });
@@ -1256,7 +1651,7 @@ placeTargetAtCurrentSegment();
 
         document.getElementById('start-btn').addEventListener('click', () => {
             // If we are not active yet (first start) or we ended (damage 100%), start a fresh run.
-            if (!gameActive || gameOver) resetGame();
+            if (!gameActive || gameOver || gameWon) resetGame();
 
             document.getElementById('overlay').classList.add('hidden');
             renderer.domElement.requestPointerLock();
@@ -1271,6 +1666,7 @@ placeTargetAtCurrentSegment();
             if (isPaused) {
                 document.exitPointerLock();
                 document.getElementById('overlay').classList.remove('hidden');
+                if (keys.space) { keys.space = false; towBeamUp(performance.now()); }
             } else {
                 document.getElementById('overlay').classList.add('hidden');
                 renderer.domElement.requestPointerLock();
@@ -1281,10 +1677,42 @@ placeTargetAtCurrentSegment();
 
         let heightOffsetValue = SETTINGS.cameraHeight;
 
-        function updatePhysics(dt) {
-            Object.values(rcsFlames).forEach(f => f.visible = false);
+        function updatePhysics(dt, nowMs) {
+    nowMs = (nowMs !== undefined && nowMs !== null) ? nowMs : performance.now();
 
-            if (keys.thrust) {
+    // --- towing beam / tow link ---
+    updateTowBeamLifetime(nowMs);
+
+    // If the player requested a detach, honor it as soon as the minimum link lifetime is satisfied.
+    if (towPendingDetach && towConnected) {
+        const minLife = SETTINGS.towLinkMinLifetimeMs ?? 0;
+        if ((nowMs - towConnectedAtMs) >= minLife) {
+            detachTow();
+        }
+    }
+
+    // Accumulate time while the cargo stays inside the tow cone (only while Space is held).
+    if (!towBeamHeld) {
+        towInConeMs = 0;
+    } else if (!towConnected && cargoBody) {
+        if (isCargoInTowCone()) {
+            towInConeMs += dt * 1000;
+            if (towInConeMs >= SETTINGS.cargoLockTimeMs) {
+                attachTow(nowMs);
+                towInConeMs = 0;
+            }
+        } else {
+            towInConeMs = 0;
+        }
+    }
+
+    // Spring force is active while the tow link exists.
+    if (towConnected && towSpring) {
+        towSpring.applyForce();
+    }
+
+    Object.values(rcsFlames).forEach(f => f.visible = false);
+if (keys.thrust) {
                 shipBody.applyLocalForce(new CANNON.Vec3(0, SETTINGS.thrustPower, 0), new CANNON.Vec3(0, 0, 0));
                 shipGroup.userData.mainFlame.visible = true;
                 const s = 1 + Math.random() * 0.5;
@@ -1364,11 +1792,29 @@ placeTargetAtCurrentSegment();
                 advanceTarget();
             }
 
-            updatePhysics(dt);
+            updatePhysics(dt, time);
             world.step(1/60, dt, 3);
 
             shipGroup.position.copy(shipBody.position);
             shipGroup.quaternion.copy(shipBody.quaternion);
+
+            // Win condition: reaching the last corridor segment ends the game successfully.
+            if (!gameOver && !gameWon && corridorSegments && corridorSegments.length > 0) {
+                const segIdx = findContainingSegmentIndex(shipGroup.position);
+                if (segIdx === corridorSegments.length - 1 && towConnected) {
+                    triggerGameWin();
+                    return;
+                }
+            }
+
+
+            // Cargo sync
+            if (cargoMesh && cargoBody) {
+                cargoMesh.position.set(cargoBody.position.x, cargoBody.position.y, cargoBody.position.z);
+                cargoMesh.quaternion.set(cargoBody.quaternion.x, cargoBody.quaternion.y, cargoBody.quaternion.z, cargoBody.quaternion.w);
+            }
+
+            updateTowVisuals(time);
 
             targetGroup.position.copy(targetBody.position);
             targetGroup.rotation.y += dt;

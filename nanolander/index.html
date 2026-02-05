@@ -195,7 +195,10 @@
             // Scoring
             enemyScoreAttached: 50,
             enemyScoreWallHopper: 160,
-            enemyScoreCenterRunner: 220
+            enemyScoreCenterRunner: 220,
+			
+            // Target hit bonus
+            targetHitHealthBonus: 50
 
         };                         
 
@@ -1803,7 +1806,11 @@ function placeTargetAtCurrentSegment() {
 function advanceTarget() {
     // score for each hit
     score += 100;
-    document.getElementById('score-display').innerText = `SCORE: ${score}`;
+	
+	damage = Math.max(0, damage - SETTINGS.targetHitHealthBonus);
+	updateDamageHUD();
+	
+    document.getElementById('score-display').innerText = `SCORE: ${score}`;	
 
     targetPathIndex++;
 
@@ -2171,8 +2178,18 @@ placeTargetAtCurrentSegment();
             AudioMgr.sfx.enemyfire();
 
             const enemyPos = enemy.mesh.position.clone();
-            const shipPos = shipGroup.position.clone();
-            const dir = shipPos.sub(enemyPos).normalize();
+            const shipBase = shipGroup.position.clone();
+
+            const d = enemyPos.distanceTo(shipBase);
+
+            // enemy aiming these
+            const minUp = 0.0;        // how much to aim above when close
+            const maxUp = 10.0;        // cap so it doesn't go crazy far away
+            const factor = 0.15;      // units of up per unit of distance
+
+            const up = THREE.MathUtils.clamp(minUp + d * factor, minUp, maxUp);
+
+            const shipPos = shipBase.clone().add(new THREE.Vector3(0, up, 0));const dir = shipPos.sub(enemyPos).normalize();
 
             const r = getEnemyRadius();
 
@@ -2192,7 +2209,7 @@ placeTargetAtCurrentSegment();
             const speed = SETTINGS.laserSpeed * SETTINGS.enemyLaserSpeedMul;
             const v = dir.multiplyScalar(speed);
 
-            const body = new CANNON.Body({ mass: 0.05, isTrigger: true });
+            const body = new CANNON.Body({ mass: 0.1, isTrigger: true });
             body.addShape(new CANNON.Box(new CANNON.Vec3(
                 SETTINGS.enemyLaserThickness * 0.5,
                 SETTINGS.enemyLaserThickness * 0.5,

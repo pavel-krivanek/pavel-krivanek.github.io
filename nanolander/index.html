@@ -92,7 +92,7 @@
             damageEnabled: true,
             bottomHitSafeSpeed: 8,           // Impact speed along normal below this (on bottom hits) causes no damage
             damageMinImpactSpeed: 1.0,       // Ignore very gentle scrapes
-            damageScale: 3.0,                // Damage per (m/s) above min impact
+            damageScale: 1.0,                // Damage per (m/s) above min impact
             damageCooldown: 0.15,            // Seconds between damage ticks while scraping
 
             // Reticles
@@ -126,7 +126,7 @@
 
             // Cargo
             cargoRadiusMul: 0.125,          // Sphere radius in ship units (diameter = 0.25 ship units)
-            cargoMassMul: 0.5,              // Relative to ship mass
+            cargoMassMul: 0.25,              // Relative to ship mass
             cargoLockTimeMs: 1000,          // Time inside cone to lock towing
 
             // Stable tow link visual (violet cylinder)
@@ -154,7 +154,48 @@
             rcsVolumeMul: 0.55,       // rcs.mp3 loop volume multiplier
 
             // If a single damage increment is > this threshold, use damage.mp3 else scrape-1.mp3
-            damageBigThreshold: 5
+            damageBigThreshold: 5,
+
+            // Enemies
+            enemiesEnabled: true,
+            enemyAttachedPerSegment: 2,            // how many wall-attached enemies in each non-first/non-last REAL segment
+            enemyAggroRangeShipUnits: 15,          // start firing when ship is within this range (in ship units)
+            enemyFireIntervalSec: 3,               // seconds between shots while aggro'd
+            enemyPlayerHitDamagePct: 10,           // +% damage when player is hit by enemy laser
+
+            enemySizeMul: 1.5,                     // 1.0 => ~one ship unit sized tetrahedron
+            enemyTetraRadiusMul: 0.612,            // circumsphere radius as a fraction of "size" (edge length ~= 1*SHIP_UNIT)
+
+            enemyColorAlive: 0xffee00,
+            enemyEmissiveColor: 0x553300,
+            enemyEmissiveIntensity: 0.55,
+            enemyColorDead: 0x000000,
+
+            enemyWallPaddingMul: 0.08,             // padding from edges along the wall (in ship units)
+            enemySpawnZFracMin: 0.25,              // within a segment (0..1)
+            enemySpawnZFracMax: 0.75,              // within a segment (0..1)
+
+            // Enemy lasers
+            enemyLaserSpeedMul: 0.5,               // relative to player laser speed
+            enemyLaserLifeSec: 3.5,
+            enemyLaserThickness: 0.12,
+            enemyLaserLength: 2.0,
+            enemyLaserColor: 0xffcc33,
+            enemyLaserSpawnOffsetMul: 0.20,        // extra forward offset from enemy surface (in ship units)
+
+            // Flying enemies
+            enemyWallHopperSpeedShipUnits: 2.0,    // wall-to-wall traverse speed (in ship units / sec)
+            enemyCenterRunnerSpeedShipUnits: 2.5,  // corridor-centre runner forward speed (in ship units / sec)
+
+            // Falling physics for non-attached enemies when destroyed
+            enemyFallMass: 1.2,
+            enemyFallLinearDamping: 0.08,
+            enemyFallAngularDamping: 0.18,
+
+            // Scoring
+            enemyScoreAttached: 50,
+            enemyScoreWallHopper: 160,
+            enemyScoreCenterRunner: 220
 
         };                         
 
@@ -241,7 +282,8 @@
             laser: 'laserfire01.mp3',
             scrape: 'scrape-1.mp3',
             damage: 'damage.mp3',
-            explosion: 'explosion.mp3'
+            explosion: 'explosion.mp3',
+            enemyfire: 'enemyfire.mp3'
         };
 
         const AudioMgr = (() => {
@@ -372,7 +414,8 @@
                 laser: () => playSfx(AUDIO_FILES.laser, 1),
                 scrape: () => playSfx(AUDIO_FILES.scrape, 1),
                 damage: () => playSfx(AUDIO_FILES.damage, 1),
-                explosion: () => playSfx(AUDIO_FILES.explosion, 1)
+                explosion: () => playSfx(AUDIO_FILES.explosion, 1),
+                enemyfire: () => playSfx(AUDIO_FILES.enemyfire, 1)
             };
 
             return { unlockFromUserGesture, syncMusic, beamOn, beamOff, thrustOn, thrustOff, rcsOn, rcsOff, sfx };
@@ -1617,7 +1660,9 @@ function resetGame() {
     setStatus('SYSTEMS: ONLINE');
 
     // Rebuild corridor + respawn ship/target
+    clearEnemies();
     buildCorridor();
+    spawnEnemies();
     resetShipToStart();
     rebuildTargetPath();
     placeTargetAtCurrentSegment();
@@ -1783,18 +1828,500 @@ placeTargetAtCurrentSegment();
             body.quaternion.set(shipGroup.quaternion.x, shipGroup.quaternion.y, shipGroup.quaternion.z, shipGroup.quaternion.w);
             body.velocity.set(fwd.x, fwd.y, fwd.z);
 
-            const l = { mesh, body, life: 2.0, dead: false };
+            const l = { kind: 'playerLaser', mesh, body, life: 2.0, dead: false };
             body.addEventListener("collide", (e) => {
                 if (l.dead) return;
                 spawnExplosion(l.mesh.position);
                 if (e.body === targetBody) targetHit = true;
+
+                // Hitting an enemy destroys it (player or enemy lasers both count as "one hit")
+                if (e.body && e.body.userData && e.body.userData.kind === 'enemy') {
+                    destroyEnemyByBody(e.body, 'player');
+                }
+
                 if (e.body !== shipBody) objectsToRemove.push(l);
             });
             world.addBody(body);
             lasers.push(l);
         }
 
-        // --- INPUT ---
+                // --- ENEMIES ---
+        const enemies = [];
+        const enemyLasers = [];
+        const _enemyByBodyId = new Map();
+        let _enemyIdSeq = 1;
+
+        function addScore(delta) {
+            score += delta;
+            document.getElementById('score-display').innerText = `SCORE: ${score}`;
+        }
+
+        function getEnemyRadius() {
+            const size = (SETTINGS.enemySizeMul ?? 1.0) * SHIP_UNIT;
+            const rMul = (SETTINGS.enemyTetraRadiusMul ?? 0.612);
+            return size * rMul;
+        }
+
+        function makeEnemyMesh() {
+            const r = getEnemyRadius();
+            const geo = new THREE.TetrahedronGeometry(r, 0);
+            const mat = new THREE.MeshStandardMaterial({
+                color: SETTINGS.enemyColorAlive,
+                emissive: SETTINGS.enemyEmissiveColor,
+                emissiveIntensity: SETTINGS.enemyEmissiveIntensity,
+                roughness: 0.35,
+                metalness: 0.1
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            if (SETTINGS.enableShadows) mesh.castShadow = true;
+            return mesh;
+        }
+
+        function makeEnemyBody(worldPos, attached) {
+            const r = getEnemyRadius();
+            const body = new CANNON.Body({ mass: attached ? 0 : 0 });
+            body.addShape(new CANNON.Sphere(r));
+            body.position.set(worldPos.x, worldPos.y, worldPos.z);
+            body.userData = { kind: 'enemy' };
+            // Non-attached enemies start as kinematic movers.
+            if (!attached) body.type = CANNON.Body.KINEMATIC;
+            world.addBody(body);
+            return body;
+        }
+
+        function clearEnemies() {
+            // Remove enemy lasers
+            for (let i = enemyLasers.length - 1; i >= 0; i--) {
+                const l = enemyLasers[i];
+                if (!l.dead) {
+                    l.dead = true;
+                    world.removeBody(l.body);
+                    scene.remove(l.mesh);
+                }
+                enemyLasers.splice(i, 1);
+            }
+
+            // Remove enemies
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
+                world.removeBody(e.body);
+                scene.remove(e.mesh);
+                if (e.mesh.geometry) e.mesh.geometry.dispose();
+                if (e.mesh.material) e.mesh.material.dispose();
+                enemies.splice(i, 1);
+            }
+            _enemyByBodyId.clear();
+        }
+
+        function destroyEnemy(enemy, source = 'unknown') {
+            if (!enemy || enemy.dead) return;
+
+            enemy.dead = true;
+            enemy.canFire = false;
+
+            // Visual: black
+            if (enemy.mesh && enemy.mesh.material) {
+                enemy.mesh.material.color.setHex(SETTINGS.enemyColorDead);
+                if (enemy.mesh.material.emissive) enemy.mesh.material.emissive.setHex(0x000000);
+                enemy.mesh.material.emissiveIntensity = 0;
+                enemy.mesh.material.needsUpdate = true;
+            }
+
+            // Score
+            addScore(enemy.scoreValue);
+
+            // Falling physics for non-attached enemies
+            if (!enemy.attachedToWall && enemy.body) {
+                enemy.body.type = CANNON.Body.DYNAMIC;
+                enemy.body.mass = SETTINGS.enemyFallMass;
+                enemy.body.updateMassProperties();
+                enemy.body.linearDamping = SETTINGS.enemyFallLinearDamping;
+                enemy.body.angularDamping = SETTINGS.enemyFallAngularDamping;
+                enemy.body.wakeUp();
+            }
+        }
+
+        function destroyEnemyByBody(body, source = 'unknown') {
+            if (!body) return false;
+            const enemy = _enemyByBodyId.get(body.id);
+            if (!enemy) return false;
+            destroyEnemy(enemy, source);
+            return true;
+        }
+
+        function randBetween(a, b) { return a + Math.random() * (b - a); }
+
+        function randomDistinctWalls(n) {
+            const walls = ['left', 'right', 'floor', 'ceiling'];
+            for (let i = walls.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                const t = walls[i]; walls[i] = walls[j]; walls[j] = t;
+            }
+            return walls.slice(0, Math.min(n, walls.length));
+        }
+
+        function spawnEnemyAttachedInSegment(segIndex, wall) {
+            const seg = corridorSegments[segIndex];
+            if (!seg) return;
+
+            const r = getEnemyRadius();
+            const pad = (SETTINGS.enemyWallPaddingMul ?? 0) * SHIP_UNIT;
+
+            // Prefer middle region to avoid openings/joins
+            const zMin = clamp((SETTINGS.enemySpawnZFracMin ?? 0.25) * seg.length, 2 * SHIP_UNIT, seg.length - 2 * SHIP_UNIT);
+            const zMax = clamp((SETTINGS.enemySpawnZFracMax ?? 0.75) * seg.length, zMin, seg.length - 2 * SHIP_UNIT);
+            const zLocal = randBetween(zMin, zMax);
+
+            const ex = segmentExtentsAt(seg, zLocal);
+            const xMax = ex.w * 0.5 - r - pad;
+            const yMax = ex.h * 0.5 - r - pad;
+
+            let x = 0, y = 0;
+            switch (wall) {
+                case 'left':
+                    x = -ex.w * 0.5 + r;
+                    y = randBetween(-yMax, yMax);
+                    break;
+                case 'right':
+                    x = ex.w * 0.5 - r;
+                    y = randBetween(-yMax, yMax);
+                    break;
+                case 'floor':
+                    y = -ex.h * 0.5 + r;
+                    x = randBetween(-xMax, xMax);
+                    break;
+                case 'ceiling':
+                    y = ex.h * 0.5 - r;
+                    x = randBetween(-xMax, xMax);
+                    break;
+            }
+
+            const worldPos = localToWorld(seg, new THREE.Vector3(x, y, zLocal));
+
+            const mesh = makeEnemyMesh();
+            mesh.position.copy(worldPos);
+            scene.add(mesh);
+
+            const body = makeEnemyBody(worldPos, true);
+            body.userData.enemyId = _enemyIdSeq;
+
+            const enemy = {
+                id: _enemyIdSeq++,
+                kind: 'attached',
+                segIndex,
+                wall,
+                mesh,
+                body,
+                attachedToWall: true,
+                canFire: true,
+                dead: false,
+                playerNear: false,
+                nextFireAtMs: 0,
+                scoreValue: SETTINGS.enemyScoreAttached
+            };
+
+            _enemyByBodyId.set(body.id, enemy);
+            enemies.push(enemy);
+        }
+
+        function spawnWallHopperEnemy(segIndex) {
+            const seg = corridorSegments[segIndex];
+            if (!seg) return;
+
+            const r = getEnemyRadius();
+            // Spawn closer to the segment start so the player sees it earlier.
+            const zLocal = clamp(6 * SHIP_UNIT, 2 * SHIP_UNIT, seg.length - 2 * SHIP_UNIT);
+            const ex = segmentExtentsAt(seg, zLocal);
+
+            const axis = (Math.random() < 0.5) ? 'x' : 'y';
+            const maxX = ex.w * 0.5 - r;
+            const maxY = ex.h * 0.5 - r;
+
+            let x = 0, y = 0, dirSign = -1;
+            if (axis === 'x') {
+                x = (Math.random() < 0.5) ? -maxX : +maxX;
+                y = randBetween(-maxY * 0.4, +maxY * 0.4);
+                dirSign = (x > 0) ? -1 : +1;
+            } else {
+                y = (Math.random() < 0.5) ? -maxY : +maxY;
+                x = randBetween(-maxX * 0.4, +maxX * 0.4);
+                dirSign = (y > 0) ? -1 : +1;
+            }
+
+            const worldPos = localToWorld(seg, new THREE.Vector3(x, y, zLocal));
+
+            const mesh = makeEnemyMesh();
+            mesh.position.copy(worldPos);
+            scene.add(mesh);
+
+            const body = makeEnemyBody(worldPos, false);
+            body.userData.enemyId = _enemyIdSeq;
+
+            const enemy = {
+                id: _enemyIdSeq++,
+                kind: 'wallHopper',
+                segIndex,
+                axis,
+                zLocal,
+                localX: x,
+                localY: y,
+                dirSign,
+                mesh,
+                body,
+                attachedToWall: false,
+                canFire: true,
+                dead: false,
+                playerNear: false,
+                nextFireAtMs: 0,
+                scoreValue: SETTINGS.enemyScoreWallHopper
+            };
+
+            _enemyByBodyId.set(body.id, enemy);
+            enemies.push(enemy);
+        }
+
+        function spawnCenterRunnerEnemy(startSegIndex, endSegIndex) {
+            if (!corridorSegments || corridorSegments.length === 0) return;
+
+            const segIndex = (startSegIndex ?? 0);
+            const seg = corridorSegments[segIndex];
+            const zLocal = Math.min(seg.length - 2 * SHIP_UNIT, 2 * SHIP_UNIT);
+
+            const worldPos = localToWorld(seg, new THREE.Vector3(0, 0, zLocal));
+
+            const mesh = makeEnemyMesh();
+            mesh.position.copy(worldPos);
+            scene.add(mesh);
+
+            const body = makeEnemyBody(worldPos, false);
+            body.userData.enemyId = _enemyIdSeq;
+
+            const enemy = {
+                id: _enemyIdSeq++,
+                kind: 'centerRunner',
+                routeSegIndex: segIndex,
+                endSegIndex: (endSegIndex ?? (corridorSegments.length - 1)),
+                zLocal,
+                mesh,
+                body,
+                attachedToWall: false,
+                canFire: true,
+                dead: false,
+                playerNear: false,
+                nextFireAtMs: 0,
+                scoreValue: SETTINGS.enemyScoreCenterRunner
+            };
+
+            _enemyByBodyId.set(body.id, enemy);
+            enemies.push(enemy);
+        }
+
+        function spawnEnemies() {
+            clearEnemies();
+            if (!SETTINGS.enemiesEnabled) return;
+            if (!corridorSegments || corridorSegments.length === 0) return;
+
+            // Real segments only (skip connector tubes). No attached enemies in first/last real segment.
+            const realSegIdx = [];
+            for (let i = 0; i < corridorSegments.length; i++) {
+                if (!corridorSegments[i].isConnector) realSegIdx.push(i);
+            }
+            if (realSegIdx.length < 3) return;
+
+            const interior = realSegIdx.slice(1, realSegIdx.length - 1);
+
+            for (const segIndex of interior) {
+                const walls = randomDistinctWalls(SETTINGS.enemyAttachedPerSegment);
+                for (const w of walls) spawnEnemyAttachedInSegment(segIndex, w);
+            }
+
+            // One wall-hopper flying enemy (spawn early so it is easy to see)
+            const hopperSeg = interior[0];
+            spawnWallHopperEnemy(hopperSeg);
+
+            // One corridor-centre runner (moves from corridor beginning to end)
+            spawnCenterRunnerEnemy(interior[0], interior[interior.length - 1]);
+        }
+
+        // Enemy lasers
+        const enemyLaserGeo = new THREE.BoxGeometry(SETTINGS.enemyLaserThickness, SETTINGS.enemyLaserThickness, SETTINGS.enemyLaserLength);
+        const enemyLaserMat = new THREE.MeshBasicMaterial({ color: SETTINGS.enemyLaserColor });
+
+        function fireEnemyLaser(enemy, nowMs) {
+            if (!enemy || enemy.dead || !enemy.canFire) return;
+
+            AudioMgr.sfx.enemyfire();
+
+            const enemyPos = enemy.mesh.position.clone();
+            const shipPos = shipGroup.position.clone();
+            const dir = shipPos.sub(enemyPos).normalize();
+
+            const r = getEnemyRadius();
+
+            // Spawn far enough so the laser box does NOT overlap the enemy's own sphere.
+            // (Otherwise enemies can immediately collide with / "shoot" themselves.)
+            const halfLen = (SETTINGS.enemyLaserLength ?? 2.0) * 0.5;
+            const spawnOffset = r + halfLen + (SETTINGS.enemyLaserSpawnOffsetMul ?? 0) * SHIP_UNIT;
+            const spawnPos = enemyPos.addScaledVector(dir, spawnOffset);
+
+            const mesh = new THREE.Mesh(enemyLaserGeo, enemyLaserMat);
+            mesh.position.copy(spawnPos);
+
+            const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1), dir);
+            mesh.quaternion.copy(q);
+            scene.add(mesh);
+
+            const speed = SETTINGS.laserSpeed * SETTINGS.enemyLaserSpeedMul;
+            const v = dir.multiplyScalar(speed);
+
+            const body = new CANNON.Body({ mass: 0.05, isTrigger: true });
+            body.addShape(new CANNON.Box(new CANNON.Vec3(
+                SETTINGS.enemyLaserThickness * 0.5,
+                SETTINGS.enemyLaserThickness * 0.5,
+                SETTINGS.enemyLaserLength * 0.5
+            )));
+            body.position.set(spawnPos.x, spawnPos.y, spawnPos.z);
+            body.quaternion.set(q.x, q.y, q.z, q.w);
+            body.velocity.set(v.x, v.y, v.z);
+            body.collisionResponse = false;
+
+            const l = { kind: 'enemyLaser', mesh, body, life: SETTINGS.enemyLaserLifeSec, dead: false };
+            body.addEventListener("collide", (e) => {
+                if (l.dead) return;
+
+                // Hit player
+                if (e.body === shipBody) {
+                    if (SETTINGS.damageEnabled && !gameOver) {
+                        damage = clamp(damage + SETTINGS.enemyPlayerHitDamagePct, 0, 100);
+                        updateDamageHUD();
+                        AudioMgr.sfx.damage();
+                        if (damage >= 100) triggerGameOver();
+                    }
+                    objectsToRemove.push(l);
+                    return;
+                }
+                // Ignore enemy bodies (prevents enemy-friendly-fire and self-hit at spawn).
+                if (e.body && e.body.userData && e.body.userData.kind === 'enemy') {
+                    return;
+                }
+
+                // Anything else (walls, cargo, target, etc.)
+                objectsToRemove.push(l);
+            });
+
+            world.addBody(body);
+            enemyLasers.push(l);
+
+            enemy.nextFireAtMs = nowMs + SETTINGS.enemyFireIntervalSec * 1000;
+        }
+
+        // Enemy movement + aggro/firing
+        function updateEnemies(dt, nowMs) {
+            if (!SETTINGS.enemiesEnabled) return;
+            if (!gameActive || isPaused || gameOver || gameWon) return;
+
+            const aggroRange = (SETTINGS.enemyAggroRangeShipUnits ?? 15) * SHIP_UNIT;
+            const aggroRange2 = aggroRange * aggroRange;
+
+            // Motion for flying enemies
+            for (let i = 0; i < enemies.length; i++) {
+                const e = enemies[i];
+                if (e.dead) continue;
+
+                if (e.kind === 'wallHopper') {
+                    const seg = corridorSegments[e.segIndex];
+                    if (!seg) continue;
+
+                    const speed = (SETTINGS.enemyWallHopperSpeedShipUnits ?? 6) * SHIP_UNIT;
+                    const r = getEnemyRadius();
+                    const ex = segmentExtentsAt(seg, e.zLocal);
+
+                    const maxX = ex.w * 0.5 - r;
+                    const maxY = ex.h * 0.5 - r;
+
+                    if (e.axis === 'x') {
+                        e.localX += e.dirSign * speed * dt;
+                        if (e.localX >= maxX) { e.localX = maxX; e.dirSign = -1; }
+                        if (e.localX <= -maxX) { e.localX = -maxX; e.dirSign = +1; }
+                    } else {
+                        e.localY += e.dirSign * speed * dt;
+                        if (e.localY >= maxY) { e.localY = maxY; e.dirSign = -1; }
+                        if (e.localY <= -maxY) { e.localY = -maxY; e.dirSign = +1; }
+                    }
+
+                    const local = new THREE.Vector3(e.localX, e.localY, e.zLocal);
+                    const wp = localToWorld(seg, local);
+                    e.body.position.set(wp.x, wp.y, wp.z);
+
+                    const vel = new THREE.Vector3();
+                    if (e.axis === 'x') vel.copy(seg.right).multiplyScalar(e.dirSign * speed);
+                    else vel.copy(seg.up).multiplyScalar(e.dirSign * speed);
+                    e.body.velocity.set(vel.x, vel.y, vel.z);
+                }
+
+                if (e.kind === 'centerRunner') {
+                    const speedUnits = (SETTINGS.enemyCenterRunnerSpeedShipUnits ?? 4.5) * SHIP_UNIT;
+                    let remaining = speedUnits * dt;
+
+                    while (remaining > 0) {
+                        const seg = corridorSegments[e.routeSegIndex];
+                        if (!seg) break;
+
+                        // If we've reached the last allowed segment, clamp at its end.
+                        if (e.routeSegIndex >= e.endSegIndex) {
+                            e.zLocal = Math.min(seg.length, e.zLocal + remaining);
+                            remaining = 0;
+                            break;
+                        }
+
+                        const toEnd = seg.length - e.zLocal;
+                        if (remaining < toEnd) {
+                            e.zLocal += remaining;
+                            remaining = 0;
+                        } else {
+                            remaining -= toEnd;
+                            const nextIdx = e.routeSegIndex + 1;
+                            if (nextIdx > e.endSegIndex) {
+                                e.routeSegIndex = e.endSegIndex;
+                                e.zLocal = corridorSegments[e.endSegIndex].length;
+                                remaining = 0;
+                            } else {
+                                e.routeSegIndex = nextIdx;
+                                e.zLocal = 0;
+                            }
+                        }
+                    }
+
+                    const seg = corridorSegments[e.routeSegIndex];
+                    if (seg) {
+                        const wp = localToWorld(seg, new THREE.Vector3(0, 0, e.zLocal));
+                        e.body.position.set(wp.x, wp.y, wp.z);
+                        const vel = seg.forward.clone().multiplyScalar(speedUnits);
+                        e.body.velocity.set(vel.x, vel.y, vel.z);
+                    }
+                }
+
+                // Aggro/firing
+                if (e.canFire && !e.dead) {
+                    const dx = e.body.position.x - shipBody.position.x;
+                    const dy = e.body.position.y - shipBody.position.y;
+                    const dz = e.body.position.z - shipBody.position.z;
+                    const d2 = dx*dx + dy*dy + dz*dz;
+
+                    if (d2 <= aggroRange2) {
+                        if (!e.playerNear) {
+                            e.playerNear = true;
+                            e.nextFireAtMs = nowMs + SETTINGS.enemyFireIntervalSec * 1000;
+                        }
+                        if (nowMs >= e.nextFireAtMs) fireEnemyLaser(e, nowMs);
+                    } else {
+                        e.playerNear = false;
+                    }
+                }
+            }
+        }
+
+// --- INPUT ---
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') e.preventDefault();
             if (e.code === 'KeyP') togglePause();
@@ -1972,6 +2499,9 @@ if (keys.thrust) {
                 shipBody.torque.vadd(correction, shipBody.torque);
                 if (Math.random() > 0.5) Object.values(rcsFlames).forEach(f => f.visible = true);
             }
+
+            // Enemies update (motion + firing)
+            updateEnemies(dt, nowMs);
         }
 
         function animate() {
@@ -1982,12 +2512,18 @@ if (keys.thrust) {
             lastTime = time;
 
             if (objectsToRemove.length > 0) {
-                objectsToRemove.forEach(l => {
-                    if(!l.dead) {
-                        l.dead = true;
-                        world.removeBody(l.body);
-                        scene.remove(l.mesh);
-                        lasers.splice(lasers.indexOf(l), 1);
+                objectsToRemove.forEach(o => {
+                    if (!o || o.dead) return;
+                    o.dead = true;
+                    world.removeBody(o.body);
+                    scene.remove(o.mesh);
+
+                    if (o.kind === 'enemyLaser') {
+                        const idx = enemyLasers.indexOf(o);
+                        if (idx >= 0) enemyLasers.splice(idx, 1);
+                    } else {
+                        const idx = lasers.indexOf(o);
+                        if (idx >= 0) lasers.splice(idx, 1);
                     }
                 });
                 objectsToRemove = [];
@@ -2023,6 +2559,14 @@ if (keys.thrust) {
                 cargoMesh.quaternion.set(cargoBody.quaternion.x, cargoBody.quaternion.y, cargoBody.quaternion.z, cargoBody.quaternion.w);
             }
 
+            // Enemies sync
+            for (let i = 0; i < enemies.length; i++) {
+                const e = enemies[i];
+                if (!e || !e.mesh || !e.body) continue;
+                e.mesh.position.set(e.body.position.x, e.body.position.y, e.body.position.z);
+                e.mesh.quaternion.set(e.body.quaternion.x, e.body.quaternion.y, e.body.quaternion.z, e.body.quaternion.w);
+            }
+
             updateTowVisuals(time);
 
             targetGroup.position.copy(targetBody.position);
@@ -2034,6 +2578,15 @@ if (keys.thrust) {
             // Lasers update
             for (let i = lasers.length - 1; i >= 0; i--) {
                 const l = lasers[i];
+                l.life -= dt;
+                l.mesh.position.copy(l.body.position);
+                l.mesh.quaternion.copy(l.body.quaternion);
+                if (l.life <= 0 && !l.dead) objectsToRemove.push(l);
+            }
+
+            // Enemy lasers update
+            for (let i = enemyLasers.length - 1; i >= 0; i--) {
+                const l = enemyLasers[i];
                 l.life -= dt;
                 l.mesh.position.copy(l.body.position);
                 l.mesh.quaternion.copy(l.body.quaternion);

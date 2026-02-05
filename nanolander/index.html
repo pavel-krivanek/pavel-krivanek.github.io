@@ -594,18 +594,26 @@
         // --- WALL MATERIALS / TEXTURES ---
 // Solid is the inward-facing surface (front side, since we orient planes so normals point into the corridor).
 // Wire is the outward-facing surface (back side), plus an optional wire overlay on the inward-facing side.
-// Textures (external assets). These files must live next to this HTML: wall.jpg and floor.jpg
+// Textures (external assets). These files must live next to this HTML.
+// We preload pools and then choose randomly per surface (each wall plane / floor plane).
 const texLoader = new THREE.TextureLoader();
 
-const wallTex = texLoader.load('wall.jpg');
-wallTex.wrapS = wallTex.wrapT = THREE.RepeatWrapping;
-wallTex.colorSpace = THREE.SRGBColorSpace;
-wallTex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy?.() ?? 8);
+const WALL_TEXTURE_FILES = ['wall01.jpg', 'wall02.jpg', 'wall03.jpg' 'wall04.jpg'];
+const FLOOR_TEXTURE_FILES = ['floor01.jpg'];
 
-const floorTex = texLoader.load('floor.jpg');
-floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
-floorTex.colorSpace = THREE.SRGBColorSpace;
-floorTex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy?.() ?? 8);
+function prepTex(t) {
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy?.() ?? 8);
+    return t;
+}
+
+const wallTexPool = WALL_TEXTURE_FILES.map(f => prepTex(texLoader.load(f)));
+const floorTexPool = FLOOR_TEXTURE_FILES.map(f => prepTex(texLoader.load(f)));
+
+// Default textures (used as fallback if pools are empty for some reason)
+const wallTex = wallTexPool[0] ?? prepTex(texLoader.load('wall01.jpg'));
+const floorTex = floorTexPool[0] ?? prepTex(texLoader.load('floor01.jpg'));
 
 
 // Base materials (we clone per-wall to set per-wall UV tiling).
@@ -824,17 +832,27 @@ const wallMatWireFront = new THREE.MeshBasicMaterial({
             // Solid (inside)
             const solidMat = solidBaseMat.clone();
 
-            // Per-wall texture tiling based on real dimensions
+            // Per-surface texture selection + tiling based on real dimensions
             if (solidMat.map) {
                 const w = planeGeo.parameters?.width ?? 1;
                 const h = planeGeo.parameters?.height ?? 1;
+
+                // Pick a random texture per surface (wall vs floor) and then clone for per-surface UV repeat.
+                const pool = (solidBaseMat === floorMatSolidBase) ? floorTexPool : wallTexPool;
+                const chosen = (pool && pool.length)
+                    ? pool[(Math.random() * pool.length) | 0]
+                    : solidBaseMat.map;
+
+                solidMat.map = chosen ? chosen.clone() : null;
+
                 // repeats = (world size) * scale
-                solidMat.map = solidMat.map.clone();
-                solidMat.map.repeat.set(
-                    Math.max(1e-3, w * SETTINGS.wallTextureScale),
-                    Math.max(1e-3, h * SETTINGS.wallTextureScale)
-                );
-                solidMat.map.needsUpdate = true;
+                if (solidMat.map) {
+                    solidMat.map.repeat.set(
+                        Math.max(1e-3, w * SETTINGS.wallTextureScale),
+                        Math.max(1e-3, h * SETTINGS.wallTextureScale)
+                    );
+                    solidMat.map.needsUpdate = true;
+                }
             }
 
             // Respect visibility/opacity toggles

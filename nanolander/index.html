@@ -21,6 +21,10 @@
         .controls-list { text-align: left; background: #111; padding: 20px; border: 1px solid #444; }
         button { margin-top: 20px; padding: 10px 30px; background: #ff0055; border: none; color: white; font-size: 20px; cursor: pointer; }
         button:hover { background: #ff4488; }
+
+        .options { margin-top: 14px; background: #111; padding: 12px 20px; border: 1px solid #444; max-width: 560px; }
+        .opt-label { display: flex; gap: 10px; align-items: center; font-size: 16px; line-height: 1.2; }
+        .opt-label input { transform: scale(1.2); }
                 .result-text { color: #fff; font-size: 18px; margin-bottom: 12px; text-align: center; }
         .hidden { display: none !important; }
     </style>
@@ -47,6 +51,12 @@
 <div><b>X</b>: Fire Laser</div>
             <div><b>A / Z</b>: Camera Height (Wide Range)</div>
             <div><b>P</b>: Pause | <b>ESC</b>: Exit</div>
+        </div>
+        <div class="options">
+            <label class="opt-label">
+                <input type="checkbox" id="darkness-toggle">
+                Darkness mode
+            </label>
         </div>
         <button id="start-btn">ENGAGE</button>
     </div>
@@ -148,6 +158,8 @@
             sfxEnabled: true,         // sound effects on/off
             sfxVolume: 0.80,          // 0..1
 
+
+            sfxPoolMax: 8,          // max Audio elements per SFX file (reduces GC / decode stalls)
             // Loop volumes are multiplied by sfxVolume
             beamVolumeMul: 0.60,      // beam.mp3 loop volume multiplier
             thrustVolumeMul: 0.75,    // thrust.mp3 loop volume multiplier
@@ -183,6 +195,19 @@
             enemyLaserColor: 0xffcc33,
             enemyLaserSpawnOffsetMul: 0.20,        // extra forward offset from enemy surface (in ship units)
 
+            // Enemy projectile light (no shadows)
+            enemyProjectileLightIntensity: 120,     // point light intensity attached to enemy lasers
+            enemyProjectileLightDistance: 45,       // 0 = infinite
+            enemyProjectileLightDecay: 2,
+
+            // Explosion light (no shadows)
+            explosionLightIntensity: 900,           // base intensity (dims over lifetime)
+            explosionLightDistance: 120,            // 0 = infinite
+            explosionLightDecay: 2,
+
+
+            explosionPoolSize: 8,               // pooled explosion meshes (and single shared light driver)
+            explosionLightSteps: 5,               // number of intensity levels over explosion lifetime
             // Flying enemies
             enemyWallHopperSpeedShipUnits: 2.0,    // wall-to-wall traverse speed (in ship units / sec)
             enemyCenterRunnerSpeedShipUnits: 2.5,  // corridor-centre runner forward speed (in ship units / sec)
@@ -226,10 +251,10 @@
         document.body.appendChild(renderer.domElement);
 
         // --- LIGHTING ---
-        const ambLight = new THREE.AmbientLight(0x404050, 10.8);
+        const ambLight = new THREE.AmbientLight(0x404050, 0.15); // very dim ambient
         scene.add(ambLight);
 
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.20); // very dim top light
         dirLight.position.set(50, 100, 50);
         if (SETTINGS.enableShadows) {
             dirLight.castShadow = true;
@@ -402,13 +427,33 @@
                 rcs.currentTime = 0;
             }
 
+            const sfxPools = new Map();
+
             function playSfx(src, volumeMul = 1) {
                 if (!unlocked || !SETTINGS.sfxEnabled) return;
 
-                // clone-per-play allows overlaps (explosions, rapid hits, etc.)
-                const a = new Audio(src);
-                a.preload = 'auto';
+                // Reuse audio elements to avoid frequent allocations/decodes that can cause short main-thread stalls.
+                const maxPool = Math.max(1, Math.floor(SETTINGS.sfxPoolMax ?? 8));
+
+                let pool = sfxPools.get(src);
+                if (!pool) { pool = []; sfxPools.set(src, pool); }
+
+                // Prefer a free element; else create up to maxPool; else "steal" the oldest.
+                let a = pool.find(x => x.paused || x.ended);
+                if (!a) {
+                    if (pool.length < maxPool) {
+                        a = new Audio(src);
+                        a.preload = 'auto';
+                        pool.push(a);
+                    } else {
+                        a = pool[0];
+                        pool.push(pool.shift());
+                        safePause(a);
+                    }
+                }
+
                 a.volume = clamp((SETTINGS.sfxVolume ?? 0.80) * volumeMul, 0, 1);
+                try { a.currentTime = 0; } catch (e) {}
                 safePlay(a);
             }
 
@@ -425,33 +470,111 @@
         })();
 
         // --- VISUAL FX ---
+        // Explosion meshes are pooled to avoid per-explosion allocations / GPU disposals.
+        const explosionPool = [];
+        const explosionGeo = new THREE.SphereGeometry(0.5, 16, 16);
+        const explosionPoolSize = Math.max(1, Math.floor(SETTINGS.explosionPoolSize ?? 8));
+
+        for (let i = 0; i < explosionPoolSize; i++) {
+            const mat = new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0 });
+            const mesh = new THREE.Mesh(explosionGeo, mat);
+            mesh.visible = false;
+            scene.add(mesh);
+            explosionPool.push(mesh);
+        }
+        let explosionPoolCursor = 0;
+
+        // One persistent explosion light (no shadows).
+        // Keeping a constant light count avoids expensive shader recompiles when explosions spawn/despawn.
+        const explosionLight = new THREE.PointLight(
+            0xffaa00,
+            0,
+            SETTINGS.explosionLightDistance ?? 120,
+            SETTINGS.explosionLightDecay ?? 2
+        );
+        explosionLight.castShadow = false;
+        explosionLight.userData.lastStep = -1;
+        scene.add(explosionLight);
+
         function spawnExplosion(position) {
             AudioMgr.sfx.explosion();
-            const geo = new THREE.SphereGeometry(0.5, 16, 16);
-            const mat = new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 1 });
-            const mesh = new THREE.Mesh(geo, mat);
+
+            const mesh = explosionPool[explosionPoolCursor];
+            explosionPoolCursor = (explosionPoolCursor + 1) % explosionPool.length;
+
+            // If this pooled mesh is still active, remove its old record.
+            for (let i = explosions.length - 1; i >= 0; i--) {
+                if (explosions[i].mesh === mesh) { explosions.splice(i, 1); break; }
+            }
+
+            mesh.visible = true;
             mesh.position.copy(position);
-            scene.add(mesh);
-            explosions.push({ mesh: mesh, age: 0, life: 0.5 });
+            mesh.scale.setScalar(1);
+            mesh.material.opacity = 1;
+
+            explosions.push({
+                mesh,
+                baseIntensity: (SETTINGS.explosionLightIntensity ?? 900),
+                age: 0,
+                life: 0.5
+            });
         }
 
         function updateExplosions(dt) {
+            const levels = Math.max(1, Math.floor(SETTINGS.explosionLightSteps ?? 5));
+
+            let bestIntensity = 0;
+            let bestPos = null;
+            let bestStep = -1;
+
             for (let i = explosions.length - 1; i >= 0; i--) {
                 const ex = explosions[i];
                 ex.age += dt;
+
                 const progress = ex.age / ex.life;
                 ex.mesh.scale.setScalar(1 + progress * 5);
                 ex.mesh.material.opacity = 1 - progress;
+
+                // Quantized light intensity per explosion (levels over lifetime)
+                let stepIdx = 0;
+                let q = 0;
+                if (levels > 1) {
+                    stepIdx = Math.min(levels - 1, Math.floor(progress * (levels - 1)));
+                    q = stepIdx / (levels - 1);
+                }
+                const fade = Math.max(0, 1 - q);
+                const intensity = (ex.baseIntensity ?? (SETTINGS.explosionLightIntensity ?? 900)) * (fade * fade);
+
+                if (intensity > bestIntensity) {
+                    bestIntensity = intensity;
+                    bestPos = ex.mesh.position;
+                    bestStep = stepIdx;
+                }
+
                 if (ex.age >= ex.life) {
-                    scene.remove(ex.mesh);
-                    ex.mesh.geometry.dispose();
-                    ex.mesh.material.dispose();
+                    ex.mesh.visible = false;
+                    ex.mesh.material.opacity = 0;
                     explosions.splice(i, 1);
+                }
+            }
+
+            // Drive the single explosion light from the strongest active explosion.
+            if (bestPos) {
+                explosionLight.position.copy(bestPos);
+
+                if (explosionLight.userData.lastStep !== bestStep || explosionLight.intensity === 0) {
+                    explosionLight.intensity = bestIntensity;
+                    explosionLight.userData.lastStep = bestStep;
+                }
+            } else {
+                if (explosionLight.intensity !== 0) {
+                    explosionLight.intensity = 0;
+                    explosionLight.userData.lastStep = -1;
                 }
             }
         }
 
-        // --- SHIP ---
+// --- SHIP ---
         const shipGroup = new THREE.Group();
         scene.add(shipGroup);
 
@@ -527,6 +650,28 @@
             vOffset.add(mainFlame);
             shipGroup.userData.mainFlame = mainFlame;
 
+            // --- Ship headlight (strong spotlight pointing forward) ---
+            // Ship model "forward" is -Z (see resetShipToStart 180° yaw), so aim down local -Z.
+            const headlight = new THREE.SpotLight(0xffffff, 1000, 1000, Math.PI / 12, 0.45, 1.8);
+            headlight.position.set(0, 0.25, -2.3); // near the nose
+            headlight.castShadow = SETTINGS.enableShadows;
+            if (SETTINGS.enableShadows) {
+                headlight.shadow.mapSize.width = 1024;
+                headlight.shadow.mapSize.height = 1024;
+                headlight.shadow.camera.near = 0.5;
+                headlight.shadow.camera.far = 1200;
+                headlight.shadow.bias = -0.0001;
+                headlight.shadow.normalBias = 0.02;
+            }
+            const headlightTarget = new THREE.Object3D();
+            headlightTarget.position.set(0, 0.10, -30);
+            vOffset.add(headlight);
+            vOffset.add(headlightTarget);
+            headlight.target = headlightTarget;
+            shipGroup.userData.headlight = headlight;
+            shipGroup.userData.headlightTarget = headlightTarget;
+            shipGroup.userData.headlightBaseIntensity = headlight.intensity;
+
             // Reticles
             const r1 = createReticleRect(SETTINGS.reticleNearSize, SETTINGS.reticleNearSize, 0x00ff00, 0.8);
             r1.position.z = -SETTINGS.reticleNearDist;
@@ -561,6 +706,38 @@
             createRCS('yawRight', -1.0, 0, -1.0, 0, 0, -Math.PI/2);
         }
         buildShipVisuals();
+
+        // --- START DIALOG OPTION: DARKNESS MODE ---
+        const ORIGINAL_LIGHTING = { ambient: 10.8, top: 1.2 }; // original game values
+        const DARK_LIGHTING = { ambient: 0.15, top: 0.20 };    // patched "dark" values
+        let darknessModeEnabled = false;
+
+        const darknessToggleEl = document.getElementById('darkness-toggle');
+
+        function applyDarknessMode(enabled) {
+            darknessModeEnabled = !!enabled;
+
+            ambLight.intensity = darknessModeEnabled ? DARK_LIGHTING.ambient : ORIGINAL_LIGHTING.ambient;
+            dirLight.intensity = darknessModeEnabled ? DARK_LIGHTING.top : ORIGINAL_LIGHTING.top;
+
+            const hl = shipGroup && shipGroup.userData ? shipGroup.userData.headlight : null;
+            if (hl) {
+                if (darknessModeEnabled) {
+                    hl.visible = true;
+                    hl.intensity = shipGroup.userData.headlightBaseIntensity ?? hl.intensity ?? 1000;
+                } else {
+                    hl.intensity = 0;
+                    hl.visible = false;
+                }
+            }
+        }
+
+        if (darknessToggleEl) {
+            darknessToggleEl.addEventListener('change', () => applyDarknessMode(darknessToggleEl.checked));
+            applyDarknessMode(darknessToggleEl.checked); // apply default immediately
+        } else {
+            applyDarknessMode(true);
+        }
 
         // --- CORRIDOR ENVIRONMENT ---
         const corridorGroup = new THREE.Group();
@@ -1856,6 +2033,9 @@ placeTargetAtCurrentSegment();
             const l = { kind: 'playerLaser', mesh, body, life: 2.0, dead: false };
             body.addEventListener("collide", (e) => {
                 if (l.dead) return;
+                // Debounce: Cannon can emit multiple collide callbacks before we remove the projectile body.
+                l.dead = true;
+
                 spawnExplosion(l.mesh.position);
                 if (e.body === targetBody) targetHit = true;
 
@@ -1863,8 +2043,7 @@ placeTargetAtCurrentSegment();
                 if (e.body && e.body.userData && e.body.userData.kind === 'enemy') {
                     destroyEnemyByBody(e.body, 'player');
                 }
-
-                if (e.body !== shipBody) objectsToRemove.push(l);
+                objectsToRemove.push(l);
             });
             world.addBody(body);
             lasers.push(l);
@@ -2206,6 +2385,16 @@ placeTargetAtCurrentSegment();
             mesh.quaternion.copy(q);
             scene.add(mesh);
 
+            // Very strong point light for enemy projectiles (no shadows)
+            const enemyProjLight = new THREE.PointLight(
+                SETTINGS.enemyLaserColor,
+                SETTINGS.enemyProjectileLightIntensity ?? 120,
+                SETTINGS.enemyProjectileLightDistance ?? 45,
+                SETTINGS.enemyProjectileLightDecay ?? 2
+            );
+            enemyProjLight.castShadow = false;
+            mesh.add(enemyProjLight);
+
             const speed = SETTINGS.laserSpeed * SETTINGS.enemyLaserSpeedMul;
             const v = dir.multiplyScalar(speed);
 
@@ -2234,6 +2423,10 @@ placeTargetAtCurrentSegment();
                     }
                     objectsToRemove.push(l);
                     return;
+                    // Debounce + schedule removal
+                    l.dead = true;
+                    objectsToRemove.push(l);
+                    return;
                 }
                 // Ignore enemy bodies (prevents enemy-friendly-fire and self-hit at spawn).
                 if (e.body && e.body.userData && e.body.userData.kind === 'enemy') {
@@ -2241,6 +2434,7 @@ placeTargetAtCurrentSegment();
                 }
 
                 // Anything else (walls, cargo, target, etc.)
+                l.dead = true;
                 objectsToRemove.push(l);
             });
 
@@ -2407,6 +2601,7 @@ placeTargetAtCurrentSegment();
             // Unlock audio playback (required by most browsers).
             AudioMgr.unlockFromUserGesture();
             AudioMgr.syncMusic();
+            if (typeof applyDarknessMode === 'function') applyDarknessMode(!!(document.getElementById('darkness-toggle')?.checked));
             // If we are not active yet (first start) or we ended (damage 100%), start a fresh run.
             if (!gameActive || gameOver || gameWon) resetGame();
 
@@ -2548,10 +2743,14 @@ if (keys.thrust) {
 
             if (objectsToRemove.length > 0) {
                 objectsToRemove.forEach(o => {
-                    if (!o || o.dead) return;
+                    if (!o || o._removed) return;
+
+                    // We may mark a projectile as dead inside its collide callback to debounce repeated events.
                     o.dead = true;
-                    world.removeBody(o.body);
-                    scene.remove(o.mesh);
+                    o._removed = true;
+
+                    if (o.body) world.removeBody(o.body);
+                    if (o.mesh) scene.remove(o.mesh);
 
                     if (o.kind === 'enemyLaser') {
                         const idx = enemyLasers.indexOf(o);

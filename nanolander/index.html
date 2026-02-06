@@ -2012,7 +2012,7 @@ placeTargetAtCurrentSegment();
 
         function fireLaser() {
             AudioMgr.sfx.laser();
-            const spawnOffset = new THREE.Vector3(0, 0, -2.5);
+            const spawnOffset = new THREE.Vector3(0, 0, -3);
             spawnOffset.applyQuaternion(shipGroup.quaternion);
             const spawnPos = shipGroup.position.clone().add(spawnOffset);
 

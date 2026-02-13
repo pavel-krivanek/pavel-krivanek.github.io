@@ -1389,7 +1389,14 @@ class ForthCodeAddStore extends ForthCodeWithHead {
 class ForthCodeCCopy extends ForthCodeWithHead {
     name() { return "c@c!"; }
     execute() {
-        throw new Error("shouldBeImplemented");
+        let destination = this.popUnsigned();   // c-addr2
+        let source = this.popUnsigned();        // c-addr1
+
+        let byte = this.memory().byteAt(source) & 0xFF;
+        this.memory().writeByteAt(byte, destination);
+
+        this.push(source + 1);
+        this.push(destination + 1);
     }
 }
 

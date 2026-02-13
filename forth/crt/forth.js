@@ -2255,12 +2255,13 @@ HEX
 DFFC CONSTANT PAD
 DECIMAL
 
+
 : LEAVE R> R> R> DROP DUP >R >R >R ;
 : -ROT ROT ROT ;
 : FILL          ( A C V )
     SWAP        ( A V C )
-    BEGIN 
-        DUP 0> 
+    BEGIN
+        DUP 0>
     WHILE
         1-      ( A V C )
         -ROT    ( C A V )
@@ -2269,10 +2270,10 @@ DECIMAL
         C!      ( C A V )
         SWAP 1+ SWAP
         ROT     ( A V C )
-    REPEAT 
+    REPEAT
     2DROP DROP
-    ; 
-  
+    ;
+
     : COUNT DUP 1+ SWAP C@ ;
     : TEXT PAD 72 32 FILL WORD  ( A L )
     DUP -ROT                    ( L A L )
@@ -2281,10 +2282,10 @@ DECIMAL
     CMOVE                       ( L )
     PAD SWAP                    ( PAD L )
     ;
- 
-: PAGE CR 34 0 DO  ." - " LOOP ." -" CR ; 
 
-: CREATE 
+: PAGE CR 34 0 DO  ." - " LOOP ." -" CR ;
+
+: CREATE
     WORD CREATEHEAD DODOES , 0 ,
 ;
 
@@ -2296,7 +2297,7 @@ DECIMAL
 : 2! TUCK 2+ ! ! ;
 
 : 2CONSTANT CREATE , , DOES> 2@ ;
-: 2VARIABLE CREATE , , DOES> ;
+: 2VARIABLE CREATE 0 , 0 , DOES> ;
 
 : S>D DUP 0< IF -1 ELSE 0 THEN ;
 
@@ -2333,7 +2334,7 @@ VARIABLE TDEPTH
 
 : ->
     DEPTH TDEPTH @ -
-    HASH-N 
+    HASH-N
     DEPTH TDEPTH !
 ;
 
@@ -2344,7 +2345,7 @@ VARIABLE TDEPTH
            BASE @  DECIMAL
            ." TEST FAILED: " TEST-NUMBER @ . CR
            BASE !
-        QUIT 
+        QUIT
     THEN
 ;
 
@@ -2363,14 +2364,14 @@ TSTART
     T{ 0 0 AND -> 0 }T
     T{ 0 1 AND -> 0 }T
     T{ 1 0 AND -> 0 }T
-    T{ 1 1 AND -> 1 }T 
+    T{ 1 1 AND -> 1 }T
 
     T{ 0 INVERT 1 AND -> 1 }T
     T{ 1 INVERT 1 AND -> 0 }T
 
     0    CONSTANT 0S
     0 INVERT CONSTANT 1S
-    
+
     T{ 0S INVERT -> 1S }T
     T{ 1S INVERT -> 0S }T
 
@@ -2383,7 +2384,7 @@ TSTART
     T{ 0S 1S OR -> 1S }T
     T{ 1S 0S OR -> 1S }T
     T{ 1S 1S OR -> 1S }T
-    
+
     T{ 0S 0S XOR -> 0S }T
     T{ 0S 1S XOR -> 1S }T
     T{ 1S 0S XOR -> 1S }T
@@ -2397,27 +2398,27 @@ TSTART
     T{ 4000 2* -> 8000 }T
     T{ 1S 2* 1 XOR -> 1S }T
     T{ MSB 2* -> 0S }T
-  
+
     T{ 0S 2/ -> 0S }T
     T{ 1 2/ -> 0 }T
     T{ 4000 2/ -> 2000 }T
-    T{ 1S 2/ -> 1S }T           
+    T{ 1S 2/ -> 1S }T
     T{ 1S 1 XOR 2/ -> 1S }T
     T{ MSB 2/ MSB AND -> MSB }T
- 
+
     T{ 1 0 LSHIFT -> 1 }T
     T{ 1 1 LSHIFT -> 2 }T
-    T{ 1 2 LSHIFT -> 4 }T      
-    T{ 1 F LSHIFT -> 8000 }T 
+    T{ 1 2 LSHIFT -> 4 }T
+    T{ 1 F LSHIFT -> 8000 }T
     T{ 1S 1 LSHIFT 1 XOR -> 1S }T
-    T{ MSB 1 LSHIFT -> 0 }T   
+    T{ MSB 1 LSHIFT -> 0 }T
 
     T{ 1 0 RSHIFT -> 1 }T
     T{ 1 1 RSHIFT -> 0 }T
     T{ 2 1 RSHIFT -> 1 }T
     T{ 4 2 RSHIFT -> 1 }T
-    T{ 8000 F RSHIFT -> 1 }T         
-    T{ MSB 1 RSHIFT MSB AND -> 0 }T     
+    T{ 8000 F RSHIFT -> 1 }T
+    T{ MSB 1 RSHIFT MSB AND -> 0 }T
     T{ MSB 1 RSHIFT 2* -> MSB }T
 
     0 INVERT                    CONSTANT MAX-UINT
@@ -2436,7 +2437,7 @@ TSTART
     T{ MAX-UINT 0= -> <FALSE> }T
     T{ MIN-INT 0= -> <FALSE> }T
     T{ MAX-INT 0= -> <FALSE> }T
-    
+
     T{ 0 0 = -> <TRUE> }T
     T{ 1 1 = -> <TRUE> }T
     T{ -1 -1 = -> <TRUE> }T
@@ -2444,13 +2445,13 @@ TSTART
     T{ -1 0 = -> <FALSE> }T
     T{ 0 1 = -> <FALSE> }T
     T{ 0 -1 = -> <FALSE> }T
-    
+
     T{ 0 0< -> <FALSE> }T
     T{ -1 0< -> <TRUE> }T
     T{ MIN-INT 0< -> <TRUE> }T
     T{ 1 0< -> <FALSE> }T
     T{ MAX-INT 0< -> <FALSE> }T
-    
+
     T{ 0 1 < -> <TRUE> }T
     T{ 1 2 < -> <TRUE> }T
     T{ -1 0 < -> <TRUE> }T
@@ -2467,7 +2468,7 @@ TSTART
     T{ 0 MIN-INT < -> <FALSE> }T
     T{ MAX-INT MIN-INT < -> <FALSE> }T
     T{ MAX-INT 0 < -> <FALSE> }T
-    
+
     T{ 0 1 > -> <FALSE> }T
     T{ 1 2 > -> <FALSE> }T
     T{ -1 0 > -> <FALSE> }T
@@ -2484,7 +2485,7 @@ TSTART
     T{ 0 MIN-INT > -> <TRUE> }T
     T{ MAX-INT MIN-INT > -> <TRUE> }T
     T{ MAX-INT 0 > -> <TRUE> }T
-    
+
     T{ 0 1 U< -> <TRUE> }T
     T{ 1 2 U< -> <TRUE> }T
     T{ 0 MID-UINT U< -> <TRUE> }T
@@ -2514,7 +2515,7 @@ TSTART
     T{ 0 MIN-INT MIN -> MIN-INT }T
     T{ MAX-INT MIN-INT MIN -> MIN-INT }T
     T{ MAX-INT 0 MIN -> 0 }T
-    
+
     T{ 0 1 MAX -> 1 }T
     T{ 1 2 MAX -> 2 }T
     T{ -1 0 MAX -> 0 }T
@@ -2581,18 +2582,18 @@ TSTART
     T{ -1 1+ -> 0 }T
     T{ 1 1+ -> 2 }T
     T{ MID-UINT 1+ -> MID-UINT+1 }T
-    
+
     T{ 2 1- -> 1 }T
     T{ 1 1- -> 0 }T
     T{ 0 1- -> -1 }T
     T{ MID-UINT+1 1- -> MID-UINT }T
-    
+
     T{ 0 NEGATE -> 0 }T
     T{ 1 NEGATE -> -1 }T
     T{ -1 NEGATE -> 1 }T
     T{ 2 NEGATE -> -2 }T
     T{ -2 NEGATE -> 2 }T
-    
+
     T{ 0 ABS -> 0 }T
     T{ 1 ABS -> 1 }T
     T{ -1 ABS -> 1 }T
@@ -2605,7 +2606,7 @@ TSTART
     T{ -2 S>D -> -2 -1 }T
     T{ MIN-INT S>D -> MIN-INT -1 }T
     T{ MAX-INT S>D -> MAX-INT 0 }T
-    
+
     T{ 0 0 M* -> 0 S>D }T
     T{ 0 1 M* -> 0 S>D }T
     T{ 1 0 M* -> 0 S>D }T
@@ -2636,9 +2637,9 @@ TSTART
     T{ MID-UINT+1          4 UM* ->           0 2 }T
     T{         1S          2 UM* -> 1S 1 LSHIFT 1 }T
     T{   MAX-UINT   MAX-UINT UM* ->    1 1 INVERT }T
-    
 
-    T{ 0 0 * -> 0 }T          
+
+    T{ 0 0 * -> 0 }T
     T{ 0 1 * -> 0 }T
     T{ 1 0 * -> 0 }T
     T{ 1 2 * -> 2 }T
@@ -2651,25 +2652,25 @@ TSTART
     T{ MID-UINT+1 1 RSHIFT 2 * -> MID-UINT+1 }T
     T{ MID-UINT+1 2 RSHIFT 4 * -> MID-UINT+1 }T
     T{ MID-UINT+1 1 RSHIFT MID-UINT+1 OR 2 * -> MID-UINT+1 }T
- 
+
     T{ DECIMAL 131071. HEX 2CONSTANT 2c0 -> }T
     T{ 2c0 -> 1 -1 }T
- 
+
     T{ 1 2 2CONSTANT 2c1 -> }T
     T{ 2c1 -> 1 2 }T
     T{ : cd1 2c1 ; -> }T
     T{ cd1 -> 1 2 }T
-    
+
     T{ : cd2 2CONSTANT ; -> }T
     T{ -1 -2 cd2 2c2 -> }T
     T{ 2c2 -> -1 -2 }T
-    
+
     (
         T{ 4 5 2CONSTANT 2c3 IMMEDIATE 2c3 -> 4 5 }T
         T{ : cd6 2c3 2LITERAL ; cd6 -> 4 5 }T
     )
 
-    
+
 
     T{ 2VARIABLE 2v1 -> }T
     T{ 0. 2v1 2! ->    }T
@@ -2680,25 +2681,25 @@ TSTART
     T{ cd2 2v2 -> }T
     T{ : cd3 2v2 2! ; -> }T
     T{ -2 -1 cd3 -> }T
-    T{ 2v2 2@ -> -2 -1 }T    
+    T{ 2v2 2@ -> -2 -1 }T
     T{ 2VARIABLE 2v3 IMMEDIATE 5 6 2v3 2! -> }T
     T{ 2v3 2@ -> 5 6 }T
 
-    T{       0 S>D              1 FM/MOD ->  0       0 }T 
-    T{       1 S>D              1 FM/MOD ->  0       1 }T 
+    T{       0 S>D              1 FM/MOD ->  0       0 }T
+    T{       1 S>D              1 FM/MOD ->  0       1 }T
     T{       2 S>D              1 FM/MOD ->  0       2 }T
     T{      -1 S>D              1 FM/MOD ->  0      -1 }T
     T{      -2 S>D              1 FM/MOD ->  0      -2 }T
-    T{       0 S>D             -1 FM/MOD ->  0       0 }T 
+    T{       0 S>D             -1 FM/MOD ->  0       0 }T
     T{       1 S>D             -1 FM/MOD ->  0      -1 }T
     T{       2 S>D             -1 FM/MOD ->  0      -2 }T
     T{      -1 S>D             -1 FM/MOD ->  0       1 }T
     T{      -2 S>D             -1 FM/MOD ->  0       2 }T
     T{       2 S>D              2 FM/MOD ->  0       1 }T
-    T{      -1 S>D             -1 FM/MOD ->  0       1 }T 
-    T{      -2 S>D             -2 FM/MOD ->  0       1 }T 
-    T{       7 S>D              3 FM/MOD ->  1       2 }T 
-    T{       7 S>D             -3 FM/MOD -> -2      -3 }T 
+    T{      -1 S>D             -1 FM/MOD ->  0       1 }T
+    T{      -2 S>D             -2 FM/MOD ->  0       1 }T
+    T{       7 S>D              3 FM/MOD ->  1       2 }T
+    T{       7 S>D             -3 FM/MOD -> -2      -3 }T
     T{      -7 S>D              3 FM/MOD ->  2      -3 }T
     T{      -7 S>D             -3 FM/MOD -> -1       2 }T
     T{ MAX-INT S>D              1 FM/MOD ->  0 MAX-INT }T
@@ -2733,16 +2734,16 @@ TSTART
     T{      -2 2      -1 */MOD ->      -2 2      -1 T*/MOD }T
     T{       2 2       2 */MOD ->       2 2       2 T*/MOD }T
     T{      -1 2      -1 */MOD ->      -1 2      -1 T*/MOD }T
-    T{      -2 2      -2 */MOD ->      -2 2      -2 T*/MOD }T 
-    T{       7 2       3 */MOD ->       7 2       3 T*/MOD }T 
-    T{       7 2      -3 */MOD ->       7 2      -3 T*/MOD }T  
-    T{      -7 2       3 */MOD ->      -7 2       3 T*/MOD }T 
-    T{      -7 2      -3 */MOD ->      -7 2      -3 T*/MOD }T  
+    T{      -2 2      -2 */MOD ->      -2 2      -2 T*/MOD }T
+    T{       7 2       3 */MOD ->       7 2       3 T*/MOD }T
+    T{       7 2      -3 */MOD ->       7 2      -3 T*/MOD }T
+    T{      -7 2       3 */MOD ->      -7 2       3 T*/MOD }T
+    T{      -7 2      -3 */MOD ->      -7 2      -3 T*/MOD }T
     T{ MAX-INT 2 MAX-INT */MOD -> MAX-INT 2 MAX-INT T*/MOD }T
     T{ MIN-INT 2 MIN-INT */MOD -> MIN-INT 2 MIN-INT T*/MOD }T
- 
-    DECIMAL 
-  
+
+    DECIMAL
+
 
     HEX
 
@@ -2756,17 +2757,15 @@ TEND
 : BAR  MARGIN 5 STARS ;
 : F    BAR BLIP BAR BLIP BLIP CR ;
 
-: TEST 4 0  do I . I' . ." hello"  CR 2 +LOOP ; 
+: TEST 4 0  do I . I' . ." hello"  CR 2 +LOOP ;
 
-: TEST 10 0 DO I DUP . 5 = IF LEAVE THEN LOOP ; 
+: TEST 10 0 DO I DUP . 5 = IF LEAVE THEN LOOP ;
 
 FORGET TESTING
 
  ."  "
 
 ( ." FINISHED" CR )
-
-
 
 
 
@@ -2812,9 +2811,10 @@ CR
 	CR
 	;
 
+
 73 L
 
-73 BLOCK 
+73 BLOCK
 / 1 BLK !
 
 

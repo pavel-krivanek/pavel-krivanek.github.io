@@ -1,4 +1,4 @@
-"use strict";
+	"use strict";
 
 class ForthMemory {
 
@@ -2138,7 +2138,6 @@ let source = `
 	REPEAT
 
 	DROP		( at this point, the stack is: start-of-word end-of-word )
-	SWAP		( end-of-word start-of-word )
 
 	( begin the definition with : NAME [IMMEDIATE] )
 	':' EMIT SPACE DUP ID. SPACE

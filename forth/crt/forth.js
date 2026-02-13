@@ -1,4 +1,4 @@
-	"use strict";
+"use strict";
 
 class ForthMemory {
 
@@ -363,7 +363,7 @@ class Forth {
         //console.log(this.memory.memoryAt(this.pc))
         //if (this.memory.memoryAt(this.pc).execute === undefined) debugger;
         this.memory.memoryAt(this.pc).execute();
-        if (this.isRunning) { this.pc += 1; }
+        if (this.isRunning()) { this.pc += 1; }
     }
 
     toggleFlagOf(flag, wordAddress) {
@@ -631,7 +631,7 @@ class ForthCodeWithHead extends ForthCode {
     codewordFor(position) { return position + this.forth.wordSize(); }
     finishAt(originalPosition) { 
         let newPosition = originalPosition + 1;
-        this.forth.addLabelAddress("next_" + this.label, newPosition);
+        this.forth.addLabelAddress("next_" + this.label(), newPosition);
         this.forth.memory.writeCodeAt(new ForthCodeNext(this.forth), newPosition);
         return newPosition;
     }
@@ -1278,7 +1278,7 @@ class ForthCodeTell extends ForthCodeWithHead {
         let text = this.forth.memory.memoryCopyFromTo(address, address + length - 1);
         for (let i = 0; i < length; i++)
             typeCharacter(text[i]);
-        this.forth.outputBuffer.push(text);
+        this.forth.outputBuffer.push(...text);
     }
 }
 
@@ -1352,7 +1352,7 @@ class ForthCodeInterpret extends ForthCodeWithHead {
             this.forth.privComma(aCodeword);
             if (interpretIsLit) 
                 this.forth.privComma(numberErrorPair[0]);
-            this.privNex;
+            this.forth.privNext();
         }
     }
 }
@@ -2138,6 +2138,7 @@ let source = `
 	REPEAT
 
 	DROP		( at this point, the stack is: start-of-word end-of-word )
+	SWAP		( end-of-word start-of-word )
 
 	( begin the definition with : NAME [IMMEDIATE] )
 	':' EMIT SPACE DUP ID. SPACE

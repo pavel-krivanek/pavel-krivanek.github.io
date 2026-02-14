@@ -149,7 +149,9 @@ class Forth {
        this.memoryInitializer().initializeMemory();
        
        this.state = "running";
-    }
+    
+       this.awaitingRawInput = false;
+}
     resetBuffers() {
         this.inputBuffer = [];
         this.outputBuffer = []; 
@@ -238,6 +240,7 @@ class Forth {
     emergencyStop() { 
         // na error occured
         this.noInput();
+        this.awaitingRawInput = false;
         this.resetBuffers();
         this.memory.resetStack();
         this.memory.resetReturnStack();  
@@ -303,6 +306,7 @@ class Forth {
 		let usesBlock = !(this.varBlkValue() === 0);
         do {
             if (this.atInputEnd(usesBlock)) {
+            this.awaitingRawInput = false;
                 this.noInput();
                 typeOk();
                 return [this.wordBufferAddress(), 0];
@@ -550,6 +554,7 @@ class ForthStandardMemoryInitializer extends ForthMemoryInitializer {
         ]); }                      
     initializeIOPrimitives() { this.installAll([
         ForthCodeKey,
+        ForthCodeKeyRaw,
         ForthCodeEmit,
         ForthCodeTell
     ]); }                          
@@ -1285,8 +1290,24 @@ class ForthCodeTell extends ForthCodeWithHead {
 class ForthCodeKey extends ForthCodeWithHead {
     name() { return "key"; }
     execute() {
+        this.forth.awaitingRawInput = false;
         let input = this.forth.readInputBuffer();
         if (this.forth.isRunning()) this.push(input);
+    }
+}
+
+
+class ForthCodeKeyRaw extends ForthCodeWithHead {
+    name() { return "keyraw"; }
+    execute() {
+        // Signal the host UI that we are waiting for raw key input (character-at-a-time).
+        this.forth.awaitingRawInput = true;
+        let input = this.forth.readInputBuffer();
+        if (this.forth.isRunning()) {
+            this.push(input);
+            // Clear the flag once we successfully consumed a character.
+            this.forth.awaitingRawInput = false;
+        }
     }
 }
 

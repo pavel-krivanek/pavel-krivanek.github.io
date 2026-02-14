@@ -190,14 +190,15 @@ h3 {
 }
 
 .cursorSpan {
-        animation: blinker 1s step-start infinite;
+        animation: blinker 1s step-end infinite;
 }
 
 @keyframes blinker {
-  50% {
-    opacity: 0;
-  }
+  0%, 49% { opacity: 1; }
+  50%, 99% { opacity: 0; }
+  100% { opacity: 1; }
 }
+
 
 .title {
 	float: right;
@@ -257,3 +258,34 @@ h3 {
 .introMessage tt {
               color: white ;
               }
+
+/* Hidden clipboard catcher for multiline paste (caret fully hidden) */
+#tty-clipboard {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  caret-color: transparent;
+  color: transparent;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  resize: none;
+  pointer-events: none;
+}
+
+/* Focus sink for keyboard + paste. Keeps native caret from appearing. */
+#tty-focus {
+    position: fixed;
+    left: -10000px;
+    top: 0;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    outline: none;
+}
+#tty-focus:focus {
+    outline: none;
+}

@@ -1,0 +1,2011 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Infernal Ignition</title>
+<style>
+  html, body {
+    margin: 0;
+    background: #090909;
+    color: #ddd;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .wrap {
+    display: grid;
+    grid-template-columns: minmax(320px, 820px) 340px;
+    gap: 14px;
+    padding: 14px;
+    align-items: start;
+    justify-content: center;
+  }
+  canvas {
+    display: block;
+    width: min(100%, 800px);
+    height: auto;
+    image-rendering: auto;
+    border: 2px solid #333;
+    background: #000;
+  }
+  .panel {
+    border: 1px solid #2a2a2a;
+    background: #111;
+    padding: 10px;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .panel h2 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    color: #fff;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 6px;
+    margin: 2px 0;
+  }
+  .muted { color: #9b9b9b; }
+  button { background:#1a1a1a; color:#ddd; border:1px solid #444; padding:2px 8px; font: inherit; cursor:pointer; }
+  pre {
+    margin: 8px 0 0;
+    white-space: pre-wrap;
+    color: #cfcfcf;
+  }
+  @media (max-width: 1100px) {
+    .wrap { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <canvas id="game" width="256" height="192"></canvas>
+  <div class="panel">
+    <h2>Infernal Ignition</h2>
+    <div class="row"><div>Move</div><div>Arrows / WASD</div></div>
+    <div class="row"><div>Use tool</div><div>Ctrl</div></div>
+    <div class="row"><div>Door</div><div>Space (stand next to door and face it)</div></div>
+    <div class="row"><div>Drop tool</div><div>Shift</div></div>
+    <div class="row"><div>Pause</div><div>P</div></div>
+    <div class="row"><div>Fullscreen</div><div><button id="btnFullscreen" type="button">Toggle</button></div></div>
+    <div class="row"><div>Restart</div><div>Enter (after game over)</div></div>
+
+    <pre id="debug" style="display:none"></pre>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d", { alpha: false });
+  ctx.imageSmoothingEnabled = false;
+  const debugEl = document.getElementById("debug");
+  const btnFullscreen = document.getElementById("btnFullscreen");
+
+  // ---------------------------------------------------------------------------
+  // CONFIGURATION
+  // ---------------------------------------------------------------------------
+
+  const CFG = {
+    tile: 8,
+    screenW: 256,
+    screenH: 192,
+
+    // Building geometry
+    xMin: 4,
+    xMax: 30,
+    // floors closer together; top-floor-to-roof spacing matches floor spacing (3 tiles)
+    floorRows: [5, 8, 11, 14, 17, 20, 23],
+    roofY: 2,
+    exitX: 30,
+    allowGroundOutsideLeft: true,
+
+    // Tools / interactions
+    bucketFirstPickupShots: 8,
+    bucketRefillMinimum: 4,
+    bucketRange: 5,
+    extinguisherRangeFactor: 0.5,
+    extinguisherDefaultShots: 10,
+    ladderToolCountPerLevel: 1,
+    ladderOneUse: true,
+
+    // Random placements
+    randomExtraTaps: 2,
+    minDoorsPerFloor: 1,
+    maxDoorsPerFloor: 2,
+    minDoorDistFromWall: 2,
+    minLaddersPerAdjacentPair: 1,
+    maxLaddersPerAdjacentPair: 2,
+    extinguisherCountBase: 2,
+    extinguisherCountMax: 4,
+
+    // Fire simulation (slower; ~one third of previous v2)
+    fireIntensityMax: 8,
+    fireIntensityGainPerSec: 0.24,
+    fireSpreadCheckSec: 1.4,
+    fireSpreadLateralThreshold: 3,
+    fireSpreadUpThreshold: 5,
+    fireSpreadDownThreshold: 8,
+    fireDoorLateralForceThreshold: 5,
+    fireLateralSpawnChance: 0.12,
+    fireVerticalSpawnChanceUp: 0.08,
+    fireVerticalSpawnChanceDown: 0.047,
+    fireInitialCount: 6,
+    fireInitialCountLevelScale: 1,
+
+    // Floor damage
+    damageMax: 10,
+    damageSteppingCollapseThreshold: 8,
+    damageDestructionThreshold: 10,
+    damageGainOnFirePerSec: 0.05,
+    groundIndestructible: true,
+
+    // Exploding extinguishers (weaker)
+    extinguisherExplodeFireLevel: 3,
+    explosionHorizRadiusFactor: 0.22,
+    explosionVertRadius: 0,
+    explosionDamageCenter: 2.5,
+    explosionDamageSide: 0.9,
+    explosionFireCenter: 2.8,
+    explosionFireMin: 0.6,
+
+    // Extinguishing attenuation
+    bucketStrengthNear: 7.6,
+    bucketStrengthFar: 3.1,
+    extStrengthNear: 8.8,
+    extStrengthFar: 3.5,
+
+    // Movement
+    playerStepSec: 0.12,
+    climbStepSec: 0.16,
+    npcStepSec: 0.18,
+    npcClimbStepSec: 0.22,
+
+    // NPC behavior
+    npcSpawnCheckSec: 3.2,
+    npcSpawnChance: 0.14,
+    npcPyromanChance: 0.10,
+    npcPyromanChancePerLevel: 0.02,
+    npcRiskContinueChance: 0.20,
+    npcDoorOpenChance: 0.15,
+    pyroDoorOpenChance: 0.50,
+    npcClimbDownChance: 0.25,
+    npcClimbUpChance: 0.10,
+    pyroAccidentalFireStepChance: 0.0,
+    pyroFireStartChancePerDecision: 0.06,
+
+    // Scoring
+    scoreFireOut: 20,
+    scoreFireOutBonus: 10,
+    scoreRescue: 100,
+    scoreValuable: 60,
+    scoreDynamite: 100,
+    scoreAllSavedBonus: 200,
+    scoreFastFireBonusBase: 240,
+    extraLifeEveryScreens: 8,
+    scoreNpcDeathPenalty: 40,
+    scoreFloorDestroyedPenalty: 12,
+
+    // Death / fall animation
+    fallAnimDistancePx: 20,
+
+    // Visual effects
+    smokeTTL: 0.55,
+    sprayTTL: 0.20,
+    refillAnimTTL: 0.55,
+    deathAnimTTL: 0.85,
+    explosionTTL: 0.55,
+
+    // HUD / messages
+    messageTTL: 1.4
+  };
+
+  const COL = {
+    black: "#000000",
+    blue: "#0000d7",
+    red: "#ff2020",
+    magenta: "#ff2fff",
+    green: "#00d030",
+    cyan: "#00e5ff",
+    yellow: "#ffff00",
+    white: "#f0f0f0",
+    orange: "#ff9a00",
+    darkRed: "#7a0000",
+    gray: "#9a9a9a",
+    darkGray: "#454545",
+    lime: "#6bff6b"
+  };
+
+  const T = CFG.tile;
+  const W = CFG.screenW;
+  const H = CFG.screenH;
+  const FLOORS = CFG.floorRows;
+  const FLOOR_COUNT = FLOORS.length;
+  const GROUND_FLOOR = FLOOR_COUNT - 1;
+  const FLOOR_LEN = CFG.xMax - CFG.xMin + 1;
+
+  const FLOOR_H = 2;
+  const ROOF_H = 2;
+
+  const SPR = {
+    personW: 12,
+    personH: 14
+  };
+
+  // ---------------------------------------------------------------------------
+  // Input
+  // ---------------------------------------------------------------------------
+
+  const keys = Object.create(null);
+  const pressed = Object.create(null);
+
+  function normKey(k) {
+    if (k === " ") return "space";
+    if (k === "Shift") return "shift";
+    return String(k).toLowerCase();
+  }
+
+  addEventListener("keydown", (e) => {
+    if (e.key === "F11") {
+      e.preventDefault();
+      if (!e.repeat) toggleFullscreen();
+    }
+    if ((e.key === "f" || e.key === "F") && !e.repeat) toggleFullscreen();
+    const k = normKey(e.key);
+    if (!keys[k]) pressed[k] = true;
+    keys[k] = true;
+    if (["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," ","Shift","Enter","Control","p","P","F11"].includes(e.key)) {
+      e.preventDefault();
+    }
+  });
+  addEventListener("keyup", (e) => {
+    keys[normKey(e.key)] = false;
+  });
+
+  function consume(k) {
+    if (pressed[k]) { pressed[k] = false; return true; }
+    return false;
+  }
+  function clearPressed() {
+    for (const k in pressed) pressed[k] = false;
+  }
+
+
+  function toggleFullscreen() {
+    const el = document.fullscreenElement ? null : (canvas.parentElement || canvas);
+    if (!document.fullscreenElement) {
+      const target = canvas;
+      const p = target.requestFullscreen ? target.requestFullscreen() : Promise.resolve();
+      if (p && p.catch) p.catch(() => {});
+    } else {
+      const p = document.exitFullscreen ? document.exitFullscreen() : Promise.resolve();
+      if (p && p.catch) p.catch(() => {});
+    }
+  }
+
+  if (btnFullscreen) btnFullscreen.addEventListener("click", toggleFullscreen);
+
+  // ---------------------------------------------------------------------------
+  // Utilities
+  // ---------------------------------------------------------------------------
+
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function chance(p) { return Math.random() < p; }
+  function randi(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+  function keyFX(f, x) { return f + ":" + x; }
+  function floorYpx(floorIdx) { return FLOORS[floorIdx] * T + (floorIdx === GROUND_FLOOR ? FLOOR_H : 0); }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  // ---------------------------------------------------------------------------
+  // Basic synthesized sounds (WebAudio)
+  // ---------------------------------------------------------------------------
+  let audioCtx = null;
+  let audioUnlocked = false;
+
+  function ensureAudio(fromGesture = false) {
+    if (!audioCtx) {
+      if (!fromGesture) return null;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      audioCtx = new AC();
+    }
+    if (fromGesture && audioCtx.state === "suspended") {
+      audioCtx.resume().catch(() => {});
+    }
+    if (audioCtx.state === "running") audioUnlocked = true;
+    return audioCtx;
+  }
+
+  function unlockAudioFromGesture() {
+    const ac = ensureAudio(true);
+    if (!ac) return;
+    if (ac.state === "running") {
+      audioUnlocked = true;
+      return;
+    }
+    ac.resume().then(() => { audioUnlocked = (ac.state === "running"); }).catch(() => {});
+  }
+
+  addEventListener("pointerdown", unlockAudioFromGesture, { once: true });
+  addEventListener("keydown", unlockAudioFromGesture, { once: true });
+
+  function sfx(type) {
+    if (!audioUnlocked || !audioCtx || audioCtx.state !== "running") return;
+    const ac = audioCtx;
+
+    function tone(f0, f1, dur, wave, vol, when = 0) {
+      const now = ac.currentTime + when;
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.connect(g);
+      g.connect(ac.destination);
+      o.type = wave;
+      o.frequency.setValueAtTime(Math.max(20, f0), now);
+      o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), now + dur);
+      g.gain.setValueAtTime(Math.max(0.0001, vol), now);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+      o.start(now);
+      o.stop(now + dur + 0.01);
+    }
+
+    switch (type) {
+      case "pickup":    tone(700, 1100, 0.07, "square", 0.05); break;
+      case "drop":      tone(260, 170, 0.06, "square", 0.045); break;
+      case "doorOpen":  tone(240, 340, 0.06, "square", 0.05); tone(320, 420, 0.05, "square", 0.03, 0.02); break;
+      case "doorClose": tone(260, 160, 0.07, "square", 0.055); break;
+      case "door":      tone(220, 170, 0.06, "square", 0.05); break;
+      case "refill":    tone(900, 420, 0.12, "triangle", 0.04); tone(500, 300, 0.10, "triangle", 0.03, 0.04); break;
+      case "spray":     tone(1500, 700, 0.05, "sawtooth", 0.03); break;
+      case "ext":       tone(1200, 480, 0.06, "triangle", 0.04); break;
+      case "fireout":   tone(520, 220, 0.06, "triangle", 0.035); break;
+      case "ignite":    tone(120, 240, 0.05, "sawtooth", 0.025); break;
+      case "step":      tone(170, 130, 0.03, "square", 0.03); break;
+      case "climb":     tone(220, 260, 0.035, "square", 0.028); break;
+      case "boom":      tone(90, 35, 0.18, "sawtooth", 0.09); tone(55, 25, 0.20, "triangle", 0.06, 0.01); break;
+      case "dynaBoom":  tone(110, 30, 0.24, "sawtooth", 0.12); tone(70, 25, 0.28, "triangle", 0.09, 0.01); tone(160, 45, 0.20, "square", 0.05, 0.015); break;
+      case "death":     tone(320, 80, 0.25, "square", 0.055); break;
+      case "npcDeath":  tone(260, 120, 0.16, "square", 0.05); tone(180, 95, 0.16, "triangle", 0.035, 0.05); break;
+      case "spawnNpc":
+        tone(440, 660, 0.10, "square", 0.04, 0.00);
+        tone(660, 880, 0.10, "square", 0.04, 0.12);
+        tone(880, 660, 0.10, "square", 0.035, 0.24);
+        tone(660, 990, 0.12, "square", 0.035, 0.36);
+        break;
+      case "spawnPyro":
+        tone(220, 330, 0.12, "sawtooth", 0.045, 0.00);
+        tone(330, 260, 0.10, "sawtooth", 0.04, 0.13);
+        tone(260, 390, 0.10, "sawtooth", 0.04, 0.25);
+        tone(390, 520, 0.12, "square", 0.045, 0.37);
+        break;
+      case "pyroCatch":
+        tone(980, 740, 0.08, "square", 0.045, 0.00);
+        tone(740, 1160, 0.09, "square", 0.045, 0.09);
+        break;
+      default:           tone(300, 300, 0.05, "square", 0.03); break;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Game state
+  // ---------------------------------------------------------------------------
+
+  let game = null;
+
+  function newGame() {
+    game = {
+      level: 1,
+      lives: 3,
+      score: 0,
+      hiScore: 0,
+      gameOver: false,
+      paused: false,
+      timeOnLevel: 0,
+      message: "AUTOMATA TOWERS ON FIRE!",
+      messageTTL: CFG.messageTTL,
+
+      fireSpreadClock: 0,
+      npcSpawnClock: 0,
+
+      sprays: [],
+      smokes: [],
+      refills: [],
+      explosions: [],
+
+      rescuedThisLevel: 0,
+      spawnedThisLevel: 0
+    };
+
+    startLevel(game.level, true);
+  }
+
+  function startLevel(level, first) {
+    game.level = level;
+    game.timeOnLevel = 0;
+    game.fireSpreadClock = 0;
+    game.npcSpawnClock = 0;
+    game.rescuedThisLevel = 0;
+    game.spawnedThisLevel = 0;
+    game.sprays.length = 0;
+    game.smokes.length = 0;
+    game.refills.length = 0;
+    game.explosions.length = 0;
+
+    const world = {
+      supports: [],
+      damage: [],
+      fire: [],
+      doors: new Map(),
+      taps: new Set(),
+      ladders: new Set(),
+      toolsOnGround: [],
+      valuables: [],
+      npcs: []
+    };
+
+    for (let f = 0; f < FLOOR_COUNT; f++) {
+      world.supports[f] = Array(CFG.xMax + 1).fill(false);
+      world.damage[f] = Array(CFG.xMax + 1).fill(0);
+      world.fire[f] = Array(CFG.xMax + 1).fill(null);
+    }
+
+    for (let f = 0; f < FLOOR_COUNT; f++) {
+      const xStart = (f === GROUND_FLOOR && CFG.allowGroundOutsideLeft) ? 0 : CFG.xMin;
+      for (let x = xStart; x <= CFG.xMax; x++) world.supports[f][x] = true;
+    }
+
+    // Mandatory ground-left tap
+    world.taps.add(keyFX(GROUND_FLOOR, 1));
+
+    // Bucket spawn (good as requested)
+    world.toolsOnGround.push({ kind: "bucket", floor: GROUND_FLOOR, x: 16, charges: CFG.bucketFirstPickupShots });
+
+    // Ladder tool spawn one segment left from right wall
+    world.toolsOnGround.push({ kind: "ladder", floor: GROUND_FLOOR, x: CFG.xMax - 1, charges: 1 });
+
+    placeExtraTaps(world);
+    placeRandomLadders(world);
+    placeRandomDoors(world);
+    placeExtinguishers(world);
+    placeValuables(world);
+
+    const initialFires = clamp(CFG.fireInitialCount + (game.level - 1), 2, 99);
+    for (let i = 0; i < initialFires; i++) igniteRandomSafe(world, false);
+
+    game.player = makeActor("player", GROUND_FLOOR, 3, +1);
+    game.player.invuln = 1.5;
+    game.player.tool = null;
+    game.player.dropLock = null; // prevents immediate re-pickup after drop
+
+    const initialResidents = clamp(2 + Math.floor((game.level - 1) / 2), 2, 5);
+    for (let i = 0; i < initialResidents; i++) spawnNPC(world, false);
+
+    game.world = world;
+
+    if (!first) {
+      game.message = "LEVEL " + String(game.level).padStart(2, "0");
+      game.messageTTL = 1.0;
+    }
+
+    tryAutoPickup(game.player);
+  }
+
+  function makeActor(kind, floor, x, dir) {
+    return {
+      kind,
+      floor,
+      x,
+      dir,
+      move: null,
+      stepCooldown: 0,
+      turnLock: 0,
+      alive: true,
+      dying: false,
+      deathTimer: 0,
+      deathReason: "",
+      pyroman: false,
+      ignoreFireAccidentChance: false,
+      pendingRiskDeath: false,
+      visualColor: null,
+      pyroLitCurrentFloor: false,
+      lastFloorForPyro: floor
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // World generation
+  // ---------------------------------------------------------------------------
+
+  function randFloorExcludingGround() { return randi(0, GROUND_FLOOR - 1); }
+
+  function freePlacementTile(world, floor, x, opts = {}) {
+    if (!hasSupport(world, floor, x)) return false;
+    if (doorAt(world, floor, x)) return false;
+    if (tapAt(world, floor, x)) return false;
+    if (!opts.allowToolOverlap && toolAt(world, floor, x)) return false;
+    if (!opts.allowLadderOverlap && ladderTouchesFloor(world, floor, x)) return false;
+    return true;
+  }
+
+  function placeExtraTaps(world) {
+    let placed = 0, tries = 0;
+    while (placed < CFG.randomExtraTaps && tries++ < 200) {
+      const f = randFloorExcludingGround();
+      const x = chance(0.5) ? CFG.xMin : CFG.xMax;
+      if (!hasSupport(world, f, x)) continue;
+      if (doorAt(world, f, x)) continue;
+      world.taps.add(keyFX(f, x));
+      placed++;
+    }
+  }
+
+  function placeRandomLadders(world) {
+    for (let f = 0; f < GROUND_FLOOR; f++) {
+      const count = randi(CFG.minLaddersPerAdjacentPair, CFG.maxLaddersPerAdjacentPair);
+      const used = new Set();
+      let placed = 0, tries = 0;
+
+      while (placed < count && tries++ < 300) {
+        const x = randi(CFG.xMin + 1, CFG.xMax - 1);
+        if (used.has(x) || used.has(x - 1) || used.has(x + 1)) continue;
+        if (!hasSupport(world, f, x) || !hasSupport(world, f + 1, x)) continue;
+        if (doorAt(world, f, x) || doorAt(world, f + 1, x)) continue;
+        world.ladders.add(keyFX(f, x));
+        used.add(x);
+        placed++;
+      }
+
+      if (placed === 0) {
+        const x = clamp(Math.floor((CFG.xMin + CFG.xMax) / 2), CFG.xMin + 1, CFG.xMax - 1);
+        world.ladders.add(keyFX(f, x));
+      }
+    }
+  }
+
+  function placeRandomDoors(world) {
+    for (let f = 0; f < FLOOR_COUNT; f++) {
+      if (f === GROUND_FLOOR) continue;
+      const count = randi(CFG.minDoorsPerFloor, CFG.maxDoorsPerFloor);
+      let placed = 0, tries = 0;
+      while (placed < count && tries++ < 400) {
+        const x = randi(CFG.xMin + CFG.minDoorDistFromWall, CFG.xMax - CFG.minDoorDistFromWall);
+        if (!freePlacementTile(world, f, x, { allowLadderOverlap: false })) continue;
+        if (tapAt(world, f, x)) continue;
+        if (ladderTouchesFloor(world, f, x)) continue;
+        if (doorAt(world, f, x - 1) || doorAt(world, f, x + 1)) continue;
+        world.doors.set(keyFX(f, x), { open: chance(0.55) });
+        placed++;
+      }
+      if (placed === 0) {
+        const x = clamp(Math.floor((CFG.xMin + CFG.xMax) / 2), CFG.xMin + 2, CFG.xMax - 2);
+        if (!ladderTouchesFloor(world, f, x) && !tapAt(world, f, x) &&
+            !doorAt(world, f, x - 1) && !doorAt(world, f, x + 1)) {
+          world.doors.set(keyFX(f, x), { open: chance(0.55) });
+        }
+      }
+    }
+  }
+
+  function placeExtinguishers(world) {
+    const extRemovedByLevel = Math.floor(game.level / 5);
+    const count = clamp(CFG.extinguisherCountBase - extRemovedByLevel, 0, CFG.extinguisherCountMax);
+    let placed = 0, tries = 0;
+    while (placed < count && tries++ < 500) {
+      const f = randi(0, GROUND_FLOOR - 1);
+      const x = randi(Math.max(1, CFG.xMin), CFG.xMax);
+      if (!freePlacementTile(world, f, x)) continue;
+      world.toolsOnGround.push({ kind: "ext", floor: f, x, charges: CFG.extinguisherDefaultShots + Math.floor(game.level / 3) });
+      placed++;
+    }
+  }
+
+  function placeValuables(world) {
+    const count = clamp(1 + Math.floor(game.level / 3), 1, 4);
+    let placed = 0, tries = 0;
+    while (placed < count && tries++ < 300) {
+      const f = randi(0, GROUND_FLOOR);
+      const x = randi(Math.max(1, CFG.xMin), CFG.xMax);
+      if (!freePlacementTile(world, f, x)) continue;
+      world.valuables.push({
+        kind: chance(0.35) ? "dynamite" : "valuable",
+        floor: f,
+        x,
+        ttl: chance(0.35) ? randi(12, 20) : randi(14, 24),
+        dead: false
+      });
+      placed++;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // World queries
+  // ---------------------------------------------------------------------------
+
+  function hasSupport(world, floor, x) {
+    if (floor < 0 || floor >= FLOOR_COUNT || x < 0 || x > CFG.xMax) return false;
+    return !!world.supports[floor][x];
+  }
+  function fireCell(world, floor, x) {
+    if (floor < 0 || floor >= FLOOR_COUNT || x < 0 || x > CFG.xMax) return null;
+    return world.fire[floor][x];
+  }
+  function doorAt(world, floor, x) { return world.doors.get(keyFX(floor, x)) || null; }
+  function tapAt(world, floor, x) { return world.taps.has(keyFX(floor, x)); }
+  function ladderLinkAt(world, floor, x) { return world.ladders.has(keyFX(floor, x)); }
+  function ladderTouchesFloor(world, floor, x) {
+    if (floor < 0 || floor >= FLOOR_COUNT) return false;
+    return world.ladders.has(keyFX(floor, x)) || world.ladders.has(keyFX(floor - 1, x));
+  }
+  function toolAt(world, floor, x) {
+    return world.toolsOnGround.find(t => !t.dead && t.floor === floor && t.x === x) || null;
+  }
+  function valuableAt(world, floor, x) {
+    return world.valuables.find(v => !v.dead && v.floor === floor && v.x === x) || null;
+  }
+  function isClosedDoor(world, floor, x) {
+    const d = doorAt(world, floor, x);
+    return !!(d && !d.open);
+  }
+  function insideHorizontalBoundsForFloor(floor, x) {
+    const xmin = (floor === GROUND_FLOOR && CFG.allowGroundOutsideLeft) ? 0 : CFG.xMin;
+    return x >= xmin && x <= CFG.xMax;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Actor movement
+  // ---------------------------------------------------------------------------
+
+  function startStep(actor, toFloor, toX, type) {
+    const dur = (type === "h") ? (actor.kind === "player" ? CFG.playerStepSec : CFG.npcStepSec)
+               : (type === "v") ? (actor.kind === "player" ? CFG.climbStepSec : CFG.npcClimbStepSec)
+               : 0.22;
+    actor.move = { type, fromF: actor.floor, fromX: actor.x, toF: toFloor, toX: toX, t: 0, dur };
+    if (actor.kind === "player") sfx(type === "v" ? "climb" : "step");
+  }
+
+  function updateActorMovement(actor, dt) {
+    if (!actor.move) return false;
+    actor.move.t += dt;
+    if (actor.move.t >= actor.move.dur) {
+      actor.floor = actor.move.toF;
+      actor.x = actor.move.toX;
+      actor.move = null;
+      if (actor.alive) {
+        const collapseDanger = tileCollapsesUnderActor(actor.floor, actor.x);
+        if (collapseDanger) killActor(actor, "fall");
+      }
+      return true;
+    }
+    return false;
+  }
+
+  function tileCollapsesUnderActor(floor, x) {
+    if (!hasSupport(game.world, floor, x)) return true;
+    if (floor === GROUND_FLOOR && CFG.groundIndestructible) return false;
+    return game.world.damage[floor][x] >= CFG.damageSteppingCollapseThreshold;
+  }
+
+  function tryMoveHorizontal(actor, dx) {
+    if (!actor.alive || actor.dying || actor.move) return false;
+    if (actor.dir !== dx) { actor.dir = dx; if (actor.kind === "player") actor.turnLock = 0.09; return true; } // turn in place
+
+    const nx = actor.x + dx;
+    const f = actor.floor;
+
+    if (!insideHorizontalBoundsForFloor(f, nx)) return false;
+    if (isClosedDoor(game.world, f, nx)) return false;
+
+    if (!hasSupport(game.world, f, nx)) {
+      if (actor.kind === "player") {
+        startStep(actor, f, nx, "h");
+        actor.pendingRiskDeath = true;
+        return true;
+      }
+      const fireThere = !!fireCell(game.world, f, nx);
+      const accidentalChance = fireThere && actor.pyroman ? CFG.pyroAccidentalFireStepChance : CFG.npcRiskContinueChance;
+      if (chance(accidentalChance)) {
+        startStep(actor, f, nx, "h");
+        actor.pendingRiskDeath = true;
+      } else {
+        actor.dir *= -1;
+      }
+      return true;
+    }
+
+    if (game.world.damage[f][nx] >= CFG.damageSteppingCollapseThreshold) {
+      if (actor.kind === "player" || chance(CFG.npcRiskContinueChance)) {
+        startStep(actor, f, nx, "h");
+        actor.pendingRiskDeath = true;
+      } else {
+        actor.dir *= -1;
+      }
+      return true;
+    }
+
+    if (fireCell(game.world, f, nx)) {
+      if (actor.kind === "player") {
+        startStep(actor, f, nx, "h");
+        actor.pendingRiskDeath = true;
+      } else {
+        const accidentalChance = actor.pyroman ? CFG.pyroAccidentalFireStepChance : CFG.npcRiskContinueChance;
+        if (chance(accidentalChance)) {
+          startStep(actor, f, nx, "h");
+          actor.pendingRiskDeath = true;
+        } else {
+          actor.dir *= -1;
+        }
+      }
+      return true;
+    }
+
+    startStep(actor, f, nx, "h");
+    return true;
+  }
+
+  function tryMoveVertical(actor, dirUp) {
+    if (!actor.alive || actor.dying || actor.move) return false;
+    const f = actor.floor;
+    const x = actor.x;
+
+    if (dirUp) {
+      if (f <= 0) return false;
+      if (!ladderLinkAt(game.world, f - 1, x)) return false;
+      if (!hasSupport(game.world, f - 1, x)) return false;
+      startStep(actor, f - 1, x, "v");
+      return true;
+    } else {
+      if (f >= GROUND_FLOOR) return false;
+      if (!ladderLinkAt(game.world, f, x)) return false;
+      if (!hasSupport(game.world, f + 1, x)) return false;
+      startStep(actor, f + 1, x, "v");
+      return true;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Player interactions
+  // ---------------------------------------------------------------------------
+
+  function tryAutoPickup(player) {
+    if (!player.alive || player.dying || player.move) return;
+    if (player.tool) return;
+
+    if (player.dropLock && player.dropLock.floor === player.floor && player.dropLock.x === player.x) return;
+
+    const t = toolAt(game.world, player.floor, player.x);
+    if (!t) return;
+
+    player.tool = { kind: t.kind, charges: t.charges, usedPlaced: false };
+
+    t.dead = true;
+    sfx("pickup");
+    flashMessage("GOT " + (t.kind === "ext" ? "EXTINGUISHER" : t.kind.toUpperCase()));
+  }
+
+  function tryAutoRefillBucket(player) {
+    if (!player.alive || player.dying || player.move) return;
+    if (!player.tool || player.tool.kind !== "bucket") return;
+    if (!tapAt(game.world, player.floor, player.x)) return;
+
+    const before = player.tool.charges;
+    player.tool.charges = Math.max(player.tool.charges, CFG.bucketRefillMinimum);
+    if (player.tool.charges > before) {
+      game.refills.push({ floor: player.floor, x: player.x, ttl: CFG.refillAnimTTL });
+      sfx("refill");
+      flashMessage("BUCKET REFILLED");
+    }
+  }
+
+  function tryPickupValuable(player) {
+    if (!player.alive || player.dying || player.move) return;
+    const v = valuableAt(game.world, player.floor, player.x);
+    if (!v) return;
+
+    if (v.kind === "dynamite") {
+      game.score += CFG.scoreDynamite;
+      flashMessage("DYNAMITE REMOVED");
+    } else {
+      game.score += CFG.scoreValuable;
+      flashMessage("VALUABLE SAVED");
+    }
+    v.dead = true;
+    clampScores();
+  }
+
+  function tryDropTool(player) {
+    if (!player.tool || player.move || player.dying || !player.alive) return;
+    const f = player.floor, x = player.x;
+
+    if (doorAt(game.world, f, x)) return;
+    if (tapAt(game.world, f, x)) return;
+    if (ladderTouchesFloor(game.world, f, x)) return;
+    if (toolAt(game.world, f, x)) return;
+
+    game.world.toolsOnGround.push({ kind: player.tool.kind, floor: f, x, charges: player.tool.charges });
+    player.tool = null;
+    player.dropLock = { floor: f, x };
+
+    sfx("drop");
+    flashMessage("DROPPED TOOL");
+  }
+
+  function tryToggleDoorByFacing(player) {
+    if (!player.alive || player.dying || player.move) return;
+    const tx = player.x + player.dir;
+    const d = doorAt(game.world, player.floor, tx);
+    if (!d) return;
+    d.open = !d.open;
+    sfx(d.open ? "doorOpen" : "doorClose");
+    flashMessage(d.open ? "DOOR OPEN" : "DOOR CLOSED");
+  }
+
+  function tryUseCurrentTool(player) {
+    if (!player.alive || player.dying || player.move) return;
+    if (!player.tool) return;
+
+    if (player.tool.kind === "ladder") {
+      placeLadderTool(player);
+      return;
+    }
+
+    if (player.tool.kind === "bucket") {
+      if (player.tool.charges <= 0) return;
+      sprayExtinguish(player, "bucket");
+      player.tool.charges--;
+      return;
+    }
+
+    if (player.tool.kind === "ext") {
+      if (player.tool.charges <= 0) { player.tool = null; return; }
+      sprayExtinguish(player, "ext");
+      player.tool.charges--;
+      if (player.tool.charges <= 0) {
+        player.tool = null;
+        flashMessage("EXTINGUISHER EMPTY");
+      }
+      return;
+    }
+  }
+
+  function placeLadderTool(player) {
+    if (!player.tool || player.tool.kind !== "ladder") return;
+    const x = player.x;
+    let placedAny = false;
+
+    for (let f = player.floor - 1; f >= 0; f--) {
+      if (!hasSupport(game.world, f, x) || !hasSupport(game.world, f + 1, x)) break;
+      if (doorAt(game.world, f, x) || doorAt(game.world, f + 1, x)) break;
+      if (ladderLinkAt(game.world, f, x)) break;
+      game.world.ladders.add(keyFX(f, x));
+      placedAny = true;
+    }
+
+    if (placedAny) {
+      player.tool = null;
+      sfx("pickup");
+      flashMessage("LADDER PLACED");
+    }
+  }
+
+  function sprayExtinguish(player, kind) {
+    const range = kind === "bucket" ? CFG.bucketRange : Math.max(1, Math.floor(FLOOR_LEN * CFG.extinguisherRangeFactor));
+    const hits = [];
+    const dir = player.dir;
+    const f = player.floor;
+    let blocked = false;
+
+    sfx(kind === "bucket" ? "spray" : "ext");
+
+    for (let d = 1; d <= range && !blocked; d++) {
+      const x = player.x + dir * d;
+      if (!insideHorizontalBoundsForFloor(f, x)) break;
+      if (isClosedDoor(game.world, f, x)) { blocked = true; break; }
+      hits.push({ floor: f, x, dist: d });
+    }
+
+    game.sprays.push({ floor: f, x0: player.x, dir, kind, hits, ttl: CFG.sprayTTL });
+
+    for (const h of hits) {
+      const cell = fireCell(game.world, h.floor, h.x);
+      if (!cell) continue;
+
+      const t = (h.dist - 1) / Math.max(1, range - 1);
+      const strength = (kind === "bucket")
+        ? lerp(CFG.bucketStrengthNear, CFG.bucketStrengthFar, t)
+        : lerp(CFG.extStrengthNear, CFG.extStrengthFar, t);
+
+      const before = cell.i;
+      cell.i = Math.max(0, cell.i - strength);
+
+      if (cell.i <= 0.01) {
+        extinguishFire(h.floor, h.x, true);
+      } else if (Math.floor(before) >= 1 && Math.floor(cell.i) < Math.floor(before) && chance(0.4)) {
+        game.smokes.push({ floor: h.floor, x: h.x, ttl: CFG.smokeTTL * 0.6 });
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Fire / damage simulation
+  // ---------------------------------------------------------------------------
+
+  function makeFireCell(intensity = 1) { return { i: intensity }; }
+
+  function ignite(world, floor, x, initialIntensity = 1, source = "spread") {
+    if (!insideHorizontalBoundsForFloor(floor, x)) return false;
+    if (!hasSupport(world, floor, x)) return false;
+
+    // Never START fire on ground from non-spread sources
+    if (floor === GROUND_FLOOR && source !== "spread") return false;
+
+    const existing = world.fire[floor][x];
+    if (existing) {
+      existing.i = clamp(Math.max(existing.i, initialIntensity), 0, CFG.fireIntensityMax);
+      return true;
+    }
+    world.fire[floor][x] = makeFireCell(clamp(initialIntensity, 1, CFG.fireIntensityMax));
+    return true;
+  }
+
+  function extinguishFire(floor, x, withSmoke) {
+    if (!game.world.fire[floor][x]) return;
+    game.world.fire[floor][x] = null;
+    if (withSmoke) game.smokes.push({ floor, x, ttl: CFG.smokeTTL });
+    game.score += CFG.scoreFireOut;
+    sfx("fireout");
+    clampScores();
+  }
+
+  function igniteRandomSafe(world, avoidTopCrowd = true) {
+    for (let tries = 0; tries < 200; tries++) {
+      const minF = 1; // no top-floor initial fire
+      const maxF = GROUND_FLOOR - 1; // no ground-floor initial fire
+      if (maxF < minF) return false;
+      const f = randi(minF, maxF);
+      const x = randi(CFG.xMin, CFG.xMax);
+      if (!hasSupport(world, f, x)) continue;
+      if (doorAt(world, f, x)) continue;
+      if (tapAt(world, f, x)) continue;
+      if (toolAt(world, f, x)?.kind === "bucket") continue;
+      ignite(world, f, x, 1, "random");
+      return true;
+    }
+    return false;
+  }
+
+  function fireBlockedLateralByDoor(world, floor, fromX, toX, intensity) {
+    const doorCurrent = isClosedDoor(world, floor, fromX);
+    const doorTarget = isClosedDoor(world, floor, toX);
+    return ((doorCurrent || doorTarget) && intensity < CFG.fireDoorLateralForceThreshold);
+  }
+
+  function updateFireAndDamage(dt) {
+    const w = game.world;
+    game.fireSpreadClock += dt;
+
+    // Intensify + damage + extinguisher explosions
+    for (let f = 0; f < FLOOR_COUNT; f++) {
+      for (let x = 0; x <= CFG.xMax; x++) {
+        const cell = w.fire[f][x];
+        if (!cell) continue;
+        if (!hasSupport(w, f, x)) { w.fire[f][x] = null; continue; }
+
+        cell.i = clamp(cell.i + CFG.fireIntensityGainPerSec * dt, 0, CFG.fireIntensityMax);
+
+        if (!(CFG.groundIndestructible && f === GROUND_FLOOR)) {
+          w.damage[f][x] = clamp(w.damage[f][x] + CFG.damageGainOnFirePerSec * dt, 0, CFG.damageMax);
+        }
+
+        const t = toolAt(w, f, x);
+        if (t && t.kind === "ext" && cell.i >= CFG.extinguisherExplodeFireLevel) triggerExtinguisherExplosion(f, x);
+        const v = valuableAt(w, f, x);
+        if (v && v.kind === "dynamite") triggerDynamiteExplosion(f, x);
+      }
+    }
+
+    if (game.fireSpreadClock >= CFG.fireSpreadCheckSec) {
+      game.fireSpreadClock = 0;
+      const toIgnite = [];
+
+      for (let f = 0; f < FLOOR_COUNT; f++) {
+        for (let x = 0; x <= CFG.xMax; x++) {
+          const cell = w.fire[f][x];
+          if (!cell || !hasSupport(w, f, x)) continue;
+          const level = cell.i;
+
+          if (level >= CFG.fireSpreadLateralThreshold) {
+            for (const dx of [-1, +1]) {
+              const nx = x + dx;
+              if (!insideHorizontalBoundsForFloor(f, nx)) continue;
+              if (!hasSupport(w, f, nx)) continue;
+              if (fireBlockedLateralByDoor(w, f, x, nx, level)) continue;
+              if (!w.fire[f][nx] && chance(CFG.fireLateralSpawnChance)) toIgnite.push([f, nx, 1]);
+            }
+          }
+
+          if (level >= CFG.fireSpreadUpThreshold && f > 0) {
+            if (hasSupport(w, f - 1, x) && !w.fire[f - 1][x] && chance(CFG.fireVerticalSpawnChanceUp)) {
+              toIgnite.push([f - 1, x, 1]);
+            }
+          }
+
+          if (level >= CFG.fireSpreadDownThreshold && f < GROUND_FLOOR) {
+            if (hasSupport(w, f + 1, x) && !w.fire[f + 1][x] && chance(CFG.fireVerticalSpawnChanceDown)) {
+              toIgnite.push([f + 1, x, 1]);
+            }
+          }
+        }
+      }
+
+      for (const [f, x, i] of toIgnite) ignite(w, f, x, i, "spread");
+    }
+
+    // Destroy segments at max damage
+    for (let f = 0; f < FLOOR_COUNT; f++) {
+      if (CFG.groundIndestructible && f === GROUND_FLOOR) continue;
+      for (let x = 0; x <= CFG.xMax; x++) {
+        if (!w.supports[f][x]) continue;
+        if (w.damage[f][x] < CFG.damageDestructionThreshold) continue;
+        destroySegment(f, x);
+      }
+    }
+  }
+
+  function destroySegment(floor, x) {
+    const w = game.world;
+    w.supports[floor][x] = false;
+    game.score -= CFG.scoreFloorDestroyedPenalty;
+    clampScores();
+    w.fire[floor][x] = null;
+    w.doors.delete(keyFX(floor, x));
+    w.ladders.delete(keyFX(floor, x));
+    w.ladders.delete(keyFX(floor - 1, x));
+
+    for (const t of w.toolsOnGround) if (!t.dead && t.floor === floor && t.x === x) t.dead = true;
+    for (const v of w.valuables) if (!v.dead && v.floor === floor && v.x === x) v.dead = true;
+  }
+
+  function triggerExtinguisherExplosion(floor, x) {
+    const w = game.world;
+    const t = toolAt(w, floor, x);
+    if (!t || t.kind !== "ext") return;
+    t.dead = true;
+    triggerExplosionAt(floor, x, 1.0, "boom");
+  }
+
+  function triggerDynamiteExplosion(floor, x) {
+    const w = game.world;
+    const v = valuableAt(w, floor, x);
+    if (!v || v.dead || v.kind !== "dynamite") return;
+    v.dead = true;
+    triggerExplosionAt(floor, x, 2.0, "dynaBoom");
+
+    // Also seed persistent fires in the same pattern as "dynamite on fire"
+    // (center tile + possible neighbours), in addition to explosion falloff fire.
+    ignite(w, floor, x, 4, "dynamite");
+    for (const dx of [-1, +1]) {
+      if (chance(0.6)) ignite(w, floor, x + dx, 2, "dynamite");
+    }
+
+    flashMessage("DYNAMITE EXPLODED!");
+  }
+
+  function triggerExplosionAt(floor, x, strengthMult = 1, soundType = "boom") {
+    const w = game.world;
+    game.explosions.push({ floor, x, ttl: CFG.explosionTTL });
+    sfx(soundType);
+
+    const horizRadius = Math.max(1, Math.floor(FLOOR_LEN * CFG.explosionHorizRadiusFactor * Math.max(1, 0.75 + 0.5 * strengthMult)));
+
+    for (let df = -CFG.explosionVertRadius; df <= CFG.explosionVertRadius; df++) {
+      const f = floor + df;
+      if (f < 0 || f >= FLOOR_COUNT) continue;
+
+      applyExplosionEffectsToTile(f, x, CFG.explosionDamageCenter * strengthMult, CFG.explosionFireCenter * strengthMult);
+
+      for (const dir of [-1, +1]) {
+        let blocked = false;
+        for (let d = 1; d <= horizRadius && !blocked; d++) {
+          const nx = x + dir * d;
+          if (!insideHorizontalBoundsForFloor(f, nx)) break;
+          if (isClosedDoor(w, f, nx)) { blocked = true; continue; }
+
+          const falloff = 1 - (d / (horizRadius + 0.001));
+          const dmg = (CFG.explosionDamageSide * strengthMult) * (0.35 + 0.65 * falloff);
+          const fire = lerp(CFG.explosionFireMin * strengthMult, CFG.explosionFireCenter * strengthMult, falloff);
+          applyExplosionEffectsToTile(f, nx, dmg, fire);
+        }
+      }
+    }
+
+    for (const nx of [x - 1, x + 1]) {
+      if (insideHorizontalBoundsForFloor(floor, nx) && hasSupport(w, floor, nx)) {
+        w.damage[floor][nx] = clamp(w.damage[floor][nx] + 0.8 * strengthMult, 0, CFG.damageMax);
+      }
+    }
+  }
+
+  function applyExplosionEffectsToTile(floor, x, damageAdd, fireIntensity) {
+    const w = game.world;
+    if (!insideHorizontalBoundsForFloor(floor, x)) return;
+    if (!hasSupport(w, floor, x)) return;
+
+    if (!(CFG.groundIndestructible && floor === GROUND_FLOOR)) {
+      w.damage[floor][x] = clamp(w.damage[floor][x] + damageAdd, 0, CFG.damageMax);
+    }
+    ignite(w, floor, x, fireIntensity, "explosion");
+  }
+
+  // ---------------------------------------------------------------------------
+  // NPCs
+  // ---------------------------------------------------------------------------
+
+  function spawnNPC(world, canBePyro = true) {
+    const f = 0;
+    const safeSpots = [];
+    for (let x = CFG.xMin; x <= CFG.xMax; x++) {
+      if (!hasSupport(world, f, x)) continue;
+      if (fireCell(world, f, x)) continue;
+      if (doorAt(world, f, x)) continue;
+      safeSpots.push(x);
+    }
+    if (!safeSpots.length) return false;
+
+    const x = safeSpots[randi(0, safeSpots.length - 1)];
+    const npc = makeActor("npc", f, x, chance(0.5) ? -1 : +1);
+    const pyroChance = clamp(CFG.npcPyromanChance + (game.level - 1) * CFG.npcPyromanChancePerLevel, 0, 0.5);
+    npc.pyroman = canBePyro && chance(pyroChance);
+    npc.ignoreFireAccidentChance = npc.pyroman;
+    npc.visualColor = npc.pyroman ? COL.red : (chance(0.5) ? COL.cyan : COL.yellow);
+    npc.pyroLitCurrentFloor = false;
+    npc.lastFloorForPyro = npc.floor;
+
+    world.npcs.push(npc);
+    game.spawnedThisLevel++;
+    sfx(npc.pyroman ? "spawnPyro" : "spawnNpc");
+    return true;
+  }
+
+  function updateNPCSpawning(dt) {
+    game.npcSpawnClock += dt;
+    if (game.npcSpawnClock < CFG.npcSpawnCheckSec) return;
+    game.npcSpawnClock = 0;
+    if (chance(CFG.npcSpawnChance)) spawnNPC(game.world, true);
+  }
+
+  function updateNPCs(dt) {
+    const w = game.world;
+
+    for (const n of w.npcs) {
+      if (!n.alive) continue;
+
+      if (n.dying) {
+        n.deathTimer -= dt;
+        if (n.deathTimer <= 0) n.alive = false;
+        continue;
+      }
+
+      if (n.move) {
+        const completed = updateActorMovement(n, dt);
+        if (completed && n.pendingRiskDeath) {
+          n.pendingRiskDeath = false;
+          killActor(n, "fall");
+          continue;
+        }
+      }
+
+      if (!n.move && game.player && game.player.alive && !game.player.dying &&
+          n.pyroman && n.floor === game.player.floor && n.x === game.player.x) {
+        n.alive = false;
+        sfx("pyroCatch");
+        flashMessage("PYROMAN CAUGHT");
+        continue;
+      }
+
+      if (!n.move && fireCell(w, n.floor, n.x)) {
+        killActor(n, "fire");
+        continue;
+      }
+
+      if (!n.move && n.floor === GROUND_FLOOR && tapAt(w, n.floor, n.x)) {
+        n.alive = false;
+        game.score += CFG.scoreRescue;
+        game.rescuedThisLevel++;
+        clampScores();
+        sfx("pickup");
+        continue;
+      }
+
+      if (n.move || n.dying) continue;
+
+      if (n.pyroman && n.floor !== n.lastFloorForPyro) {
+        n.lastFloorForPyro = n.floor;
+        n.pyroLitCurrentFloor = false;
+      }
+
+      n.stepCooldown -= dt;
+      if (n.stepCooldown > 0) continue;
+      n.stepCooldown = CFG.npcStepSec;
+
+      if (n.pyroman && !n.pyroLitCurrentFloor && chance(CFG.pyroFireStartChancePerDecision)) {
+        const fx = n.x + n.dir;
+        if (insideHorizontalBoundsForFloor(n.floor, fx) && hasSupport(w, n.floor, fx) && !isClosedDoor(w, n.floor, fx)) {
+          if (ignite(w, n.floor, fx, 1, "pyro")) {
+            n.pyroLitCurrentFloor = true;
+            sfx("ignite");
+          }
+        }
+      }
+
+      const canDown = (n.floor < GROUND_FLOOR) && ladderLinkAt(w, n.floor, n.x) && hasSupport(w, n.floor + 1, n.x);
+      const canUp = (n.floor > 0) && ladderLinkAt(w, n.floor - 1, n.x) && hasSupport(w, n.floor - 1, n.x);
+
+      if (canDown && chance(CFG.npcClimbDownChance)) { tryMoveVertical(n, false); continue; }
+      if (canUp && chance(CFG.npcClimbUpChance)) { tryMoveVertical(n, true); continue; }
+
+      const nx = n.x + n.dir;
+      if (!insideHorizontalBoundsForFloor(n.floor, nx)) {
+        n.dir *= -1;
+        continue;
+      }
+
+      const d = doorAt(w, n.floor, nx);
+      if (d && !d.open) {
+        const pOpen = n.pyroman ? CFG.pyroDoorOpenChance : CFG.npcDoorOpenChance;
+        if (chance(pOpen)) d.open = true;
+        else { n.dir *= -1; continue; }
+      }
+
+      tryMoveHorizontal(n, n.dir);
+    }
+
+    game.world.npcs = game.world.npcs.filter(n => n.alive);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Player lifecycle
+  // ---------------------------------------------------------------------------
+
+  function killActor(actor, reason) {
+    if (!actor.alive || actor.dying) return;
+    actor.dying = true;
+    actor.deathReason = reason || "death";
+    actor.deathTimer = CFG.deathAnimTTL;
+
+    if (actor.kind === "player") {
+      sfx("death");
+      flashMessage(reason === "fall" ? "YOU FELL!" : "WALTER HOSE DIED");
+    } else {
+      game.score -= CFG.scoreNpcDeathPenalty;
+      clampScores();
+      sfx("npcDeath");
+    }
+  }
+
+  function finishPlayerDeathIfNeeded(dt) {
+    const p = game.player;
+    if (!p.dying) return;
+
+    p.deathTimer -= dt;
+    if (p.deathTimer > 0) return;
+
+    p.dying = false;
+    p.alive = false;
+
+    game.lives = Math.max(0, game.lives - 1);
+    game.gameOver = true;
+    flashMessage("WALTER HOSE DIED - ENTER TO RESTART", 999);
+  }
+
+  function updatePlayer(dt) {
+    const p = game.player;
+    if (!p || !p.alive) return;
+
+    if (p.invuln > 0) p.invuln -= dt;
+    if (p.turnLock > 0) p.turnLock -= dt;
+
+    if (p.dying) {
+      if (p.move) updateActorMovement(p, dt);
+      finishPlayerDeathIfNeeded(dt);
+      return;
+    }
+
+    if (p.move) {
+      const completed = updateActorMovement(p, dt);
+      if (completed && p.pendingRiskDeath) {
+        p.pendingRiskDeath = false;
+        killActor(p, "fall");
+      }
+      if (completed && p.alive && !p.dying) {
+        for (const n of game.world.npcs) {
+          if (n.alive && !n.dying && n.pyroman && !n.move && n.floor === p.floor && n.x === p.x) {
+            n.alive = false;
+            sfx("pyroCatch");
+            flashMessage("PYROMAN CAUGHT");
+          }
+        }
+      }
+    } else {
+      if (p.invuln <= 0 && fireCell(game.world, p.floor, p.x)) {
+        killActor(p, "fire");
+        return;
+      }
+
+      // clear drop lock after leaving the drop tile
+      if (p.dropLock && (p.dropLock.floor !== p.floor || p.dropLock.x !== p.x)) p.dropLock = null;
+
+      tryAutoPickup(p);
+      tryAutoRefillBucket(p);
+      tryPickupValuable(p);
+
+      // Catch pyroman when stepping onto the same segment
+      for (const n of game.world.npcs) {
+        if (n.alive && !n.dying && n.pyroman && !n.move && n.floor === p.floor && n.x === p.x) {
+          n.alive = false;
+          sfx("pyroCatch");
+          flashMessage("PYROMAN CAUGHT");
+        }
+      }
+
+      if (consume("shift")) tryDropTool(p);
+      if (consume("space")) tryToggleDoorByFacing(p);
+      if (consume("control") || consume("e")) tryUseCurrentTool(p);
+
+      const left = keys["arrowleft"] || keys["a"];
+      const right = keys["arrowright"] || keys["d"];
+      const up = keys["arrowup"] || keys["w"];
+      const down = keys["arrowdown"] || keys["s"];
+      const upPress = consume("arrowup") || consume("w");
+      const downPress = consume("arrowdown") || consume("s");
+
+      if (upPress && !down) tryMoveVertical(p, true);
+      else if (downPress && !up) tryMoveVertical(p, false);
+      else if (p.turnLock <= 0) {
+        if (left && !right) tryMoveHorizontal(p, -1);
+        else if (right && !left) tryMoveHorizontal(p, +1);
+      }
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Other systems
+  // ---------------------------------------------------------------------------
+
+  function clampScores() {
+    if (game.score < 0) game.score = 0;
+    game.hiScore = Math.max(game.hiScore, game.score);
+  }
+
+  function flashMessage(text, ttl = CFG.messageTTL) {
+    game.message = text;
+    game.messageTTL = ttl;
+  }
+
+  function updateValuables(dt) {
+    const w = game.world;
+    for (const v of w.valuables) {
+      if (v.dead) continue;
+      v.ttl -= dt;
+      if (v.ttl <= 0) {
+        if (v.kind === "dynamite") {
+          // Fuse burnt down -> immediate blast
+          triggerDynamiteExplosion(v.floor, v.x);
+        }
+        v.dead = true;
+      }
+    }
+    w.valuables = w.valuables.filter(v => !v.dead);
+  }
+
+  function updateEffects(dt) {
+    for (const arrName of ["sprays", "smokes", "refills", "explosions"]) {
+      const arr = game[arrName];
+      for (const e of arr) e.ttl -= dt;
+      game[arrName] = arr.filter(e => e.ttl > 0);
+    }
+  }
+
+  function levelClearCheck() {
+    let fireCount = 0;
+    for (let f = 0; f < FLOOR_COUNT; f++) for (let x = 0; x <= CFG.xMax; x++) if (game.world.fire[f][x]) fireCount++;
+    if (fireCount > 0) return;
+
+    const fastBonus = Math.max(0, Math.floor(CFG.scoreFastFireBonusBase - game.timeOnLevel * 8));
+    if (fastBonus > 0) game.score += fastBonus;
+
+    if (game.spawnedThisLevel > 0 && game.rescuedThisLevel >= game.spawnedThisLevel) {
+      game.lives++;
+      game.score += CFG.scoreAllSavedBonus;
+      flashMessage("ALL SAVED BONUS + EXTRA LIFE");
+    }
+
+    if ((game.level % CFG.extraLifeEveryScreens) === 0) game.lives++;
+
+    clampScores();
+    startLevel(game.level + 1, false);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Main update
+  // ---------------------------------------------------------------------------
+
+  function update(dt) {
+    if (!game) return;
+
+    if (consume("p")) {
+      game.paused = !game.paused;
+      if (game.paused) {
+        game.message = "PAUSED";
+        game.messageTTL = 9999;
+      } else {
+        game.messageTTL = 0;
+      }
+    }
+
+    if (game.gameOver) {
+      if (consume("enter")) newGame();
+      if (game.messageTTL > 0 && game.messageTTL < 900) game.messageTTL -= dt;
+      clearPressed();
+      return;
+    }
+
+    if (game.paused) {
+      clearPressed();
+      return;
+    }
+
+    game.timeOnLevel += dt;
+    if (game.messageTTL > 0) game.messageTTL -= dt;
+
+    updatePlayer(dt);
+    updateNPCSpawning(dt);
+    updateNPCs(dt);
+    updateValuables(dt);
+    updateFireAndDamage(dt);
+    updateEffects(dt);
+    levelClearCheck();
+
+    clearPressed();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Rendering helpers
+  // ---------------------------------------------------------------------------
+
+  function actorRenderPos(actor) {
+  let px = actor.x * T;
+  let py = floorYpx(actor.floor) - SPR.personH;
+  let moving = false;
+  let moveT = 0;
+
+  if (actor.move) {
+    const t = clamp(actor.move.t / actor.move.dur, 0, 1);
+    moving = true;
+    moveT = t;
+
+    const fromPx = actor.move.fromX * T;
+    const toPx = actor.move.toX * T;
+    const fromPy = floorYpx(actor.move.fromF) - SPR.personH;
+    const toPy = floorYpx(actor.move.toF) - SPR.personH;
+
+    px = lerp(fromPx, toPx, t);
+    py = lerp(fromPy, toPy, t);
+
+    if (actor.move.type === "v") {
+      px = fromPx; // stay centered on ladder tile while climbing
+      const minPy = Math.min(fromPy, toPy);
+      const maxPy = Math.max(fromPy, toPy);
+      py = clamp(py, minPy, maxPy);
+    }
+  }
+
+  if (actor.dying && actor.deathReason === "fall") {
+    const tFall = clamp(1 - (actor.deathTimer / CFG.deathAnimTTL), 0, 1);
+    py += CFG.fallAnimDistancePx * tFall;
+  }
+
+  return { px, py, moving, moveT };
+}
+
+  function draw() {
+    ctx.fillStyle = COL.black;
+    ctx.fillRect(0, 0, W, H);
+
+    drawBackdrop();
+    drawHUD();
+    drawBuilding();
+    drawDamageOverlay();
+    drawLadders();
+    drawDoors();
+    drawTaps();
+    drawFires();
+    drawTools();
+    drawValuables();
+    drawEffects();
+    drawNPCs();
+    drawPlayer();
+    drawRoofFront();
+    drawMessages();
+
+    renderDebug();
+  }
+
+  function drawBackdrop() {
+  const groundBandY = 188;
+  const outsideSolidFromY = floorYpx(GROUND_FLOOR) - 14;
+
+  for (let y = 16; y < groundBandY; y++) {
+    let c1, c2;
+    if (y < 52) { c1 = "#0b2aa8"; c2 = "#1748d8"; }
+    else if (y < 88) { c1 = "#0d7ea6"; c2 = "#2fd7ff"; }
+    else if (y < 124) { c1 = "#b8f2ff"; c2 = "#f6ffff"; }
+    else if (y < 156) { c1 = "#d8d820"; c2 = "#ffff58"; }
+    else { c1 = "#1f8a2a"; c2 = "#4fd95e"; }
+
+    if (y >= outsideSolidFromY) {
+      ctx.fillStyle = c1;
+      ctx.fillRect(0, y, 24, 1);
+    } else {
+      for (let x = 0; x < 24; x++) {
+        const pat = ((x + y) & 3) === 0 || (((x * 3 + y) & 7) === 0);
+        ctx.fillStyle = pat ? c2 : c1;
+        ctx.fillRect(x, y, 1, 1);
+      }
+    }
+  }
+
+  function drawBrickWall(x0, yTop, yBottom) {
+    const w = 8;
+    // base wall color
+    ctx.fillStyle = "#d23636";
+    ctx.fillRect(x0, yTop, w, Math.max(0, yBottom - yTop));
+
+    // small-brick mortar pattern
+    for (let y = yTop; y < yBottom; y += 2) {
+      const row = ((y - yTop) >> 1);
+      // horizontal mortar
+      ctx.fillStyle = "#7d0f0f";
+      ctx.fillRect(x0, y + 1, w, 1);
+
+      // vertical mortar, staggered every row
+      const off = (row & 1) ? 2 : 0;
+      ctx.fillStyle = "#f0e8e8";
+      for (let x = x0 + off; x < x0 + w; x += 4) {
+        ctx.fillRect(x, y, 1, 2);
+      }
+
+      // subtle highlights on brick faces
+      ctx.fillStyle = "#efb0b0";
+      for (let x = x0 + ((row & 1) ? 0 : 2); x < x0 + w; x += 4) {
+        if (x + 2 <= x0 + w) ctx.fillRect(x + 1, y, 2, 1);
+      }
+    }
+  }
+
+  // Left wall bricks (never on the ground-floor level area)
+  const leftWallBottom = floorYpx(GROUND_FLOOR - 1) + FLOOR_H;
+  drawBrickWall(24, 16, leftWallBottom);
+
+  // Right wall bricks (all floors including ground)
+  const rightWallTop = 16;
+  const rightWallBottom = floorYpx(GROUND_FLOOR) + FLOOR_H;
+  const rightWallX0 = (CFG.xMax + 1) * T;
+  drawBrickWall(rightWallX0, rightWallTop, rightWallBottom);
+
+  // Roof (background slab)
+  ctx.fillStyle = COL.magenta;
+  ctx.fillRect(CFG.xMin * T, CFG.roofY * T, (CFG.xMax - CFG.xMin + 1) * T, ROOF_H);
+
+  // Ground strip shifted down to free roof space
+  ctx.fillStyle = "#00b030";
+  ctx.fillRect(0, groundBandY, 256, H - groundBandY);
+}
+
+function drawHUD() {
+    ctx.fillStyle = COL.white;
+    ctx.font = "9px sans-serif";
+    const s =
+      "LEVEL=" + String(game.level).padStart(2, "0") +
+      " LIVES=" + game.lives +
+      " SCORE=" + String(Math.max(0, game.score)).padStart(6, "0") +
+      " HISCORE=" + String(Math.max(0, game.hiScore)).padStart(6, "0");
+    ctx.fillText(s, 2, 8);
+  }
+
+  function drawBuilding() {
+  // Floors: slightly thinner; solid color
+  for (let f = 0; f < FLOOR_COUNT; f++) {
+    const y = floorYpx(f);
+    const xStart = (f === GROUND_FLOOR && CFG.allowGroundOutsideLeft) ? 0 : CFG.xMin;
+    for (let x = xStart; x <= CFG.xMax; x++) {
+      if (!hasSupport(game.world, f, x)) continue;
+      ctx.fillStyle = COL.magenta;
+      ctx.fillRect(x * T, y, T, FLOOR_H);
+    }
+  }
+
+  // Left ground hydrant-ish hint
+  ctx.fillStyle = COL.red;
+  ctx.fillRect(4, floorYpx(GROUND_FLOOR)-8, 2, 8);
+  ctx.fillRect(2, floorYpx(GROUND_FLOOR)-8, 6, 1);
+  ctx.fillRect(4, floorYpx(GROUND_FLOOR)-4, 5, 1);
+}
+
+function drawRoofFront() {
+  const rx = CFG.xMin * T;
+  const ry = CFG.roofY * T;
+  const rw = (CFG.xMax - CFG.xMin + 1) * T;
+
+  // visible roof strip starts where walls begin (no overlap with HUD)
+  ctx.fillStyle = COL.magenta;
+  ctx.fillRect(rx, ry, rw, ROOF_H);
+  ctx.fillStyle = "#8a008a";
+  ctx.fillRect(rx, ry, rw, 1);
+  ctx.fillStyle = "#640064";
+  ctx.fillRect(rx, ry + ROOF_H, rw, 1);
+
+  // subtle roof hatch on the visible top edge
+  ctx.fillStyle = "#b24ab2";
+  for (let x = rx + 2; x < rx + rw - 2; x += 4) {
+    ctx.fillRect(x, ry, 1, 1);
+  }
+}
+
+function drawDamageOverlay() {
+    for (let f = 0; f < FLOOR_COUNT; f++) {
+      const y = floorYpx(f);
+      for (let x = 0; x <= CFG.xMax; x++) {
+        if (!hasSupport(game.world, f, x)) continue;
+        const d = game.world.damage[f][x];
+        if (d < CFG.damageSteppingCollapseThreshold) continue;
+        const burning = !!fireCell(game.world, f, x);
+        ctx.fillStyle = burning ? "#ff7700" : "#997040";
+        ctx.fillRect(x * T + 1, y, 6, FLOOR_H);
+      }
+    }
+  }
+
+  function drawLadders() {
+  for (const k of game.world.ladders) {
+    const [fStr, xStr] = k.split(":");
+    const f = +fStr, x = +xStr;
+    const y0 = floorYpx(f) + FLOOR_H;
+    const y1 = floorYpx(f + 1) - 1;
+    const px = x * T + ((T - 4) >> 1); // center within segment (4 px wide ladder)
+    ctx.fillStyle = COL.yellow;
+    ctx.fillRect(px, y0, 1, y1 - y0 + 1);
+    ctx.fillRect(px + 3, y0, 1, y1 - y0 + 1);
+    for (let y = y0 + 2; y < y1; y += 4) ctx.fillRect(px, y, 4, 1);
+  }
+}
+
+function drawDoors() {
+    for (const [k, d] of game.world.doors.entries()) {
+      const [fStr, xStr] = k.split(":");
+      const f = +fStr, x = +xStr;
+      if (!hasSupport(game.world, f, x)) continue;
+
+      const px = x * T;
+      const py = floorYpx(f) - SPR.personH;
+
+      if (d.open) {
+        // Swapped visual: full green means open
+        ctx.fillStyle = COL.green;
+        ctx.fillRect(px + 0, py + 0, 8, SPR.personH);
+      } else {
+        // Closed door: half-width dark green
+        ctx.fillStyle = "#0f4a0f";
+        ctx.fillRect(px + 3, py + 0, 4, SPR.personH);
+      }
+    }
+  }
+
+  function drawTaps() {
+    for (const k of game.world.taps) {
+      const [fStr, xStr] = k.split(":");
+      const f = +fStr, x = +xStr;
+      if (!hasSupport(game.world, f, x)) continue;
+      const px = x * T, py = floorYpx(f) - 8;
+      ctx.fillStyle = COL.cyan;
+      ctx.fillRect(px + 1, py + 2, 1, 5);
+      ctx.fillRect(px + 2, py + 2, 4, 1);
+      ctx.fillRect(px + 5, py + 3, 1, 2);
+    }
+  }
+
+  function drawTools() {
+    for (const t of game.world.toolsOnGround) {
+      if (t.dead || !hasSupport(game.world, t.floor, t.x)) continue;
+      const px = t.x * T, py = floorYpx(t.floor) - 8;
+
+      if (t.kind === "bucket") {
+        ctx.fillStyle = COL.cyan;
+        ctx.fillRect(px + 2, py + 4, 4, 3);
+        ctx.fillRect(px + 1, py + 3, 1, 3);
+        ctx.fillRect(px + 6, py + 3, 1, 3);
+        ctx.fillRect(px + 3, py + 2, 2, 1);
+      } else if (t.kind === "ext") {
+        // tubular extinguisher look
+        ctx.fillStyle = COL.red;
+        ctx.fillRect(px + 3, py + 1, 2, 1); // handle cap
+        ctx.fillRect(px + 2, py + 2, 4, 5); // cylinder body
+        ctx.fillRect(px + 3, py + 7, 2, 1); // base
+        ctx.fillStyle = COL.gray;
+        ctx.fillRect(px + 2, py + 3, 1, 3); // left shading
+        ctx.fillRect(px + 5, py + 3, 1, 3); // right outline
+        ctx.fillStyle = COL.brown;
+        ctx.fillRect(px + 5, py + 2, 2, 1); // nozzle hose
+        ctx.fillRect(px + 6, py + 3, 1, 1);
+      } else if (t.kind === "ladder") {
+        // Yellow folded ladder tool (not white; avoids confusion with exit gate)
+        ctx.fillStyle = COL.yellow;
+        ctx.fillRect(px + 2, py + 2, 1, 5);
+        ctx.fillRect(px + 5, py + 2, 1, 5);
+        ctx.fillRect(px + 2, py + 3, 4, 1);
+        ctx.fillRect(px + 2, py + 5, 4, 1);
+      }
+    }
+  }
+
+  function drawValuables() {
+    for (const v of game.world.valuables) {
+      if (v.dead) continue;
+      const px = v.x * T, py = floorYpx(v.floor) - 8;
+      const blink = ((Math.floor(v.ttl * 8) & 1) === 0);
+      if (v.kind === "dynamite") {
+        ctx.fillStyle = blink ? COL.red : COL.orange;
+        ctx.fillRect(px + 2, py + 3, 4, 3);
+        ctx.fillStyle = COL.yellow;
+        ctx.fillRect(px + 6, py + 2, 1, 2);
+      } else {
+        ctx.fillStyle = blink ? COL.yellow : COL.white;
+        ctx.fillRect(px + 3, py + 2, 2, 1);
+        ctx.fillRect(px + 2, py + 3, 4, 1);
+        ctx.fillRect(px + 3, py + 4, 2, 2);
+        ctx.fillRect(px + 2, py + 6, 4, 1);
+      }
+    }
+  }
+
+  function drawFires() {
+    // Smoother flame rendering (less blocky) while keeping retro scale
+    for (let f = 0; f < FLOOR_COUNT; f++) {
+      for (let x = 0; x <= CFG.xMax; x++) {
+        const c = fireCell(game.world, f, x);
+        if (!c) continue;
+
+        const cx = x * T + 4;
+        const baseY = floorYpx(f) - 1;
+        const intensity = clamp(c.i / CFG.fireIntensityMax, 0, 1);
+
+        const r1 = 4 + intensity * 3;
+        const g1 = ctx.createRadialGradient(cx, baseY - 5, 1, cx, baseY - 5, r1);
+        g1.addColorStop(0.0, c.i > 5 ? "rgba(255,255,180,0.95)" : "rgba(255,180,80,0.9)");
+        g1.addColorStop(0.55, "rgba(255,90,0,0.75)");
+        g1.addColorStop(1.0, "rgba(255,20,0,0.0)");
+        ctx.fillStyle = g1;
+        ctx.beginPath();
+        ctx.arc(cx, baseY - 5, r1, 0, Math.PI * 2);
+        ctx.fill();
+
+        const sway = Math.sin(perfNow * 10 + x * 0.7 + f) * 1.2;
+        ctx.fillStyle = c.i >= 6 ? "#ffd44d" : "#ff7a00";
+        ctx.beginPath();
+        ctx.moveTo(cx - 3, baseY + 1);
+        ctx.quadraticCurveTo(cx - 4 + sway, baseY - 6, cx, baseY - 11 - intensity * 2);
+        ctx.quadraticCurveTo(cx + 4 + sway, baseY - 6, cx + 3, baseY + 1);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = c.i >= 4 ? "#fff0b0" : "#ffcc66";
+        ctx.beginPath();
+        ctx.moveTo(cx - 1.5, baseY);
+        ctx.quadraticCurveTo(cx - 1 + sway * 0.4, baseY - 5, cx, baseY - 7 - intensity);
+        ctx.quadraticCurveTo(cx + 1 + sway * 0.4, baseY - 5, cx + 1.5, baseY);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+  }
+
+  function drawEffects() {
+    for (const s of game.sprays) {
+      const alphaT = clamp(s.ttl / CFG.sprayTTL, 0, 1);
+      for (const h of s.hits) {
+        const px = h.x * T, py = floorYpx(h.floor) - 6;
+        if (s.kind === "bucket") {
+          ctx.fillStyle = (alphaT > 0.5) ? COL.cyan : COL.white;
+          ctx.fillRect(px + 3, py + 1, 2, 4);
+          ctx.fillRect(px + 2, py + 4, 4, 2);
+        } else {
+          ctx.fillStyle = (alphaT > 0.5) ? COL.white : COL.cyan;
+          ctx.fillRect(px + 1, py + 1, 6, 3);
+          if (((Math.floor(alphaT * 10 + h.x) & 1) === 0)) ctx.fillRect(px + 3, py + 4, 2, 1);
+        }
+      }
+    }
+
+    for (const sm of game.smokes) {
+      const t = clamp(sm.ttl / CFG.smokeTTL, 0, 1);
+      const px = sm.x * T, py = floorYpx(sm.floor) - 12;
+      ctx.fillStyle = t > 0.5 ? COL.gray : COL.darkGray;
+      ctx.fillRect(px + 2, py + 4, 4, 2);
+      ctx.fillRect(px + 3, py + 2, 3, 2);
+      if (t > 0.25) ctx.fillRect(px + 1, py + 6, 3, 2);
+    }
+
+    for (const rf of game.refills) {
+      const t = clamp(rf.ttl / CFG.refillAnimTTL, 0, 1);
+      const px = rf.x * T, py = floorYpx(rf.floor) - 16;
+      ctx.fillStyle = t > 0.5 ? COL.cyan : COL.white;
+      ctx.fillRect(px + 3, py + 3, 2, 8);
+      if (((Math.floor(t * 20) & 1) === 0)) ctx.fillRect(px + 2, py + 9, 4, 2);
+    }
+
+    for (const ex of game.explosions) {
+      const t = clamp(ex.ttl / CFG.explosionTTL, 0, 1);
+      const px = ex.x * T - 8;
+      const py = floorYpx(ex.floor) - 16;
+      ctx.fillStyle = t > 0.5 ? COL.white : COL.orange;
+      ctx.fillRect(px + 7, py + 5, 10, 6);
+      ctx.fillRect(px + 4, py + 7, 16, 3);
+      ctx.fillStyle = COL.red;
+      if (t > 0.35) {
+        ctx.fillRect(px + 2, py + 8, 4, 2);
+        ctx.fillRect(px + 18, py + 8, 4, 2);
+      }
+    }
+  }
+
+  function drawNPCs() {
+    for (const n of game.world.npcs) {
+      const pos = actorRenderPos(n);
+      const flash = n.dying && ((Math.floor(n.deathTimer * 20) & 1) === 0);
+      if (flash) continue;
+      const color = n.visualColor || (n.pyroman ? COL.red : COL.cyan);
+      drawPerson2x(pos.px, pos.py, color, n.dir, n.pyroman, n.dying, pos.moving, pos.moveT);
+    }
+  }
+
+  function drawPlayer() {
+    const p = game.player;
+    if (!p || !p.alive) return;
+
+    const pos = actorRenderPos(p);
+    if (p.invuln > 0 && ((Math.floor(perfNow * 12) & 1) === 0) && !p.dying) return;
+
+    drawPerson2x(pos.px, pos.py, COL.white, p.dir, false, p.dying, pos.moving, pos.moveT);
+
+    if (p.tool && !p.dying) {
+      const x = pos.px | 0, y = pos.py | 0;
+      if (p.tool.kind === "bucket") {
+        ctx.fillStyle = COL.cyan;
+        ctx.fillRect(x + 8, y + 8, 3, 3);
+      } else if (p.tool.kind === "ext") {
+        ctx.fillStyle = COL.red;
+        ctx.fillRect(x + 8, y + 7, 2, 4);
+        ctx.fillRect(x + 9, y + 6, 1, 1);
+        ctx.fillStyle = COL.cyan;
+        ctx.fillRect(x + 10, y + 7, 1, 1);
+      } else if (p.tool.kind === "ladder") {
+        ctx.fillStyle = COL.yellow;
+        ctx.fillRect(x + 8, y + 8, 1, 3);
+        ctx.fillRect(x + 10, y + 8, 1, 3);
+      }
+    }
+  }
+
+  function drawPerson2x(px, py, color, dir, pyroman, dying, moving) {
+    px |= 0; py |= 0;
+    const x = px, y = py;
+
+    ctx.fillStyle = color;
+    ctx.fillRect(x + 4, y + 0, 4, 4); // head
+    ctx.fillRect(x + 4, y + 4, 4, 6); // body
+    ctx.fillRect(x + 2, y + 5, 2, 2); // arms
+    ctx.fillRect(x + 8, y + 5, 2, 2);
+
+    const step = moving ? (((Math.floor(perfNow * 10) + x) & 1) !== 0) : false;
+    if (step) {
+      ctx.fillRect(x + 3, y + 10, 2, 4);
+      ctx.fillRect(x + 7, y + 10, 2, 4);
+    } else {
+      ctx.fillRect(x + 4, y + 10, 2, 4);
+      ctx.fillRect(x + 6, y + 10, 2, 4);
+    }
+
+    ctx.fillStyle = pyroman ? COL.orange : COL.black;
+    if (dir < 0) ctx.fillRect(x + 4, y + 1, 1, 1);
+    else ctx.fillRect(x + 7, y + 1, 1, 1);
+
+    if (pyroman) {
+      ctx.fillStyle = COL.red;
+      if (dir < 0) ctx.fillRect(x + 1, y + 3, 2, 2);
+      else ctx.fillRect(x + 9, y + 3, 2, 2);
+    }
+
+    if (dying) {
+      ctx.fillStyle = COL.white;
+      ctx.fillRect(x + 2, y + 13, 8, 1);
+    }
+  }
+
+  function drawMessages() {
+    if (game && game.paused) {
+      ctx.font = "10px sans-serif";
+      const t = "PAUSED (P TO RESUME)";
+      const ww = ctx.measureText(t).width + 12;
+      const xx = ((W - ww) / 2) | 0;
+      const yy = 14;
+      ctx.fillStyle = "rgba(0,0,0,0.85)"; ctx.fillRect(xx, yy, ww, 12);
+      ctx.strokeStyle = COL.white; ctx.strokeRect(xx + 0.5, yy + 0.5, ww - 1, 11);
+      ctx.fillStyle = COL.white; ctx.fillText(t, xx + 6, yy + 9);
+    }
+    if (game.messageTTL <= 0 || !game.message) return;
+    ctx.font = "9px sans-serif";
+    const w = ctx.measureText(game.message).width + 10;
+    const x = ((W - w) / 2) | 0;
+    const y = 12;
+    ctx.fillStyle = "rgba(0,0,0,0.85)";
+    ctx.fillRect(x, y, w, 11);
+    ctx.strokeStyle = COL.white;
+    ctx.strokeRect(x + 0.5, y + 0.5, w - 1, 10);
+    ctx.fillStyle = COL.white;
+    ctx.fillText(game.message, x + 5, y + 8);
+
+    if (game.gameOver) {
+      const text = "PRESS ENTER TO RESTART";
+      const w2 = ctx.measureText(text).width + 10;
+      const x2 = ((W - w2) / 2) | 0;
+      const y2 = H - 18;
+      ctx.fillStyle = "#220000";
+      ctx.fillRect(x2, y2, w2, 11);
+      ctx.strokeStyle = COL.red;
+      ctx.strokeRect(x2 + 0.5, y2 + 0.5, w2 - 1, 10);
+      ctx.fillStyle = COL.white;
+      ctx.fillText(text, x2 + 5, y2 + 8);
+    }
+  }
+
+  function renderDebug() {
+    if (!debugEl) return;
+    const p = game.player;
+    let fireCount = 0;
+    for (let f = 0; f < FLOOR_COUNT; f++) for (let x = 0; x <= CFG.xMax; x++) if (game.world.fire[f][x]) fireCount++;
+
+    debugEl.textContent =
+`Level: ${game.level}
+Lives: ${game.lives}
+Score: ${game.score}
+Fires: ${fireCount}
+NPCs: ${game.world.npcs.length}
+Rescued/spawned: ${game.rescuedThisLevel}/${game.spawnedThisLevel}
+Player: floor ${p.floor}, x ${p.x}, dir ${p.dir < 0 ? "L" : "R"}
+Tool: ${p.tool ? p.tool.kind : "none"}${p.tool && p.tool.kind === "ext" ? " (hidden ammo)" : ""}`;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Main loop
+  // ---------------------------------------------------------------------------
+
+  let perfNow = 0;
+  let last = performance.now();
+
+  function frame(now) {
+    perfNow = now / 1000;
+    let dt = (now - last) / 1000;
+    last = now;
+    dt = Math.min(dt, 0.05);
+
+    update(dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  newGame();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -68,7 +68,6 @@
     <div class="row"><div>Drop tool</div><div>Shift</div></div>
     <div class="row"><div>Pause</div><div>P</div></div>
     <div class="row"><div>Fullscreen</div><div><button id="btnFullscreen" type="button">Toggle</button></div></div>
-    <div class="row"><div>Restart</div><div>Enter (after game over)</div></div>
 
     <pre id="debug" style="display:none"></pre>
   </div>
@@ -139,7 +138,7 @@
     damageMax: 10,
     damageSteppingCollapseThreshold: 8,
     damageDestructionThreshold: 10,
-    damageGainOnFirePerSec: 0.05,
+    damageGainOnFirePerSec: 0.08,
     groundIndestructible: true,
 
     // Exploding extinguishers (weaker)
@@ -194,7 +193,8 @@
     // Visual effects
     smokeTTL: 0.55,
     sprayTTL: 0.20,
-    refillAnimTTL: 0.55,
+    // refill (bucket at tap) animation duration; slowed down ~2x as requested
+    refillAnimTTL: 1.10,
     deathAnimTTL: 0.85,
     explosionTTL: 0.55,
 
@@ -221,6 +221,8 @@
   const T = CFG.tile;
   const W = CFG.screenW;
   const H = CFG.screenH;
+  // HUD bar height in pixels (reduced) to free vertical space for roof rendering
+  const HUD_BAR_PX = 10;
   const FLOORS = CFG.floorRows;
   const FLOOR_COUNT = FLOORS.length;
   const GROUND_FLOOR = FLOOR_COUNT - 1;
@@ -400,9 +402,11 @@
       score: 0,
       hiScore: 0,
       gameOver: false,
+      finalGameOver: false,
+      awaitingContinue: false,
       paused: false,
       timeOnLevel: 0,
-      message: "AUTOMATA TOWERS ON FIRE!",
+      message: "HOUSE ON FIRE!",
       messageTTL: CFG.messageTTL,
 
       fireSpreadClock: 0,
@@ -484,8 +488,9 @@
     game.world = world;
 
     if (!first) {
-      game.message = "LEVEL " + String(game.level).padStart(2, "0");
-      game.messageTTL = 1.0;
+      // Avoid duplicating HUD text (LEVEL is already in the HUD)
+      game.message = "";
+      game.messageTTL = 0;
     }
 
     tryAutoPickup(game.player);
@@ -1190,7 +1195,7 @@
         const completed = updateActorMovement(n, dt);
         if (completed && n.pendingRiskDeath) {
           n.pendingRiskDeath = false;
-          killActor(n, "fall");
+          killActor(n, "fire");
           continue;
         }
       }
@@ -1275,7 +1280,7 @@
 
     if (actor.kind === "player") {
       sfx("death");
-      flashMessage(reason === "fall" ? "YOU FELL!" : "WALTER HOSE DIED");
+      flashMessage(reason === "fall" ? "YOU FELL!" : (reason === "fire" ? "YOU BURNED!" : "YOU DIED!"));
     } else {
       game.score -= CFG.scoreNpcDeathPenalty;
       clampScores();
@@ -1294,8 +1299,18 @@
     p.alive = false;
 
     game.lives = Math.max(0, game.lives - 1);
+
+    // Life system: restart the SAME level until lives are exhausted.
     game.gameOver = true;
-    flashMessage("WALTER HOSE DIED - ENTER TO RESTART", 999);
+    if (game.lives > 0) {
+      game.finalGameOver = false;
+      game.awaitingContinue = true;
+      flashMessage("LIFE LOST", 999);
+    } else {
+      game.finalGameOver = true;
+      game.awaitingContinue = false;
+      flashMessage("GAME OVER", 999);
+    }
   }
 
   function updatePlayer(dt) {
@@ -1315,7 +1330,7 @@
       const completed = updateActorMovement(p, dt);
       if (completed && p.pendingRiskDeath) {
         p.pendingRiskDeath = false;
-        killActor(p, "fall");
+        killActor(p, "fire");
       }
       if (completed && p.alive && !p.dying) {
         for (const n of game.world.npcs) {
@@ -1444,7 +1459,17 @@
     }
 
     if (game.gameOver) {
-      if (consume("enter")) newGame();
+      if (consume("enter")) {
+        if (game.finalGameOver) {
+          newGame();
+        } else {
+          // Continue on the same level with one fewer life.
+          game.gameOver = false;
+          game.awaitingContinue = false;
+          // Regenerate the level state (fresh fires/placements) but keep level/score/lives.
+          startLevel(game.level, false);
+        }
+      }
       if (game.messageTTL > 0 && game.messageTTL < 900) game.messageTTL -= dt;
       clearPressed();
       return;
@@ -1535,7 +1560,7 @@
   const groundBandY = 188;
   const outsideSolidFromY = floorYpx(GROUND_FLOOR) - 14;
 
-  for (let y = 16; y < groundBandY; y++) {
+  for (let y = HUD_BAR_PX; y < groundBandY; y++) {
     let c1, c2;
     if (y < 52) { c1 = "#0b2aa8"; c2 = "#1748d8"; }
     else if (y < 88) { c1 = "#0d7ea6"; c2 = "#2fd7ff"; }
@@ -1593,9 +1618,7 @@
   const rightWallX0 = (CFG.xMax + 1) * T;
   drawBrickWall(rightWallX0, rightWallTop, rightWallBottom);
 
-  // Roof (background slab)
-  ctx.fillStyle = COL.magenta;
-  ctx.fillRect(CFG.xMin * T, CFG.roofY * T, (CFG.xMax - CFG.xMin + 1) * T, ROOF_H);
+  // Roof is rendered in drawRoofFront() so we keep the background clear here.
 
   // Ground strip shifted down to free roof space
   ctx.fillStyle = "#00b030";
@@ -1633,24 +1656,49 @@ function drawHUD() {
 }
 
 function drawRoofFront() {
-  const rx = CFG.xMin * T;
-  const ry = CFG.roofY * T;
-  const rw = (CFG.xMax - CFG.xMin + 1) * T;
+  // Roof starts on the *outer* boundaries of the walls, with a 45° skew on the left edge.
+  const leftWallX0 = 14;                 // matches drawBrickWall() left wall x0
+  const wallW = 8;                       // drawBrickWall() width
+  const rightWallX0 = (CFG.xMax + 1) * T;
+  const rx0 = leftWallX0;
+  const rx1 = rightWallX0 + wallW;
 
-  // visible roof strip starts where walls begin (no overlap with HUD)
+  // Requested: roof should span from the *top edge of the wall* up to the *HUD bottom edge*.
+  // Walls begin at y=16px in this renderer.
+  const wallTopY = 18;
+  const ryTop = HUD_BAR_PX;
+  const roofHpx = Math.max(2, wallTopY - ryTop);
+  const ry = ryTop;
+  const skew = 12; // ~45° look at this resolution
+
+  // Top strip (magenta-like), with diagonal left edge (sky shows behind)
   ctx.fillStyle = COL.magenta;
-  ctx.fillRect(rx, ry, rw, ROOF_H);
-  ctx.fillStyle = "#8a008a";
-  ctx.fillRect(rx, ry, rw, 1);
-  ctx.fillStyle = "#640064";
-  ctx.fillRect(rx, ry + ROOF_H, rw, 1);
+  ctx.beginPath();
+  ctx.moveTo(rx0 + skew, ry);
+  ctx.lineTo(rx1, ry);
+  ctx.lineTo(rx1, ry + roofHpx);
+  ctx.lineTo(rx0, ry + roofHpx);
+  ctx.closePath();
+  ctx.fill();
 
-  // subtle roof hatch on the visible top edge
+  // Edge highlights
+  ctx.strokeStyle = "#8a008a";
+  ctx.beginPath();
+  ctx.moveTo(rx0 + skew, ry + 0.5);
+  ctx.lineTo(rx1, ry + 0.5);
+  ctx.stroke();
+
+  ctx.strokeStyle = "#640064";
+  ctx.beginPath();
+  ctx.moveTo(rx0, ry + roofHpx + 0.5);
+  ctx.lineTo(rx1, ry + roofHpx + 0.5);
+  ctx.stroke();
+
+  // Subtle hatch on the visible top edge
   ctx.fillStyle = "#b24ab2";
-  for (let x = rx + 2; x < rx + rw - 2; x += 4) {
-    ctx.fillRect(x, ry, 1, 1);
-  }
+  for (let x = rx0 + skew + 2; x < rx1 - 2; x += 4) ctx.fillRect(x, ry + 1, 1, 1);
 }
+
 
 function drawDamageOverlay() {
     for (let f = 0; f < FLOOR_COUNT; f++) {
@@ -1708,9 +1756,20 @@ function drawDoors() {
       if (!hasSupport(game.world, f, x)) continue;
       const px = x * T, py = floorYpx(f) - 8;
       ctx.fillStyle = COL.cyan;
-      ctx.fillRect(px + 1, py + 2, 1, 5);
+      // longer vertical pipe so it visually reaches the floor surface
+      ctx.fillRect(px + 1, py + 2, 1, 6);
       ctx.fillRect(px + 2, py + 2, 4, 1);
       ctx.fillRect(px + 5, py + 3, 1, 2);
+
+      // gentle drip/trickle (purely visual)
+      const dripPhase = (game.timeOnLevel * 3 + x * 0.37 + f * 0.91) % 1;
+      if (dripPhase < 0.55) {
+        ctx.fillStyle = "rgba(97,215,255,0.85)";
+        // keep drips short so they don't draw over the floor (about half previous height)
+        const dy = py + 5 + Math.floor(dripPhase * 4);
+        ctx.fillRect(px + 5, dy, 1, 2);
+      }
+
     }
   }
 
@@ -1837,10 +1896,16 @@ function drawDoors() {
 
     for (const rf of game.refills) {
       const t = clamp(rf.ttl / CFG.refillAnimTTL, 0, 1);
-      const px = rf.x * T, py = floorYpx(rf.floor) - 16;
+      const px = rf.x * T;
+      const tapY = floorYpx(rf.floor) - 8;
+      // small aligned stream from the tap spout
+      const sx = px + 5;
+      const sy0 = tapY + 4;
+      // keep the stream short (about half the previous height) so it does not overdraw the floor
+      const sy1 = tapY + 8;
       ctx.fillStyle = t > 0.5 ? COL.cyan : COL.white;
-      ctx.fillRect(px + 3, py + 3, 2, 8);
-      if (((Math.floor(t * 20) & 1) === 0)) ctx.fillRect(px + 2, py + 9, 4, 2);
+      ctx.fillRect(sx, sy0, 1, sy1 - sy0);
+      if (((Math.floor(t * 18) & 1) === 0)) ctx.fillRect(sx - 1, sy1 - 1, 3, 1);
     }
 
     for (const ex of game.explosions) {
@@ -1937,7 +2002,7 @@ function drawDoors() {
       const t = "PAUSED (P TO RESUME)";
       const ww = ctx.measureText(t).width + 12;
       const xx = ((W - ww) / 2) | 0;
-      const yy = 14;
+      const yy = HUD_BAR_PX + 6;
       ctx.fillStyle = "rgba(0,0,0,0.85)"; ctx.fillRect(xx, yy, ww, 12);
       ctx.strokeStyle = COL.white; ctx.strokeRect(xx + 0.5, yy + 0.5, ww - 1, 11);
       ctx.fillStyle = COL.white; ctx.fillText(t, xx + 6, yy + 9);
@@ -1946,16 +2011,16 @@ function drawDoors() {
     ctx.font = "9px sans-serif";
     const w = ctx.measureText(game.message).width + 10;
     const x = ((W - w) / 2) | 0;
-    const y = 12;
+    const y = HUD_BAR_PX + 6;
     ctx.fillStyle = "rgba(0,0,0,0.85)";
-    ctx.fillRect(x, y, w, 11);
+    ctx.fillRect(x, y, w, 13);
     ctx.strokeStyle = COL.white;
-    ctx.strokeRect(x + 0.5, y + 0.5, w - 1, 10);
+    ctx.strokeRect(x + 0.5, y + 0.5, w - 1, 12);
     ctx.fillStyle = COL.white;
-    ctx.fillText(game.message, x + 5, y + 8);
+    ctx.fillText(game.message, x + 5, y + 10);
 
     if (game.gameOver) {
-      const text = "PRESS ENTER TO RESTART";
+      const text = (game.finalGameOver ? "PRESS ENTER TO RESTART" : "PRESS ENTER TO CONTINUE");
       const w2 = ctx.measureText(text).width + 10;
       const x2 = ((W - w2) / 2) | 0;
       const y2 = H - 18;
@@ -1964,7 +2029,7 @@ function drawDoors() {
       ctx.strokeStyle = COL.red;
       ctx.strokeRect(x2 + 0.5, y2 + 0.5, w2 - 1, 10);
       ctx.fillStyle = COL.white;
-      ctx.fillText(text, x2 + 5, y2 + 8);
+      ctx.fillText(text, x2 + 5, y2 + 9);
     }
   }
 

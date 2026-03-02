@@ -1710,6 +1710,21 @@ case 'resendFrom': {
       vm.addSlot(traits, 'string', traitsString);
       vm.addSlot(traits, 'block', traitsBlock);
 
+// traits.simpleTestSuite (minimal test harness)
+const traitsSimpleTestSuiteBase = vm.newObject('traits.simpleTestSuiteBase');
+const traitsSimpleTestSuite = vm.newObject('traits.simpleTestSuite');
+
+vm.addSlot(traits, 'simpleTestSuiteBase', traitsSimpleTestSuiteBase);
+vm.addSlot(traits, 'simpleTestSuite', traitsSimpleTestSuite);
+
+// Parent chain: behaves like clonable objects (=> defaultBehavior => globals)
+vm.addSlot(traitsSimpleTestSuiteBase, 'parent', traitsClonable, { isParent: true });
+vm.addSlot(traitsSimpleTestSuite, 'parent', traitsClonable, { isParent: true });
+
+// For directed resends in tests: suite has a parent slot named 'resendBase'
+vm.addSlot(traitsSimpleTestSuite, 'resendBase', traitsSimpleTestSuiteBase, { isParent: true });
+
+
       // parent chain
       vm.addSlot(traitsClonable, 'parent', defaultBehavior, { isParent: true });
       vm.addSlot(traitsOddball, 'parent', defaultBehavior, { isParent: true });
@@ -1863,6 +1878,13 @@ vm.addSlot(jsObj, 'log:', makePrimitiveMethod('jsLog:', ['value']));
       vm.addSlot(outlinerObject, 'lobby', lobby, { isParent: true });
       vm.addSlot(globals, 'outlinerObject', outlinerObject);
       vm.outlinerObject = outlinerObject;
+
+// globals.simpleTestSuite prototype (linked from traits.simpleTestSuite)
+const simpleTestSuiteProto = vm.cloneObjectShallow(outlinerObject, 'simpleTestSuite');
+vm.addSlot(simpleTestSuiteProto, 'suite', traitsSimpleTestSuite, { isParent: true });
+vm.addSlot(globals, 'simpleTestSuite', simpleTestSuiteProto);
+vm.addSlot(traitsSimpleTestSuite, 'prototype', simpleTestSuiteProto);
+
 
       // Ensure interned strings delegate to traits.string
       try {
@@ -2160,9 +2182,9 @@ function scan(src) {
     const isIdStart = (c) => (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c === '_';
     const isId = (c) => isIdStart(c) || isDigit(c);
     // NOTE: exclude ':' and '|' which are structural tokens in this tiny language.
-    const isBinOpChar = (c) => "+-*/=<>~&,@%".includes(c);
+    const isBinOpChar = (c) => "+-*/=<>~!&,@%".includes(c);
 
-    const add = (type, value, pos) => tokens.push({ type, value, pos });
+    const add = (type, value, pos, extra) => tokens.push(Object.assign({ type, value, pos }, extra || {}));
 
     while (i < s.length) {
       const c = s[i];
@@ -2181,7 +2203,14 @@ function scan(src) {
       if (c === ')') { add('RPAREN', ')', i++); continue; }
       if (c === '[') { add('LBRACK', '[', i++); continue; }
       if (c === ']') { add('RBRACK', ']', i++); continue; }
-      if (c === '.') { add('DOT', '.', i++); continue; }
+      if (c === '.') {
+        // '.' is both a statement terminator and (when *tight*) the resend operator.
+        // Tight means: no whitespace after the dot (and not immediately starting a // comment).
+        const n1 = s[i + 1];
+        const tight = (n1 !== undefined) && (!isWS(n1)) && !(n1 === '/' && s[i + 2] === '/');
+        add('DOT', '.', i++, { tight });
+        continue;
+      }
       if (c === '^') { add('CARET', '^', i++); continue; }
       if (c === '|') { add('BAR', '|', i++); continue; }
       if (c === ':') { add('COLON', ':', i++); continue; }
@@ -2450,8 +2479,10 @@ class Parser {
 //   <parentSlot>.<message>     (directed)
 if (tok.type === 'IDENT') {
   const name = tok.value;
-  // If followed by '.' and a message start, treat as resendSend.
-  if (this.lookahead().type === 'DOT') {
+  // If followed by a *tight* '.' and a message start, treat as resendSend.
+  // Tight means: no whitespace after the dot. (Scanner sets DOT.tight accordingly.)
+  const dotTok = this.lookahead();
+  if (dotTok.type === 'DOT' && dotTok.tight) {
     const afterDot = this.lookahead(2);
     if (afterDot.type === 'IDENT' || afterDot.type === 'BINOP') {
       this.next(); // consume name
@@ -3386,6 +3417,195 @@ nextValue: self.
 		nextValue: nextValue + 1]`
       );
     }
+
+    // --- Test suite (traits.simpleTestSuite) ---
+    const traitsSimpleTestSuite2 = traits ? vm.getSlotValue(traits, 'simpleTestSuite') : null;
+    const traitsSimpleTestSuiteBase2 = traits ? vm.getSlotValue(traits, 'simpleTestSuiteBase') : null;
+
+    if (traitsSimpleTestSuiteBase2 && traitsSimpleTestSuiteBase2.slots) {
+      _installStdMethod(traitsSimpleTestSuiteBase2, 'foo', '^ 41');
+      _installStdMethod(traitsSimpleTestSuiteBase2, 'bar', '^ 10');
+    }
+
+    if (traitsSimpleTestSuite2 && traitsSimpleTestSuite2.slots) {
+      // Resend exercisers (undirected + directed)
+      _installStdMethod(traitsSimpleTestSuite2, 'foo', '^ (resend.foo) + 1');
+      _installStdMethod(traitsSimpleTestSuite2, 'bar', '^ (resendBase.bar) + 1');
+
+      // Minimal reporting helper
+      _installStdMethod(traitsSimpleTestSuite2, 'report: name Passed: ok',
+        `| prefix |
+prefix: (ok ifTrue: [ 'PASS ' ] False: [ 'FAIL ' ]).
+js log: (prefix , name).
+^ ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testIdentityAndEquality',
+        `| a b ok |
+a: outlinerObject clone.
+b: a.
+ok: (a == b).
+ok: (ok and: [ (a == (a clone)) not ]).
+ok: (ok and: [ (1 == 1) ]).
+ok: (ok and: [ (1 == 2) not ]).
+ok: (ok and: [ (1 != 2) ]).
+ok: (ok and: [ (1 != 1) not ]).
+^ self report: 'testIdentityAndEquality' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testNumberArithmeticAndComparisons',
+        `| ok |
+ok: true.
+ok: (ok and: [ (1 + 2) == 3 ]).
+ok: (ok and: [ (7 - 4) == 3 ]).
+ok: (ok and: [ (3 * 4) == 12 ]).
+ok: (ok and: [ (8 / 2) == 4 ]).
+ok: (ok and: [ (5 < 6) ]).
+ok: (ok and: [ (6 <= 6) ]).
+ok: (ok and: [ (7 > 6) ]).
+ok: (ok and: [ (7 >= 7) ]).
+ok: (ok and: [ (42 printString) == '42' ]).
+^ self report: 'testNumberArithmeticAndComparisons' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testStringPrimitives',
+        `| ok s |
+s: ('ab' , 'cd').
+ok: (s == 'abcd').
+ok: (ok and: [ (s size) == 4 ]).
+ok: (ok and: [ (s copyFrom: 2 To: 3) == 'bc' ]).
+^ self report: 'testStringPrimitives' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testBlockValuePrimitives',
+        `| ok b0 b1 b2 b3 b4 |
+b0: [ 7 ].
+b1: [ :x | x + 1 ].
+b2: [ :x :y | x + y ].
+b3: [ :a :b :c | a + b + c ].
+b4: [ :a :b :c :d | a + b + c + d ].
+ok: (b0 value) == 7.
+ok: (ok and: [ (b1 value: 4) == 5 ]).
+ok: (ok and: [ (b2 value: 2 With: 3) == 5 ]).
+ok: (ok and: [ (b3 value: 1 With: 2 With: 3) == 6 ]).
+ok: (ok and: [ (b4 value: 1 With: 2 With: 3 With: 4) == 10 ]).
+^ self report: 'testBlockValuePrimitives' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testControlBlocks',
+        `| i j ok |
+i: 0.
+[ i < 5 ] whileTrue: [ i: i + 1 ].
+j: 0.
+[ j >= 3 ] whileFalse: [ j: j + 1 ].
+ok: (i == 5).
+ok: (ok and: [ (j == 3) ]).
+^ self report: 'testControlBlocks' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testToDoLoop',
+        `| sum ok |
+sum: 0.
+1 to: 10 Do: [ :i |
+  sum: sum + i.
+].
+ok: (sum == 55).
+^ self report: 'testToDoLoop' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testNestedClosures',
+        `| x outer inner ok |
+x: 3.
+outer: [ :y | [ :z | x + y + z ] ].
+inner: (outer value: 4).
+ok: (inner value: 5) == 12.
+^ self report: 'testNestedClosures' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testSlotPrimitives',
+        `| obj parentObj ok |
+obj: outlinerObject clone.
+obj addSlot: 'x' Type: 'rw' Parent: false.
+obj x: 5.
+ok: (obj x) == 5.
+obj setSlot: 'x' To: 7.
+ok: (ok and: [ (obj x) == 7 ]).
+obj addSlot: 'm' Type: 'method' Parent: false.
+ok: (ok and: [ (obj m) == nil ]).
+obj removeSlot: 'm'.
+obj addSlot: 'm' Type: 'method' Parent: false.
+ok: (ok and: [ (obj m) == nil ]).
+parentObj: outlinerObject clone.
+parentObj addSlot: 'y' Type: 'rw' Parent: false.
+parentObj y: 9.
+obj addSlot: 'p' Type: 'rw' Parent: true.
+obj p: parentObj.
+ok: (ok and: [ (obj y) == 9 ]).
+^ self report: 'testSlotPrimitives' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testIndexedSlots',
+        `| obj ok |
+obj: outlinerObject clone.
+obj addIndexedSlots: 3.
+ok: (obj indexedSize) == 3.
+ok: (ok and: [ (obj indexedAt: 1) == nil ]).
+obj indexedAt: 2 Put: 99.
+ok: (ok and: [ (obj indexedAt: 2) == 99 ]).
+obj deleteIndexedSlotsFrom: 2 To: 3.
+ok: (ok and: [ (obj indexedSize) == 1 ]).
+^ self report: 'testIndexedSlots' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testJsBridge',
+        `| ok r |
+r: (js evaluate: '1 + 2').
+ok: (r == 3).
+^ self report: 'testJsBridge' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testUndirectedResend',
+        `| ok |
+ok: (foo == 42).
+^ self report: 'testUndirectedResend' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testDirectedResend',
+        `| ok |
+ok: (bar == 11).
+^ self report: 'testDirectedResend' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testParsingDotTerminator',
+        `| nextValue ok |
+nextValue: 1.
+nextValue.
+nextValue: nextValue + 1.
+ok: (nextValue == 2).
+^ self report: 'testParsingDotTerminator' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'runTests',
+        `| ok |
+ok: true.
+ok: (ok and: [ self testIdentityAndEquality ]).
+ok: (ok and: [ self testNumberArithmeticAndComparisons ]).
+ok: (ok and: [ self testStringPrimitives ]).
+ok: (ok and: [ self testBlockValuePrimitives ]).
+ok: (ok and: [ self testControlBlocks ]).
+ok: (ok and: [ self testToDoLoop ]).
+ok: (ok and: [ self testNestedClosures ]).
+ok: (ok and: [ self testSlotPrimitives ]).
+ok: (ok and: [ self testIndexedSlots ]).
+ok: (ok and: [ self testJsBridge ]).
+ok: (ok and: [ self testUndirectedResend ]).
+ok: (ok and: [ self testDirectedResend ]).
+ok: (ok and: [ self testParsingDotTerminator ]).
+js log: (ok ifTrue: [ 'ALL TESTS PASS' ] False: [ 'SOME TESTS FAILED' ]).
+^ ok`
+      );
+    }
+
   }
 
   _ensureStdLibrary();

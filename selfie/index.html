@@ -2993,17 +2993,8 @@ case 'ResendSend': {
     if (!lobby) throw new Error('Invalid image: lobbyId missing or not found.');
     vm.lobby = lobby;
 
-    // Reconnect VM convenience refs after materialization
-    try {
-      const traits = vm.getSlotValue(lobby, 'traits');
-      vm.traitsString = vm.getSlotValue(traits, 'string');
-      const globals = vm.getSlotValue(lobby, 'globals');
-      vm.trueObj = vm.getSlotValue(globals, 'true');
-      vm.falseObj = vm.getSlotValue(globals, 'false');
-      vm.nil = vm.getSlotValue(globals, 'nil');
-      vm.outlinerObject = vm.getSlotValue(globals, 'outlinerObject');
-      vm.jsObj = vm.getSlotValue(globals, 'js');
-    } catch { /* ignore */ }
+    // NOTE: VM convenience refs (true/false/nil/js/etc.) are reconnected *after* slot decoding below.
+
     // Ensure lobby has systemContext slot right away so vm.internString works during decoding.
     if (!vm.hasSlot(vm.lobby, 'systemContext')) {
       vm.addSlot(vm.lobby, 'systemContext', systemContext);
@@ -3029,6 +3020,21 @@ case 'ResendSend': {
       // Indexed slots
       obj.indexedSlots = Array.isArray(rec.indexedSlots) ? rec.indexedSlots.map(e => ({ id: e.id, value: decodeValue(vm, idToObj, e.value) })) : [];
     }
+
+
+
+    // Reconnect VM convenience refs now that slots are restored.
+    try {
+      const lobby2 = vm.lobby;
+      const traits2 = vm.getSlotValue(lobby2, 'traits');
+      vm.traitsString = vm.getSlotValue(traits2, 'string');
+      const globals2 = vm.getSlotValue(lobby2, 'globals');
+      vm.trueObj = vm.getSlotValue(globals2, 'true');
+      vm.falseObj = vm.getSlotValue(globals2, 'false');
+      vm.nil = vm.getSlotValue(globals2, 'nil');
+      vm.outlinerObject = vm.getSlotValue(globals2, 'outlinerObject');
+      vm.jsObj = vm.getSlotValue(globals2, 'js');
+    } catch { /* ignore */ }
 
 
 

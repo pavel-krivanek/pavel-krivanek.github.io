@@ -835,6 +835,15 @@ html, body {
     }
   }
 
+  class NonLocalReturn extends Error {
+    constructor(value, homeActivation) {
+      super('NonLocalReturn');
+      this.name = 'NonLocalReturn';
+      this.value = value;
+      this.homeActivation = homeActivation;
+    }
+  }
+
   class SelfLikeVM {
     constructor() {
       this._nextId = 1;
@@ -1134,7 +1143,7 @@ if (op === 'resendFrom') {
       const blockObjectTemplate = this.newObject(`${cfg.label || 'block'}::object`);
       blockObjectTemplate.kind = 'blockTemplateObject';
       this.addSlot(blockObjectTemplate, 'parent', this.getSlotValue(this.getSlotValue(this.lobby, 'traits'), 'block'), { isParent: true });
-      this.addSlot(blockObjectTemplate, '(lexicalParent)', null, { isLiteral: false });
+      this.addSlot(blockObjectTemplate, '(lexicalParent)', null, { isLiteral: false, isParent: true });
       // Note: block instances inherit value/value:... from traits.block; the block method is stored in the template.
 
       return {
@@ -1241,9 +1250,19 @@ _tryPrimitiveSend(receiver, selectorName, args) {
       if (!this.hasSlot(activation, parentSlotName)) {
         throw new VMError(`Activation parent slot '${parentSlotName}' missing on activation clone.`);
       }
+      const lexicalParentActivation = methodTemplate.activationParentIsSelf
+        ? null
+        : (messageReceiver && messageReceiver._lexicalParent ? messageReceiver._lexicalParent : null);
+
       activation.slots[parentSlotName].value = methodTemplate.activationParentIsSelf
         ? messageReceiver
-        : (messageReceiver && messageReceiver._lexicalParent ? messageReceiver._lexicalParent : null);
+        : lexicalParentActivation;
+
+      // Non-local return support: every activation has a "home" activation (the owning method activation).
+      activation._homeActivation = methodTemplate.activationParentIsSelf
+        ? activation
+        : (lexicalParentActivation && lexicalParentActivation._homeActivation ? lexicalParentActivation._homeActivation : lexicalParentActivation);
+      if (!activation._homeActivation) activation._homeActivation = activation;
 
       // Bind arguments.
       if (args.length !== methodTemplate.argNames.length) {
@@ -1263,6 +1282,10 @@ _tryPrimitiveSend(receiver, selectorName, args) {
       try {
         return this.executeActivation(activation);
       } catch (e) {
+        if (e instanceof NonLocalReturn) {
+          if (activation === e.homeActivation) return e.value;
+          throw e;
+        }
         if (e instanceof VMError) {
           if (!e.context) e.context = {};
           e.context.currentActivation = activation;
@@ -1414,8 +1437,13 @@ case 'resendFrom': {
   }
   break;
 }
-          case 'returnTop':
-            return popValue();
+          case 'returnTop': {
+            const v = popValue();
+            if (activation._homeActivation && activation._homeActivation !== activation) {
+              throw new NonLocalReturn(v, activation._homeActivation);
+            }
+            return v;
+          }
           default:
             throw new VMError(`Unknown instruction op '${ins.op}'.`);
         }
@@ -2036,10 +2064,9 @@ if (selectorName === 'removeSlot:' && args.length === 1 && receiver && receiver.
         const name = (args[0] && typeof args[0] === 'object' && args[0].kind === 'string') ? args[0].jsValue : String(args[0]);
         if (!name) return { handled: true, value: args[1] };
         if (!receiver.slots[name]) {
-          receiver.slots[name] = { name, value: args[1], isParent: false, isArgument: false, isLiteral: false, literalKind: null };
-        } else {
-          receiver.slots[name].value = args[1];
+          throw new VMError(`Slot '${name}' not found on ${vm.describeValue(receiver)}.`);
         }
+        receiver.slots[name].value = args[1];
         return { handled: true, value: args[1] };
       }
       // clone primitive for regular objects and blocks/numbers.
@@ -2182,7 +2209,7 @@ function scan(src) {
     const isIdStart = (c) => (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c === '_';
     const isId = (c) => isIdStart(c) || isDigit(c);
     // NOTE: exclude ':' and '|' which are structural tokens in this tiny language.
-    const isBinOpChar = (c) => "+-*/=<>~!&,@%".includes(c);
+    const isBinOpChar = (c) => "+-*/=<>~!&,@%|?\\\\".includes(c);
 
     const add = (type, value, pos, extra) => tokens.push(Object.assign({ type, value, pos }, extra || {}));
 
@@ -2222,6 +2249,19 @@ function scan(src) {
         let out = '';
         while (i < s.length) {
           const ch = s[i];
+          if (ch === "\\") {
+            const esc = s[i + 1];
+            if (esc === undefined) throw new ScanError('Unterminated string escape.', start);
+            switch (esc) {
+              case 'n': out += '\n'; break;
+              case 't': out += '\t'; break;
+              case 'r': out += '\r'; break;
+              case '\\': out += '\\'; break;
+              case "'": out += "'"; break;
+              default: out += esc; break;
+            }
+            i += 2; continue;
+          }
           if (ch === "'") {
             if (s[i + 1] === "'") { out += "'"; i += 2; continue; }
             i++; break;
@@ -3528,6 +3568,44 @@ ok: (inner value: 5) == 12.
 ^ self report: 'testNestedClosures' Passed: ok`
       );
 
+      _installStdMethod(traitsSimpleTestSuite2, 'makeLexBlock: n',
+        `| b |
+b: [ n ].
+^ b`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testLexicalParentDelegationUnary',
+        `| x b ok |
+x: 7.
+b: [ x ].
+ok: ((b x) == 7).
+^ self report: 'testLexicalParentDelegationUnary' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testLexicalParentDelegationSetter',
+        `| x b ok |
+x: 1.
+b: [ 0 ].
+b x: 9.
+ok: (x == 9).
+^ self report: 'testLexicalParentDelegationSetter' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testLexicalParentDelegationArgCapture',
+        `| ok b |
+b: (self makeLexBlock: 17).
+ok: ((b n) == 17).
+^ self report: 'testLexicalParentDelegationArgCapture' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testLexicalParentDelegationSelf',
+        `| b ok |
+b: [ self ].
+ok: ((b self) == self).
+^ self report: 'testLexicalParentDelegationSelf' Passed: ok`
+      );
+
+
       _installStdMethod(traitsSimpleTestSuite2, 'testSlotPrimitives',
         `| obj parentObj ok |
 obj: outlinerObject clone.
@@ -3591,7 +3669,41 @@ ok: (nextValue == 2).
 ^ self report: 'testParsingDotTerminator' Passed: ok`
       );
 
-      _installStdMethod(traitsSimpleTestSuite2, 'runTests',
+      
+
+      _installStdMethod(traitsSimpleTestSuite2, 'nlrExample',
+        `| b |
+b: [ ^ 1 ].
+b value.
+^ 2`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testNonLocalReturn',
+        `| ok |
+ok: (self nlrExample) == 1.
+^ self report: 'testNonLocalReturn' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testStringBackslashEscapes',
+        `| ok s t u v |
+s: 'a\nb'.
+ok: (s size) == 3.
+t: '\\'.
+ok: (ok and: [ (t size) == 1 ]).
+u: 'It\'s'.
+ok: (ok and: [ (u size) == 4 ]).
+v: 'It''s'.
+ok: (ok and: [ (v size) == 4 ]).
+^ self report: 'testStringBackslashEscapes' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testScannerBinarySelectorChars',
+        `| ok |
+ok: (js evaluate: '(() => { try { SelfCompile.compileSourceToMethodSpec("a | b. a ? b", {}, SelfieRuntime.vm); return true; } catch (e) { console.log(e); return false; } })()').
+^ self report: 'testScannerBinarySelectorChars' Passed: ok`
+      );
+
+_installStdMethod(traitsSimpleTestSuite2, 'runTests',
         `| ok |
 ok: true.
 ok: (ok and: [ self testIdentityAndEquality ]).
@@ -3601,6 +3713,13 @@ ok: (ok and: [ self testBlockValuePrimitives ]).
 ok: (ok and: [ self testControlBlocks ]).
 ok: (ok and: [ self testToDoLoop ]).
 ok: (ok and: [ self testNestedClosures ]).
+ok: (ok and: [ self testLexicalParentDelegationUnary ]).
+ok: (ok and: [ self testLexicalParentDelegationSetter ]).
+ok: (ok and: [ self testLexicalParentDelegationArgCapture ]).
+ok: (ok and: [ self testLexicalParentDelegationSelf ]).
+ok: (ok and: [ self testNonLocalReturn ]).
+ok: (ok and: [ self testStringBackslashEscapes ]).
+ok: (ok and: [ self testScannerBinarySelectorChars ]).
 ok: (ok and: [ self testSlotPrimitives ]).
 ok: (ok and: [ self testIndexedSlots ]).
 ok: (ok and: [ self testJsBridge ]).

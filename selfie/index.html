@@ -3703,29 +3703,114 @@ ok: (js evaluate: '(() => { try { SelfCompile.compileSourceToMethodSpec("a | b. 
 ^ self report: 'testScannerBinarySelectorChars' Passed: ok`
       );
 
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testBooleanLogic',
+        `| x ok |
+x: 0.
+false and: [ x: 1 ].
+ok: (x == 0).
+true or: [ x: 2 ].
+ok: (ok and: [ (x == 0) ]).
+true and: [ x: 3 ].
+ok: (ok and: [ (x == 3) ]).
+false or: [ x: 4 ].
+ok: (ok and: [ (x == 4) ]).
+ok: (ok and: [ ((true not) == false) ]).
+ok: (ok and: [ ((false not) == true) ]).
+ok: (ok and: [ ((true xor: [ true ]) == false) ]).
+ok: (ok and: [ ((true xor: [ false ]) == true) ]).
+^ self report: 'testBooleanLogic' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testBinaryLeftAssociativity',
+        `| ok |
+ok: ((1 + 2 * 3) == 9).
+ok: (ok and: [ (1 + (2 * 3)) == 7 ]).
+ok: (ok and: [ (10 - 3 - 2) == 5 ]).
+^ self report: 'testBinaryLeftAssociativity' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testNumericLiteralsFloatAndSign',
+        `| ok |
+ok: ((1.5 + 2.25) == 3.75).
+ok: (ok and: [ (-3 + 5) == 2 ]).
+ok: (ok and: [ ((+4)) == 4 ]).
+^ self report: 'testNumericLiteralsFloatAndSign' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testCloneShallow',
+        `| a b c ok |
+a: outlinerObject clone.
+a addSlot: 'x' Type: 'rw' Parent: false.
+a x: 1.
+b: a clone.
+b x: 2.
+ok: ((a x) == 1).
+ok: (ok and: [ (b x) == 2 ]).
+c: outlinerObject clone.
+c addSlot: 'y' Type: 'rw' Parent: false.
+c y: 9.
+a addSlot: 'ref' Type: 'rw' Parent: false.
+a ref: c.
+b: a clone.
+(b ref) y: 10.
+ok: (ok and: [ (((a ref) y) == 10) ]).
+^ self report: 'testCloneShallow' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testBlockCloneKeepsLexicalParent',
+        `| x b bc ok |
+x: 6.
+b: [ x ].
+bc: b clone.
+ok: ((bc x) == 6).
+^ self report: 'testBlockCloneKeepsLexicalParent' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testDotCommentTerminator',
+        `| x ok |
+x: 1.// comment right after dot
+x: x + 1.
+ok: (x == 2).
+^ self report: 'testDotCommentTerminator' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testPrimitiveErrorCases',
+        `| ok |
+ok: (js evaluate: '(() => { const vm = SelfieRuntime.vm; const globals = vm.getSlotValue(vm.lobby,"globals"); const out = vm.getSlotValue(globals,"outlinerObject"); const obj = vm.send(out,"clone",[]); let pass = true; try { vm.send(obj,"setSlot:To:",[vm.internString("missing"), vm.makeNumber(1)]); pass = false; } catch(e) {} try { vm.send(obj,"addSlot:Type:Parent:",[vm.internString("roSlot"), vm.internString("ro"), vm.falseObj]); vm.send(obj,"roSlot:",[vm.makeNumber(2)]); pass = false; } catch(e) {} try { vm.send(obj,"addIndexedSlots:",[vm.makeNumber(1)]); vm.send(obj,"indexedAt:Put:",[vm.makeNumber(2), vm.makeNumber(9)]); pass = false; } catch(e) {} try { const s = vm.internString("ab"); vm.send(s,"copyFrom:To:",[vm.makeNumber(1), vm.makeNumber(3)]); pass = false; } catch(e) {} try { vm.send(obj,"addSlot:Type:Parent:",[vm.internString("tmp"), vm.internString("rw"), vm.falseObj]); vm.send(obj,"tmp:",[vm.makeNumber(1)]); vm.send(obj,"removeSlot:",[vm.internString("tmp")]); vm.send(obj,"tmp",[]); pass = false; } catch(e) {} return pass; })()').
+^ self report: 'testPrimitiveErrorCases' Passed: ok`
+      );
+
 _installStdMethod(traitsSimpleTestSuite2, 'runTests',
         `| ok |
 ok: true.
 ok: (ok and: [ self testIdentityAndEquality ]).
 ok: (ok and: [ self testNumberArithmeticAndComparisons ]).
+ok: (ok and: [ self testBinaryLeftAssociativity ]).
+ok: (ok and: [ self testNumericLiteralsFloatAndSign ]).
 ok: (ok and: [ self testStringPrimitives ]).
+ok: (ok and: [ self testStringBackslashEscapes ]).
 ok: (ok and: [ self testBlockValuePrimitives ]).
 ok: (ok and: [ self testControlBlocks ]).
+ok: (ok and: [ self testBooleanLogic ]).
 ok: (ok and: [ self testToDoLoop ]).
 ok: (ok and: [ self testNestedClosures ]).
 ok: (ok and: [ self testLexicalParentDelegationUnary ]).
 ok: (ok and: [ self testLexicalParentDelegationSetter ]).
 ok: (ok and: [ self testLexicalParentDelegationArgCapture ]).
 ok: (ok and: [ self testLexicalParentDelegationSelf ]).
+ok: (ok and: [ self testBlockCloneKeepsLexicalParent ]).
 ok: (ok and: [ self testNonLocalReturn ]).
-ok: (ok and: [ self testStringBackslashEscapes ]).
+ok: (ok and: [ self testPrimitiveErrorCases ]).
 ok: (ok and: [ self testScannerBinarySelectorChars ]).
 ok: (ok and: [ self testSlotPrimitives ]).
+ok: (ok and: [ self testCloneShallow ]).
 ok: (ok and: [ self testIndexedSlots ]).
 ok: (ok and: [ self testJsBridge ]).
 ok: (ok and: [ self testUndirectedResend ]).
 ok: (ok and: [ self testDirectedResend ]).
 ok: (ok and: [ self testParsingDotTerminator ]).
+ok: (ok and: [ self testDotCommentTerminator ]).
 js log: (ok ifTrue: [ 'ALL TESTS PASS' ] False: [ 'SOME TESTS FAILED' ]).
 ^ ok`
       );

@@ -852,11 +852,89 @@ html, body {
     }
   }
 
+  class ObjectStore {
+    constructor() {
+      this.kind = (typeof WeakRef !== 'undefined') ? 'weak' : 'strong';
+      // In weak mode: id -> WeakRef(object)
+      // In strong mode: id -> object and a Set for iteration.
+      this._byId = new Map();
+      this._strong = (this.kind === 'strong') ? new Set() : null;
+
+      // Auto-cleanup for weak mode, when supported.
+      this._finalizer = null;
+      if (this.kind === 'weak' && typeof FinalizationRegistry !== 'undefined') {
+        this._finalizer = new FinalizationRegistry((id) => {
+          try { this._byId.delete(id); } catch { /* ignore */ }
+        });
+      }
+    }
+
+    reset() {
+      this._byId.clear();
+      if (this._strong) this._strong.clear();
+      // NOTE: FinalizationRegistry cannot be reset reliably; leaving it is fine.
+    }
+
+    add(obj) {
+      if (!obj || typeof obj !== 'object') return;
+      const id = obj.id;
+      if (typeof id !== 'number') return;
+
+      if (this.kind === 'strong') {
+        this._strong.add(obj);
+        this._byId.set(id, obj);
+        return;
+      }
+
+      // weak
+      try {
+        this._byId.set(id, new WeakRef(obj));
+        if (this._finalizer) this._finalizer.register(obj, id);
+      } catch {
+        // If WeakRef construction fails for any reason, fall back to strong tracking.
+        this.kind = 'strong';
+        this._strong = new Set();
+        this._strong.add(obj);
+        this._byId.set(id, obj);
+      }
+    }
+
+    getById(id) {
+      const n = Number(id);
+      if (!Number.isFinite(n)) return null;
+
+      if (this.kind === 'strong') return this._byId.get(n) || null;
+
+      const ref = this._byId.get(n);
+      if (!ref) return null;
+      const obj = ref.deref();
+      if (!obj) this._byId.delete(n);
+      return obj || null;
+    }
+
+    *[Symbol.iterator]() {
+      if (this.kind === 'strong') {
+        yield* this._strong;
+        return;
+      }
+      for (const [id, ref] of this._byId.entries()) {
+        const obj = ref && typeof ref.deref === 'function' ? ref.deref() : null;
+        if (obj) yield obj;
+        else this._byId.delete(id);
+      }
+    }
+
+    // Not exact in weak mode, but useful for diagnostics.
+    sizeEstimate() {
+      return this._byId.size;
+    }
+  }
+
   class SelfLikeVM {
     constructor() {
       this._nextId = 1;
       this._nextIndexedId = 1;
-      this.objects = new Set();
+      this.objects = new ObjectStore();
       this._systemContext = {
         kind: 'systemContext',
         stringTable: new Map(),
@@ -1152,6 +1230,9 @@ if (op === 'resendFrom') {
       blockObjectTemplate.kind = 'blockTemplateObject';
       this.addSlot(blockObjectTemplate, 'parent', this.getSlotValue(this.getSlotValue(this.lobby, 'traits'), 'block'), { isParent: true });
       this.addSlot(blockObjectTemplate, '(lexicalParent)', null, { isLiteral: false, isParent: true });
+      // Install the evaluation selector directly on the block object (no primitive blockValue).
+      this.addSlot(blockObjectTemplate, cfg.valueSelector, blockMethod);
+
       // Note: block instances inherit value/value:... from traits.block; the block method is stored in the template.
 
       return {
@@ -1864,12 +1945,7 @@ vm.addSlot(traitsSimpleTestSuite, 'resendBase', traitsSimpleTestSuiteBase, { isP
       vm.addSlot(traitsString, 'size', makePrimitiveMethod('size', []));
       vm.addSlot(traitsString, 'copyFrom:To:', makePrimitiveMethod('copyFrom:To:', ['from', 'to']));
 
-      // traits.block value/value:...
-      vm.addSlot(traitsBlock, 'value', makePrimitiveWrapperMethod('value', 'blockValue', []));
-      vm.addSlot(traitsBlock, 'value:', makePrimitiveWrapperMethod('value:', 'blockValue', ['arg']));
-      vm.addSlot(traitsBlock, 'value:With:', makePrimitiveWrapperMethod('value:With:', 'blockValue', ['arg1', 'arg2']));
-      vm.addSlot(traitsBlock, 'value:With:With:', makePrimitiveWrapperMethod('value:With:With:', 'blockValue', ['arg1', 'arg2', 'arg3']));
-      vm.addSlot(traitsBlock, 'value:With:With:With:', makePrimitiveWrapperMethod('value:With:With:With:', 'blockValue', ['arg1', 'arg2', 'arg3', 'arg4']));
+      // traits.block evaluation selectors are installed on each block literal (no VM primitive needed).
 
       // globals oddballs
       const trueObj = vm.newObject('true');
@@ -1957,19 +2033,6 @@ vm.addSlot(traitsSimpleTestSuite, 'prototype', simpleTestSuiteProto);
         if (!(receiver && receiver.kind === 'number' && args[0] && args[0].kind === 'number')) {
           return { handled: true, value: vm.booleanOf(receiver === args[0]) };
         }
-      }
-
-      // block evaluation primitive (invoked via traits.block value/value:... methods using primitiveSend)
-      if (selectorName === 'blockValue' && receiver && typeof receiver === 'object' && receiver.kind === 'blockInstance') {
-        const tmpl = receiver.blockLiteralTemplate;
-        if (!tmpl || !tmpl.blockMethod) {
-          throw new VMError('Malformed block instance: missing block method.');
-        }
-        const result = vm.invokeMethod(tmpl.blockMethod, receiver, args, {
-          selectorName: tmpl.valueSelector || 'value',
-          holder: tmpl.blockObjectTemplate || null
-        });
-        return { handled: true, value: result };
       }
 
       
@@ -3004,7 +3067,7 @@ case 'ResendSend': {
   }
 
   function materializeInto(vm, vmData) {
-    vm.objects = new Set();
+    vm.objects.reset();
     vm._nextId = 1;
 
     const idToObj = new Map();
@@ -3311,6 +3374,15 @@ function openErrorReport(err) {
   function findObjectById(id) {
     const n = Number(id);
     if (!Number.isFinite(n)) return null;
+
+    // Prefer indexed lookup if the VM provides it (avoids iterating every object).
+    try {
+      if (vm.objects && typeof vm.objects.getById === 'function') {
+        const hit = vm.objects.getById(n);
+        if (hit) return hit;
+      }
+    } catch { /* ignore */ }
+
     for (const obj of vm.objects) if (obj && obj.id === n) return obj;
     return null;
   }
@@ -3809,6 +3881,31 @@ ok: (js evaluate: '(() => { const vm = SelfieRuntime.vm; const globals = vm.getS
 ^ self report: 'testPrimitiveErrorCases' Passed: ok`
       );
 
+      _installStdMethod(traitsSimpleTestSuite2, 'testObjectStoreNotStrongSet',
+        `| ok |
+ok: (js evaluate: '(() => { const vm = SelfieRuntime.vm; return !(vm.objects instanceof Set); })()').
+^ self report: 'testObjectStoreNotStrongSet' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testObjectStoreWeakWhenSupported',
+        `| ok |
+ok: (js evaluate: '(() => { const vm = SelfieRuntime.vm; if (typeof WeakRef === "undefined") return true; return vm.objects && (vm.objects.kind === "weak"); })()').
+^ self report: 'testObjectStoreWeakWhenSupported' Passed: ok`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testObjectStoreGetById',
+        `| ok |
+ok: (js evaluate: '(() => { const vm = SelfieRuntime.vm; if (!vm.objects || typeof vm.objects.getById !== "function") return false; const o = vm.newObject("tmpForIdLookup"); const id = o.id; const found = vm.objects.getById(id); return found === o; })()').
+^ self report: 'testObjectStoreGetById' Passed: ok`
+      );
+
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testBlockEvalWithoutPrimitive',
+        `| ok |
+ok: (js evaluate: '(() => { const vm = SelfieRuntime.vm; const globals = vm.getSlotValue(vm.lobby,"globals"); const suite = vm.getSlotValue(globals,"simpleTestSuite"); const blk = vm.send(suite,"makeLexBlock:",[vm.makeNumber(5)]); const orig = vm._tryPrimitiveSend.bind(vm); vm._tryPrimitiveSend = function(receiver, selectorName, args){ if(selectorName==="blockValue") throw new Error("blockValue primitive used"); return orig(receiver, selectorName, args); }; try { const r = vm.send(blk, "value", []); vm._tryPrimitiveSend = orig; return r && r.kind==="number" ? (r.jsValue===5) : false; } catch(e){ vm._tryPrimitiveSend = orig; return false; } })()').
+^ self report: 'testBlockEvalWithoutPrimitive' Passed: ok`
+      );
+
 _installStdMethod(traitsSimpleTestSuite2, 'runTests',
         `| ok |
 ok: true.
@@ -3828,9 +3925,13 @@ ok: (ok and: [ self testLexicalParentDelegationSetter ]).
 ok: (ok and: [ self testLexicalParentDelegationArgCapture ]).
 ok: (ok and: [ self testLexicalParentDelegationSelf ]).
 ok: (ok and: [ self testBlockCloneKeepsLexicalParent ]).
+ok: (ok and: [ self testBlockEvalWithoutPrimitive ]).
 ok: (ok and: [ self testNonLocalReturn ]).
 ok: (ok and: [ self testEscapingBlockNLRContextExpired ]).
 ok: (ok and: [ self testPrimitiveErrorCases ]).
+ok: (ok and: [ self testObjectStoreNotStrongSet ]).
+ok: (ok and: [ self testObjectStoreWeakWhenSupported ]).
+ok: (ok and: [ self testObjectStoreGetById ]).
 ok: (ok and: [ self testScannerBinarySelectorChars ]).
 ok: (ok and: [ self testSlotPrimitives ]).
 ok: (ok and: [ self testCloneShallow ]).

@@ -835,6 +835,14 @@ html, body {
     }
   }
 
+  class ContextExpired extends VMError {
+    constructor(message, context) {
+      super(message || 'ContextExpired', context);
+      this.name = 'ContextExpired';
+    }
+  }
+
+
   class NonLocalReturn extends Error {
     constructor(value, homeActivation) {
       super('NonLocalReturn');
@@ -1245,6 +1253,8 @@ _tryPrimitiveSend(receiver, selectorName, args) {
       activation._holder = meta && meta.holder ? meta.holder : null;
       activation._selectorName = meta && meta.selectorName ? meta.selectorName : null;
 
+      activation._isLive = true;
+
       // Bind activation parent slot.
       const parentSlotName = methodTemplate.activationParentSlotName;
       if (!this.hasSlot(activation, parentSlotName)) {
@@ -1297,6 +1307,7 @@ _tryPrimitiveSend(receiver, selectorName, args) {
         }
         throw e;
       } finally {
+        activation._isLive = false;
         ctx.currentActivation = ctx.activationStack.pop();
       }
     }
@@ -1440,7 +1451,11 @@ case 'resendFrom': {
           case 'returnTop': {
             const v = popValue();
             if (activation._homeActivation && activation._homeActivation !== activation) {
-              throw new NonLocalReturn(v, activation._homeActivation);
+              const home = activation._homeActivation;
+              if (!home || home._isLive === false) {
+                throw new ContextExpired('ContextExpired: home activation is no longer live.');
+              }
+              throw new NonLocalReturn(v, home);
             }
             return v;
           }
@@ -3684,6 +3699,19 @@ ok: (self nlrExample) == 1.
 ^ self report: 'testNonLocalReturn' Passed: ok`
       );
 
+      _installStdMethod(traitsSimpleTestSuite2, 'makeEscapingNLRBlock',
+        `| b |
+b: [ ^ 42 ].
+^ b`
+      );
+
+      _installStdMethod(traitsSimpleTestSuite2, 'testEscapingBlockNLRContextExpired',
+        `| ok |
+ok: (js evaluate: '(() => { const vm = SelfieRuntime.vm; const globals = vm.getSlotValue(vm.lobby,"globals"); const suite = vm.getSlotValue(globals,"simpleTestSuite"); const blk = vm.send(suite,"makeEscapingNLRBlock",[]); try { vm.send(blk,"value",[]); return false; } catch(e) { return e && (e.name === "ContextExpired"); } })()').
+^ self report: 'testEscapingBlockNLRContextExpired' Passed: ok`
+      );
+
+
       _installStdMethod(traitsSimpleTestSuite2, 'testStringBackslashEscapes',
         `| ok s t u v |
 s: 'a\nb'.
@@ -3801,6 +3829,7 @@ ok: (ok and: [ self testLexicalParentDelegationArgCapture ]).
 ok: (ok and: [ self testLexicalParentDelegationSelf ]).
 ok: (ok and: [ self testBlockCloneKeepsLexicalParent ]).
 ok: (ok and: [ self testNonLocalReturn ]).
+ok: (ok and: [ self testEscapingBlockNLRContextExpired ]).
 ok: (ok and: [ self testPrimitiveErrorCases ]).
 ok: (ok and: [ self testScannerBinarySelectorChars ]).
 ok: (ok and: [ self testSlotPrimitives ]).

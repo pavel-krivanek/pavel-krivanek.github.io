@@ -820,7 +820,7 @@ html, body {
   </div>
 
   <!-- Embedded system image (JSON). Filled when you "Save system". -->
-  <script id="selfie-image" type="application/json"></script>
+  <script id="selfie-image" type="application/json" data-selfie-file="true" data-name="selfie-image.json"></script>
 
   <!-- Selfie files (scripts) -->
   <script type="application/x-selfie-script" data-selfie-file="true" data-name="selfie_object_model.js">
@@ -2729,7 +2729,145 @@ function parseHeader(headerText) {
   'use strict';
 
   global.SelfieHelp = {
-    markdown: "# Selfie \u2014 Help\n\n## Windows\n- Drag header to move; resize from bottom-right.\n- Click a window to focus (bring to front).\n\n## References and lines\n- Click the \\`::\\` handle to open the referenced object and toggle its line.\n- Drag the \\`::\\` handle to retarget (drop on an object header/value).\n- Shift-click \\`::\\` on a block literal opens the literal *template* instead of the instantiated closure.\n- Toolbar: **Hide lines** toggles all lines.\n\n## Editing slot values\n- Numbers: \\`42\\`  | Names: \\`#foo\\`  | Object refs: \\`@3\\`  | Strings: \\`'text'\\`  | empty \u21d2 \\`null\\`\n\n## Source language\n- Literals: numbers, strings, blocks \\`[ ... ]\\` or \\`[:x :y | ... ]\\`\n- Messages: unary (\\`x size\\`), binary (\\`x + y\\`), keyword (\\`obj at: i Put: v\\`)\n- Temps: \\`| t u |\\` and assignment via setter: \\`t: expr\\`\n- Return: \\`^ expr\\`  Statements: \\`.\\`\n\n## Bytecode\n- \\`pushSelf\\` | \\`send <selector> [argc]\\` | \\`resend <selector> [argc]\\` | \\`primitiveSend <selector> [argc]\\` | \\`dup\\` | \\`pop\\` | \\`returnTop\\`\n\n## Slot controls\n- Use the \\`\u25be/\u25b4\\` toggle to show/hide slot flags and delete.\n\n\n---\n\n## Language summary\n\nSelfie is a small Self-like message language:\n\n- **Everything is a message send**. There are no special assignment operators.\n- **Temporaries are RW slots** on the activation; assignment is sending the setter message:\n  - `| a |` declares RW temp slot `a`\n  - `a: 10.` assigns (setter send)\n- **Return** uses `^ expr`.\n\n### Message syntax\n\n- **Unary**: `x printString`\n- **Binary**: `x + 1`, `resend.+ 5`\n- **Keyword**: `x min: 17 Max: 23`\n\n### Blocks\n\n- Literal block: `[ ... ]`\n- Arguments: `[ :x :y | ... ]`\n- Execute via `value`, `value:`, `value:With:` \u2026\n- Control blocks available on blocks:\n  - `whileTrue`, `whileTrue:`, `whileFalse`, `whileFalse:`, `repeat`\n\n### Resend\n\nSelfie supports Self-style resend forms:\n\n- **Undirected resend** (continue lookup in the *holder\u2019s* parents):\n  - `resend.display`\n  - `resend.+ 5`\n  - `resend.min: 17 Max: 23`\n\n- **Directed resend** (start from a specific parent slot):\n  - `listParent.height`\n  - `intParent.min: 17 Max: 23`\n\n**Disambiguation rule:**\n- `a.b` (no whitespace after the dot) is parsed as directed resend.\n- `a. b` is parsed as two statements (`a.` then `b`).\n\n---\n\n## Grammar (EBNF)\n\nThis is the grammar used by the parser (simplified, but matches the implementation):\n\n```ebnf\nProgram        ::= Stmt ('.' Stmt)* '.'?\nStmt           ::= Return | Expr\nReturn         ::= '^' Expr\n\nExpr           ::= KeywordChain\nKeywordChain   ::= BinaryChain (KeywordMsg BinaryChain)+ | BinaryChain\nKeywordMsg     ::= KeywordPart (KeywordPart)*\nKeywordPart    ::= Ident ':'\n\nBinaryChain    ::= UnaryChain (BinaryOp UnaryChain)*\nUnaryChain     ::= Primary (UnaryMsg | ResendMsg)*\nUnaryMsg       ::= Ident\n\nResendMsg      ::= UndirectedResend | DirectedResend\nUndirectedResend ::= 'resend' '.' (Ident | BinaryOp | KeywordHead)\nDirectedResend ::= ParentSlot '.' (Ident | BinaryOp | KeywordHead)\nKeywordHead    ::= Ident ':'\nParentSlot     ::= Ident\n\nPrimary        ::= Number | String | Name | Ref | Block | Paren | Ident\nParen          ::= '(' Expr ')'\nBlock          ::= '[' BlockArgs? BlockTemps? Program? ']'\nBlockArgs      ::= (':' Ident)+ '|'\nBlockTemps     ::= '|' Ident* '|'\n\nName           ::= '#' Ident\nString         ::= '\\'' ( ... ) '\\''\nRef            ::= '@' Number\nNumber         ::= Digit+ ('.' Digit+)?\nBinaryOp       ::= one-or-more of: + - * / < <= > >= == ~= != ,\nIdent          ::= [A-Za-z_][A-Za-z0-9_]*\n```\n\nNotes:\n- `| a b |` declares RW temporaries on the activation.\n- `a:` is the setter message for RW slot `a`.\n\n---\n\n## Object model notes\n\n- **Parent slots** (marked with `*`) participate in lookup delegation.\n- **Indexed slots** are ignored by lookup and are addressed by 1-based index in the UI.\n- Boolean results are Selfie objects `true`/`false` (not JS booleans).\n\n---\n\n## VM / File view\n\n- **Image view** is the floating outliner desktop.\n- **VM view** lets you edit the embedded files (scripts/styles) that make up the current system.\n- **Save system** writes a single self-contained HTML (TiddlyWiki-like).\n- **Save image** writes a `.selfieImage` JSON snapshot.\n\n---\n\n## JS bridge\n\nGlobal `js` object:\n- `js evaluate: '...js code...'` evaluates JavaScript and returns a Selfie value when possible.\n- `js log: x` writes to the browser console."
+    markdown: `# Selfie — Help
+
+## Windows
+- Drag header to move; resize from bottom-right.
+- Click a window to focus (bring to front).
+
+## References and lines
+- Click the \`::\` handle to open the referenced object and toggle its line.
+- Drag the \`::\` handle to retarget (drop on an object header/value).
+- Shift-click \`::\` on a block literal opens the literal *template* instead of the instantiated closure.
+- Toolbar: **Hide lines** toggles all lines.
+
+## Editing slot values
+- Numbers: \`42\`  | Names: \`#foo\`  | Object refs: \`@3\`  | Strings: \`'text'\`  | empty ⇒ \`null\`
+
+## Source language
+- Literals: numbers, strings, blocks \`[ ... ]\` or \`[:x :y | ... ]\`
+- Messages: unary (\`x size\`), binary (\`x + y\`), keyword (\`obj at: i Put: v\`)
+- Temps: \`| t u |\` and assignment via setter: \`t: expr\`
+- Return: \`^ expr\`  Statements: \`.\`
+
+## Bytecode
+- \`pushSelf\` | \`send <selector> [argc]\` | \`resend <selector> [argc]\` | \`primitiveSend <selector> [argc]\` | \`dup\` | \`pop\` | \`returnTop\`
+
+## Slot controls
+- Use the \`▾/▴\` toggle to show/hide slot flags and delete.
+
+
+---
+
+## Language summary
+
+Selfie is a small Self-like message language:
+
+- **Everything is a message send**. There are no special assignment operators.
+- **Temporaries are RW slots** on the activation; assignment is sending the setter message:
+  - \`| a |\` declares RW temp slot \`a\`
+  - \`a: 10.\` assigns (setter send)
+- **Return** uses \`^ expr\`.
+
+### Message syntax
+
+- **Unary**: \`x printString\`
+- **Binary**: \`x + 1\`, \`resend.+ 5\`
+- **Keyword**: \`x min: 17 Max: 23\`
+
+### Blocks
+
+- Literal block: \`[ ... ]\`
+- Arguments: \`[ :x :y | ... ]\`
+- Execute via \`value\`, \`value:\`, \`value:With:\` …
+- Control blocks available on blocks:
+  - \`whileTrue\`, \`whileTrue:\`, \`whileFalse\`, \`whileFalse:\`, \`repeat\`
+
+### Resend
+
+Selfie supports Self-style resend forms:
+
+- **Undirected resend** (continue lookup in the *holder’s* parents):
+  - \`resend.display\`
+  - \`resend.+ 5\`
+  - \`resend.min: 17 Max: 23\`
+
+- **Directed resend** (start from a specific parent slot):
+  - \`listParent.height\`
+  - \`intParent.min: 17 Max: 23\`
+
+**Disambiguation rule:**
+- \`a.b\` (no whitespace after the dot) is parsed as directed resend.
+- \`a. b\` is parsed as two statements (\`a.\` then \`b\`).
+
+---
+
+## Grammar (EBNF)
+
+This is the grammar used by the parser (simplified, but matches the implementation):
+
+\`\`\`ebnf
+Program        ::= Stmt ('.' Stmt)* '.'?
+Stmt           ::= Return | Expr
+Return         ::= '^' Expr
+
+Expr           ::= KeywordChain
+KeywordChain   ::= BinaryChain (KeywordMsg BinaryChain)+ | BinaryChain
+KeywordMsg     ::= KeywordPart (KeywordPart)*
+KeywordPart    ::= Ident ':'
+
+BinaryChain    ::= UnaryChain (BinaryOp UnaryChain)*
+UnaryChain     ::= Primary (UnaryMsg | ResendMsg)*
+UnaryMsg       ::= Ident
+
+ResendMsg      ::= UndirectedResend | DirectedResend
+UndirectedResend ::= 'resend' '.' (Ident | BinaryOp | KeywordHead)
+DirectedResend ::= ParentSlot '.' (Ident | BinaryOp | KeywordHead)
+KeywordHead    ::= Ident ':'
+ParentSlot     ::= Ident
+
+Primary        ::= Number | String | Name | Ref | Block | Paren | Ident
+Paren          ::= '(' Expr ')'
+Block          ::= '[' BlockArgs? BlockTemps? Program? ']'
+BlockArgs      ::= (':' Ident)+ '|'
+BlockTemps     ::= '|' Ident* '|'
+
+Name           ::= '#' Ident
+String         ::= '\'' ( ... ) '\''
+Ref            ::= '@' Number
+Number         ::= Digit+ ('.' Digit+)?
+BinaryOp       ::= one-or-more of: + - * / < <= > >= == ~= != ,
+Ident          ::= [A-Za-z_][A-Za-z0-9_]*
+\`\`\`
+
+Notes:
+- \`| a b |\` declares RW temporaries on the activation.
+- \`a:\` is the setter message for RW slot \`a\`.
+
+---
+
+## Object model notes
+
+- **Parent slots** (marked with \`*\`) participate in lookup delegation.
+- **Indexed slots** are ignored by lookup and are addressed by 1-based index in the UI.
+- Boolean results are Selfie objects \`true\`/\`false\` (not JS booleans).
+
+---
+
+## VM / File view
+
+- **Image view** is the floating outliner desktop.
+- **VM view** lets you edit the embedded files (scripts/styles) that make up the current system.
+- **Save system** writes a single self-contained HTML (TiddlyWiki-like).
+- **Save image** writes a \`.selfieImage\` JSON snapshot.
+
+---
+
+## JS bridge
+
+Global \`js\` object:
+- \`js evaluate: '...js code...'\` evaluates JavaScript and returns a Selfie value when possible.
+- \`js log: x\` writes to the browser console.`
   };
 })(typeof window !== 'undefined' ? window : globalThis);
 
@@ -5556,53 +5694,157 @@ $('#btnToggleLines').addEventListener('click', (ev) => {
     return { format: 'SelfieImage', version: 1, createdAt: new Date().toISOString(), vm: { objects: [] }, ui: {} };
   }
 
-  function buildHtmlString() {
-    const image = gatherSystemImage();
+  function isOfflineBuild(doc) {
+  const d = doc || document;
+  return d && d.documentElement && d.documentElement.getAttribute('data-selfie-offline') === '1';
+}
 
-    const clone = document.documentElement.cloneNode(true);
+function prepareClone(image) {
+  const clone = document.documentElement.cloneNode(true);
 
-    // Ensure/replace embedded image json
-    let imgEl = clone.querySelector('#selfie-image');
-    if (!imgEl) {
-      imgEl = clone.ownerDocument.createElement('script');
-      imgEl.id = 'selfie-image';
-      imgEl.type = 'application/json';
-      clone.querySelector('body')?.appendChild(imgEl);
-    }
-    imgEl.textContent = JSON.stringify(image, null, 2);
+  // Ensure/replace embedded image json
+  let imgEl = clone.querySelector('#selfie-image');
+  if (!imgEl) {
+    imgEl = clone.ownerDocument.createElement('script');
+    imgEl.id = 'selfie-image';
+    imgEl.type = 'application/json';
+    clone.querySelector('body')?.appendChild(imgEl);
+  }
+  try { imgEl.setAttribute('data-selfie-file','true'); imgEl.setAttribute('data-name','selfie-image.json'); } catch {}
+  imgEl.textContent = JSON.stringify(image, null, 2);
 
-    // Clear runtime UI (outliners, toasts, editor widgets)
-    const ws = clone.querySelector('#workspace');
-    if (ws) ws.innerHTML = '';
+  // Clear runtime UI (outliners, toasts, editor widgets)
+  const ws = clone.querySelector('#workspace');
+  if (ws) ws.innerHTML = '';
 
-    const toast = clone.querySelector('#toast');
-    if (toast) { toast.textContent = ''; toast.classList.remove('show'); }
+  const toast = clone.querySelector('#toast');
+  if (toast) { toast.textContent = ''; toast.classList.remove('show'); }
 
-    // Remove CodeMirror widgets (leave textarea)
-    clone.querySelectorAll('.CodeMirror').forEach(n => n.remove());
-    const ta = clone.querySelector('#fileEditor');
-    if (ta) { ta.style.display = ''; ta.removeAttribute('data-gramm'); }
+  // Remove CodeMirror widgets (leave textarea)
+  clone.querySelectorAll('.CodeMirror').forEach(n => n.remove());
+  const ta = clone.querySelector('#fileEditor');
+  if (ta) { ta.style.display = ''; ta.removeAttribute('data-gramm'); }
 
-    return '<!doctype html>\n' + clone.outerHTML;
+  return clone;
+}
+
+function buildHtmlString() {
+  const image = gatherSystemImage();
+  const clone = prepareClone(image);
+
+  // Normal save: ensure offline marker is not present (unless this page is already offline-only).
+  if (!isOfflineBuild(document)) { try { clone.removeAttribute('data-selfie-offline'); } catch {} }
+
+  return '<!doctype html>\n' + clone.outerHTML;
+}
+
+async function fetchText(url) {
+  const res = await fetch(url, { mode: 'cors', credentials: 'omit', cache: 'force-cache' });
+  if (!res.ok) throw new Error(`Fetch failed (${res.status}) for ${url}`);
+  return await res.text();
+}
+
+function isExternalUrl(u) {
+  return typeof u === 'string' && /^https?:\/\//i.test(u);
+}
+
+function deriveDataNameFromUrl(url, fallbackExt) {
+  try {
+    const u = new URL(url);
+    const parts = (u.pathname || '').split('/').filter(Boolean);
+    let base = parts.length ? parts[parts.length - 1] : ('asset' + (fallbackExt || ''));
+    if (fallbackExt && !base.endsWith(fallbackExt)) base += fallbackExt;
+    // include hostname to avoid collisions
+    const safeHost = String(u.hostname || 'host').replace(/[^A-Za-z0-9._-]/g, '_');
+    const safeBase = String(base).replace(/[^A-Za-z0-9._-]/g, '_');
+    return `external/${safeHost}/${safeBase}`;
+  } catch {
+    const s = String(url || 'asset');
+    const safe = s.replace(/[^A-Za-z0-9._-]/g, '_');
+    return `external/${safe}${fallbackExt || ''}`;
+  }
+}
+
+async function inlineExternalAssets(clone) {
+  const doc = clone.ownerDocument;
+
+  // Inline external stylesheets (preserve order).
+  const links = Array.from(clone.querySelectorAll('link[rel="stylesheet"][href]'));
+  for (const link of links) {
+    const href = link.getAttribute('href');
+    if (!isExternalUrl(href)) continue;
+    const css = await fetchText(href);
+    const style = doc.createElement('style');
+    style.setAttribute('data-embedded-src', href);
+    // Expose embedded asset as a VM file
+    style.setAttribute('data-selfie-file', 'true');
+    style.setAttribute('data-name', deriveDataNameFromUrl(href, '.css'));
+    style.textContent = css;
+    link.replaceWith(style);
   }
 
-  function downloadHtml() {
-    const html = buildHtmlString();
-    const blob = new Blob([html], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Selfie-${nowStamp()}.html`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  // Inline external scripts (preserve order).
+  const scripts = Array.from(clone.querySelectorAll('script[src]'));
+  for (const s of scripts) {
+    const src = s.getAttribute('src');
+    if (!isExternalUrl(src)) continue;
+    const js = await fetchText(src);
+    const ns = doc.createElement('script');
+    ns.setAttribute('data-embedded-src', src);
+    // Expose embedded asset as a VM file
+    ns.setAttribute('data-selfie-file', 'true');
+    ns.setAttribute('data-name', deriveDataNameFromUrl(src, '.js'));
+    const t = s.getAttribute('type');
+    if (t) ns.setAttribute('type', t);
+    // Inline text.
+    ns.textContent = js;
+    s.replaceWith(ns);
+  }
+}
+
+async function buildHtmlStringOffline() {
+  const image = gatherSystemImage();
+  const clone = prepareClone(image);
+
+  await inlineExternalAssets(clone);
+
+  // Mark as offline build (disables normal save in UI).
+  try { clone.setAttribute('data-selfie-offline', '1'); } catch {}
+
+  return '<!doctype html>\n' + clone.outerHTML;
+}
+
+async function downloadHtml(options) {
+  const opts = options || {};
+  let mode = opts.mode || 'normal';
+
+  // If this page is already an offline build, normal save is not allowed.
+  if (isOfflineBuild(document)) mode = 'offline';
+
+  let html;
+  if (mode === 'offline') {
+    html = await buildHtmlStringOffline();
+  } else {
+    html = buildHtmlString();
   }
 
-  global.SelfieSave = {
-    buildHtmlString,
-    downloadHtml
-  };
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Selfie-${nowStamp()}${mode === 'offline' ? '-offline' : ''}.html`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+global.SelfieSave = {
+  isOfflineBuild,
+  buildHtmlString,
+  buildHtmlStringOffline,
+  downloadHtml
+};
 })(window);
   </script>
   <script type="application/x-selfie-script" data-selfie-file="true" data-name="selfie_shell.js">
@@ -5614,8 +5856,17 @@ $('#btnToggleLines').addEventListener('click', (ev) => {
   function listFileElements() {
     const styles = Array.from(document.querySelectorAll('style[data-selfie-file="true"][data-name]'))
       .map(el => ({ kind: 'style', name: el.dataset.name, el }));
-    const scripts = Array.from(document.querySelectorAll('script[type="application/x-selfie-script"][data-selfie-file="true"][data-name]'))
-      .map(el => ({ kind: 'script', name: el.dataset.name, el }));
+
+    const scripts = Array.from(document.querySelectorAll('script[data-selfie-file="true"][data-name]'))
+      .map(el => {
+        const name = el.dataset.name;
+        const t = String(el.getAttribute('type') || '').toLowerCase();
+        let kind = 'js';
+        if (t === 'application/x-selfie-script') kind = 'script';
+        else if (t === 'application/json' || String(name || '').toLowerCase().endsWith('.json')) kind = 'json';
+        return ({ kind, name, el });
+      });
+
     const all = styles.concat(scripts);
     all.sort((a,b) => (a.kind===b.kind ? a.name.localeCompare(b.name) : a.kind.localeCompare(b.kind)));
     return all;
@@ -5709,9 +5960,28 @@ $('#btnToggleLines').addEventListener('click', (ev) => {
       mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
       const btnSaveSystem = $('#btnSaveSystem');
-      if (btnSaveSystem) btnSaveSystem.addEventListener('click', () => {
-        if (global.SelfieSave) global.SelfieSave.downloadHtml();
-        else alert('SelfieSave not loaded.');
+      if (btnSaveSystem) btnSaveSystem.addEventListener('click', async () => {
+        if (!global.SelfieSave) { alert('SelfieSave not loaded.'); return; }
+
+        try {
+          const offlineOnly = global.SelfieSave.isOfflineBuild && global.SelfieSave.isOfflineBuild(document);
+          if (offlineOnly) {
+            await global.SelfieSave.downloadHtml({ mode: 'offline' });
+            return;
+          }
+
+          // Two options:
+          // - OK: save for offline use (embed external libraries)
+          // - Cancel: normal save
+          const wantOffline = window.confirm(
+            'Save system\n\nOK = Save for offline use (embed external libraries)\nCancel = Normal save'
+          );
+
+          await global.SelfieSave.downloadHtml({ mode: wantOffline ? 'offline' : 'normal' });
+        } catch (e) {
+          const msg = (e && e.message) ? e.message : String(e);
+          alert('Save failed: ' + msg);
+        }
       });
 
       const btnAddScript = $('#btnAddScript');
@@ -5737,7 +6007,8 @@ $('#btnToggleLines').addEventListener('click', (ev) => {
       if (btnFileExport) btnFileExport.addEventListener('click', () => this.exportActive());
 
       this.refreshList();
-      this.selectByName('Selfie.html', true);
+      // Default view is a small, editable file (avoids generating full HTML on tab switch).
+      this.selectByName('selfie_help.js', false);
     },
 
     refreshList() {
@@ -5894,7 +6165,7 @@ $('#btnToggleLines').addEventListener('click', (ev) => {
       try { f.el.remove(); } catch {}
       this.active = null;
       this.refreshList();
-      this.selectByName('Selfie.html', true);
+      this.selectByName('selfie_help.js', false);
     },
 
     async handleDrop(ev) {

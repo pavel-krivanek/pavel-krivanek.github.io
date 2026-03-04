@@ -1982,8 +1982,6 @@ const jsObj = vm.newObject('js');
 jsObj.kind = 'oddball';
 vm.addSlot(jsObj, 'parent', traitsOddball, { isParent: true });
 vm.addSlot(globals, 'js', jsObj);
-vm.jsObj = jsObj;
-
 vm.addSlot(jsObj, 'evaluate:', makePrimitiveMethod('evaluate:', ['code']));
 vm.addSlot(jsObj, 'log:', makePrimitiveMethod('jsLog:', ['value']));
 
@@ -2231,7 +2229,7 @@ if (selectorName === 'removeSlot:' && args.length === 1 && receiver && receiver.
 
 
 // JavaScript bridge (globals.js)
-if (receiver === vm.jsObj) {
+// Note: do not gate on null /* vm_jsObj removed */ identity; primitives work for any receiver.
   if (selectorName === 'evaluate:' && args.length === 1) {
     const a0 = args[0];
     const code = (a0 && typeof a0 === 'object' && a0.kind === 'string') ? String(a0.jsValue ?? '') : null;
@@ -2257,7 +2255,6 @@ if (receiver === vm.jsObj) {
     }
     return { handled: true, value: receiver };
   }
-}
 
 return { handled: false, value: null };
     }
@@ -3361,8 +3358,7 @@ case 'ResendSend': {
       vm.falseObj = vm.getSlotValue(globals2, 'false');
       vm.nil = vm.getSlotValue(globals2, 'nil');
       vm.outlinerObject = vm.getSlotValue(globals2, 'outlinerObject');
-      vm.jsObj = vm.getSlotValue(globals2, 'js');
-    } catch { /* ignore */ }
+    } catch (e) { console.error('Image load: failed to reconnect VM convenience refs', e); }
 
 
 

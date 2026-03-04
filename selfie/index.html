@@ -183,6 +183,16 @@ html, body {
 .toolbar__left { display: flex; gap: 10px; align-items: baseline; }
 .toolbar__hint { color: var(--muted); font-size: 12px; }
 .toolbar__right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.toolbar__offline{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size: 12px;
+  color: var(--muted);
+  max-width: 520px;
+}
+.toolbar__offline input{ margin: 0; }
+
 
 .toolbar__search {
   width: min(420px, 40vw);
@@ -780,9 +790,14 @@ html, body {
     <div class="toolbar__right">
       <input id="search" class="toolbar__search" type="search" placeholder="Find object by label or id (e.g. lobby, #3)" />
       <button id="btnOpenLobby" class="btn">Open lobby</button>
-      <button id="btnOpenGlobals" class="btn">Open globals</button>      <button id="btnNewObject" class="btn">New outliner</button>
+      <button id="btnNewObject" class="btn">New outliner</button>
       <button id="btnSaveImage" class="btn">Save image</button>
       <button id="btnSaveSystem" class="btn">Save system</button>
+      <label class="toolbar__offline" title="Saves the system with external libraries which makes the file bigger but usable without internet">
+        <input id="chkSaveOffline" type="checkbox" />
+        <span>Offline</span>
+      </label>
+      <button id="btnRunTests" class="btn">Run tests</button>
       <button id="btnHelpTop" class="btn">Help</button>
       <button id="btnToggleLines" class="btn">Hide lines</button>
       <button id="btnTheme" class="btn">Theme: system</button>
@@ -5516,11 +5531,21 @@ _renderSlotRow(holderObj, slot) {
   // ---------------------------------------------------------------------------
 
   $('#btnOpenLobby').addEventListener('click', () => Outliners.open(vm.lobby));
-  $('#btnOpenGlobals').addEventListener('click', () => {
-    const g = getGlobals();
-    if (g) Outliners.open(g);
-  });
 
+  const btnRunTests = $('#btnRunTests');
+  if (btnRunTests) btnRunTests.addEventListener('click', () => {
+    try {
+      const globals = getGlobals();
+      if (!globals) { toast('Globals not available', 'error'); return; }
+      const suite = vm.getSlotValue(globals, 'simpleTestSuite');
+      if (!suite) { toast('simpleTestSuite not found', 'error'); return; }
+      vm.send(suite, 'runTests', []);
+    } catch (e) {
+      console.error('Run tests failed:', e);
+      toast(e instanceof Error ? e.message : String(e), 'error');
+      if (e instanceof VMError) openErrorReport(e);
+    }
+  });
   $('#btnNewObject').addEventListener('click', () => {
     let obj = null;
     try {
@@ -6043,29 +6068,30 @@ global.SelfieSave = {
       const mo = new MutationObserver(() => {
         if (this.cm) this.cm.setOption('theme', cmThemeFromDoc());
       });
-      mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+      mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });      const chkSaveOffline = $('#chkSaveOffline');
+
+      // If this build was produced as an offline system, keep it offline and lock the checkbox.
+      let offlineOnly = false;
+      try {
+        offlineOnly = !!(global.SelfieSave && global.SelfieSave.isOfflineBuild && global.SelfieSave.isOfflineBuild(document));
+      } catch (e) {
+        console.error('Offline-build detection failed:', e);
+      }
+      if (chkSaveOffline) {
+        chkSaveOffline.checked = offlineOnly;
+        chkSaveOffline.disabled = offlineOnly;
+      }
 
       const btnSaveSystem = $('#btnSaveSystem');
       if (btnSaveSystem) btnSaveSystem.addEventListener('click', async () => {
         if (!global.SelfieSave) { alert('SelfieSave not loaded.'); return; }
 
         try {
-          const offlineOnly = global.SelfieSave.isOfflineBuild && global.SelfieSave.isOfflineBuild(document);
-          if (offlineOnly) {
-            await global.SelfieSave.downloadHtml({ mode: 'offline' });
-            return;
-          }
-
-          // Two options:
-          // - OK: save for offline use (embed external libraries)
-          // - Cancel: normal save
-          const wantOffline = window.confirm(
-            'Save system\n\nOK = Save for offline use (embed external libraries)\nCancel = Normal save'
-          );
-
+          const wantOffline = offlineOnly || (chkSaveOffline && chkSaveOffline.checked);
           await global.SelfieSave.downloadHtml({ mode: wantOffline ? 'offline' : 'normal' });
         } catch (e) {
           const msg = (e && e.message) ? e.message : String(e);
+          console.error('Save system failed:', e);
           alert('Save failed: ' + msg);
         }
       });

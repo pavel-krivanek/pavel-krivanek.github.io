@@ -400,6 +400,55 @@ html, body {
 }
 .slotName[contenteditable="true"]:focus { background: rgba(138,180,248,.12); outline: none; }
 
+/* Parent slot marker (Self-style): show star after slot name. */
+.slotRow.isParentSlot .slotName::after {
+  content: '*';
+  margin-left: 2px;
+  color: var(--muted);
+  opacity: 0.75;
+}
+
+/* Inline method editor (shown when slot controls are expanded). */
+.slotMethodEditor {
+  display: none;
+  margin-top: 4px;
+  border-top: 1px dashed var(--stroke);
+  padding-top: 6px;
+}
+.slotRow[data-controls="open"] .slotMethodEditor { display: block; }
+.methodEditorBar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.methodEditorHint {
+  font-size: 11px;
+  color: var(--muted);
+}
+.methodEditorTa {
+  width: 100%;
+  min-height: 130px;
+  resize: vertical;
+  padding: 8px;
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  background: var(--field-bg);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--text);
+  caret-color: var(--text);
+}
+.methodEditorTa:focus {
+  outline: none;
+  background: var(--field-bg);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), .25);
+}
+
+
 .slotValue { min-width: 0; display: flex; align-items: center; gap: 8px; }
 
 .slotValueChip {
@@ -3698,6 +3747,14 @@ function openErrorReport(err) {
     }
   }
 
+  function formatSlotValue(value) {
+    if (value === vm.nil) return 'nil';
+    if (value === vm.trueObj) return 'true';
+    if (value === vm.falseObj) return 'false';
+    if (value === vm.lobby) return 'lobby';
+    return safeDescribe(value);
+  }
+
   function findObjectById(id) {
     const n = Number(id);
     if (!Number.isFinite(n)) return null;
@@ -3734,6 +3791,7 @@ function openErrorReport(err) {
     if (raw === 'nil') return { ok: true, value: vm.nil };
     if (raw === 'true') return { ok: true, value: vm.trueObj };
     if (raw === 'false') return { ok: true, value: vm.falseObj };
+    if (raw === 'lobby') return { ok: true, value: vm.lobby };
     if (raw === 'undefined') return { ok: true, value: undefined };
 
     if (raw.startsWith('#') && raw.length > 1 && !/^#\d+$/.test(raw)) {
@@ -4679,6 +4737,8 @@ remove(srcId, slotName) {
       this._codeView = 'source'; // for method templates
       this._methodHeader = '';
       this._methodSource = '';
+      this._inlineMethodText = new Map();
+      this._slotControlsOpen = new Map();
 
       this.root = el('div', { class: 'outliner', tabindex: '0' });
 
@@ -4750,7 +4810,8 @@ remove(srcId, slotName) {
         const dx = ev.clientX - startX;
         const dy = ev.clientY - startY;
         this.root.style.left = `${Math.max(-20, startLeft + dx)}px`;
-        this.root.style.top = `${Math.max(40, startTop + dy)}px`;
+        // Allow windows to reach the workspace top (flush under the toolbar).
+        this.root.style.top = `${Math.max(0, startTop + dy)}px`;
         Links.schedule();
       };
 
@@ -5258,20 +5319,24 @@ remove(srcId, slotName) {
       const row = el('div', { class: 'slotRow', dataset: { slotName: stableKey } });
       const stripe = el('div', { class: 'slotStripe', dataset: { kind: 'indexed' }, title: 'indexed' });
 
-      row.dataset.controls = 'closed';
-      const toggleBtn = el('button', { class: 'slotToggle', title: 'Show/hide slot controls' }, '▾');
+      const slotKey = stableKey;
+      const open0 = this._slotControlsOpen.get(slotKey) === true;
+      row.dataset.controls = open0 ? 'open' : 'closed';
+      const toggleBtn = el('button', { class: 'slotToggle', title: 'Show/hide slot controls' }, open0 ? '▴' : '▾');
       toggleBtn.addEventListener('click', (ev) => {
         ev.preventDefault();
         ev.stopPropagation();
         const open = row.dataset.controls === 'open';
         row.dataset.controls = open ? 'closed' : 'open';
         toggleBtn.textContent = open ? '▾' : '▴';
+        if (open) this._slotControlsOpen.delete(slotKey);
+        else this._slotControlsOpen.set(slotKey, true);
       });
 
       const nameEl = el('div', { class: 'slotName', contenteditable: 'false' }, String(displayIndex));
 
       const valueWrap = el('div', { class: 'slotValue' });
-      const valueChip = el('div', { class: 'slotValueChip', contenteditable: 'true', spellcheck: 'false' }, safeDescribe(curValue));
+      const valueChip = el('div', { class: 'slotValueChip', contenteditable: 'true', spellcheck: 'false' }, formatSlotValue(curValue));
 
       valueChip.addEventListener('keydown', (ev) => {
         if (ev.key === 'Enter') { ev.preventDefault(); valueChip.blur(); }
@@ -5279,10 +5344,10 @@ remove(srcId, slotName) {
 
       valueChip.addEventListener('blur', () => {
         const parsed = parseValueText(valueChip.textContent);
-        if (!parsed.ok) { toast(parsed.error, 'error'); valueChip.textContent = safeDescribe(curValue); return; }
+        if (!parsed.ok) { toast(parsed.error, 'error'); valueChip.textContent = formatSlotValue(curValue); return; }
         vm._tryPrimitiveSend(holderObj, 'indexedAtPut', [vm.makeNumber(displayIndex), parsed.value]);
         if (entry && typeof entry === 'object' && 'value' in entry) entry.value = parsed.value;
-        valueChip.textContent = safeDescribe(parsed.value);
+        valueChip.textContent = formatSlotValue(parsed.value);
         if (parsed.value && typeof parsed.value === 'object' && typeof parsed.value.id === 'number') Links.setTarget(holderObj.id, stableKey, parsed.value.id);
         else Links.setTarget(holderObj.id, stableKey, NaN);
         Links.schedule();
@@ -5363,7 +5428,9 @@ remove(srcId, slotName) {
 
 _renderSlotRow(holderObj, slot) {
       const slotName = slot.name;
+      const isMethod = !!(slot.value && typeof slot.value === 'object' && slot.value.kind === 'methodTemplate');
       const row = el('div', { class: 'slotRow', dataset: { slotName } });
+      if (slot.isParent) row.classList.add('isParentSlot');
 
       const stripeKind = (() => {
         if (slotName === '(lexicalParent)') return 'lexical';
@@ -5372,7 +5439,7 @@ _renderSlotRow(holderObj, slot) {
         if (slot.isParent) return 'parent';
         if (slot.isArgument) return 'arg';
         if (slot.isReadWrite) return 'rw';
-        if (slot.value && typeof slot.value === 'object' && slot.value.kind === 'methodTemplate') return 'method';
+        if (isMethod) return 'method';
         return 'data';
       })();
 
@@ -5399,7 +5466,7 @@ _renderSlotRow(holderObj, slot) {
       });
 
       const valueWrap = el('div', { class: 'slotValue' });
-      const valueChip = el('div', { class: 'slotValueChip', contenteditable: 'true', spellcheck: 'false' }, safeDescribe(slot.value));
+      const valueChip = el('div', { class: 'slotValueChip', contenteditable: 'true', spellcheck: 'false' }, formatSlotValue(slot.value));
 
       valueChip.addEventListener('keydown', (ev) => {
         if (ev.key === 'Enter') { ev.preventDefault(); valueChip.blur(); }
@@ -5409,11 +5476,11 @@ _renderSlotRow(holderObj, slot) {
         const parsed = parseValueText(valueChip.textContent);
         if (!parsed.ok) {
           toast(parsed.error, 'error');
-          valueChip.textContent = safeDescribe(slot.value);
+          valueChip.textContent = formatSlotValue(slot.value);
           return;
         }
         slot.value = parsed.value;
-        valueChip.textContent = safeDescribe(slot.value);
+        valueChip.textContent = formatSlotValue(slot.value);
         if (slot.value && typeof slot.value === 'object' && typeof slot.value.id === 'number') {
           Links.setTarget(holderObj.id, slotName, slot.value.id);
         } else {
@@ -5441,7 +5508,7 @@ _renderSlotRow(holderObj, slot) {
         if (obj) {
           ev.preventDefault();
           slot.value = obj;
-          valueChip.textContent = safeDescribe(slot.value);
+          valueChip.textContent = formatSlotValue(slot.value);
           Links.setTarget(holderObj.id, slotName, obj.id);
           Links.setVisible(holderObj.id, slotName, true);
           Links.schedule();
@@ -5459,17 +5526,24 @@ _renderSlotRow(holderObj, slot) {
 
       valueWrap.appendChild(valueChip);
 
-      const flags = el('div', { class: 'slotFlags' },
-        el('label', { class: 'flag' }, el('input', { type: 'checkbox', checked: slot.isParent ? 'checked' : null }), 'parent'),
-        el('label', { class: 'flag' }, el('input', { type: 'checkbox', checked: slot.isArgument ? 'checked' : null }), 'arg'),
-        el('label', { class: 'flag' }, el('input', { type: 'checkbox', checked: slot.isLiteral ? 'checked' : null }), 'lit'),
-        el('label', { class: 'flag', title: 'Read/write slot' }, el('input', { type: 'checkbox', checked: slot.isReadWrite ? 'checked' : null }), 'rw')
-      );
-      const flagInputs = flags.querySelectorAll('input');
-      flagInputs[0].addEventListener('change', () => { slot.isParent = flagInputs[0].checked; });
-      flagInputs[1].addEventListener('change', () => { slot.isArgument = flagInputs[1].checked; });
-      flagInputs[2].addEventListener('change', () => { slot.isLiteral = flagInputs[2].checked; });
-      flagInputs[3].addEventListener('change', () => { slot.isReadWrite = !!flagInputs[3].checked; });
+      let flags = null;
+      if (!isMethod) {
+        flags = el('div', { class: 'slotFlags' },
+          el('label', { class: 'flag' }, el('input', { type: 'checkbox', checked: slot.isParent ? 'checked' : null }), 'parent'),
+          el('label', { class: 'flag' }, el('input', { type: 'checkbox', checked: slot.isArgument ? 'checked' : null }), 'arg'),
+          el('label', { class: 'flag' }, el('input', { type: 'checkbox', checked: slot.isLiteral ? 'checked' : null }), 'lit'),
+          el('label', { class: 'flag', title: 'Read/write slot' }, el('input', { type: 'checkbox', checked: slot.isReadWrite ? 'checked' : null }), 'rw')
+        );
+        const flagInputs = flags.querySelectorAll('input');
+        flagInputs[0].addEventListener('change', () => {
+          slot.isParent = flagInputs[0].checked;
+          row.classList.toggle('isParentSlot', slot.isParent);
+        });
+        flagInputs[1].addEventListener('change', () => { slot.isArgument = flagInputs[1].checked; });
+        flagInputs[2].addEventListener('change', () => { slot.isLiteral = flagInputs[2].checked; });
+        flagInputs[3].addEventListener('change', () => { slot.isReadWrite = !!flagInputs[3].checked; });
+      }
+
 
       const actions = el('div', { class: 'slotActions' });
 
@@ -5556,15 +5630,19 @@ _renderSlotRow(holderObj, slot) {
         else Links.setVisible(holderObj.id, slotName, true);
         Links.schedule();
       });
-      row.dataset.controls = 'closed';
+      const slotKey = slotName;
+      const open0 = this._slotControlsOpen.get(slotKey) === true;
+      row.dataset.controls = open0 ? 'open' : 'closed';
 
-      const toggleBtn = el('button', { class: 'slotToggle', title: 'Show/hide slot controls' }, '▾');
+      const toggleBtn = el('button', { class: 'slotToggle', title: 'Show/hide slot controls' }, open0 ? '▴' : '▾');
       toggleBtn.addEventListener('click', (ev) => {
         ev.preventDefault();
         ev.stopPropagation();
         const open = row.dataset.controls === 'open';
         row.dataset.controls = open ? 'closed' : 'open';
         toggleBtn.textContent = open ? '▾' : '▴';
+        if (open) this._slotControlsOpen.delete(slotKey);
+        else this._slotControlsOpen.set(slotKey, true);
       });
 
       const top = el('div', { class: 'slotTop' },
@@ -5576,7 +5654,109 @@ _renderSlotRow(holderObj, slot) {
 
       const bottom = el('div', { class: 'slotBottom' }, flags, actions);
 
+      let methodEditor = null;
+      if (isMethod) {
+        const mt = slot.value;
+        const cacheKey = `${holderObj.id}:${slotName}`;
+        const header = this._formatMethodHeader(mt) || slotName;
+        const body = String(mt.source || '');
+        const defaultText = `${header}\n${body}`;
+        const initText = this._inlineMethodText.has(cacheKey) ? this._inlineMethodText.get(cacheKey) : defaultText;
+
+        const ta = el('textarea', { class: 'methodEditorTa', spellcheck: 'false' }, initText);
+        ta.addEventListener('input', () => { this._inlineMethodText.set(cacheKey, ta.value); });
+
+        const btnCompile = el('button', { class: 'smallBtn', title: 'Compile & install (Ctrl+Enter)' }, 'Compile');
+        const bar = el('div', { class: 'methodEditorBar' }, btnCompile);
+
+        methodEditor = el('div', { class: 'slotMethodEditor' }, bar, ta);
+
+        ta.addEventListener('keydown', (ev) => {
+          if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') {
+            ev.preventDefault();
+            btnCompile.click();
+          }
+        });
+
+        btnCompile.addEventListener('click', () => {
+          try {
+            const raw = String(ta.value || '').replace(/\r\n/g, '\n');
+            const lines = raw.split('\n');
+            const headerLine = (lines.shift() || '').trim();
+            const bodySource = lines.join('\n');
+            if (!headerLine) { toast('Method header (first line) is empty.', 'error'); return; }
+
+            const spec = compileSourceToMethodSpec(bodySource, { isMethod: true, headerText: headerLine });
+
+            const holder = holderObj;
+            const oldName = slotName;
+            const newName = spec.selector;
+
+            if (!vm.hasSlot(holder, oldName)) throw new VMError(`Holder slot '${oldName}' no longer exists.`);
+
+            if (newName !== oldName) {
+              if (vm.hasSlot(holder, newName)) throw new VMError(`Cannot rename: holder already has slot '${newName}'.`);
+
+              holder.slots[newName] = Object.assign({}, holder.slots[oldName], { name: newName });
+              delete holder.slots[oldName];
+
+              // migrate link state
+              const oldKey = Links.key(holder.id, oldName);
+              const ent = Links.entries.get(oldKey);
+              if (ent) {
+                Links.entries.delete(oldKey);
+                ent.slotName = newName;
+                Links.entries.set(Links.key(holder.id, newName), ent);
+              }
+            }
+
+            const mt2 = holder.slots[newName].value;
+            if (!mt2 || typeof mt2 !== 'object' || mt2.kind !== 'methodTemplate') throw new VMError('Slot value is not a method template.');
+
+            mt2.label = spec.selector;
+            mt2.selectorHint = spec.selector;
+            mt2.source = spec.source;
+            mt2.bytecode = spec.bytecode;
+            mt2.instructions = vm.compileBytecode(mt2.bytecode);
+            mt2.argNames = spec.argNames.slice();
+
+            // Rebuild slots: parent/self + args + temps + literals
+            const parentSlotName = mt2.activationParentSlotName || 'self';
+            mt2.slots = Object.create(null);
+            vm.addSlot(mt2, parentSlotName, null, { isParent: true, isArgument: true });
+            for (const a of spec.argNames) vm.addSlot(mt2, a, null, { isArgument: true });
+            for (const t of (spec.tempNames || [])) {
+              if (!vm.hasSlot(mt2, t)) vm.addSlot(mt2, t, vm.nil, { isReadWrite: true });
+            }
+            for (const lit of (spec.literals || [])) {
+              vm.intern(lit.slotName);
+              vm.addSlot(mt2, lit.slotName, lit.value, { isLiteral: true, literalKind: lit.kind === 'block' ? 'block' : 'constant' });
+            }
+
+            holder.slots[newName].value = mt2;
+
+            const newText = `${spec.headerDisplay || spec.selector}\n${spec.source || ''}`;
+            const oldCacheKey = cacheKey;
+            const newCacheKey = `${holder.id}:${newName}`;
+            this._inlineMethodText.delete(oldCacheKey);
+            this._inlineMethodText.set(newCacheKey, newText);
+
+            // Keep this slot expanded after compile.
+            this._slotControlsOpen.set(newName, true);
+            if (newName !== oldName) this._slotControlsOpen.delete(oldName);
+
+            Links.schedule();
+            this.render();
+            toast('Compiled & installed.', 'ok');
+          } catch (e) {
+            const msg = e instanceof Error ? e.message : String(e);
+            toast(`Compile error: ${msg}`, 'error');
+          }
+        });
+      }
+
       row.append(stripe, top, bottom);
+      if (methodEditor) row.appendChild(methodEditor);
 
       return row;
     }

@@ -1113,7 +1113,7 @@ describeValue(value) {
       for (const line of lines) {
         const parts = line.split(/\s+/);
         const op = parts[0];
-        if (op === 'pushSelf' || op === 'pop' || op === 'returnTop' || op === 'dup') {
+        if (op === 'pushSelf' || op === 'pop' || op === 'returnTop' || op === 'nlrReturnTop' || op === 'dup') {
           instructions.push({ op, source: line });
           continue;
         }
@@ -1529,17 +1529,16 @@ case 'resendFrom': {
   }
   break;
 }
-          case 'returnTop': {
+          case 'nlrReturnTop': {
             const v = popValue();
-            if (activation._homeActivation && activation._homeActivation !== activation) {
-              const home = activation._homeActivation;
-              if (!home || home._isLive === false) {
-                throw new ContextExpired('ContextExpired: home activation is no longer live.');
-              }
-              throw new NonLocalReturn(v, home);
+            const home = activation._homeActivation || activation;
+            if (!home || home._isLive === false) {
+              throw new ContextExpired('ContextExpired: home activation is no longer live.');
             }
-            return v;
+            throw new NonLocalReturn(v, home);
           }
+          case 'returnTop':
+            return popValue();
           default:
             throw new VMError(`Unknown instruction op '${ins.op}'.`);
         }
@@ -2351,11 +2350,10 @@ function scan(src) {
         continue;
       }
 
-      // number
-      if (isDigit(c) || ((c === '+' || c === '-') && isDigit(s[i + 1]))) {
+      // number (unsigned; unary + / - is handled by the parser)
+      if (isDigit(c)) {
         const start = i;
         let j = i;
-        if (s[j] === '+' || s[j] === '-') j++;
         while (j < s.length && isDigit(s[j])) j++;
         if (s[j] === '.') {
           let k = j + 1;
@@ -2422,7 +2420,7 @@ function scan(src) {
 
   keywordSend    ::= binary ( (IDENT ':' binary)+ )?
   binary         ::= unary ( BINOP unary )*
-  unary          ::= primary ( IDENT )*
+  unary          ::= (('+' | '-') unary)? primary ( IDENT )*
 
   primary        ::= resendSend
                    | NUMBER
@@ -2570,8 +2568,11 @@ class Parser {
 
     parseBinary() {
       let left = this.parseUnary();
-      while (this.peek().type === 'BINOP') {
-        const op = this.next().value;
+      // In Self, '|' is a valid binary selector character, but this lexer
+      // tokenizes it as BAR to support temp declarations like: | x y |
+      // Allow BAR to act as a binary operator token in expression context.
+      while (this.peek().type === 'BINOP' || this.peek().type === 'BAR') {
+        const op = this.next().value; // BINOP value or '|' for BAR
         const right = this.parseUnary();
         left = { type: 'BinarySend', op, recv: left, arg: right };
       }
@@ -2579,6 +2580,13 @@ class Parser {
     }
 
     parseUnary() {
+      // prefix unary + / - (right-associative; binds tighter than binary messages)
+      if (this.peek().type === 'BINOP' && (this.peek().value === '+' || this.peek().value === '-')) {
+        const op = this.next().value;
+        const expr = this.parseUnary();
+        return { type: 'UnaryPrefix', op, expr };
+      }
+
       let node = this.parsePrimary();
       while (this.peek().type === 'IDENT' && this.lookahead().type !== 'COLON') {
         const sel = this.next().value;
@@ -2887,8 +2895,9 @@ function blockValueSelectorForArity(n) {
   }
 
   class Compiler {
-    constructor(env) {
+    constructor(env, opts) {
       this.env = env;
+      this.isBlock = !!(opts && opts.isBlock);
       this.lines = [];
       this.literals = [];
       this.litCount = 0;
@@ -2925,7 +2934,7 @@ function blockValueSelectorForArity(n) {
 
         if (st.type === 'Return') {
           this.compileExpr(st.expr);
-          this.emit('returnTop');
+          this.emit(this.isBlock ? 'nlrReturnTop' : 'returnTop');
           return;
         }
 
@@ -2973,6 +2982,22 @@ case 'ResendSend': {
           this.emit(`send ${node.sel}`);
           return;
         }
+        case 'UnaryPrefix': {
+          if (node.op === '+') {
+            this.compileExpr(node.expr);
+            return;
+          }
+          if (node.op === '-') {
+            // Compile as: 0 - expr  (arg first, receiver last)
+            this.compileExpr(node.expr);
+            const zero = this.env.vm.makeNumber(0);
+            const slot = this.addLiteral('constant', zero);
+            this.pushLiteralSlot(slot);
+            this.emit('send - 1');
+            return;
+          }
+          throw new Error(`Unsupported unary prefix '${node.op}'`);
+        }
         case 'BinarySend': {
           this.compileExpr(node.arg);
           this.compileExpr(node.recv);
@@ -2987,7 +3012,7 @@ case 'ResendSend': {
           return;
         }
         case 'Block': {
-          const inner = new Compiler(this.env);
+          const inner = new Compiler(this.env, { isBlock: true });
           inner.compileStatements(node.statements);
           const bytecode = inner.lines.join('\n');
           const valueSelector = blockValueSelectorForArity((node.argNames || []).length);
@@ -3149,9 +3174,56 @@ case 'ResendSend': {
     const objects = [];
     let maxId = 0;
     let maxIndexedId = 0;
+
+    // Persist activation objects only if they are reachable from the persistent heap
+    // (e.g. stored block closures capturing their lexical parent context).
+    const byId = new Map();
+    for (const o of vm.objects) {
+      if (o && typeof o === 'object' && typeof o.id === 'number') byId.set(o.id, o);
+    }
+
+    const keepActivations = new Set();
+
+    const noteActivationRefs = (containerObj) => {
+      if (!containerObj || typeof containerObj !== 'object') return;
+      const slotNames = containerObj.slots ? Object.keys(containerObj.slots) : [];
+      for (const name of slotNames) {
+        const s = containerObj.slots[name];
+        if (!s) continue;
+        const v = s.value;
+        if (isVmObject(v) && v.kind === 'activation') keepActivations.add(v.id);
+      }
+      if (Array.isArray(containerObj.indexedSlots)) {
+        for (const e of containerObj.indexedSlots) {
+          const v = e && e.value;
+          if (isVmObject(v) && v.kind === 'activation') keepActivations.add(v.id);
+        }
+      }
+    };
+
+    // Seed from all non-activation objects.
+    for (const o of vm.objects) {
+      if (!o || typeof o !== 'object') continue;
+      if (o.kind === 'activation') continue;
+      noteActivationRefs(o);
+    }
+
+    // Closure lexical chains can point to activations that point to other activations (nested blocks).
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const id of Array.from(keepActivations)) {
+        const act = byId.get(id);
+        if (!act) continue;
+        const before = keepActivations.size;
+        noteActivationRefs(act);
+        if (keepActivations.size !== before) changed = true;
+      }
+    }
+
     for (const obj of vm.objects) {
       if (!obj || typeof obj !== 'object') continue;
-      if (obj.kind === 'activation') continue; // ephemeral
+      if (obj.kind === 'activation' && !keepActivations.has(obj.id)) continue;
       maxId = Math.max(maxId, obj.id || 0);
 
       const rec = {
@@ -3320,6 +3392,22 @@ for (const o of vm.objects) {
   }
   if (Array.isArray(o.indexedSlots)) {
     for (const e of o.indexedSlots) e.value = rewrite(e.value);
+  }
+}
+
+
+
+// Restore non-slot runtime pointers for persisted closures/contexts.
+for (const o of vm.objects) {
+  if (!o || typeof o !== 'object') continue;
+  if (o.kind === 'activation') {
+    // Persisted activations are never "live" after reload.
+    // This makes non-local returns raise ContextExpired instead of escaping into nowhere.
+    o._isLive = false;
+  }
+  if (o.kind === 'blockInstance') {
+    const lpSlot = o.slots ? o.slots['(lexicalParent)'] : null;
+    o._lexicalParent = lpSlot ? lpSlot.value : null;
   }
 }
 
@@ -3728,7 +3816,9 @@ ok: (ok and: [ (1 != 1) not ]).
         `| ok |
 ok: true.
 ok: (ok and: [ (1 + 2) == 3 ]).
+ok: (ok and: [ (1+2) == 3 ]).
 ok: (ok and: [ (7 - 4) == 3 ]).
+ok: (ok and: [ (7-4) == 3 ]).
 ok: (ok and: [ (3 * 4) == 12 ]).
 ok: (ok and: [ (8 / 2) == 4 ]).
 ok: (ok and: [ (5 < 6) ]).
@@ -3923,7 +4013,7 @@ ok: (js evaluate: '(() => { const vm = SelfieRuntime.vm; const globals = vm.getS
 
 
       _installStdMethod(traitsSimpleTestSuite2, 'testStringBackslashEscapes',
-        `| ok s t u v |
+        String.raw`| ok s t u v |
 s: 'a\nb'.
 ok: (s size) == 3.
 t: '\\'.

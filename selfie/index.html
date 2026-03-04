@@ -953,9 +953,14 @@ html, body {
       this._systemContext = {
         kind: 'systemContext',
         stringTable: new Map(),
+        // Number interning uses a weak registry (when supported) to avoid keeping all seen numbers alive.
+        numberTable: new Map(),  // number -> { ref: WeakRef(obj), token } OR obj (fallback)
+        _numberWeak: false,
+        _numberFinalizer: null,
         currentActivation: null,
         activationStack: []
       };
+      this._setupNumberInterning(true);
       this.nil = this.newObject('nil');
       this.nil.kind = 'nil';
       this.lobby = this._bootstrapLobby();
@@ -971,6 +976,78 @@ html, body {
 
     get systemContext() {
       return this._systemContext;
+    }
+
+
+    _setupNumberInterning(resetTable) {
+      const sc = this.systemContext;
+      if (resetTable || !(sc.numberTable instanceof Map)) sc.numberTable = new Map();
+
+      const table = sc.numberTable;
+      const supportsWeak = (typeof WeakRef !== 'undefined');
+      sc._numberWeak = !!supportsWeak;
+
+      if (!supportsWeak) {
+        sc._numberFinalizer = null;
+        return;
+      }
+
+      if (typeof FinalizationRegistry === 'undefined') {
+        sc._numberFinalizer = null;
+        return;
+      }
+
+      // Cleanup hook: when a number object is collected, drop its registry entry (if still current).
+      sc._numberFinalizer = new FinalizationRegistry((held) => {
+        try {
+          const n = held && typeof held.n === 'number' ? held.n : Number(held && held.n);
+          const token = held ? held.token : null;
+          const e = table.get(n);
+          if (e && e.token === token) table.delete(n);
+        } catch { /* ignore */ }
+      });
+    }
+
+    _setNumberRegistryEntry(n, obj) {
+      const sc = this.systemContext;
+      const table = sc.numberTable;
+
+      if (sc._numberWeak) {
+        const token = {};
+        table.set(n, { ref: new WeakRef(obj), token });
+        if (sc._numberFinalizer) sc._numberFinalizer.register(obj, { n, token });
+      } else {
+        table.set(n, obj);
+      }
+    }
+
+    internNumber(value) {
+      const n = Number(value);
+      if (!Number.isFinite(n)) {
+        throw new VMError('Only finite numbers are supported in this demo runtime.');
+      }
+
+      const sc = this.systemContext;
+      if (!(sc.numberTable instanceof Map)) this._setupNumberInterning(true);
+
+      const entry = sc.numberTable.get(n);
+      if (entry) {
+        if (sc._numberWeak) {
+          const obj = entry.ref && typeof entry.ref.deref === 'function' ? entry.ref.deref() : null;
+          if (obj) return obj;
+          sc.numberTable.delete(n);
+        } else {
+          return entry;
+        }
+      }
+
+      const num = this.newObject(`Number(${n})`);
+      num.kind = 'number';
+      num.jsValue = n;
+      this.addSlot(num, 'parent', this.getSlotValue(this.getSlotValue(this.lobby, 'traits'), 'number'), { isParent: true });
+
+      this._setNumberRegistryEntry(n, num);
+      return num;
     }
 
 internString(text) {
@@ -1017,16 +1094,8 @@ booleanOf(cond) {
       this.objects.add(obj);
       return obj;
     }
-
     makeNumber(value) {
-      if (!Number.isFinite(value)) {
-        throw new VMError('Only finite numbers are supported in this demo runtime.');
-      }
-      const num = this.newObject(`Number(${value})`);
-      num.kind = 'number';
-      num.jsValue = value;
-      this.addSlot(num, 'parent', this.getSlotValue(this.getSlotValue(this.lobby, 'traits'), 'number'), { isParent: true });
-      return num;
+      return this.internNumber(value);
     }
 
     isNumberObject(obj) {
@@ -3319,10 +3388,15 @@ case 'ResendSend': {
     const systemContext = {
       kind: 'systemContext',
       stringTable: new Map(),
+      // Weak number registry (rebuilt after decoding, similar to stringTable).
+      numberTable: new Map(),
+      _numberWeak: false,
+      _numberFinalizer: null,
       currentActivation: null,
       activationStack: []
     };
     vm._systemContext = systemContext;
+    vm._setupNumberInterning(true);
     if (vmData.systemContext && Array.isArray(vmData.systemContext.stringTable)) {
       for (const [txt, id] of vmData.systemContext.stringTable) {
                 // stringTable is rebuilt after object graph decoding.
@@ -3377,15 +3451,24 @@ case 'ResendSend': {
 
 
 
-// Canonicalize strings by content (interning) so identity implies content equality.
-const canon = new Map();      // text -> canonical string object
+// Canonicalize strings and numbers by content (interning) so identity implies content equality.
+const canonStr = new Map();   // text -> canonical string object
+const canonNum = new Map();   // number -> canonical number object
 const remap = new Map();      // oldId -> canonical object (for duplicates)
 
 for (const o of vm.objects) {
-  if (o && o.kind === 'string') {
+  if (!o) continue;
+
+  if (o.kind === 'string') {
     const txt = String(o.jsValue ?? '');
-    const c0 = canon.get(txt);
-    if (!c0) canon.set(txt, o);
+    const c0 = canonStr.get(txt);
+    if (!c0) canonStr.set(txt, o);
+    else remap.set(o.id, c0);
+  } else if (o.kind === 'number') {
+    const n = Number(o.jsValue);
+    if (!Number.isFinite(n)) continue;
+    const c0 = canonNum.get(n);
+    if (!c0) canonNum.set(n, o);
     else remap.set(o.id, c0);
   }
 }
@@ -3406,7 +3489,10 @@ for (const o of vm.objects) {
   }
 }
 
-
+// Ensure UI restoration by saved objectId also lands on the canonical object.
+for (const [oldId, canonical] of remap.entries()) {
+  try { idToObj.set(oldId, canonical); } catch { /* ignore */ }
+}
 
 // Restore non-slot runtime pointers for persisted closures/contexts.
 for (const o of vm.objects) {
@@ -3424,7 +3510,11 @@ for (const o of vm.objects) {
 
 // Rebuild runtime string table
 systemContext.stringTable = new Map();
-for (const [txt, o] of canon.entries()) systemContext.stringTable.set(txt, o);
+for (const [txt, o] of canonStr.entries()) systemContext.stringTable.set(txt, o);
+
+// Rebuild runtime number table (weak interning, when supported)
+vm._setupNumberInterning(true);
+for (const [n, o] of canonNum.entries()) vm._setNumberRegistryEntry(n, o);
 
     const maxId = Math.max(0, ...Array.from(vm.objects).map(o => o.id || 0));
     vm._nextId = Math.max(vmData.nextId || 1, maxId + 1);

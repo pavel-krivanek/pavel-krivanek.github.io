@@ -4668,6 +4668,14 @@ remove(srcId, slotName) {
       win.root.remove();
       if (Links.focusKey === key) Links.setFocus(null);
       Links.schedule();
+    },
+
+    refresh(value) {
+      const key = identityKey(value);
+      const win = this.windows.get(key);
+      if (!win) return null;
+      win.render();
+      return win;
     }
   };
 
@@ -4739,6 +4747,11 @@ remove(srcId, slotName) {
       this._methodSource = '';
       this._inlineMethodText = new Map();
       this._slotControlsOpen = new Map();
+
+      // Temporary method slots (UI-only, not stored in the holder object)
+      this._tempMethodSlots = [];
+      this._tempMethodNextId = 1;
+      this._focusRequest = null;
 
       this.root = el('div', { class: 'outliner', tabindex: '0' });
 
@@ -4848,6 +4861,41 @@ remove(srcId, slotName) {
       this.header.replaceChildren(this._renderHeader());
       this.body.replaceChildren(this._renderBody());
       Links.schedule();
+
+      if (this._focusRequest) {
+        const req = this._focusRequest;
+        this._focusRequest = null;
+        requestAnimationFrame(() => this._applyFocusRequest(req));
+      }
+    }
+
+    _applyFocusRequest(req) {
+      try {
+        const esc = (s) => {
+          const str = String(s);
+          if (window.CSS && CSS.escape) return CSS.escape(str);
+                    return str.split('\\').join('\\\\').split('\"').join('\\\"');
+        };
+        if (!req) return;
+
+        if (req.kind === 'tempMethod') {
+          const ta = this.body.querySelector(`.slotRow[data-temp-method-id="${req.id}"] textarea`);
+          if (ta) {
+            ta.focus({ preventScroll: true });
+            try { ta.setSelectionRange(ta.value.length, ta.value.length); } catch {}
+          }
+          return;
+        }
+
+        if (req.kind === 'methodSlot' && typeof req.slotName === 'string') {
+          const sel = `.slotRow[data-slot-name="${esc(req.slotName)}"] textarea.methodEditorTa`;
+          const ta = this.body.querySelector(sel);
+          if (ta) {
+            ta.focus({ preventScroll: true });
+            try { ta.setSelectionRange(ta.value.length, ta.value.length); } catch {}
+          }
+        }
+      } catch {}
     }
 
     _renderHeader() {
@@ -4942,6 +4990,7 @@ remove(srcId, slotName) {
 
         const list = el('div', { class: 'slotList' });
         for (const name of slotNames) list.appendChild(this._renderSlotRow(v, v.slots[name]));
+        for (const tmp of (this._tempMethodSlots || [])) list.appendChild(this._renderTempMethodRow(v, tmp));
 
         const btnAddData = el('button', { class: 'smallBtn', title: 'Add new data slot' }, 'ro');
         btnAddData.addEventListener('click', () => {
@@ -4968,36 +5017,17 @@ remove(srcId, slotName) {
 
         const btnAddMethod = el('button', { class: 'smallBtn', title: 'Add new method slot' }, 'method');
         btnAddMethod.addEventListener('click', () => {
-          const headerText = prompt('New method header (unary, binary, or keyword):', 'foo');
-          if (headerText == null) return;
-          const ht = headerText.trim();
-          if (!ht) return;
-          try {
-            const h = parseMethodHeader(ht);
-            const selector = h.selector;
-            if (vm.hasSlot(v, selector)) { toast(`Slot '${selector}' already exists.`, 'error'); return; }
-            // default empty method returns self
-            const defaultSrc = 'self';
-            const spec = compileSourceToMethodSpec(defaultSrc, { isMethod: true, headerText: ht });
-            const mt = vm.newMethodTemplate({
-              label: spec.selector,
-              selectorHint: spec.selector,
-              argNames: spec.argNames,
-              literals: spec.literals,
-              bytecode: spec.bytecode
-            });
-            mt.source = '';
-            // temp slots
-            for (const t of (spec.tempNames || [])) { if (!vm.hasSlot(mt, t)) vm.addSlot(mt, t, vm.nil, { isReadWrite: true }); }
+          const id = this._tempMethodNextId++;
+          const tmp = { id, text: 'foo\nself' };
+          this._tempMethodSlots.push(tmp);
 
-            vm.addSlot(v, selector, mt);
-            this.render();
-            Outliners.open(mt, { x: parseFloat(this.root.style.left) + 24, y: parseFloat(this.root.style.top) + 24 }, { holderId: v.id, slotName: selector });
-          } catch (e) {
-            const msg = e instanceof Error ? e.message : String(e);
-            toast(`Header error: ${msg}`, 'error');
-          }
+          // Keep temp slot expanded and focus its editor.
+          this._slotControlsOpen.set(`__tempMethod:${id}`, true);
+          this._focusRequest = { kind: 'tempMethod', id };
+
+          this.render();
         });
+
         const indexed = this._renderIndexedSection(v);
         const evaluator = this._renderEvaluator(v);
 
@@ -5423,6 +5453,119 @@ remove(srcId, slotName) {
       const bottom = el('div', { class: 'slotBottom' }, actions);
 
       row.append(stripe, top, bottom);
+      return row;
+    }
+
+
+    _renderTempMethodRow(holderObj, tmp) {
+      const tmpId = tmp && Number.isFinite(tmp.id) ? tmp.id : 0;
+      const tmpKey = `__tempMethod:${tmpId}`;
+
+      const row = el('div', { class: 'slotRow', dataset: { tempMethodId: String(tmpId) } });
+      const stripe = el('div', { class: 'slotStripe', dataset: { kind: 'method' }, title: 'method' });
+
+      const open0 = this._slotControlsOpen.get(tmpKey) === true;
+      row.dataset.controls = open0 ? 'open' : 'closed';
+      const toggleBtn = el('button', { class: 'slotToggle', title: 'Show/hide slot controls' }, open0 ? '▴' : '▾');
+      toggleBtn.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const open = row.dataset.controls === 'open';
+        row.dataset.controls = open ? 'closed' : 'open';
+        toggleBtn.textContent = open ? '▾' : '▴';
+        if (open) this._slotControlsOpen.delete(tmpKey);
+        else this._slotControlsOpen.set(tmpKey, true);
+      });
+
+      // No slot name yet (UI-only).
+      const nameEl = el('div', { class: 'slotName', contenteditable: 'false', title: 'New method (not yet installed)' }, '');
+
+      // No value / no connector handle yet.
+      const valueWrap = el('div', { class: 'slotValue' });
+      const valueChip = el('div', { class: 'slotValueChip', contenteditable: 'false', style: { opacity: '0.7' } }, '<new method>');
+      valueWrap.appendChild(valueChip);
+
+      const spacer = el('div', {});
+
+      const actions = el('div', { class: 'slotActions' });
+      const btnDel = el('button', { class: 'smallBtn danger' }, 'Del');
+      btnDel.addEventListener('click', () => {
+        if (!confirm('Discard this new method?')) return;
+        this._tempMethodSlots = (this._tempMethodSlots || []).filter(t => t !== tmp);
+        this._slotControlsOpen.delete(tmpKey);
+        this.render();
+      });
+      actions.appendChild(btnDel);
+
+      const bottom = el('div', { class: 'slotBottom' }, el('div', { class: 'slotFlags' }), actions);
+
+      // Inline editor (first line = header, rest = body). Not stored in the holder until compile succeeds.
+      const initText = typeof tmp.text === 'string' ? tmp.text : 'foo\nself';
+      const ta = el('textarea', { class: 'methodEditorTa', spellcheck: 'false' }, initText);
+      ta.addEventListener('input', () => { tmp.text = ta.value; });
+
+      const btnCompile = el('button', { class: 'smallBtn', title: 'Compile & install (Ctrl+Enter)' }, 'Compile');
+      const bar = el('div', { class: 'methodEditorBar' }, btnCompile);
+      const methodEditor = el('div', { class: 'slotMethodEditor' }, bar, ta);
+
+      ta.addEventListener('keydown', (ev) => {
+        if ((ev.ctrlKey || ev.metaKey) && ev.key === 'Enter') {
+          ev.preventDefault();
+          btnCompile.click();
+        }
+      });
+
+      btnCompile.addEventListener('click', () => {
+        try {
+          const raw = String(ta.value || '').replace(/\r\n/g, '\n');
+          const lines = raw.split('\n');
+          const headerLine = (lines.shift() || '').trim();
+          const bodySource = lines.join('\n');
+
+          if (!headerLine) { toast('Method header (first line) is empty.', 'error'); return; }
+
+          const spec = compileSourceToMethodSpec(bodySource, { isMethod: true, headerText: headerLine });
+          const selector = spec.selector;
+
+          if (vm.hasSlot(holderObj, selector)) { toast(`Slot '${selector}' already exists.`, 'error'); return; }
+
+          const mt = vm.newMethodTemplate({
+            label: spec.selector,
+            selectorHint: spec.selector,
+            argNames: spec.argNames,
+            literals: spec.literals,
+            bytecode: spec.bytecode
+          });
+          mt.source = spec.source || '';
+
+          // temp slots
+          for (const t of (spec.tempNames || [])) {
+            if (!vm.hasSlot(mt, t)) vm.addSlot(mt, t, vm.nil, { isReadWrite: true });
+          }
+
+          vm.addSlot(holderObj, selector, mt);
+
+          // Promote UI text cache to the real method slot and keep it expanded.
+          const newText = `${spec.headerDisplay || spec.selector}\n${spec.source || ''}`;
+          this._inlineMethodText.set(`${holderObj.id}:${selector}`, newText);
+          this._slotControlsOpen.set(selector, true);
+
+          // Remove this temp row.
+          this._tempMethodSlots = (this._tempMethodSlots || []).filter(t => t !== tmp);
+          this._slotControlsOpen.delete(tmpKey);
+
+          Links.schedule();
+          this._focusRequest = { kind: 'methodSlot', slotName: selector };
+          this.render();
+          toast('Compiled & installed.', 'ok');
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          toast(`Compile error: ${msg}`, 'error');
+        }
+      });
+
+      const top = el('div', { class: 'slotTop' }, toggleBtn, nameEl, valueWrap, spacer);
+      row.append(stripe, top, bottom, methodEditor);
       return row;
     }
 
@@ -5888,6 +6031,7 @@ $('#btnToggleLines').addEventListener('click', (ev) => {
     Outliners.windows.clear();
     for (const e of Links.entries.values()) {
       try { e.path.remove(); } catch {}
+      try { if (e.circle) e.circle.remove(); } catch {}
     }
     Links.entries.clear();
     Links.hiddenAll = false;

@@ -222,6 +222,65 @@ html, body {
   overflow: hidden;
 }
 
+
+.scene{
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.navPad{
+  display: grid;
+  grid-template-columns: 18px 18px 18px;
+  grid-template-rows: 18px 18px;
+  gap: 2px;
+  align-items: center;
+  justify-items: center;
+}
+.navBtn{
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--stroke);
+  background: rgba(0,0,0,.10);
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 10px;
+  line-height: 16px;
+}
+.navBtn:hover{ border-color: var(--accent); }
+.navBtn:active{ transform: translateY(1px); }
+
+/* Inverted (reverse-T) arrow cluster */
+#btnPanUp{ grid-column: 2; grid-row: 1; }
+#btnPanLeft{ grid-column: 1; grid-row: 2; }
+#btnPanDown{ grid-column: 2; grid-row: 2; }
+#btnPanRight{ grid-column: 3; grid-row: 2; }
+
+.zoomReadout{
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  padding: 0 2px;
+  min-width: 44px;
+  text-align: right;
+}
+
+.zoomPad{
+  display:flex;
+  gap: 6px;
+  align-items: center;
+}
+.zoomBtn{ font-size: 12px; }
+.zoomBtnReset{
+  width: 28px;
+  font-size: 10px;
+}
+
+
+
 .linkLayer {
   position: absolute;
   inset: 0;
@@ -838,6 +897,20 @@ html, body {
     </div>
     <div class="toolbar__right">
       <input id="search" class="toolbar__search" type="search" placeholder="Find object by label or id (e.g. lobby, #3)" />
+
+      <div class="navPad" role="group" aria-label="Pan viewport">
+        <button id="btnPanUp" class="navBtn" title="Pan up">▲</button>
+        <button id="btnPanLeft" class="navBtn" title="Pan left">◀</button>
+        <button id="btnPanDown" class="navBtn" title="Pan down">▼</button>
+        <button id="btnPanRight" class="navBtn" title="Pan right">▶</button>
+      </div>
+
+      <div class="zoomPad" role="group" aria-label="Zoom viewport">
+        <button id="btnZoomOut" class="navBtn zoomBtn" title="Zoom out">−</button>
+        <span id="zoomReadout" class="zoomReadout" title="Viewport zoom">100%</span>
+        <button id="btnZoomIn" class="navBtn zoomBtn" title="Zoom in">+</button>
+        <button id="btnZoomReset" class="navBtn zoomBtn zoomBtnReset" title="Reset zoom">1:1</button>
+      </div>
       <button id="btnOpenLobby" class="btn">Open lobby</button>
       <button id="btnNewObject" class="btn">New outliner</button>
       <button id="btnSaveImage" class="btn">Save image</button>
@@ -2872,6 +2945,9 @@ function parseHeader(headerText) {
 ## Windows
 - Drag header to move; resize from bottom-right.
 - Click a window to focus (bring to front).
+- Middle mouse drag pans the viewport.
+- Ctrl+wheel zooms in/out.
+- Toolbar arrows pan the viewport.
 
 ## References and lines
 - Click the \`::\` handle to open the referenced object and toggle its line.
@@ -3571,18 +3647,31 @@ for (const [n, o] of canonNum.entries()) vm._setNumberRegistryEntry(n, o);
     return { idToObj };
   }
 
-  function captureUi(outliners, links) {
+  function captureUi(outliners, links, viewport) {
     const outlinerStates = [];
     for (const win of outliners.windows.values()) {
       const v = win.value;
       if (!v || typeof v !== 'object' || typeof v.id !== 'number') continue;
       const r = win.root.getBoundingClientRect();
+      const cs = window.getComputedStyle(win.root);
+      const s = (viewport && typeof viewport === 'object' && Number.isFinite(Number(viewport.scale)) && Number(viewport.scale) !== 0)
+        ? Number(viewport.scale)
+        : 1;
+      const styleW = parseFloat(win.root.style.width);
+      const styleH = parseFloat(win.root.style.height);
+      const csW = parseFloat(cs.width);
+      const csH = parseFloat(cs.height);
+      const wUnscaled = Number.isFinite(csW) ? csW : (r.width / s);
+      const hUnscaled = Number.isFinite(csH) ? csH : (r.height / s);
+      const wPx = Number.isFinite(styleW) ? styleW : wUnscaled;
+      const hPx = Number.isFinite(styleH) ? styleH : hUnscaled;
+
       outlinerStates.push({
         objectId: v.id,
         x: parseFloat(win.root.style.left || '0') || 0,
         y: parseFloat(win.root.style.top || '0') || 0,
-        w: parseFloat(win.root.style.width || String(r.width)) || r.width,
-        h: parseFloat(win.root.style.height || String(r.height)) || r.height,
+        w: wPx,
+        h: hPx,
         evaluator: {
           view: win._evalView || 'source',
           source: String(win._evalSource || ''),
@@ -3595,6 +3684,7 @@ for (const [n, o] of canonNum.entries()) vm._setNumberRegistryEntry(n, o);
             }))
             : []
         }
+      
       });
     }
 
@@ -3603,7 +3693,9 @@ for (const [n, o] of canonNum.entries()) vm._setNumberRegistryEntry(n, o);
       if (e && e.visible) visibleLinks.push({ sourceId: e.srcId, slotName: e.slotName });
     }
 
-    return { outliners: outlinerStates, links: visibleLinks };
+    const vp = (viewport && typeof viewport === 'object') ? { x: Number(viewport.x) || 0, y: Number(viewport.y) || 0, scale: Number(viewport.scale) || 1 } : null;
+
+    return { viewport: vp, outliners: outlinerStates, links: visibleLinks };
   }
 
   function downloadImage(imageObj, filename) {
@@ -4343,6 +4435,143 @@ js log: (ok ifTrue: [ 'ALL TESTS PASS' ] False: [ 'SOME TESTS FAILED' ]).
 
   const workspace = $('#workspace');
 
+
+  // ---------------------------------------------------------------------------
+  // Infinite desktop viewport (pan + zoom)
+  // ---------------------------------------------------------------------------
+  // World coordinates are stored on windows as CSS left/top (in world units).
+  // The viewport maps world -> screen via: screen = (world - origin) * scale
+  // Implemented as: transform: scale(scale) translate(-originX, -originY)
+
+  const scene = document.createElement('div');
+  scene.id = 'scene';
+  scene.className = 'scene';
+  workspace.appendChild(scene);
+
+  // Defer link redraw until Links is initialized (avoids TDZ on const Links).
+  let _scheduleLinks = () => {};
+  const _setZoomReadout = (s) => {
+    const zr = document.getElementById('zoomReadout');
+    if (!zr) return;
+    const pct = Math.round((Number(s) || 1) * 100);
+    zr.textContent = `${pct}%`;
+  };
+
+  const Viewport = {
+    x: 0,
+    y: 0,
+    scale: 1,
+    minScale: 0.25,
+    maxScale: 4,
+
+    _clampScale(s) {
+      const n = Number(s);
+      if (!Number.isFinite(n)) return this.scale;
+      return Math.max(this.minScale, Math.min(this.maxScale, n));
+    },
+
+    apply() {
+      scene.style.transform = `scale(${this.scale}) translate(${-this.x}px, ${-this.y}px)`;
+      _setZoomReadout(this.scale);
+      _scheduleLinks();
+    },
+
+    set(x, y, scale) {
+      if (Number.isFinite(Number(x))) this.x = Number(x);
+      if (Number.isFinite(Number(y))) this.y = Number(y);
+      if (scale != null) this.scale = this._clampScale(scale);
+      this.apply();
+    },
+
+    panBy(dxWorld, dyWorld) {
+      this.x += Number(dxWorld) || 0;
+      this.y += Number(dyWorld) || 0;
+      this.apply();
+    },
+
+    screenToWorld(clientX, clientY) {
+      const r = workspace.getBoundingClientRect();
+      const sx = (clientX - r.left);
+      const sy = (clientY - r.top);
+      return { x: (sx / this.scale) + this.x, y: (sy / this.scale) + this.y };
+    },
+
+    zoomAt(clientX, clientY, factor) {
+      const f = Number(factor);
+      if (!Number.isFinite(f) || f === 0) return;
+
+      const r = workspace.getBoundingClientRect();
+      const sx = (clientX - r.left);
+      const sy = (clientY - r.top);
+
+      const old = this.scale;
+      const next = this._clampScale(old * f);
+      if (next === old) return;
+
+      const wx = (sx / old) + this.x;
+      const wy = (sy / old) + this.y;
+
+      this.scale = next;
+      this.x = wx - (sx / next);
+      this.y = wy - (sy / next);
+
+      this.apply();
+    }
+  };
+
+  // Middle mouse pans the viewport (grab).
+  (() => {
+    let panning = false;
+    let startX = 0, startY = 0;
+    let startVX = 0, startVY = 0;
+
+    const isEditable = (t) =>
+      !!(t && t.closest && t.closest('input,textarea,[contenteditable="true"]'));
+
+    // Prevent browser auto-scroll on middle click.
+    workspace.addEventListener('mousedown', (ev) => {
+      if (ev.button === 1) ev.preventDefault();
+    }, { capture: true });
+
+    workspace.addEventListener('pointerdown', (ev) => {
+      if (ev.button !== 1) return;
+      if (isEditable(ev.target)) return;
+      panning = true;
+      startX = ev.clientX;
+      startY = ev.clientY;
+      startVX = Viewport.x;
+      startVY = Viewport.y;
+      try { workspace.setPointerCapture(ev.pointerId); } catch {}
+      ev.preventDefault();
+      ev.stopPropagation();
+    }, { capture: true });
+
+    workspace.addEventListener('pointermove', (ev) => {
+      if (!panning) return;
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+      Viewport.set(startVX - dx / Viewport.scale, startVY - dy / Viewport.scale, null);
+      ev.preventDefault();
+      ev.stopPropagation();
+    }, { capture: true });
+
+    const end = (ev) => {
+      if (!panning) return;
+      panning = false;
+      try { workspace.releasePointerCapture(ev.pointerId); } catch {}
+    };
+    workspace.addEventListener('pointerup', end, { capture: true });
+    workspace.addEventListener('pointercancel', end, { capture: true });
+
+    // Ctrl+wheel zoom (anchored under cursor).
+    workspace.addEventListener('wheel', (ev) => {
+      if (!(ev.ctrlKey || ev.metaKey)) return;
+      ev.preventDefault();
+      const factor2 = Math.exp(-ev.deltaY * 0.002);
+      Viewport.zoomAt(ev.clientX, ev.clientY, factor2);
+    }, { passive: false });
+  })();
+
   const SVG_NS = 'http://www.w3.org/2000/svg';
   const linkLayer = document.createElementNS(SVG_NS, 'svg');
   linkLayer.classList.add('linkLayer');
@@ -4633,6 +4862,11 @@ remove(srcId, slotName) {
   }
 };
 
+  // Now that Links exists, allow viewport changes to trigger redraw.
+  _scheduleLinks = () => { try { Links.schedule(); } catch {} };
+  Viewport.apply();
+
+
 // ---------------------------------------------------------------------------
 // Outliner manager
 
@@ -4653,7 +4887,7 @@ remove(srcId, slotName) {
       }
       const win = new OutlinerWindow(value, pos, meta);
       this.windows.set(key, win);
-      workspace.appendChild(win.root);
+      scene.appendChild(win.root);
       win.bringToFront();
       Links.schedule();
       return win;
@@ -4721,8 +4955,8 @@ remove(srcId, slotName) {
     const obj = DND.getObject(ev.dataTransfer.getData(DND.MIME_OBJ));
     if (!obj) return;
     ev.preventDefault();
-    const rect = workspace.getBoundingClientRect();
-    Outliners.open(obj, { x: ev.clientX - rect.left, y: ev.clientY - rect.top });
+    const p = Viewport.screenToWorld(ev.clientX, ev.clientY);
+    Outliners.open(obj, p);
   });
 
   // ---------------------------------------------------------------------------
@@ -4779,7 +5013,7 @@ remove(srcId, slotName) {
     _defaultPos(pos) {
       if (pos && Number.isFinite(pos.x) && Number.isFinite(pos.y)) return pos;
       const count = Outliners.windows.size;
-      return { x: 18 + (count % 10) * 22, y: 72 + (count % 10) * 22 };
+      return { x: Viewport.x + 18 + (count % 10) * 22, y: Viewport.y + 22 + (count % 10) * 22 };
     }
 
     bringToFront() {
@@ -4808,6 +5042,7 @@ remove(srcId, slotName) {
         if (t.closest('button')) return;
         if (t.getAttribute('contenteditable') === 'true') return;
         if (t.tagName === 'TEXTAREA' || t.tagName === 'INPUT') return;
+        if (ev.button !== 0) return;
         dragging = true;
         this.bringToFront();
         this.header.setPointerCapture(ev.pointerId);
@@ -4820,11 +5055,10 @@ remove(srcId, slotName) {
 
       const onPointerMove = (ev) => {
         if (!dragging) return;
-        const dx = ev.clientX - startX;
-        const dy = ev.clientY - startY;
-        this.root.style.left = `${Math.max(-20, startLeft + dx)}px`;
-        // Allow windows to reach the workspace top (flush under the toolbar).
-        this.root.style.top = `${Math.max(0, startTop + dy)}px`;
+        const dx = (ev.clientX - startX) / Viewport.scale;
+        const dy = (ev.clientY - startY) / Viewport.scale;
+        this.root.style.left = `${startLeft + dx}px`;
+        this.root.style.top = `${startTop + dy}px`;
         Links.schedule();
       };
 
@@ -5945,6 +6179,43 @@ _renderSlotRow(holderObj, slot) {
 
   $('#btnOpenLobby').addEventListener('click', () => Outliners.open(vm.lobby));
 
+  // Viewport arrow buttons
+  const panStepPx = 160;
+  const panByScreen = (dxPx, dyPx) => {
+    const dx = (Number(dxPx) || 0) / Viewport.scale;
+    const dy = (Number(dyPx) || 0) / Viewport.scale;
+    Viewport.panBy(dx, dy);
+  };
+  const btnPanLeft = $('#btnPanLeft');
+  const btnPanRight = $('#btnPanRight');
+  const btnPanUp = $('#btnPanUp');
+  const btnPanDown = $('#btnPanDown');
+  if (btnPanLeft) btnPanLeft.addEventListener('click', () => panByScreen(-panStepPx, 0));
+  if (btnPanRight) btnPanRight.addEventListener('click', () => panByScreen(panStepPx, 0));
+  if (btnPanUp) btnPanUp.addEventListener('click', () => panByScreen(0, -panStepPx));
+  if (btnPanDown) btnPanDown.addEventListener('click', () => panByScreen(0, panStepPx));
+
+  // Zoom buttons (center-anchored)
+  const zoomStep = 1.1;
+  const zoomAtCenter = (factor) => {
+    const r = workspace.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    Viewport.zoomAt(cx, cy, factor);
+  };
+  const btnZoomIn = $('#btnZoomIn');
+  const btnZoomOut = $('#btnZoomOut');
+  const btnZoomReset = $('#btnZoomReset');
+  if (btnZoomIn) btnZoomIn.addEventListener('click', () => zoomAtCenter(zoomStep));
+  if (btnZoomOut) btnZoomOut.addEventListener('click', () => zoomAtCenter(1 / zoomStep));
+  if (btnZoomReset) btnZoomReset.addEventListener('click', () => {
+    // reset to 100% while keeping the current center point fixed
+    const r = workspace.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    Viewport.zoomAt(cx, cy, 1 / Viewport.scale);
+  });
+
   const btnRunTests = $('#btnRunTests');
   if (btnRunTests) btnRunTests.addEventListener('click', () => {
     try {
@@ -6009,10 +6280,10 @@ $('#btnToggleLines').addEventListener('click', (ev) => {
     btnSaveImage.addEventListener('click', () => {
       try {
         const image = {
-          version: 1,
+          version: 2,
           createdAt: new Date().toISOString(),
           vm: SelfImage.serializeVm(vm),
-          ui: SelfImage.captureUi(Outliners, Links)
+          ui: SelfImage.captureUi(Outliners, Links, Viewport)
         };
         const stamp = image.createdAt.replace(/[:.]/g, '-');
         SelfImage.downloadImage(image, `snapshot-${stamp}.selfieImage`);
@@ -6037,10 +6308,21 @@ $('#btnToggleLines').addEventListener('click', (ev) => {
     Links.hiddenAll = false;
     const btnLines = $('#btnToggleLines');
     if (btnLines) btnLines.textContent = 'Hide lines';
+    try { Viewport.set(0, 0, 1); } catch {}
     Links.schedule();
   };
 
   const restoreUiFromImage = (ui, idToObj) => {
+    // Restore viewport (if present in snapshot)
+    try {
+      const vp = ui && ui.viewport ? ui.viewport : null;
+      if (vp && Number.isFinite(Number(vp.x)) && Number.isFinite(Number(vp.y)) && Number.isFinite(Number(vp.scale))) {
+        Viewport.set(Number(vp.x), Number(vp.y), Number(vp.scale));
+      } else {
+        Viewport.set(0, 0, 1);
+      }
+    } catch {}
+
     const outliners = Array.isArray(ui && ui.outliners) ? ui.outliners : [];
     for (const w of outliners) {
       const obj = findObjectById(w.objectId);
@@ -6097,6 +6379,7 @@ $('#btnToggleLines').addEventListener('click', (ev) => {
     vm,
     Outliners,
     Links,
+    Viewport,
     loadImageObject,
     clearAllOutlinersAndLinks
   };
@@ -6169,7 +6452,7 @@ $('#btnToggleLines').addEventListener('click', (ev) => {
 
   // Initial windows
   if (!didLoadEmbeddedImage) {
-    Outliners.open(vm.lobby, { x: 22, y: 72 });
+    Outliners.open(vm.lobby);
   }
 
   // VMError surface
@@ -6202,10 +6485,10 @@ $('#btnToggleLines').addEventListener('click', (ev) => {
     if (rt && SI && rt.vm && rt.Outliners && rt.Links) {
       return {
         format: 'SelfieImage',
-        version: 1,
+        version: 2,
         createdAt: new Date().toISOString(),
         vm: SI.serializeVm(rt.vm),
-        ui: SI.captureUi(rt.Outliners, rt.Links)
+        ui: SI.captureUi(rt.Outliners, rt.Links, rt.Viewport)
       };
     }
     // fallback: embedded json
@@ -6216,7 +6499,7 @@ $('#btnToggleLines').addEventListener('click', (ev) => {
         try { return JSON.parse(txt); } catch {}
       }
     }
-    return { format: 'SelfieImage', version: 1, createdAt: new Date().toISOString(), vm: { objects: [] }, ui: {} };
+    return { format: 'SelfieImage', version: 2, createdAt: new Date().toISOString(), vm: { objects: [] }, ui: {} };
   }
 
   function isOfflineBuild(doc) {

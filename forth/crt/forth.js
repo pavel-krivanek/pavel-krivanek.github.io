@@ -2322,6 +2322,184 @@ DECIMAL
 
 : S>D DUP 0< IF -1 ELSE 0 THEN ;
 
+
+( ---- )
+
+( --- Arithmetic & Double Math --- )
+: */ ( n1 n2 n3 -- q ) */MOD SWAP DROP ;
+: U* ( u1 u2 -- ud ) UM* ;
+
+: D+ ( l1 h1 l2 h2 -- l3 h3 )
+    ROT + >R     ( l1 l2 )      ( R: h1+h2 )
+    OVER OVER +  ( l1 l2 l3 )
+    DUP >R       ( l1 l2 l3 )   ( R: h1+h2 l3 )
+    ROT U< NIP   ( carry )      ( R: h1+h2 l3 )
+    IF 1 ELSE 0 THEN
+    R> SWAP R> + ;
+
+: DNEGATE ( d -- -d ) INVERT SWAP INVERT SWAP 1 0 D+ ;
+: D- ( d1 d2 -- d3 ) DNEGATE D+ ;
+: DABS ( d -- |d| ) DUP 0< IF DNEGATE THEN ;
+: M+ ( d n -- d+n ) S>D D+ ;
+: M/ ( d n -- q ) FM/MOD NIP ;
+
+( M*/ is omitted because doing true 48-bit intermediate math )
+( in high-level 16-bit Forth is a massive undertaking not suitable )
+( for a simple alias. )
+
+( --- Comparisons --- )
+: D= ( d1 d2 -- f ) ROT = -ROT = AND ;
+: D0= ( d -- f ) OR 0= ;
+
+: D< ( d1 d2 -- f )
+    ROT 2DUP = IF
+        2DROP U<
+    ELSE
+        >R >R 2DROP R> R> >
+    THEN ;
+
+: DU< ( d1 d2 -- f )
+    ROT 2DUP = IF
+        2DROP U<
+    ELSE
+        >R >R 2DROP R> R> SWAP U<
+    THEN ;
+
+: DMIN ( d1 d2 -- min ) 2OVER 2OVER D< IF 2DROP ELSE 2SWAP 2DROP THEN ;
+: DMAX ( d1 d2 -- max ) 2OVER 2OVER D< IF 2SWAP 2DROP ELSE 2DROP THEN ;
+
+( --- String & Memory --- )
+: TYPE ( addr len -- ) TELL ;
+: >TYPE ( addr len -- ) TYPE ;
+
+: -TRAILING ( addr len -- addr len' )
+    BEGIN
+        DUP 0> IF
+            2DUP 1- + C@ BL = IF
+                1- FALSE
+            ELSE TRUE THEN
+        ELSE TRUE THEN
+    UNTIL ;
+
+: -TEXT ( addr1 len addr2 -- diff )
+    >R BEGIN
+        DUP 0>
+    WHILE
+        OVER C@ R@ C@ - ?DUP IF
+            >R 2DROP R> R> DROP EXIT
+        THEN
+        SWAP 1+ SWAP 1-
+        R> 1+ >R
+    REPEAT
+    2DROP R> DROP 0 ;
+
+: MOVE ( addr1 addr2 u -- )
+    0 DO
+        OVER @ OVER !
+        2+ SWAP 2+ SWAP
+    LOOP 2DROP ;
+
+: <CMOVE ( addr1 addr2 u -- )
+    DUP 0> IF
+        1- -1 SWAP DO
+            2DUP I + SWAP I + C@ SWAP C!
+        -1 +LOOP
+    ELSE DROP THEN 2DROP ;
+
+: ERASE ( addr u -- ) 0 FILL ;
+: BLANK ( addr u -- ) BL FILL ;
+
+( --- Character I/O --- )
+VARIABLE SPAN
+: EXPECT ( addr len -- )
+    0 SPAN !
+    OVER + SWAP ( end-addr curr-addr )
+    BEGIN
+        2DUP = IF TRUE ELSE
+            KEY
+            DUP 10 = OVER 13 = OR IF
+                DROP SPACE TRUE
+            ELSE
+                DUP 8 = OVER 127 = OR IF
+                    DROP
+                    SPAN @ 0> IF
+                        -1 SPAN +!
+                        1- 8 EMIT BL EMIT 8 EMIT
+                    THEN FALSE
+                ELSE
+                    DUP EMIT
+                    OVER C!
+                    1+ 1 SPAN +! FALSE
+                THEN
+            THEN
+        THEN
+    UNTIL
+    2DROP ;
+
+( --- Compilation --- )
+: COMPILE IMMEDIATE
+    WORD FIND >CFA
+    ' LIT , ,
+    ' , , ;
+
+( --- Pictured Numeric Output --- )
+VARIABLE HLD
+: <# ( -- ) PAD HLD ! ;
+: HOLD ( char -- ) HLD @ 1- DUP HLD ! C! ;
+: #> ( d -- addr len ) 2DROP HLD @ PAD OVER - ;
+
+: # ( d -- d' )
+    BASE @ FM/MOD ( rem quot )
+    SWAP DUP 9 > IF 7 + THEN '0' + HOLD
+    0 ; ( simplified: return single quot padded to double 0 )
+
+: #S ( d -- 0 0 )
+    BEGIN # 2DUP OR 0= UNTIL ;
+
+: SIGN ( n -- ) 0< IF '-' HOLD THEN ;
+
+: D. ( d -- )
+    DUP >R ( save high cell to return stack )
+    DABS <# #S R> SIGN #> TYPE SPACE ;
+
+: D.R ( d width -- )
+    >R DUP >R DABS <# #S R> SIGN #> ( addr len ) ( R: width )
+    R> OVER - SPACES TYPE ;
+
+( --- Operating System & Variables --- )
+: ?STACK ( -- )
+    DSP@ S0 @ > IF ." Stack Underflow " CR QUIT THEN ;
+
+VARIABLE ORIG-HERE   HERE @ ORIG-HERE !
+VARIABLE ORIG-LATEST LATEST @ ORIG-LATEST !
+: EMPTY ( -- )
+    ORIG-HERE @ HERE !
+    ORIG-LATEST @ LATEST ! ;
+
+: ABORT" IMMEDIATE
+    [COMPILE] IF
+    [COMPILE] ."
+    ' QUIT ,
+    [COMPILE] THEN ;
+
+VARIABLE OFFSET 0 OFFSET !
+VARIABLE SCR
+VARIABLE R#
+: H HERE ;
+
+( --- Virtual Memory --- )
+: LIST ( n -- )
+    DUP SCR !
+    ." Screen " . CR
+    BLOCK ( addr )
+    16 0 DO
+        I 2 .R SPACE
+        DUP I 64 * + 64 -TRAILING TYPE CR
+    LOOP DROP ;
+
+: LOAD ( n -- )
+    BLK ! 0 >IN ! ;
+
 ( --------------------------------------------------------------------- )
 
 : TESTING ; ( will be forgotten )
@@ -2765,6 +2943,48 @@ TSTART
 
     DECIMAL
 
+    ( Arithmetic )
+    T{ 10 2 5 */ -> 4 }T
+    T{ 3 4 U* -> 12 0 }T
+
+    ( Double Addition & Math )
+    T{ 1 0 2 0 D+ -> 3 0 }T
+    T{ -1 0 1 0 D+ -> 0 1 }T  ( Carry test )
+    T{ 5 0 2 0 D- -> 3 0 }T
+    T{ 0 0 DNEGATE -> 0 0 }T
+    T{ 1 0 DNEGATE -> -1 -1 }T
+    T{ -1 -1 DABS -> 1 0 }T
+    T{ -1 0 1 M+ -> 0 1 }T
+
+    ( Double Comparisons )
+    T{ 1 2 1 2 D= -> <TRUE> }T
+    T{ 1 2 3 4 D= -> <FALSE> }T
+    T{ 0 0 D0= -> <TRUE> }T
+    T{ 1 0 D0= -> <FALSE> }T
+    T{ 1 0 2 0 D< -> <TRUE> }T
+    T{ -1 -1 0 0 D< -> <TRUE> }T
+    T{ -1 -1 0 0 DU< -> <FALSE> }T
+    T{ 1 0 2 0 DMIN -> 1 0 }T
+    T{ 1 0 2 0 DMAX -> 2 0 }T
+
+    ( Memory )
+    VARIABLE B1 2 ALLOT
+    VARIABLE B2 2 ALLOT
+    T{ 0 B1 ! 0 B2 ! B1 B2 1 MOVE B2 @ -> 0 }T
+
+    ( Strings )
+    : STR1 S" ABC" ;
+    : STR2 S" ABD" ;
+    : STR3 S" ABC  " ;
+
+    T{ STR1 STR1 DROP -TEXT -> 0 }T
+    T{ STR1 STR2 DROP -TEXT -> -1 }T
+    T{ STR3 -TRAILING NIP -> 3 }T
+
+    ( Pictured Output )
+    T{ 0 0 <# #S #> NIP -> 1 }T
+    T{ 123 0 <# #S #> NIP -> 3 }T
+    T{ 123 0 <# #S #> DROP C@ -> 49 }T ( ASCII '1' )
 
     HEX
 
@@ -2791,7 +3011,7 @@ FORGET TESTING
 
 
 : MYTEST 3 4 + . ;
-64 EMIT
+
 `.toUpperCase();
 
 
@@ -2831,13 +3051,13 @@ CR
 	LOOP
 	CR
 	;
-
+(
 
 73 L
 
 73 BLOCK
 / 1 BLK !
-
+)
 
 `);
 

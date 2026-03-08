@@ -89,11 +89,11 @@ Number.prototype.asSigned32 = function() {
 }
 Number.prototype.asUnsigned2Bytes = function() {
     let num = this.asUnsigned16();
-    return [ (num & 0xFF00) >>> 8, num & 0xFF ];
+    return[ (num & 0xFF00) >>> 8, num & 0xFF ];
 }
 Number.prototype.asUnsigned4Bytes = function() {
     let num = this.asUnsigned32();
-    return [ (num & 0xFF000000) >>> 24, (num & 0xFF0000) >>> 16, (num & 0xFF00) >>> 8, num & 0xFF ];
+    return[ (num & 0xFF000000) >>> 24, (num & 0xFF0000) >>> 16, (num & 0xFF00) >>> 8, num & 0xFF ];
 }
 Number.prototype.numberValue = function() {
     return this;
@@ -152,7 +152,7 @@ class ForthBlockBuffers {
         this.memory = memory;
         this.startAddress = startAddress;
         this.count = count;
-        this.buffers = [];
+        this.buffers =[];
         for (let i = 0; i < count; i++) {
             this.buffers.push({
                 blockNum: -1,
@@ -255,7 +255,7 @@ class Forth {
 }
     resetBuffers() {
         this.inputBuffer = [];
-        this.outputBuffer = [];
+        this.outputBuffer =[];
     }
     input(aString) {
         for (var i = 0; i < aString.length; i++) {
@@ -291,8 +291,8 @@ class Forth {
         let anArray = this.memory.memoryCopyFromTo(lengthAddress+1, lengthAddress+nameArray.length)
         return nameArray.isSameAs(anArray);
     }
-    find(nameArray) {
-        let current = this.varLatestValue();
+    searchVocab(nameArray, startAddress) {
+        let current = startAddress;
         let found = false;
         do {
             if (current === 0) return 0;
@@ -300,6 +300,25 @@ class Forth {
             if (!found) { current = this.memory.wordAt(current) }
         } while (!found);
         return current;
+    }
+    find(nameArray) {
+        let contextVocab = this.memory.wordAt(this.varContext());
+        let currentVocab = this.memory.wordAt(this.varCurrent());
+
+        let result = this.searchVocab(nameArray, this.memory.wordAt(contextVocab));
+        if (result !== 0) return result;
+
+        if (contextVocab !== currentVocab) {
+            result = this.searchVocab(nameArray, this.memory.wordAt(currentVocab));
+            if (result !== 0) return result;
+        }
+
+        let forthVocab = this.addressForLabel("var_FORTH_VOCAB");
+        if (contextVocab !== forthVocab && currentVocab !== forthVocab) {
+             result = this.searchVocab(nameArray, this.memory.wordAt(forthVocab));
+        }
+
+        return result;
     }
     fixUnknownLabels() {
         for (let [label, usages] of Object.entries(this.unknownLabels)) {
@@ -375,7 +394,7 @@ class Forth {
     privNumber(wordStringAddress, length) {
         let isDouble = false;
         let base = this.varBaseValue();
-        let toParse = [];
+        let toParse =[];
         let bytes = this.memory.memoryCopyFromTo(wordStringAddress, wordStringAddress+length-1);
         for (let i = 0; i < bytes.length; i++) {
             let isSeparator = (i > 0 && this.isDoubleSeparator(bytes[i]));
@@ -412,7 +431,7 @@ class Forth {
                     this.noInput();
                     typeOk();
                 }
-                return [this.wordBufferAddress(), 0];
+                return[this.wordBufferAddress(), 0];
             }
             charCode = this.readCharacter(usesBlock);
         } while (this.isSeparator(charCode));
@@ -426,7 +445,7 @@ class Forth {
                 : this.isSeparator(charCode = this.readCharacter(usesBlock));
         } while (!atWordEnd);
 
-        return [this.wordBufferAddress(), length]
+        return[this.wordBufferAddress(), length]
     }
 
 	readsFromBlock() {
@@ -512,6 +531,9 @@ class Forth {
     varBlkValue() { return this.memory.signedWordAt(this.varBlk()); }
     setVarBlkValue(aValue) { return this.memory.writeWordAt(aValue, this.varBlk()); }
 
+    varContext() { return this.addressForLabel("var_CONTEXT"); }
+    varCurrent() { return this.addressForLabel("var_CURRENT"); }
+
     wordBufferAddress() { return this.addressForLabel("word_buffer") };
     wordBufferSize() { return 32 };
     wordSize() { return 2; }
@@ -564,7 +586,16 @@ class ForthStandardMemoryInitializer extends ForthMemoryInitializer {
         this.initializeStringLiteralsPrimitives();
 		this.initializeBlockPrimitives();
         this.initializeInterpreterPrimitives();
-        this.forth.setVarLatestValue(this.forth.addressForLabel("name_INTERPRET"));
+        this.initializeVocabularyPrimitives();
+
+        let lastWord = this.forth.lastWord;
+        this.forth.setVarLatestValue(lastWord);
+
+        let forthVocab = this.forth.addressForLabel("var_FORTH_VOCAB");
+        this.forth.memory.writeWordAt(lastWord, forthVocab);
+        this.forth.memory.writeWordAt(forthVocab, this.forth.varContext());
+        this.forth.memory.writeWordAt(forthVocab, this.forth.varCurrent());
+
         this.forth.setVarHereValue(this.initPos);
         this.forth.fixUnknownLabels();
     };
@@ -623,6 +654,8 @@ class ForthStandardMemoryInitializer extends ForthMemoryInitializer {
         this.addCode(new ForthCodeVariable(this.forth, "s0", this.forth.memory.s0()));
         this.addCode(new ForthCodeVariable(this.forth, ">in", 0));
         this.addCode(new ForthCodeVariable(this.forth, "blk", 0));
+        this.addCode(new ForthCodeVariable(this.forth, "context", 0));
+        this.addCode(new ForthCodeVariable(this.forth, "current", 0));
     }
     initializeComparisonPrimitives() { this.installAll([
 		ForthCodeEqu,
@@ -676,6 +709,10 @@ class ForthStandardMemoryInitializer extends ForthMemoryInitializer {
 		ForthCodeHalt,
 		ForthCodeQuit,
 		ForthCodeInterpret
+        ]); }
+    initializeVocabularyPrimitives() { this.installAll([
+        ForthCodeDefinitions,
+        ForthCodeForth
         ]); }
     initializeLiteralsPrimitives() { this.installAll([
         ForthCodeLit
@@ -1281,7 +1318,7 @@ class ForthCodeTick extends ForthCodeWithHead {
 
 class ForthCodeColon extends ForthCodeWithHeadCompiled {
     name() { return ":"; }
-    codewordLabels() { return ["WORD", "CREATEHEAD", "LIT", "DOCOL", "COMMA", "LATEST", "FETCH", "HIDDEN", "RBRAC", "EXIT"]}
+    codewordLabels() { return["WORD", "CREATEHEAD", "LIT", "DOCOL", "COMMA", "LATEST", "FETCH", "HIDDEN", "RBRAC", "EXIT"]}
 }
 
 class ForthCodeComma extends ForthCodeWithHead {
@@ -1297,11 +1334,17 @@ class ForthCodeCreateHead extends ForthCodeWithHead {
         let length = this.popSigned();
         let nameAddress = this.popUnsigned();
         let header = this.forth.varHereValue();
-        let latest = this.forth.varLatestValue();
+
+        let currentVocabPointer = this.memory().wordAt(this.forth.varCurrent());
+        let latest = this.memory().wordAt(currentVocabPointer);
+
         this.memory().writeWordAt(latest, header);
         this.memory().writeByteAt(length, header + this.forth.wordSize());
         for (let i=1; i<=length; i++)
             this.memory().writeByteAt(this.memory().byteAt(nameAddress+i-1), header + this.forth.wordSize() + i)
+
+        this.memory().writeWordAt(header, currentVocabPointer);
+
         this.forth.setVarLatestValue(header);
         this.forth.setVarHereValue(header + this.forth.wordSize() + length + 1)
     }
@@ -1326,8 +1369,34 @@ class ForthCodeRBrac extends ForthCodeWithHead {
 class ForthCodeSemicolon extends ForthCodeWithHeadCompiled {
     name() { return ";"; }
     flags() { return this.forth.flagImmediate(); }
-    codewordLabels() { return ["LIT", "EXIT", "COMMA", "LATEST", "FETCH", "HIDDEN", "LBRAC", "EXIT"]}
+    codewordLabels() { return["LIT", "EXIT", "COMMA", "LATEST", "FETCH", "HIDDEN", "LBRAC", "EXIT"]}
 }
+
+// Vocabulary primitives
+class ForthCodeDefinitions extends ForthCodeWithHead {
+    name() { return "definitions"; }
+    execute() {
+        let contextVocab = this.memory().wordAt(this.forth.varContext());
+        this.memory().writeWordAt(contextVocab, this.forth.varCurrent());
+    }
+}
+
+class ForthCodeForth extends ForthCodeWithHead {
+    name() { return "forth"; }
+    execute() {
+        let forthVocab = this.forth.addressForLabel("var_FORTH_VOCAB");
+        this.memory().writeWordAt(forthVocab, this.forth.varContext());
+    }
+    finishAt(initialPosition) {
+        let newPosition = super.finishAt(initialPosition);
+        newPosition++;
+        this.forth.addLabelAddress("var_FORTH_VOCAB", newPosition);
+        this.memory().writeWordAt(0, newPosition);
+        newPosition += this.forth.wordSize();
+        return newPosition;
+    }
+}
+
 
 // Data stack primitives
 
@@ -1461,7 +1530,7 @@ class ForthCodeInterpret extends ForthCodeWithHead {
         let aCodeword = 0;
         let toFind = this.memory().memoryCopyFromTo(address, address + length - 1);
         let resultOfFind = this.forth.find(toFind);
-        let numberErrorPair = [0, 0];
+        let numberErrorPair =[0, 0];
         if (resultOfFind === 0) {
             "not in the dictionary (not a word) so assume it's a literal number"
             interpretIsLit = true;
@@ -2194,7 +2263,7 @@ let source = `
 ;
 
 : WORDS
-	LATEST @	( start at LATEST dictionary entry )
+	CONTEXT @ @	( start at CONTEXT dictionary entry )
 	BEGIN
 		?DUP		( while link pointer is not null )
 	WHILE
@@ -2209,7 +2278,8 @@ let source = `
 
 : FORGET
 	WORD FIND	( find the word, gets the dictionary entry address )
-	DUP @ LATEST !	( set LATEST to point to the previous word )
+	DUP @ CURRENT @ !
+	DUP @ LATEST !
 	HERE !		( and store HERE with the dictionary address )
 ;
 
@@ -2292,7 +2362,7 @@ let source = `
 ;
 
 : CFA>
-	LATEST @	( start at LATEST dictionary entry )
+	CONTEXT @ @	( start at CONTEXT dictionary entry )
 	BEGIN
 		?DUP		( while link pointer is not null )
 	WHILE
@@ -2470,6 +2540,11 @@ DECIMAL
 
 : DOES> IMMEDIATE
     ['] LIT , HERE @ 6 CELLS + , ['] LATEST , ['] @ , ['] >DFA , ['] ! , ['] EXIT ,
+;
+
+: VOCABULARY
+	CREATE 0 ,
+	DOES> CONTEXT !
 ;
 
 : 2@ DUP 2+ @ SWAP @ ;
@@ -3243,7 +3318,7 @@ FORGET TESTING
 
 
 let lines = source.replace(/\t/g, "    ").split(/\r?\n/);
-let blockContents = [];
+let blockContents =[];
 for (let i = 0; i < lines.length; i += 16) {
   blockContents.push(lines.slice(i, i + 16));
 }
@@ -3321,12 +3396,12 @@ function runHostBlockTests(forth)
     assertHost(listing.includes("FIRST LINE"), "LIST did not print the first line");
     assertHost(listing.includes("SECOND LINE"), "LIST did not print the second line");
 
-    setDiskBlockLines(forth, 61, [': HOST-LOAD-ONE 901 ; 62 LOAD : HOST-LOAD-THREE 903 ; ']);
-    setDiskBlockLines(forth, 62, [': HOST-LOAD-TWO 902 ; ']);
+    setDiskBlockLines(forth, 61,[': HOST-LOAD-ONE 901 ; 62 LOAD : HOST-LOAD-THREE 903 ; ']);
+    setDiskBlockLines(forth, 62,[': HOST-LOAD-TWO 902 ; ']);
     let loaded = runForthSnippet(forth, '61 LOAD HOST-LOAD-ONE . HOST-LOAD-TWO . HOST-LOAD-THREE . ');
     assertHost(loaded.includes("901 902 903"), "Nested LOAD did not restore BLK and >IN correctly");
 
-    setDiskBlockLines(forth, 63, [
+    setDiskBlockLines(forth, 63,[
         "",
         "SECOND VISIBLE LINE"
     ]);
@@ -3343,7 +3418,7 @@ function runHostBlockTests(forth)
     assertHost(list65.includes("BETA SCREEN"), "LIST did not show block 65 contents");
     assertHost(!list65.includes("ALPHA SCREEN"), "LIST for block 65 leaked block 64 contents");
 
-    setDiskBlockLines(forth, 70, ['71 BUFFER DUP CHAR X SWAP C! UPDATE SAVE-BUFFERS']);
+    setDiskBlockLines(forth, 70,['71 BUFFER DUP CHAR X SWAP C! UPDATE SAVE-BUFFERS']);
     setDiskBlockLines(forth, 71, [""]);
     runForthSnippet(forth, '70 LOAD ');
     let afterUpdateDuringLoad = runForthSnippet(forth, '71 BLOCK C@ . ');
@@ -3381,4 +3456,3 @@ function typeOk()
 {
     typeError("OK");
 }
-

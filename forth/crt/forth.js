@@ -460,6 +460,49 @@ class Forth {
         }
         return result;
     }
+    parseEditorText(destAddr, lenAddr, maxLen = 64) {
+        let usesBlock = this.readsFromBlock();
+        let charCode = 0;
+
+        while (true) {
+            if (this.atInputEnd(usesBlock)) {
+                if (!usesBlock) {
+                    this.awaitingRawInput = false;
+                    this.noInput();
+                }
+                return;
+            }
+            charCode = this.readCharacter(usesBlock);
+            if (charCode !== 32) break;
+        }
+
+        if ((charCode === 94) || (charCode === 10) || (charCode === 13) || (charCode === 0)) {
+            return;
+        }
+
+        let len = 0;
+        while (true) {
+            if ((charCode === 94) || (charCode === 10) || (charCode === 13) || (charCode === 0)) {
+                break;
+            }
+
+            if (len < maxLen) {
+                this.memory.writeByteAt(charCode, destAddr + len);
+                len += 1;
+            }
+
+            if (this.atInputEnd(usesBlock)) {
+                if (!usesBlock) {
+                    this.awaitingRawInput = false;
+                    this.noInput();
+                }
+                break;
+            }
+            charCode = this.readCharacter(usesBlock);
+        }
+
+        this.memory.writeWordAt(len, lenAddr);
+    }
     alignHere() {
         if ((this.varHereValue() & 1) !== 0) {
             this.memory.writeByteAt(0, this.varHereValue());
@@ -795,7 +838,8 @@ class ForthStandardMemoryInitializer extends ForthMemoryInitializer {
         ForthCodeWord,
         ForthCodeNumber,
         ForthCodeDigitQ,
-        ForthCodeConvert
+        ForthCodeConvert,
+        ForthCodeEditorParse
         ]); }
     initializeDataStackPrimitives() { this.installAll([
         ForthCodeDSPFetch,
@@ -1832,6 +1876,15 @@ class ForthCodeConvert extends ForthCodeWithHead {
         }
         this.push2(value);
         this.push(ptr);
+    }
+}
+
+class ForthCodeEditorParse extends ForthCodeWithHead {
+    name() { return "editor-parse"; }
+    execute() {
+        let lenAddr = this.popUnsigned();
+        let destAddr = this.popUnsigned();
+        this.forth.parseEditorText(destAddr, lenAddr, 64);
     }
 }
 
@@ -2946,6 +2999,286 @@ VARIABLE R#
 
 : SCRUB ( n -- ) WIPE ;
 
+: /LOOP IMMEDIATE
+    ['] R> , ['] R> ,       ( -- inc index limit )
+    ['] SWAP , ['] ROT ,    ( -- limit index inc )
+    ['] + ,                 ( -- limit index' )
+    ['] 2DUP ,              ( -- limit index' limit index' )
+    ['] SWAP , ['] U< ,     ( -- limit index' flag_continue )
+    ['] 0= ,                ( -- limit index' flag_exit )
+    ['] -ROT , ['] SWAP ,   ( -- exit_flag index' limit )
+    ['] >R , ['] >R ,       ( -- exit_flag )
+    [COMPILE] UNTIL
+    ['] RDROP , ['] RDROP ,
+;
+
+( --- EDITOR vocabulary (Starting Forth style subset) --- )
+
+VARIABLE ED-LINE
+0 ED-LINE !
+VARIABLE ED-CURSOR
+0 ED-CURSOR !
+HERE @ 64 ALLOT CONSTANT ED-IBUF
+VARIABLE ED-ILEN
+0 ED-ILEN !
+HERE @ 64 ALLOT CONSTANT ED-FBUF
+VARIABLE ED-FLEN
+0 ED-FLEN !
+VARIABLE ED-MATCH
+VARIABLE ED-HIT
+VARIABLE ED-TEMP
+VARIABLE ED-TEMP2
+
+VOCABULARY EDITOR
+EDITOR DEFINITIONS
+
+: SET-CURSOR ( n -- )
+    DUP ED-CURSOR !
+    64 MOD R# !
+;
+
+: CUR-BLOCK-ADDR ( -- addr )
+    SCR @ BLOCK
+;
+
+: LINE-ADDR ( n -- addr )
+    64 * CUR-BLOCK-ADDR +
+;
+
+: CLINE-ADDR ( -- addr )
+    ED-LINE @ LINE-ADDR
+;
+
+: LINE-END ( -- n )
+    ED-LINE @ 1+ 64 *
+;
+
+: PARSE-INTO ( addr lenaddr -- )
+    EDITOR-PARSE
+;
+
+: >INSERT ( addr len -- )
+    DUP ED-ILEN !
+    ED-IBUF 64 BLANK
+    ED-IBUF SWAP CMOVE
+;
+
+: >FIND ( addr len -- )
+    DUP ED-FLEN !
+    ED-FBUF 64 BLANK
+    ED-FBUF SWAP CMOVE
+;
+
+: LINE>INSERT ( addr -- )
+    DUP 64 -TRAILING >INSERT DROP
+;
+
+: PUT-INSERT ( addr -- )
+    DUP 64 BLANK
+    ED-IBUF OVER ED-ILEN @ CMOVE
+    DROP
+;
+
+: FIND-MATCH? ( pos -- f )
+    CUR-BLOCK-ADDR + ED-FLEN @ ED-FBUF -TEXT 0=
+;
+
+: SEARCH-BLOCK ( start limit -- f )
+    2DUP = IF 2DROP FALSE EXIT THEN
+    2DUP > IF 2DROP FALSE EXIT THEN
+    >R
+    BEGIN
+        DUP R@ <
+    WHILE
+        DUP FIND-MATCH? IF
+            DUP ED-MATCH !
+            DROP R> DROP
+            TRUE EXIT
+        THEN
+        1+
+    REPEAT
+    DROP R> DROP
+    FALSE
+;
+
+: FOUND>STATE ( pos -- )
+    DUP 64 / ED-LINE !
+    ED-FLEN @ + SET-CURSOR
+;
+
+: SEARCH-CURRENT-BLOCK ( -- f )
+    ED-FLEN @ 0= IF FALSE EXIT THEN
+    ED-CURSOR @
+    1024 ED-FLEN @ - 1+
+    SEARCH-BLOCK
+    DUP IF ED-MATCH @ FOUND>STATE THEN
+;
+
+: SEARCH-CURRENT-LINE ( -- f )
+    ED-FLEN @ 0= IF FALSE EXIT THEN
+    ED-CURSOR @
+    LINE-END ED-FLEN @ - 1+
+    SEARCH-BLOCK
+    DUP IF ED-MATCH @ FOUND>STATE THEN
+;
+
+: T ( n -- )
+    DUP ED-LINE !
+    64 * SET-CURSOR
+    ED-LINE @ LINE-ADDR 64 -TRAILING TYPE CR
+;
+
+: P ( -- )
+    ED-IBUF ED-ILEN PARSE-INTO
+    CLINE-ADDR PUT-INSERT
+    UPDATE
+;
+
+: (U) ( -- )
+    ED-LINE @ 14 <= IF
+        ED-LINE @ 1+ LINE-ADDR
+        ED-LINE @ 2+ LINE-ADDR
+        14 ED-LINE @ - 64 * <CMOVE
+        1 ED-LINE +!
+    THEN
+    ED-LINE @ 64 * SET-CURSOR
+    CLINE-ADDR PUT-INSERT
+    UPDATE
+;
+
+: U ( -- )
+    ED-IBUF ED-ILEN PARSE-INTO
+    (U)
+;
+
+: X ( -- )
+    CLINE-ADDR LINE>INSERT
+    ED-LINE @ 15 < IF
+        ED-LINE @ 1+ LINE-ADDR
+        CLINE-ADDR
+        15 ED-LINE @ - 64 * CMOVE
+    THEN
+    15 LINE-ADDR 64 BLANK
+    UPDATE
+;
+
+: M ( block line -- )
+    CLINE-ADDR LINE>INSERT
+    SWAP SCR !
+    ED-LINE !
+    (U)
+;
+
+: F ( -- )
+    ED-FBUF ED-FLEN PARSE-INTO
+    SEARCH-CURRENT-BLOCK DROP
+;
+
+: S ( n -- )
+    ED-FBUF ED-FLEN PARSE-INTO
+    SCR @ DO
+        I SCR !
+        0 ED-LINE !
+        0 SET-CURSOR
+        SEARCH-CURRENT-BLOCK IF
+            LEAVE
+        THEN
+    LOOP
+;
+
+: E ( -- )
+    ED-FLEN @ 0= IF EXIT THEN
+    ED-CURSOR @ ED-FLEN @ - DUP ED-LINE @ 64 * < IF
+        DROP EXIT
+    THEN
+    ED-TEMP !
+    CUR-BLOCK-ADDR ED-CURSOR @ +
+    CUR-BLOCK-ADDR ED-TEMP @ +
+    LINE-END ED-CURSOR @ - CMOVE
+    LINE-END ED-FLEN @ - ED-FLEN @ BLANK
+    ED-TEMP @ SET-CURSOR
+    UPDATE
+;
+
+: D ( -- )
+    ED-FBUF ED-FLEN PARSE-INTO
+    SEARCH-CURRENT-LINE IF
+        E
+    THEN
+;
+
+: TILL ( -- )
+    ED-FBUF ED-FLEN PARSE-INTO
+    ED-FLEN @ 0= IF EXIT THEN
+    ED-FLEN @ ED-TEMP !
+    ED-CURSOR @ ED-TEMP2 !
+    SEARCH-CURRENT-LINE IF
+        ED-CURSOR @ ED-TEMP2 @ - ED-FLEN !
+        E
+    THEN
+    ED-TEMP @ ED-FLEN !
+;
+
+: (I) ( -- )
+    ED-ILEN @ 0= IF EXIT THEN
+    LINE-END ED-CURSOR @ - DUP 0<= IF
+        DROP EXIT
+    THEN
+    DUP ED-ILEN @ > IF
+        LINE-END ED-CURSOR @ - ED-ILEN @ -
+        CUR-BLOCK-ADDR ED-CURSOR @ +
+        DUP ED-ILEN @ +
+        ROT <CMOVE
+    ELSE
+        DROP
+    THEN
+    ED-IBUF
+    CUR-BLOCK-ADDR ED-CURSOR @ +
+    LINE-END ED-CURSOR @ - ED-ILEN @ MIN
+    CMOVE
+    ED-CURSOR @ ED-ILEN @ + LINE-END MIN SET-CURSOR
+    UPDATE
+;
+
+: I ( -- )
+    ED-IBUF ED-ILEN PARSE-INTO
+    (I)
+;
+
+: R ( -- )
+    ED-IBUF ED-ILEN PARSE-INTO
+    ED-FLEN @ 0= IF EXIT THEN
+    ED-CURSOR @ ED-FLEN @ - ED-TEMP !
+    ED-ILEN @ ED-FLEN @ > IF
+        ED-ILEN @ ED-FLEN @ - ED-TEMP2 !
+        LINE-END ED-CURSOR @ - ED-TEMP2 @ - DUP 0> IF
+            CUR-BLOCK-ADDR ED-CURSOR @ +
+            DUP ED-TEMP2 @ +
+            ROT <CMOVE
+        ELSE
+            DROP
+        THEN
+    THEN
+    ED-ILEN @ ED-FLEN @ < IF
+        CUR-BLOCK-ADDR ED-CURSOR @ +
+        CUR-BLOCK-ADDR ED-TEMP @ + ED-ILEN @ +
+        LINE-END ED-CURSOR @ - CMOVE
+        LINE-END ED-FLEN @ ED-ILEN @ - -
+        ED-FLEN @ ED-ILEN @ - BLANK
+    THEN
+    ED-IBUF
+    CUR-BLOCK-ADDR ED-TEMP @ +
+    LINE-END ED-TEMP @ - ED-ILEN @ MIN
+    CMOVE
+    ED-TEMP @ ED-ILEN @ + LINE-END MIN SET-CURSOR
+    UPDATE
+;
+
+FORTH DEFINITIONS
+
+DROP
+DROP
+
 ( --------------------------------------------------------------------- )
 
 : TESTING ; ( will be forgotten )
@@ -3029,7 +3362,6 @@ TSTART
     T{ 0S 1S OR -> 1S }T
     T{ 1S 0S OR -> 1S }T
     T{ 1S 1S OR -> 1S }T
-
     T{ 0S 0S XOR -> 0S }T
     T{ 0S 1S XOR -> 1S }T
     T{ 1S 0S XOR -> 1S }T
@@ -3185,6 +3517,7 @@ TSTART
     T{ 0 ?DUP -> 0 }T
     T{ 1 ?DUP -> 1 1 }T
     T{ -1 ?DUP -> -1 -1 }T
+
     T{ DEPTH -> 0 }T
     T{ 0 DEPTH -> 0 1 }T
     T{ 0 1 DEPTH -> 0 1 2 }T
@@ -3600,6 +3933,77 @@ function runHostBlockTests(forth)
     assertHost(afterUpdateDuringLoad.includes("88"), "UPDATE during LOAD did not persist the explicitly buffered block");
 }
 
+function currentBlockLineText(forth, blockNumber, lineNumber)
+{
+    let addr = forth.blockBuffers.getBlock(blockNumber);
+    let chars = [];
+    for (let i = 0; i < 64; i++) {
+        let code = forth.memory.byteAt(addr + lineNumber * 64 + i);
+        chars.push(String.fromCharCode(code === 0 ? 32 : code));
+    }
+    return chars.join("").replace(/[ \x00]+$/, "");
+}
+
+function freshForthWithEditor()
+{
+    let forth = run();
+    installEditor(forth);
+    return forth;
+}
+
+function runHostEditorTests()
+{
+    let forth;
+
+    forth = freshForthWithEditor();
+    setDiskBlockLines(forth, 80, ["ALPHA", "BRAVO"]);
+    runForthSnippet(forth, "EDITOR 80 SCR ! 0 T P HELLO^ ");
+    assertHost(currentBlockLineText(forth, 80, 0) === "HELLO", "EDITOR P did not replace the current line");
+    assertHost(currentBlockLineText(forth, 80, 1) === "BRAVO", "EDITOR P damaged the following line");
+
+    forth = freshForthWithEditor();
+    setDiskBlockLines(forth, 81, ["ONE", "TWO", "THREE"]);
+    runForthSnippet(forth, "EDITOR 81 SCR ! 0 T U INSERTED^ ");
+    assertHost(currentBlockLineText(forth, 81, 0) === "ONE", "EDITOR U changed the current line unexpectedly");
+    assertHost(currentBlockLineText(forth, 81, 1) === "INSERTED", "EDITOR U did not insert below the current line");
+    assertHost(currentBlockLineText(forth, 81, 2) === "TWO", "EDITOR U did not shift following lines down");
+    assertHost(currentBlockLineText(forth, 81, 3) === "THREE", "EDITOR U damaged later lines");
+
+    forth = freshForthWithEditor();
+    setDiskBlockLines(forth, 82, ["ONE", "TWO", "THREE"]);
+    runForthSnippet(forth, "EDITOR 82 SCR ! 1 T X 2 T P ^ ");
+    assertHost(currentBlockLineText(forth, 82, 0) === "ONE", "EDITOR X damaged the first line");
+    assertHost(currentBlockLineText(forth, 82, 1) === "THREE", "EDITOR X did not pull the following line up");
+    assertHost(currentBlockLineText(forth, 82, 2) === "TWO", "EDITOR X/P did not preserve the extracted insert buffer");
+
+    forth = freshForthWithEditor();
+    setDiskBlockLines(forth, 83, ["HELLO HELLO"]);
+    runForthSnippet(forth, "EDITOR 83 SCR ! 0 T F HELLO^ D ^ ");
+    assertHost(currentBlockLineText(forth, 83, 0) === "HELLO", "EDITOR F/D did not delete the next occurrence in the current line");
+
+    forth = freshForthWithEditor();
+    setDiskBlockLines(forth, 84, ["ABC DEF GHI"]);
+    runForthSnippet(forth, "EDITOR 84 SCR ! 0 T F DEF^ TILL GHI^ ");
+    assertHost(currentBlockLineText(forth, 84, 0) === "ABC DEF", "EDITOR TILL did not delete from the cursor through the target string");
+
+    forth = freshForthWithEditor();
+    setDiskBlockLines(forth, 85, ["ABEF"]);
+    runForthSnippet(forth, "EDITOR 85 SCR ! 0 T F AB^ I CD^ ");
+    assertHost(currentBlockLineText(forth, 85, 0) === "ABCDEF", "EDITOR I did not insert at the active cursor");
+
+    forth = freshForthWithEditor();
+    setDiskBlockLines(forth, 86, ["ABXXEF"]);
+    runForthSnippet(forth, "EDITOR 86 SCR ! 0 T F XX^ R CD^ ");
+    assertHost(currentBlockLineText(forth, 86, 0) === "ABCDEF", "EDITOR R did not replace the found string");
+
+    forth = freshForthWithEditor();
+    setDiskBlockLines(forth, 87, ["SOURCE"]);
+    setDiskBlockLines(forth, 88, ["DEST0", "DEST1"]);
+    runForthSnippet(forth, "EDITOR 87 SCR ! 0 T 88 0 M ");
+    assertHost(currentBlockLineText(forth, 88, 0) === "DEST0", "EDITOR M damaged the destination line");
+    assertHost(currentBlockLineText(forth, 88, 1) === "SOURCE", "EDITOR M did not move a copy of the current line under the destination line");
+    assertHost(currentBlockLineText(forth, 88, 2) === "DEST1", "EDITOR M damaged the next destination line");
+}
 
 function addchar(char)
 {

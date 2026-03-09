@@ -3938,17 +3938,6 @@ TEND
 
 FORGET TESTING
 
- ."  "
-
-( ." FINISHED" CR )
-
-
-
-
-
-
-: MYTEST 3 4 + . ;
-
 `.toUpperCase();
 
 

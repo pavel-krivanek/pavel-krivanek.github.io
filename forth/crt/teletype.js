@@ -36,6 +36,7 @@ var inputScrollRow = 0;
 var inputHistory = [];
 var historyIndex = null;      // null => not navigating history
 var historyDraft = "";        // preserved current edit buffer when entering history navigation
+var statusMessageTimer = null;
 
 // ---- Utilities ----
 function start() { started = true; }
@@ -428,18 +429,224 @@ function handleRawKeydown(e) {
     }
 }
 
+function getForthInstance() {
+    return window.forth || globalThis.forth || null;
+}
+
+function pad2(n) {
+    return String(n).padStart(2, "0");
+}
+
+function currentDiskDownloadFilename() {
+    let now = new Date();
+    let yy = pad2(now.getFullYear() % 100);
+    let mm = pad2(now.getMonth() + 1);
+    let dd = pad2(now.getDate());
+    let hh = pad2(now.getHours());
+    let mi = pad2(now.getMinutes());
+    let ss = pad2(now.getSeconds());
+    return `forth-${yy}${mm}${dd}-${hh}${mi}${ss}.img`;
+}
+
+function ensureStatusMessageElement() {
+    let element = $("#tty-status-message");
+    if (element.length > 0) return element;
+
+    element = $('<div id="tty-status-message" aria-live="polite"></div>');
+    element.css({
+        position: "fixed",
+        right: "16px",
+        bottom: "16px",
+        display: "none",
+        maxWidth: "min(40rem, calc(100vw - 32px))",
+        padding: "10px 14px",
+        borderRadius: "6px",
+        color: "#fff",
+        background: "rgba(0, 0, 0, 0.82)",
+        boxShadow: "0 6px 20px rgba(0, 0, 0, 0.35)",
+        fontFamily: "monospace",
+        fontSize: "14px",
+        zIndex: 2147483647,
+        pointerEvents: "none"
+    });
+    $("body").append(element);
+    return element;
+}
+
+function setStatusMessage(message, isError) {
+    let element = ensureStatusMessageElement();
+    if (statusMessageTimer !== null) {
+        clearTimeout(statusMessageTimer);
+        statusMessageTimer = null;
+    }
+
+    element.stop(true, true);
+    element.text(message || "");
+    element.css("background", isError ? "rgba(140, 24, 24, 0.92)" : "rgba(0, 0, 0, 0.82)");
+    element.show();
+
+    statusMessageTimer = setTimeout(function() {
+        element.fadeOut(700);
+        statusMessageTimer = null;
+    }, 3200);
+}
+
+function saveCurrentDisk() {
+    let forth = getForthInstance();
+    if (!forth || !forth.disk || !forth.disk.content) {
+        setStatusMessage("No disk is available to save.", true);
+        return;
+    }
+
+    if (forth.blockBuffers && typeof forth.blockBuffers.saveBuffers === "function") {
+        forth.blockBuffers.saveBuffers();
+    }
+
+    let bytes = forth.disk.content;
+    let blob = new Blob([bytes], { type: "application/octet-stream" });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement("a");
+    let filename = currentDiskDownloadFilename();
+
+    link.href = url;
+    link.download = filename;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setTimeout(function() {
+        URL.revokeObjectURL(url);
+    }, 1000);
+
+    setStatusMessage("Saved disk image as " + filename + ".", false);
+}
+
+function isImgFilename(name) {
+    return /\.img$/i.test(name || "");
+}
+
+function loadCurrentDiskFromBytes(bytes, sourceName) {
+    let forth = getForthInstance();
+    if (!forth || !forth.disk || !forth.disk.content) {
+        setStatusMessage("No disk is available to replace.", true);
+        return;
+    }
+
+    let diskBytes = forth.disk.content;
+    if (bytes.length > diskBytes.length) {
+        setStatusMessage("The dropped disk image is too large for the current virtual disk.", true);
+        return;
+    }
+
+    if (forth.blockBuffers && typeof forth.blockBuffers.emptyBuffers === "function") {
+        forth.blockBuffers.emptyBuffers();
+    }
+
+    diskBytes.fill(32);
+    diskBytes.set(bytes);
+    renderTerminal();
+    setStatusMessage("Loaded disk image " + sourceName + ".", false);
+}
+
+function loadDiskImageFile(file) {
+    if (!file) return;
+    if (!isImgFilename(file.name)) {
+        setStatusMessage("Only .img files can be loaded as disks.", true);
+        return;
+    }
+
+    let reader = new FileReader();
+    reader.onload = function(event) {
+        try {
+            let bytes = new Uint8Array(event.target.result);
+            loadCurrentDiskFromBytes(bytes, file.name);
+        } catch (error) {
+            console.error(error);
+            setStatusMessage("Failed to read the dropped disk image.", true);
+        }
+    };
+    reader.onerror = function() {
+        setStatusMessage("Failed to read the dropped disk image.", true);
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function eventHasFiles(event) {
+    let dataTransfer = event && event.dataTransfer;
+    if (!dataTransfer) return false;
+    if (dataTransfer.items && dataTransfer.items.length > 0) {
+        return Array.from(dataTransfer.items).some(item => item.kind === "file");
+    }
+    if (dataTransfer.types && dataTransfer.types.length > 0) {
+        return Array.from(dataTransfer.types).indexOf("Files") !== -1;
+    }
+    return dataTransfer.files && dataTransfer.files.length > 0;
+}
+
+function preventBrowserFileDrop(event) {
+    if (!eventHasFiles(event)) return false;
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = "copy";
+    }
+    return true;
+}
+
+function installDiskDropHandlers() {
+    let targets = [window, document, document.documentElement, document.body].filter(Boolean);
+
+    targets.forEach(function(target) {
+        ["dragenter", "dragover"].forEach(function(eventName) {
+            target.addEventListener(eventName, function(event) {
+                preventBrowserFileDrop(event);
+            }, true);
+        });
+
+        target.addEventListener("drop", function(event) {
+            if (!preventBrowserFileDrop(event)) return;
+            let files = Array.from((event.dataTransfer && event.dataTransfer.files) || []);
+            let file = files.find(function(candidate) { return isImgFilename(candidate.name); });
+            if (!file) {
+                setStatusMessage("Drop a .img file to load a disk image.", true);
+                return;
+            }
+            loadDiskImageFile(file);
+        }, true);
+    });
+}
+
+function shouldHandleBufferedKeydown(e) {
+    switch (e.key) {
+        case "Escape":
+        case "Enter":
+        case "Backspace":
+        case "Delete":
+        case "Insert":
+        case "ArrowLeft":
+        case "ArrowRight":
+        case "ArrowUp":
+        case "ArrowDown":
+        case "Tab":
+        case "Home":
+        case "End":
+            return true;
+        default:
+            return !!(e.key && e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey);
+    }
+}
+
 // ---- Event handling / focus ----
 function handleBufferedKeydown(e) {
     // Allow system shortcuts and paste.
     let isPaste = (e.key && e.key.toLowerCase() === "v" && (e.ctrlKey || e.metaKey));
     if (isPaste) return;
+    if (!shouldHandleBufferedKeydown(e)) return;
 
-    // Prevent browser navigation / default behavior for keys we handle.
-    // (We still allow Ctrl/Cmd combos except paste.)
-    if (!e.altKey && !e.ctrlKey && !e.metaKey) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
+    // Prevent browser navigation / default behavior only for keys we actually handle.
+    e.preventDefault();
+    e.stopPropagation();
 
     switch (e.key) {
         case "Escape":
@@ -529,6 +736,13 @@ function handleBufferedKeydown(e) {
 function keydown(e) {
     if (!started) start();
 
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        e.stopPropagation();
+        saveCurrentDisk();
+        return;
+    }
+
     // If Forth requests raw input, bypass the editor.
     if (window.forth && window.forth.awaitingRawInput === true) {
         handleRawKeydown(e);
@@ -559,6 +773,11 @@ $(function() {
         try { $focus[0].focus({ preventScroll: true }); }
         catch (_) { $focus.trigger("focus"); }
     }
+
+    installDiskDropHandlers();
+    ensureStatusMessageElement();
+
+     setStatusMessage("This Forth is uppercase-case and case sensitive. Ctrl+S to save disk. Drop disk file to load it.");
 
     $(document)
         .on("mousedown", function() { focusTerminal(); })

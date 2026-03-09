@@ -77,15 +77,16 @@ Number.prototype.asUnsigned16 = function() {
     return this < 0 ? ((Math.abs(this+1) & 0xFFFF) ^ 0xFFFF) : this & 0xFFFF ;
 }
 Number.prototype.asUnsigned32 = function() {
-    if (this >= 0) return this & 0xFFFFFFFF;
-    let num = Math.abs(this+1) % 0x100000000;
-    return 0xFFFFFFFF - num;
+    let num = Math.trunc(Number(this));
+    return ((num % 0x100000000) + 0x100000000) % 0x100000000;
 }
 Number.prototype.asSigned16 = function() {
-    return this > 0x7FFF ? 0 - (((this & 0xFFFF) ^ 0xFFFF) + 1) : this ;
+    let num = this.asUnsigned16();
+    return num > 0x7FFF ? num - 0x10000 : num;
 }
 Number.prototype.asSigned32 = function() {
-    return this > 0x7FFFFFFF ? 0 - (((this & 0xFFFFFFFF) ^ 0xFFFFFFFF) + 1) : this ;
+    let num = this.asUnsigned32();
+    return num > 0x7FFFFFFF ? num - 0x100000000 : num;
 }
 Number.prototype.asUnsigned2Bytes = function() {
     let num = this.asUnsigned16();
@@ -102,7 +103,7 @@ Array.prototype.asUnsigned16 = function() {
     return (this[1]+(this[0] << 8));
 }
 Array.prototype.asUnsigned32 = function() {
-    return (this[3]+(this[2] << 8)+(this[1] << 16)+(this[0] << 24));
+    return (((this[0] * 256) + this[1]) * 256 + this[2]) * 256 + this[3];
 }
 Array.prototype.asSigned16 = function() {
     return this.asUnsigned16().asSigned16();
@@ -357,8 +358,24 @@ class Forth {
 		this.setVarBlkValue(0);
 		this.state = "noInput";
 	}
+    clearInputSource() {
+        this.inputBuffer = [];
+        this.awaitingRawInput = false;
+        this.setVarBlkValue(0);
+        this.setVarToInValue(0);
+    }
+    abortToQuit() {
+        this.clearInputSource();
+        this.setVarStateValue(0);
+        this.memory.resetStack();
+        this.memory.resetReturnStack();
+        this.makeRunning();
+        this.pcCurrent = this.addressForLabel("codeword_QUIT");
+        this.pcNext = this.pcCurrent + this.wordSize();
+        this.pc = this.memory.wordAt(this.pcCurrent) - 1;
+    }
     emergencyStop() {
-        // na error occured
+        // an error occurred
         this.noInput();
         this.awaitingRawInput = false;
         this.resetBuffers();
@@ -386,6 +403,13 @@ class Forth {
             || ((asciiCode >= 97) && (asciiCode <= 97+base-11))
             || ((asciiCode >= 44) && (asciiCode <= 47)) // ,-
             || (asciiCode === 58)
+    }
+    digitValue(asciiCode, base = this.varBaseValue()) {
+        let value = -1;
+        if ((asciiCode >= 48) && (asciiCode <= 57)) value = asciiCode - 48;
+        else if ((asciiCode >= 65) && (asciiCode <= 90)) value = asciiCode - 65 + 10;
+        else if ((asciiCode >= 97) && (asciiCode <= 122)) value = asciiCode - 97 + 10;
+        return (value >= 0 && value < base) ? value : -1;
     }
     isDoubleSeparator(asciiCode) {
          return ((asciiCode >= 44) && (asciiCode <= 47)) // ,-./
@@ -420,6 +444,28 @@ class Forth {
     }
     inputBufferEmpty() { return  this.inputBuffer.length === 0 }
 
+    readStringUntil(terminatorChar) {
+        let usesBlock = this.readsFromBlock();
+        let result = [];
+        while (!this.atInputEnd(usesBlock)) {
+            let charCode = this.readCharacter(usesBlock);
+            if (charCode === terminatorChar) {
+                return result;
+            }
+            result.push(charCode);
+        }
+        if (!usesBlock) {
+            this.awaitingRawInput = false;
+            this.noInput();
+        }
+        return result;
+    }
+    alignHere() {
+        if ((this.varHereValue() & 1) !== 0) {
+            this.memory.writeByteAt(0, this.varHereValue());
+            this.setVarHereValue(this.varHereValue() + 1);
+        }
+    }
     privWord() {
         let length = 0;
         let charCode;
@@ -460,7 +506,7 @@ class Forth {
 
         let oldLast = this.blockBuffers.lastAccessedBuffer;
         let oldBlockNum = oldLast ? oldLast.blockNum : -1;
-		let addr = this.blockBuffers.getBlock(this.varBlkValue());
+		let addr = this.blockBuffers.getBlock(this.blockNumberWithOffset(this.varBlkValue()));
         if (oldLast && oldLast.blockNum === oldBlockNum) {
             this.blockBuffers.lastAccessedBuffer = oldLast;
         } else if (!oldLast) {
@@ -533,6 +579,20 @@ class Forth {
 
     varContext() { return this.addressForLabel("var_CONTEXT"); }
     varCurrent() { return this.addressForLabel("var_CURRENT"); }
+    offsetVariableAddress() {
+        let name = Array.from("OFFSET").map(each => each.charCodeAt(0));
+        let offsetWord = this.find(name);
+        if (offsetWord === 0) return undefined;
+        let codeword = this.codewordOf(offsetWord);
+        return this.memory.unsignedWordAt(codeword + (this.wordSize() * 2));
+    }
+    varOffsetValue() {
+        let offsetVarAddress = this.offsetVariableAddress();
+        return (offsetVarAddress === undefined) ? 0 : this.memory.signedWordAt(offsetVarAddress);
+    }
+    blockNumberWithOffset(aBlockNumber) {
+        return aBlockNumber + this.varOffsetValue();
+    }
 
     wordBufferAddress() { return this.addressForLabel("word_buffer") };
     wordBufferSize() { return 32 };
@@ -624,6 +684,8 @@ class ForthStandardMemoryInitializer extends ForthMemoryInitializer {
         ForthCodeUDivMod,
         ForthCodeMulDivMod,
         ForthCodeFMDivMod,
+        ForthCodeUDDivMod,
+        ForthCodeMStarSlash,
         ForthCodeLShift,
         ForthCodeRShift
         ]); }
@@ -707,6 +769,8 @@ class ForthStandardMemoryInitializer extends ForthMemoryInitializer {
     initializeInterpreterPrimitives() { this.installAll([
 		ForthCodeExecute,
 		ForthCodeHalt,
+		ForthCodeAbort,
+		ForthCodeAbortQuote,
 		ForthCodeQuit,
 		ForthCodeInterpret
         ]); }
@@ -729,7 +793,9 @@ class ForthStandardMemoryInitializer extends ForthMemoryInitializer {
         ]); }
         initializeParsingPrimitives() { this.installAll([
         ForthCodeWord,
-        ForthCodeNumber
+        ForthCodeNumber,
+        ForthCodeDigitQ,
+        ForthCodeConvert
         ]); }
     initializeDataStackPrimitives() { this.installAll([
         ForthCodeDSPFetch,
@@ -744,6 +810,7 @@ class ForthStandardMemoryInitializer extends ForthMemoryInitializer {
         ]); }
     initializeStringLiteralsPrimitives() { this.installAll([
         ForthCodeLitString,
+        ForthCodeAbortQRuntime,
         ForthCodeChar
         ]); }
     initializeBlockPrimitives() { this.installAll([
@@ -781,6 +848,7 @@ class ForthCode {
     popSigned() { return this.pop().asSigned16(); }
     popSigned32() { return this.forth.memory.pop(4).asSigned32(); }
     popUnsigned() { return this.pop().asUnsigned16(); }
+    popUnsigned32() { return this.forth.memory.pop(4).asUnsigned32(); }
     memory() { return this.forth.memory; }
     true() { return 0xFFFF; }
     false() { return 0; }
@@ -948,6 +1016,30 @@ class ForthCodeFMDivMod extends ForthCodeWithHead {
         let div = Math.floor(a / b);
         this.push(a - (div * b));
         this.push(div);
+    }
+}
+
+class ForthCodeUDDivMod extends ForthCodeWithHead {
+    name() { return "ud/mod"; }
+    execute() {
+        let divisor = this.popUnsigned();
+        let dividend = this.popUnsigned32();
+        let remainder = dividend % divisor;
+        let quotient = Math.floor(dividend / divisor);
+        this.push(remainder);
+        this.push2(quotient);
+    }
+}
+
+class ForthCodeMStarSlash extends ForthCodeWithHead {
+    name() { return "m*/"; }
+    execute() {
+        let divisor = this.popUnsigned();
+        let multiplier = this.popSigned();
+        let multiplicand = this.popSigned32();
+        let product = multiplicand * multiplier;
+        let quotient = Math.floor(product / divisor);
+        this.push2(quotient);
     }
 }
 
@@ -1518,6 +1610,39 @@ class ForthCodeHalt extends ForthCodeWithHead {
     }
 }
 
+class ForthCodeAbort extends ForthCodeWithHead {
+    name() { return "abort"; }
+    execute() {
+        this.forth.abortToQuit();
+    }
+}
+
+class ForthCodeAbortQuote extends ForthCodeWithHead {
+    name() { return 'abort"'; }
+    flags() { return this.forth.flagImmediate(); }
+    execute() {
+        let text = this.forth.readStringUntil(34);
+        if (this.forth.varStateValue() === 0) {
+            let flag = this.popSigned();
+            if (flag !== 0) {
+                text.forEach(each => typeCharacter(each));
+                this.forth.outputBuffer.push(...text);
+                this.forth.abortToQuit();
+            }
+            return;
+        }
+
+        this.forth.privComma(this.forth.addressForLabel('codeword_ABORTQRUNTIME'));
+        this.forth.privComma(text.length);
+        let here = this.forth.varHereValue();
+        text.forEach((each, index) => {
+            this.memory().writeByteAt(each, here + index);
+        });
+        this.forth.setVarHereValue(here + text.length);
+        this.forth.alignHere();
+    }
+}
+
 class ForthCodeInterpret extends ForthCodeWithHead {
     name() { return "interpret"; }
     execute() {
@@ -1677,6 +1802,39 @@ class ForthCodeNumber extends ForthCodeWithHead {
     }
 }
 
+class ForthCodeDigitQ extends ForthCodeWithHead {
+    name() { return "digit?"; }
+    execute() {
+        let asciiCode = this.popUnsigned();
+        let digit = this.forth.digitValue(asciiCode);
+        if (digit >= 0) {
+            this.push(digit);
+            this.push(this.true());
+        } else {
+            this.push(asciiCode);
+            this.push(this.false());
+        }
+    }
+}
+
+class ForthCodeConvert extends ForthCodeWithHead {
+    name() { return "convert"; }
+    execute() {
+        let addr = this.popUnsigned();
+        let value = this.popUnsigned32();
+        let ptr = addr + 1;
+        let base = this.forth.varBaseValue();
+        while (true) {
+            let digit = this.forth.digitValue(this.memory().byteAt(ptr), base);
+            if (digit < 0) break;
+            value = ((value * base) + digit).asUnsigned32();
+            ptr += 1;
+        }
+        this.push2(value);
+        this.push(ptr);
+    }
+}
+
 class ForthCodeWord extends ForthCodeWithHead {
     name() { return "word"; }
     finishAt(initialPosition) {
@@ -1744,6 +1902,29 @@ class ForthCodeLitString extends ForthCodeWithHead {
     }
 }
 
+class ForthCodeAbortQRuntime extends ForthCodeWithHead {
+    name() { return "abortq"; }
+    execute() {
+        let flag = this.popSigned();
+        let length = this.memory().wordAt(this.forth.pcNext);
+        let addr = this.forth.pcNext + this.forth.wordSize();
+        let nextPc = addr + length;
+        if ((nextPc & 1) !== 0) {
+            nextPc += 1;
+        }
+        this.forth.pcCurrent = this.forth.pcNext;
+        this.forth.pcNext = nextPc;
+        if (flag !== 0) {
+            let text = (length > 0)
+                ? this.memory().memoryCopyFromTo(addr, addr + length - 1)
+                : [];
+            text.forEach(each => typeCharacter(each));
+            this.forth.outputBuffer.push(...text);
+            this.forth.abortToQuit();
+        }
+    }
+}
+
 class ForthCodeLitTell extends ForthCodeWithHead {
     name() { return "tell"; }
     execute() {
@@ -1797,7 +1978,7 @@ class ForthCodeBlock extends ForthCodeWithHead {
     name() { return "block"; }
     execute() {
 		let u = this.popUnsigned();
-        let addr = this.forth.blockBuffers.getBlock(u);
+        let addr = this.forth.blockBuffers.getBlock(this.forth.blockNumberWithOffset(u));
         this.push(addr);
 	}
 }
@@ -1806,7 +1987,7 @@ class ForthCodeBuffer extends ForthCodeWithHead {
     name() { return "buffer"; }
     execute() {
         let u = this.popUnsigned();
-        let addr = this.forth.blockBuffers.getBuffer(u);
+        let addr = this.forth.blockBuffers.getBuffer(this.forth.blockNumberWithOffset(u));
         this.push(addr);
     }
 }
@@ -2501,7 +2682,7 @@ let source = `
 : MIN 2DUP > IF SWAP DROP ELSE DROP THEN ;
 
 HEX
-DFFC CONSTANT PAD
+D9FC CONSTANT PAD
 DECIMAL
 
 
@@ -2576,9 +2757,8 @@ DECIMAL
 : M+ ( d n -- d+n ) S>D D+ ;
 : M/ ( d n -- q ) FM/MOD NIP ;
 
-( M*/ is omitted because doing true 48-bit intermediate math )
-( in high-level 16-bit Forth is a massive undertaking not suitable )
-( for a simple alias. )
+( M*/ is provided as a JS primitive. JavaScript can hold the )
+( required 48-bit intermediate exactly, so this is straightforward. )
 
 ( --- Comparisons --- )
 : D= ( d1 d2 -- f ) ROT = -ROT = AND ;
@@ -2681,10 +2861,10 @@ VARIABLE HLD
 : HOLD ( char -- ) HLD @ 1- DUP HLD ! C! ;
 : #> ( d -- addr len ) 2DROP HLD @ PAD OVER - ;
 
-: # ( d -- d' )
-    BASE @ FM/MOD ( rem quot )
-    SWAP DUP 9 > IF 7 + THEN '0' + HOLD
-    0 ; ( simplified: return single quot padded to double 0 )
+: # ( ud -- ud' )
+    BASE @ UD/MOD ( rem uquot )
+    ROT DUP 9 > IF 7 + THEN '0' + HOLD
+;
 
 : #S ( d -- 0 0 )
     BEGIN # 2DUP OR 0= UNTIL ;
@@ -2709,11 +2889,7 @@ VARIABLE ORIG-LATEST LATEST @ ORIG-LATEST !
     ORIG-HERE @ HERE !
     ORIG-LATEST @ LATEST ! ;
 
-: ABORT" IMMEDIATE
-    [COMPILE] IF
-    [COMPILE] ."
-    ' QUIT ,
-    [COMPILE] THEN ;
+( ABORT" is provided as a JS immediate primitive. )
 
 VARIABLE OFFSET 0 OFFSET !
 VARIABLE SCR
@@ -3255,7 +3431,6 @@ TSTART
     T{ 0 0 <# #S #> NIP -> 1 }T
     T{ 123 0 <# #S #> NIP -> 3 }T
     T{ 123 0 <# #S #> DROP C@ -> 49 }T ( ASCII '1' )
-
     ( Block primitives and buffers )
     : PUT-BLOCK ( addr len n -- )
         >R

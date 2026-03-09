@@ -77,16 +77,17 @@ Number.prototype.asUnsigned16 = function() {
     return this < 0 ? ((Math.abs(this+1) & 0xFFFF) ^ 0xFFFF) : this & 0xFFFF ;
 }
 Number.prototype.asUnsigned32 = function() {
-    let num = Math.trunc(Number(this));
-    return ((num % 0x100000000) + 0x100000000) % 0x100000000;
+    if (this >= 0) return this & 0xFFFFFFFF;
+    let num = Math.abs(this+1) % 0x100000000;
+    return 0xFFFFFFFF - num;
 }
 Number.prototype.asSigned16 = function() {
-    let num = this.asUnsigned16();
-    return num > 0x7FFF ? num - 0x10000 : num;
+    return this > 0x7FFF ? 0 - (((this & 0xFFFF) ^ 0xFFFF) + 1) : this ;
+
 }
 Number.prototype.asSigned32 = function() {
-    let num = this.asUnsigned32();
-    return num > 0x7FFFFFFF ? num - 0x100000000 : num;
+    return this > 0x7FFFFFFF ? 0 - (((this & 0xFFFFFFFF) ^ 0xFFFFFFFF) + 1) : this ;
+
 }
 Number.prototype.asUnsigned2Bytes = function() {
     let num = this.asUnsigned16();
@@ -103,7 +104,7 @@ Array.prototype.asUnsigned16 = function() {
     return (this[1]+(this[0] << 8));
 }
 Array.prototype.asUnsigned32 = function() {
-    return (((this[0] * 256) + this[1]) * 256 + this[2]) * 256 + this[3];
+    return (this[3]+(this[2] << 8)+(this[1] << 16)+(this[0] << 24));
 }
 Array.prototype.asSigned16 = function() {
     return this.asUnsigned16().asSigned16();
@@ -375,7 +376,7 @@ class Forth {
         this.pc = this.memory.wordAt(this.pcCurrent) - 1;
     }
     emergencyStop() {
-        // an error occurred
+        // na error occured
         this.noInput();
         this.awaitingRawInput = false;
         this.resetBuffers();
@@ -444,71 +445,71 @@ class Forth {
     }
     inputBufferEmpty() { return  this.inputBuffer.length === 0 }
 
-    readStringUntil(terminatorChar) {
-        let usesBlock = this.readsFromBlock();
-        let result = [];
-        while (!this.atInputEnd(usesBlock)) {
-            let charCode = this.readCharacter(usesBlock);
-            if (charCode === terminatorChar) {
-                return result;
-            }
-            result.push(charCode);
-        }
-        if (!usesBlock) {
-            this.awaitingRawInput = false;
-            this.noInput();
-        }
-        return result;
-    }
-    parseEditorText(destAddr, lenAddr, maxLen = 64) {
-        let usesBlock = this.readsFromBlock();
-        let charCode = 0;
 
-        while (true) {
-            if (this.atInputEnd(usesBlock)) {
-                if (!usesBlock) {
-                    this.awaitingRawInput = false;
-                    this.noInput();
-                }
-                return;
-            }
-            charCode = this.readCharacter(usesBlock);
-            if (charCode !== 32) break;
-        }
 
-        if ((charCode === 94) || (charCode === 10) || (charCode === 13) || (charCode === 0)) {
-            return;
-        }
 
-        let len = 0;
-        while (true) {
-            if ((charCode === 94) || (charCode === 10) || (charCode === 13) || (charCode === 0)) {
-                break;
-            }
 
-            if (len < maxLen) {
-                this.memory.writeByteAt(charCode, destAddr + len);
-                len += 1;
-            }
 
-            if (this.atInputEnd(usesBlock)) {
-                if (!usesBlock) {
-                    this.awaitingRawInput = false;
-                    this.noInput();
-                }
-                break;
-            }
-            charCode = this.readCharacter(usesBlock);
-        }
 
-        this.memory.writeWordAt(len, lenAddr);
-    }
-    alignHere() {
-        if ((this.varHereValue() & 1) !== 0) {
-            this.memory.writeByteAt(0, this.varHereValue());
-            this.setVarHereValue(this.varHereValue() + 1);
-        }
-    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     privWord() {
         let length = 0;
         let charCode;
@@ -839,7 +840,7 @@ class ForthStandardMemoryInitializer extends ForthMemoryInitializer {
         ForthCodeNumber,
         ForthCodeDigitQ,
         ForthCodeConvert,
-        ForthCodeEditorParse
+
         ]); }
     initializeDataStackPrimitives() { this.installAll([
         ForthCodeDSPFetch,
@@ -1879,14 +1880,14 @@ class ForthCodeConvert extends ForthCodeWithHead {
     }
 }
 
-class ForthCodeEditorParse extends ForthCodeWithHead {
-    name() { return "editor-parse"; }
-    execute() {
-        let lenAddr = this.popUnsigned();
-        let destAddr = this.popUnsigned();
-        this.forth.parseEditorText(destAddr, lenAddr, 64);
-    }
-}
+
+
+
+
+
+
+
+
 
 class ForthCodeWord extends ForthCodeWithHead {
     name() { return "word"; }
@@ -2735,7 +2736,7 @@ let source = `
 : MIN 2DUP > IF SWAP DROP ELSE DROP THEN ;
 
 HEX
-D9FC CONSTANT PAD
+DFFC CONSTANT PAD
 DECIMAL
 
 
@@ -2810,8 +2811,9 @@ DECIMAL
 : M+ ( d n -- d+n ) S>D D+ ;
 : M/ ( d n -- q ) FM/MOD NIP ;
 
-( M*/ is provided as a JS primitive. JavaScript can hold the )
-( required 48-bit intermediate exactly, so this is straightforward. )
+( M*/ is omitted because doing true 48-bit intermediate math )
+( in high-level 16-bit Forth is a massive undertaking not suitable )
+( for a simple alias. )
 
 ( --- Comparisons --- )
 : D= ( d1 d2 -- f ) ROT = -ROT = AND ;
@@ -2914,10 +2916,10 @@ VARIABLE HLD
 : HOLD ( char -- ) HLD @ 1- DUP HLD ! C! ;
 : #> ( d -- addr len ) 2DROP HLD @ PAD OVER - ;
 
-: # ( ud -- ud' )
-    BASE @ UD/MOD ( rem uquot )
-    ROT DUP 9 > IF 7 + THEN '0' + HOLD
-;
+: # ( d -- d' )
+    BASE @ FM/MOD ( rem quot )
+    SWAP DUP 9 > IF 7 + THEN '0' + HOLD
+    0 ; ( simplified: return single quot padded to double 0 )
 
 : #S ( d -- 0 0 )
     BEGIN # 2DUP OR 0= UNTIL ;
@@ -2943,6 +2945,10 @@ VARIABLE ORIG-LATEST LATEST @ ORIG-LATEST !
     ORIG-LATEST @ LATEST ! ;
 
 ( ABORT" is provided as a JS immediate primitive. )
+
+
+
+
 
 VARIABLE OFFSET 0 OFFSET !
 VARIABLE SCR
@@ -3014,23 +3020,41 @@ VARIABLE R#
 
 ( --- EDITOR vocabulary (Starting Forth style subset) --- )
 
+VOCABULARY EDITOR
+EDITOR DEFINITIONS
+
 VARIABLE ED-LINE
 0 ED-LINE !
 VARIABLE ED-CURSOR
 0 ED-CURSOR !
+VARIABLE PARSE-BUF
+VARIABLE PARSE-LENPTR
+VARIABLE ED-TEMP
+VARIABLE ED-TEMP2
+VARIABLE ED-SAVE1
+VARIABLE ED-SAVE2
+VARIABLE ED-MATCH
+
 HERE @ 64 ALLOT CONSTANT ED-IBUF
 VARIABLE ED-ILEN
 0 ED-ILEN !
 HERE @ 64 ALLOT CONSTANT ED-FBUF
 VARIABLE ED-FLEN
 0 ED-FLEN !
-VARIABLE ED-MATCH
-VARIABLE ED-HIT
-VARIABLE ED-TEMP
-VARIABLE ED-TEMP2
 
-VOCABULARY EDITOR
-EDITOR DEFINITIONS
+
+
+
+
+: .OK S" ok" TELL ;
+: .NONE S" NONE" TELL ;
+
+: END-PARSE? ( c -- f )
+    DUP 94 = IF DROP TRUE EXIT THEN
+    DUP 10 = IF DROP TRUE EXIT THEN
+    DUP 13 = IF DROP TRUE EXIT THEN
+    0=
+;
 
 : SET-CURSOR ( n -- )
     DUP ED-CURSOR !
@@ -3054,7 +3078,31 @@ EDITOR DEFINITIONS
 ;
 
 : PARSE-INTO ( addr lenaddr -- )
-    EDITOR-PARSE
+    PARSE-LENPTR !
+    PARSE-BUF !
+    KEY DUP END-PARSE? IF
+        DROP
+        EXIT
+    THEN
+    DUP BL = IF
+        DROP
+        KEY DUP END-PARSE? IF
+            DROP
+            0 PARSE-LENPTR @ !
+            EXIT
+        THEN
+    THEN
+    0 PARSE-LENPTR @ !
+    BEGIN
+        DUP END-PARSE? NOT
+    WHILE
+        PARSE-LENPTR @ @ 64 < IF
+            DUP PARSE-BUF @ PARSE-LENPTR @ @ + C!
+            1 PARSE-LENPTR @ +!
+        THEN
+        KEY
+    REPEAT
+    DROP
 ;
 
 : >INSERT ( addr len -- )
@@ -3084,21 +3132,21 @@ EDITOR DEFINITIONS
 ;
 
 : SEARCH-BLOCK ( start limit -- f )
-    2DUP = IF 2DROP FALSE EXIT THEN
-    2DUP > IF 2DROP FALSE EXIT THEN
-    >R
+    ED-TEMP2 !
+
+
     BEGIN
-        DUP R@ <
+        DUP ED-TEMP2 @ <
     WHILE
         DUP FIND-MATCH? IF
             DUP ED-MATCH !
-            DROP R> DROP
-            TRUE EXIT
+            DROP TRUE EXIT
+
         THEN
         1+
     REPEAT
-    DROP R> DROP
-    FALSE
+    DROP FALSE
+
 ;
 
 : FOUND>STATE ( pos -- )
@@ -3122,10 +3170,44 @@ EDITOR DEFINITIONS
     DUP IF ED-MATCH @ FOUND>STATE THEN
 ;
 
+: TYPE-CURRENT-LINE ( -- )
+    CLINE-ADDR 64 -TRAILING NIP ED-TEMP2 !
+    ED-CURSOR @ ED-LINE @ 64 * - DUP 0< IF DROP 0 THEN ED-TEMP !
+    ED-TEMP @ ED-TEMP2 @ MAX ED-MATCH !
+    0
+    BEGIN
+        DUP ED-MATCH @ <
+    WHILE
+        DUP ED-TEMP @ = IF 94 EMIT THEN
+        DUP ED-TEMP2 @ < IF
+            CLINE-ADDR OVER + C@ EMIT
+        ELSE
+            BL EMIT
+        THEN
+        1+
+    REPEAT
+    DUP ED-TEMP @ = IF 94 EMIT THEN
+    DROP
+;
+
+: .LINE-OK ( -- )
+    TYPE-CURRENT-LINE
+    SPACE ED-LINE @ . SPACE .OK CR
+;
+
+: .LINE-BLOCK-OK ( -- )
+    TYPE-CURRENT-LINE
+    SPACE ED-LINE @ . SPACE SCR @ . SPACE .OK CR
+;
+
+: L ( -- )
+    SCR @ LIST
+;
+
 : T ( n -- )
     DUP ED-LINE !
     64 * SET-CURSOR
-    ED-LINE @ LINE-ADDR 64 -TRAILING TYPE CR
+    .LINE-OK
 ;
 
 : P ( -- )
@@ -3163,66 +3245,32 @@ EDITOR DEFINITIONS
 ;
 
 : M ( block line -- )
-    CLINE-ADDR LINE>INSERT
-    SWAP SCR !
-    ED-LINE !
+    SWAP ED-TEMP ! ED-TEMP2 !
+    X
+    ED-TEMP @ SCR !
+    ED-TEMP2 @ ED-LINE !
     (U)
 ;
 
 : F ( -- )
     ED-FBUF ED-FLEN PARSE-INTO
-    SEARCH-CURRENT-BLOCK DROP
-;
-
-: S ( n -- )
-    ED-FBUF ED-FLEN PARSE-INTO
-    SCR @ DO
-        I SCR !
-        0 ED-LINE !
-        0 SET-CURSOR
-        SEARCH-CURRENT-BLOCK IF
-            LEAVE
-        THEN
-    LOOP
-;
-
-: E ( -- )
-    ED-FLEN @ 0= IF EXIT THEN
-    ED-CURSOR @ ED-FLEN @ - DUP ED-LINE @ 64 * < IF
-        DROP EXIT
-    THEN
-    ED-TEMP !
-    CUR-BLOCK-ADDR ED-CURSOR @ +
-    CUR-BLOCK-ADDR ED-TEMP @ +
-    LINE-END ED-CURSOR @ - CMOVE
-    LINE-END ED-FLEN @ - ED-FLEN @ BLANK
-    ED-TEMP @ SET-CURSOR
-    UPDATE
-;
-
-: D ( -- )
-    ED-FBUF ED-FLEN PARSE-INTO
-    SEARCH-CURRENT-LINE IF
-        E
+    SEARCH-CURRENT-BLOCK IF
+        .LINE-OK
+    ELSE
+        .NONE CR
     THEN
 ;
 
-: TILL ( -- )
-    ED-FBUF ED-FLEN PARSE-INTO
-    ED-FLEN @ 0= IF EXIT THEN
-    ED-FLEN @ ED-TEMP !
-    ED-CURSOR @ ED-TEMP2 !
-    SEARCH-CURRENT-LINE IF
-        ED-CURSOR @ ED-TEMP2 @ - ED-FLEN !
-        E
+: I ( -- )
+    ED-IBUF ED-ILEN PARSE-INTO
+    ED-ILEN @ 0= IF
+        .LINE-OK
+        EXIT
     THEN
-    ED-TEMP @ ED-FLEN !
-;
-
-: (I) ( -- )
-    ED-ILEN @ 0= IF EXIT THEN
     LINE-END ED-CURSOR @ - DUP 0<= IF
-        DROP EXIT
+        DROP
+        .LINE-OK
+        EXIT
     THEN
     DUP ED-ILEN @ > IF
         LINE-END ED-CURSOR @ - ED-ILEN @ -
@@ -3238,16 +3286,44 @@ EDITOR DEFINITIONS
     CMOVE
     ED-CURSOR @ ED-ILEN @ + LINE-END MIN SET-CURSOR
     UPDATE
+    .LINE-OK
 ;
 
-: I ( -- )
-    ED-IBUF ED-ILEN PARSE-INTO
-    (I)
+: E ( -- )
+    ED-FLEN @ 0= IF
+        .LINE-OK
+        EXIT
+    THEN
+    ED-CURSOR @ ED-FLEN @ - DUP ED-LINE @ 64 * < IF
+        DROP
+        .LINE-OK
+        EXIT
+    THEN
+    ED-TEMP !
+    CUR-BLOCK-ADDR ED-CURSOR @ +
+    CUR-BLOCK-ADDR ED-TEMP @ +
+    LINE-END ED-CURSOR @ - CMOVE
+    LINE-END ED-FLEN @ - ED-FLEN @ BLANK
+    ED-TEMP @ SET-CURSOR
+    UPDATE
+    .LINE-OK
+;
+
+: D ( -- )
+    ED-FBUF ED-FLEN PARSE-INTO
+    SEARCH-CURRENT-LINE IF
+        E
+    ELSE
+        .NONE CR
+    THEN
 ;
 
 : R ( -- )
     ED-IBUF ED-ILEN PARSE-INTO
-    ED-FLEN @ 0= IF EXIT THEN
+    ED-FLEN @ 0= IF
+        .LINE-OK
+        EXIT
+    THEN
     ED-CURSOR @ ED-FLEN @ - ED-TEMP !
     ED-ILEN @ ED-FLEN @ > IF
         ED-ILEN @ ED-FLEN @ - ED-TEMP2 !
@@ -3272,12 +3348,61 @@ EDITOR DEFINITIONS
     CMOVE
     ED-TEMP @ ED-ILEN @ + LINE-END MIN SET-CURSOR
     UPDATE
+    .LINE-OK
 ;
 
-FORTH DEFINITIONS
+: TILL ( -- )
+    ED-FBUF ED-FLEN PARSE-INTO
+    ED-FLEN @ 0= IF
+        .LINE-OK
+        EXIT
+    THEN
+    ED-FLEN @ ED-SAVE1 !
+    ED-CURSOR @ ED-SAVE2 !
+    SEARCH-CURRENT-LINE IF
+        ED-CURSOR @ ED-SAVE2 @ - ED-FLEN !
+        E
+    ELSE
+        .NONE CR
+    THEN
+    ED-SAVE1 @ ED-FLEN !
+;
+
+: D-LINE ( n -- ) T ;  ( convenience only, not used )
+
+
+: S ( n -- )
+    ED-FBUF ED-FLEN PARSE-INTO
+    FALSE ED-TEMP !
+    SEARCH-CURRENT-BLOCK IF
+        TRUE ED-TEMP !
+    ELSE
+        SCR @ 1+ SWAP
+        DO
+            I SCR !
+            0 ED-LINE !
+            0 SET-CURSOR
+            SEARCH-CURRENT-BLOCK IF
+                TRUE ED-TEMP !
+                LEAVE
+            THEN
+        LOOP
+    THEN
+    ED-TEMP @ IF
+        .LINE-BLOCK-OK
+    ELSE
+        .NONE CR
+    THEN
+;
+
+: N ( -- ) 1 SCR +! ;
+: B ( -- ) -1 SCR +! ;
+: FLUSH ( -- ) SAVE-BUFFERS ;
 
 DROP
 DROP
+
+FORTH DEFINITIONS
 
 ( --------------------------------------------------------------------- )
 
@@ -3362,6 +3487,7 @@ TSTART
     T{ 0S 1S OR -> 1S }T
     T{ 1S 0S OR -> 1S }T
     T{ 1S 1S OR -> 1S }T
+
     T{ 0S 0S XOR -> 0S }T
     T{ 0S 1S XOR -> 1S }T
     T{ 1S 0S XOR -> 1S }T
@@ -3764,6 +3890,7 @@ TSTART
     T{ 0 0 <# #S #> NIP -> 1 }T
     T{ 123 0 <# #S #> NIP -> 3 }T
     T{ 123 0 <# #S #> DROP C@ -> 49 }T ( ASCII '1' )
+
     ( Block primitives and buffers )
     : PUT-BLOCK ( addr len n -- )
         >R
@@ -3933,6 +4060,8 @@ function runHostBlockTests(forth)
     assertHost(afterUpdateDuringLoad.includes("88"), "UPDATE during LOAD did not persist the explicitly buffered block");
 }
 
+
+
 function currentBlockLineText(forth, blockNumber, lineNumber)
 {
     let addr = forth.blockBuffers.getBlock(blockNumber);
@@ -3944,66 +4073,67 @@ function currentBlockLineText(forth, blockNumber, lineNumber)
     return chars.join("").replace(/[ \x00]+$/, "");
 }
 
-function freshForthWithEditor()
-{
-    let forth = run();
-    installEditor(forth);
-    return forth;
-}
+function runHostEditorForthTests()
 
-function runHostEditorTests()
+
+
+
+
+
+
 {
     let forth;
 
-    forth = freshForthWithEditor();
+    forth = run();
     setDiskBlockLines(forth, 80, ["ALPHA", "BRAVO"]);
     runForthSnippet(forth, "EDITOR 80 SCR ! 0 T P HELLO^ ");
-    assertHost(currentBlockLineText(forth, 80, 0) === "HELLO", "EDITOR P did not replace the current line");
-    assertHost(currentBlockLineText(forth, 80, 1) === "BRAVO", "EDITOR P damaged the following line");
+    assertHost(currentBlockLineText(forth, 80, 0) === "HELLO", "EDITOR P failed");
+    assertHost(currentBlockLineText(forth, 80, 1) === "BRAVO", "EDITOR P damaged next line");
 
-    forth = freshForthWithEditor();
+    forth = run();
     setDiskBlockLines(forth, 81, ["ONE", "TWO", "THREE"]);
     runForthSnippet(forth, "EDITOR 81 SCR ! 0 T U INSERTED^ ");
-    assertHost(currentBlockLineText(forth, 81, 0) === "ONE", "EDITOR U changed the current line unexpectedly");
-    assertHost(currentBlockLineText(forth, 81, 1) === "INSERTED", "EDITOR U did not insert below the current line");
-    assertHost(currentBlockLineText(forth, 81, 2) === "TWO", "EDITOR U did not shift following lines down");
+    assertHost(currentBlockLineText(forth, 81, 0) === "ONE", "EDITOR U changed current line");
+    assertHost(currentBlockLineText(forth, 81, 1) === "INSERTED", "EDITOR U failed to insert below");
+    assertHost(currentBlockLineText(forth, 81, 2) === "TWO", "EDITOR U failed to shift line 1");
     assertHost(currentBlockLineText(forth, 81, 3) === "THREE", "EDITOR U damaged later lines");
 
-    forth = freshForthWithEditor();
+    forth = run();
     setDiskBlockLines(forth, 82, ["ONE", "TWO", "THREE"]);
     runForthSnippet(forth, "EDITOR 82 SCR ! 1 T X 2 T P ^ ");
-    assertHost(currentBlockLineText(forth, 82, 0) === "ONE", "EDITOR X damaged the first line");
-    assertHost(currentBlockLineText(forth, 82, 1) === "THREE", "EDITOR X did not pull the following line up");
-    assertHost(currentBlockLineText(forth, 82, 2) === "TWO", "EDITOR X/P did not preserve the extracted insert buffer");
+    assertHost(currentBlockLineText(forth, 82, 0) === "ONE", "EDITOR X damaged first line");
+    assertHost(currentBlockLineText(forth, 82, 1) === "THREE", "EDITOR X did not pull line up");
+    assertHost(currentBlockLineText(forth, 82, 2) === "TWO", "EDITOR X/P did not preserve insert buffer");
 
-    forth = freshForthWithEditor();
+    forth = run();
     setDiskBlockLines(forth, 83, ["HELLO HELLO"]);
     runForthSnippet(forth, "EDITOR 83 SCR ! 0 T F HELLO^ D ^ ");
-    assertHost(currentBlockLineText(forth, 83, 0) === "HELLO", "EDITOR F/D did not delete the next occurrence in the current line");
+    assertHost(currentBlockLineText(forth, 83, 0) === "HELLO", "EDITOR F/D failed");
 
-    forth = freshForthWithEditor();
+    forth = run();
     setDiskBlockLines(forth, 84, ["ABC DEF GHI"]);
     runForthSnippet(forth, "EDITOR 84 SCR ! 0 T F DEF^ TILL GHI^ ");
-    assertHost(currentBlockLineText(forth, 84, 0) === "ABC DEF", "EDITOR TILL did not delete from the cursor through the target string");
+    assertHost(currentBlockLineText(forth, 84, 0) === "ABC DEF", "EDITOR TILL failed");
 
-    forth = freshForthWithEditor();
+    forth = run();
     setDiskBlockLines(forth, 85, ["ABEF"]);
     runForthSnippet(forth, "EDITOR 85 SCR ! 0 T F AB^ I CD^ ");
-    assertHost(currentBlockLineText(forth, 85, 0) === "ABCDEF", "EDITOR I did not insert at the active cursor");
+    assertHost(currentBlockLineText(forth, 85, 0) === "ABCDEF", "EDITOR I failed");
 
-    forth = freshForthWithEditor();
+    forth = run();
     setDiskBlockLines(forth, 86, ["ABXXEF"]);
     runForthSnippet(forth, "EDITOR 86 SCR ! 0 T F XX^ R CD^ ");
-    assertHost(currentBlockLineText(forth, 86, 0) === "ABCDEF", "EDITOR R did not replace the found string");
+    assertHost(currentBlockLineText(forth, 86, 0) === "ABCDEF", "EDITOR R failed");
 
-    forth = freshForthWithEditor();
+    forth = run();
     setDiskBlockLines(forth, 87, ["SOURCE"]);
     setDiskBlockLines(forth, 88, ["DEST0", "DEST1"]);
     runForthSnippet(forth, "EDITOR 87 SCR ! 0 T 88 0 M ");
-    assertHost(currentBlockLineText(forth, 88, 0) === "DEST0", "EDITOR M damaged the destination line");
-    assertHost(currentBlockLineText(forth, 88, 1) === "SOURCE", "EDITOR M did not move a copy of the current line under the destination line");
-    assertHost(currentBlockLineText(forth, 88, 2) === "DEST1", "EDITOR M damaged the next destination line");
+    assertHost(currentBlockLineText(forth, 88, 0) === "DEST0", "EDITOR M damaged destination line 0");
+    assertHost(currentBlockLineText(forth, 88, 1) === "SOURCE", "EDITOR M failed to move line under destination");
+    assertHost(currentBlockLineText(forth, 88, 2) === "DEST1", "EDITOR M damaged destination line 1");
 }
+
 
 function addchar(char)
 {

@@ -71,6 +71,15 @@ var commandHistory = storedHistory ? JSON.parse(storedHistory) : [];
 // Set the history index to the end of the current history
 var historyIndex = commandHistory.length;
 
+  window.typeCharacter = function (c) {
+    replOutput.textContent += String.fromCharCode(c & 0xFF);
+    replOutput.scrollTop = replOutput.scrollHeight;
+  }
+
+  window.typeOk = function () {
+    replOutput.textContent += " ok\n"
+  }
+
 replInput.addEventListener("keydown", function(e) {
   if (e.key === "Enter") {
     e.preventDefault();

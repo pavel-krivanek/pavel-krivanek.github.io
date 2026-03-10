@@ -45,6 +45,10 @@
       margin-left: 10px;
       font-weight: bold;
     }
+    .help {
+      font-size: 70%;
+      margin-left: 20px;
+    }
     .repl-output {
       flex: 1;
       background: #160e07;  

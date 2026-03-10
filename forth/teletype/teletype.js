@@ -33,6 +33,8 @@ var spoolPosition = 1;
 var headImage = "head.png";
 var printBuffer = [];
 var forthBootstrapRun = null;
+var statusMessageTimer = null;
+var focusSink = null;
 
 function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -85,15 +87,7 @@ function updateBusyIndicator() {
 function normalizeInputChar(charCode) {
     if (charCode === undefined || charCode === null) return null;
     if (charCode === 13) return 10;
-
-    charCode = charCode & 0xFF;
-
-    // convert a-z to A-Z
-    if (charCode >= 97 && charCode <= 122) {
-        charCode -= 32;
-    }
-
-    return charCode;
+    return charCode & 0xFF;
 }
 
 function maybeResumeForth() {
@@ -106,6 +100,228 @@ function maybeResumeForth() {
     }
 
     updateBusyIndicator();
+}
+
+function clearKeyboardState() {
+    keydown_keys = {};
+    keypress_keys = {};
+    keydown_keycode = false;
+}
+
+function pad2(n) {
+    return String(n).padStart(2, "0");
+}
+
+function currentDiskDownloadFilename() {
+    let now = new Date();
+    let yy = pad2(now.getFullYear() % 100);
+    let mm = pad2(now.getMonth() + 1);
+    let dd = pad2(now.getDate());
+    let hh = pad2(now.getHours());
+    let mi = pad2(now.getMinutes());
+    let ss = pad2(now.getSeconds());
+    return `forth-${yy}${mm}${dd}-${hh}${mi}${ss}.img`;
+}
+
+function ensureStatusMessageElement() {
+    let element = $("#tty-status-message");
+    if (element.length > 0) return element;
+
+    element = $('<div id="tty-status-message" aria-live="polite"></div>');
+    element.css({
+        position: "fixed",
+        right: "16px",
+        bottom: "16px",
+        display: "none",
+        maxWidth: "min(40rem, calc(100vw - 32px))",
+        padding: "10px 14px",
+        borderRadius: "6px",
+        color: "#fff",
+        background: "rgba(0, 0, 0, 0.82)",
+        boxShadow: "0 6px 20px rgba(0, 0, 0, 0.35)",
+        fontFamily: "monospace",
+        fontSize: "14px",
+        zIndex: 2147483647,
+        pointerEvents: "none"
+    });
+    $("body").append(element);
+    return element;
+}
+
+function setStatusMessage(message, isError) {
+    let element = ensureStatusMessageElement();
+    if (statusMessageTimer !== null) {
+        clearTimeout(statusMessageTimer);
+        statusMessageTimer = null;
+    }
+
+    element.stop(true, true);
+    element.text(message || "");
+    element.css("background", isError ? "rgba(140, 24, 24, 0.92)" : "rgba(0, 0, 0, 0.82)");
+    element.show();
+
+    statusMessageTimer = setTimeout(function() {
+        element.fadeOut(700);
+        statusMessageTimer = null;
+    }, 3200);
+}
+
+function ensureFocusSink() {
+    if (focusSink) return focusSink;
+
+    focusSink = $('<div id="tty-focus" tabindex="0" aria-hidden="true"></div>');
+    focusSink.css({
+        position: "fixed",
+        left: "-10000px",
+        top: "0px",
+        width: "1px",
+        height: "1px",
+        opacity: 0,
+        outline: "none",
+        pointerEvents: "none"
+    });
+
+    $("body").append(focusSink);
+    return focusSink;
+}
+
+function focusTerminal() {
+    let sink = ensureFocusSink();
+    try {
+        sink[0].focus({ preventScroll: true });
+    } catch (_) {
+        sink[0].focus();
+    }
+}
+
+function saveCurrentDisk() {
+    const forth = currentForth();
+    if (!forth || !forth.disk || !forth.disk.content) {
+        setStatusMessage("No disk is available to save.", true);
+        return;
+    }
+
+    if (forth.blockBuffers && typeof forth.blockBuffers.saveBuffers === "function") {
+        forth.blockBuffers.saveBuffers();
+    }
+
+    let bytes = forth.disk.content;
+    let blob = new Blob([bytes], { type: "application/octet-stream" });
+    let url = URL.createObjectURL(blob);
+    let link = document.createElement("a");
+    let filename = currentDiskDownloadFilename();
+
+    link.href = url;
+    link.download = filename;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setTimeout(function() {
+        URL.revokeObjectURL(url);
+    }, 1000);
+
+    setStatusMessage("Saved disk image as " + filename + ".", false);
+    focusTerminal();
+}
+
+function isImgFilename(name) {
+    return /\.img$/i.test(name || "");
+}
+
+function loadCurrentDiskFromBytes(bytes, sourceName) {
+    const forth = currentForth();
+    if (!forth || !forth.disk || !forth.disk.content) {
+        setStatusMessage("No disk is available to replace.", true);
+        return;
+    }
+
+    let diskBytes = forth.disk.content;
+    if (bytes.length > diskBytes.length) {
+        setStatusMessage("The dropped disk image is too large for the current virtual disk.", true);
+        return;
+    }
+
+    if (forth.blockBuffers && typeof forth.blockBuffers.emptyBuffers === "function") {
+        forth.blockBuffers.emptyBuffers();
+    }
+
+    diskBytes.fill(32);
+    diskBytes.set(bytes);
+    clearKeyboardState();
+    updateBusyIndicator();
+    setStatusMessage("Loaded disk image " + sourceName + ".", false);
+    focusTerminal();
+}
+
+function loadDiskImageFile(file) {
+    if (!file) return;
+    if (!isImgFilename(file.name)) {
+        setStatusMessage("Only .img files can be loaded as disks.", true);
+        return;
+    }
+
+    let reader = new FileReader();
+    reader.onload = function(event) {
+        try {
+            let bytes = new Uint8Array(event.target.result);
+            loadCurrentDiskFromBytes(bytes, file.name);
+        } catch (error) {
+            console.error(error);
+            setStatusMessage("Failed to read the dropped disk image.", true);
+        }
+    };
+    reader.onerror = function() {
+        setStatusMessage("Failed to read the dropped disk image.", true);
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function eventHasFiles(event) {
+    let dataTransfer = event && event.dataTransfer;
+    if (!dataTransfer) return false;
+    if (dataTransfer.items && dataTransfer.items.length > 0) {
+        return Array.from(dataTransfer.items).some(item => item.kind === "file");
+    }
+    if (dataTransfer.types && dataTransfer.types.length > 0) {
+        return Array.from(dataTransfer.types).indexOf("Files") !== -1;
+    }
+    return dataTransfer.files && dataTransfer.files.length > 0;
+}
+
+function preventBrowserFileDrop(event) {
+    if (!eventHasFiles(event)) return false;
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = "copy";
+    }
+    return true;
+}
+
+function installDiskDropHandlers() {
+    let targets = [window, document, document.documentElement, document.body].filter(Boolean);
+
+    targets.forEach(function(target) {
+        ["dragenter", "dragover"].forEach(function(eventName) {
+            target.addEventListener(eventName, function(event) {
+                preventBrowserFileDrop(event);
+            }, true);
+        });
+
+        target.addEventListener("drop", function(event) {
+            if (!preventBrowserFileDrop(event)) return;
+            let files = Array.from((event.dataTransfer && event.dataTransfer.files) || []);
+            let file = files.find(function(candidate) { return isImgFilename(candidate.name); });
+            if (!file) {
+                setStatusMessage("Drop a .img file to load a disk image.", true);
+                focusTerminal();
+                return;
+            }
+            loadDiskImageFile(file);
+        }, true);
+    });
 }
 
 function clearTypewriter() {
@@ -150,11 +366,13 @@ function reset() {
     const forth = forthBootstrapRun();
     globalThis.forth = forth;
     updateBusyIndicator();
+    focusTerminal();
     return forth;
 }
 
 function run() {
     captureBootstrapRun();
+
     let forth = currentForth();
     if (!forth) {
         if (!forthBootstrapRun) {
@@ -163,16 +381,23 @@ function run() {
         forth = forthBootstrapRun();
         globalThis.forth = forth;
         updateBusyIndicator();
+        focusTerminal();
         return forth;
     }
 
     forth.makeRunning();
     forth.run();
     updateBusyIndicator();
+    focusTerminal();
     return forth;
 }
 
 function keypress(e) {
+    // Let browser/system shortcuts through (Ctrl/Cmd+key), but keep AltGr combinations working.
+    if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+        return false;
+    }
+
     // Prevent browser special key actions as long as ctrl/alt/cmd is not being held
     if (!e.altKey && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
@@ -199,8 +424,10 @@ function keypress(e) {
         }
     }
 
+    // Record the keypress for mutex purposes, even if we're not going to act on it
     keypress_keys[keydown_keycode] = 1;
 
+    // Only one printing keypress allowed at a time
     if (Object.keys(keypress_keys).length > 1) {
         return false;
     }
@@ -208,7 +435,7 @@ function keypress(e) {
     if ((e.charCode != 10) && (e.charCode != 13)) {
         let ch = e.charCode & 0xFF;
 
-        // convert a-z to A-Z
+        // convert a-z to A-Z on the printable input path
         if (ch >= 97 && ch <= 122) {
             ch -= 32;
         }
@@ -362,21 +589,12 @@ function feedForthChar(charCode) {
 
     if (!forth) return;
 
-    const original = charCode;
     charCode = normalizeInputChar(charCode);
-
-    console.log("feedForthChar", {
-        original: original,
-        normalized: charCode,
-        originalChar: original ? String.fromCharCode(original) : "",
-        normalizedChar: charCode ? String.fromCharCode(charCode) : ""
-    });
-
     if (charCode === null) return;
 
     forth.inputBuffer.push(charCode & 0xFF);
 
-    if (charCode === 95) {
+    if (charCode === 95) { // underscore acts like rubout in the host UI
         forth.inputBuffer.pop();
         forth.inputBuffer.pop();
     }
@@ -445,7 +663,6 @@ function keydown_nonmod(e) {
     if (Object.keys(keydown_keys).length > 1) {
         return false;
     }
-
     switch (e.which) {
         case 8: // backspace
             if (e.charCode == 0) {
@@ -474,10 +691,20 @@ function keydown_nonmod(e) {
     }
 }
 
-
 function keydown(e) {
     if (!started) {
         start();
+    }
+
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key && e.key.toLowerCase() === "s") {
+        if (keydown_keys[e.keyCode]) {
+            return;
+        }
+        keydown_keys[e.keyCode] = 1;
+        e.preventDefault();
+        e.stopPropagation();
+        saveCurrentDisk();
+        return;
     }
 
     // If this key is already being held down, ignore it (keyboard auto-repeat may fire multiple events)
@@ -527,7 +754,6 @@ function move_page() {
 // Handler for keyup events
 function keyup(e) {
     if (Object.keys(keydown_keys).length) {
-
         delete keydown_keys[e.keyCode];
         delete keypress_keys[e.keyCode];
     }
@@ -558,8 +784,12 @@ function installForthUiBridge() {
 // onLoad setup
 $(function() {
     installForthUiBridge();
+    installDiskDropHandlers();
+    ensureStatusMessageElement();
+    ensureFocusSink();
     move_page();
     setCursorPosition();
+
     $.ionSound({
         path: "",
         sounds: [{
@@ -577,6 +807,12 @@ $(function() {
     });
 
     $(document)
+        .on('mousedown', function() {
+            focusTerminal();
+        })
+        .on('touchstart', function() {
+            focusTerminal();
+        })
         .on('keydown', function(e) {
             keydown(e);
         })
@@ -586,6 +822,9 @@ $(function() {
         .on('keyup', function(e) {
             keyup(e);
         });
+
+    focusTerminal();
+    setStatusMessage("Ctrl+S saves the current disk. Drop a .img file anywhere to load it.", false);
 
     $(document).ready(function() {
         $('#Carriage').bind('wheel', function(e) {

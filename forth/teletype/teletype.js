@@ -31,8 +31,8 @@ var shift_lock = false;
 var spoolPosition = 1;
 
 var headImage = "head.png";
-
 var printBuffer = [];
+var forthBootstrapRun = null;
 
 function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -49,7 +49,6 @@ function stop() {
 }
 
 function crlf() {
-    var line_length = x / xpx;
     y += ypx;
     maxY = Math.max(maxY, y);
     x = 0;
@@ -63,12 +62,117 @@ function advance_one_space() {
     if ((x / xpx) === max_width) {
         crlf();
         move_page();
- 
     }
 }
 
-function keypress(e) {
+function currentForth() {
+    return globalThis.forth;
+}
 
+function captureBootstrapRun() {
+    if (!forthBootstrapRun && typeof globalThis.run === "function" && globalThis.run !== run) {
+        forthBootstrapRun = globalThis.run;
+    }
+    return forthBootstrapRun;
+}
+
+function updateBusyIndicator() {
+    const forth = currentForth();
+    const busy = !!(forth && forth.awaitingRawInput);
+    $('#rkbusy').toggle(busy);
+}
+
+function normalizeInputChar(charCode) {
+    if (charCode === undefined || charCode === null) return null;
+    if (charCode === 13) return 10;
+
+    charCode = charCode & 0xFF;
+
+    // convert a-z to A-Z
+    if (charCode >= 97 && charCode <= 122) {
+        charCode -= 32;
+    }
+
+    return charCode;
+}
+
+function maybeResumeForth() {
+    const forth = currentForth();
+    if (!forth) return;
+
+    if (forth.awaitingRawInput || ((!forth.readsFromBlock || !forth.readsFromBlock()) && forth.state !== "running")) {
+        forth.makeRunning();
+        forth.run();
+    }
+
+    updateBusyIndicator();
+}
+
+function clearTypewriter() {
+    x = 0 * xpx;
+    y = ypx;
+    maxY = y;
+    minY = y;
+    vmid = $(window).height() / 2;
+    hmid = $(window).width() / 2;
+    voffset = {};
+    brokenness = 15;
+    ink_remaining = 280;
+    ink_variation = 0.3;
+    keydown_keys = {};
+    keypress_keys = {};
+    keydown_keycode = false;
+    shift_lock = false;
+    spoolPosition = 1;
+    headImage = "head.png";
+    printBuffer = [];
+
+    $('.output').empty();
+    $('#terminal').val('');
+    $('#debug').val('');
+    $('#cursorImage').attr('src', headImage);
+    $('#Carriage, .output, .cursor').stop(true, true);
+    $('#Carriage').css({ top: (vmid - y) + 'px' });
+    $('.output').css({ height: '0px' });
+    $('.cursor').css({ top: (y + 10) + 'px', left: (x - 185) + 'px' });
+    updateBusyIndicator();
+}
+
+function reset() {
+    captureBootstrapRun();
+    clearTypewriter();
+    start();
+
+    if (!forthBootstrapRun) {
+        throw new Error("forth.js was loaded, but its bootstrap run() function was not captured.");
+    }
+
+    const forth = forthBootstrapRun();
+    globalThis.forth = forth;
+    updateBusyIndicator();
+    return forth;
+}
+
+function run() {
+    captureBootstrapRun();
+    let forth = currentForth();
+    if (!forth) {
+        if (!forthBootstrapRun) {
+            throw new Error("forth.js was loaded, but its bootstrap run() function was not captured.");
+        }
+        forth = forthBootstrapRun();
+        globalThis.forth = forth;
+        updateBusyIndicator();
+        return forth;
+    }
+
+    forth.makeRunning();
+    forth.run();
+    updateBusyIndicator();
+    return forth;
+}
+
+function keypress(e) {
     // Prevent browser special key actions as long as ctrl/alt/cmd is not being held
     if (!e.altKey && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
@@ -77,7 +181,6 @@ function keypress(e) {
 
     // Don't handle keys that are handled by keydown functions
     if (e.charCode == 0) {
-        // Note the use of keyCode here so these numbers will match the keydown ones
         switch (e.keyCode) {
             case 8:
             case 9:
@@ -95,17 +198,23 @@ function keypress(e) {
                 return false;
         }
     }
-    // Record the keypress for mutex purposes, even if we're not going to act on it
-    keypress_keys[keydown_keycode] = 1; // Have to use charCode as that's the only one available to both keypress and keyup
 
-    // Only one printing keypress allowed at a time
+    keypress_keys[keydown_keycode] = 1;
+
     if (Object.keys(keypress_keys).length > 1) {
         return false;
     }
 
     if ((e.charCode != 10) && (e.charCode != 13)) {
-        addchar(e.charCode);
-        specialchar(e.charCode);
+        let ch = e.charCode & 0xFF;
+
+        // convert a-z to A-Z
+        if (ch >= 97 && ch <= 122) {
+            ch -= 32;
+        }
+
+        addchar(ch);
+        // do not call specialchar() for printable characters
     }
 }
 
@@ -127,19 +236,28 @@ function printer() {
 
 function typeCharacterImmediately(charCode, shiftKey) {
     var nosound = false;
-    if (charCode == 10) return; // ignore
-    if (charCode == 0) return; // ignore
-    if (charCode == 13) {
+    if (charCode == null || charCode === 0) return;
+
+    if (charCode === 10 || charCode === 13) {
         crlf();
         move_page();
+        setCursorPosition();
+        return;
     }
 
-    if (charCode != 32 && charCode != 127 && !((charCode === 10) || (charCode === 13)))
+    if (charCode === 9) {
+        let spaces = tab_width - ((x / xpx) % tab_width);
+        if (spaces === 0) spaces = tab_width;
+        for (let i = 0; i < spaces; i++) {
+            typeCharacterImmediately(32, shiftKey);
+        }
+        return;
+    }
+
+    if (charCode != 32 && charCode != 127)
         $("#cursorImage").attr("src", "head2.png");
 
-    var c;
-    c = String.fromCharCode(charCode);
-
+    var c = String.fromCharCode(charCode);
     if (charCode == 127) c = " ";
 
     // Vertical offset
@@ -147,16 +265,14 @@ function typeCharacterImmediately(charCode, shiftKey) {
         voffset[c] = {
             threshold: Math.floor(Math.random() * 99) + 1, // 1..99
             direction: Math.floor(Math.random() * 3) - 1, // -1..+1
-        }
+        };
     }
 
     let this_voffset = (voffset[c].threshold <= brokenness) ? Math.round(voffset[c].direction * brokenness / 33) : 0;
 
     output_character(c, this_voffset, '.output');
+    advance_one_space();
 
-    if (charCode != 10) {
-        advance_one_space();
-    }
     if (charCode == 127) {
         advance_one_space();
         advance_one_space();
@@ -219,7 +335,7 @@ function output_character(aCharacter, this_voffset, where) {
 
         if (subclips) {
             // Maybe output further subcropped character(s) in black to make the colouring more uneven
-            for (var subclips = 0; subclips < 3; subclips++) {
+            for (var subclipIndex = 0; subclipIndex < 3; subclipIndex++) {
                 var subclip_right = Math.floor(Math.random() * xpx) + 1;
                 var subclip_left = Math.floor(Math.random() * subclip_right);
                 var subclip_bottom = Math.floor(Math.random() * black_height) + 1;
@@ -238,6 +354,89 @@ function output_character(aCharacter, this_voffset, where) {
     }
 }
 
+function feedForthChar(charCode) {
+    let forth = currentForth();
+    if (!forth) {
+        forth = run();
+    }
+
+    if (!forth) return;
+
+    const original = charCode;
+    charCode = normalizeInputChar(charCode);
+
+    console.log("feedForthChar", {
+        original: original,
+        normalized: charCode,
+        originalChar: original ? String.fromCharCode(original) : "",
+        normalizedChar: charCode ? String.fromCharCode(charCode) : ""
+    });
+
+    if (charCode === null) return;
+
+    forth.inputBuffer.push(charCode & 0xFF);
+
+    if (charCode === 95) {
+        forth.inputBuffer.pop();
+        forth.inputBuffer.pop();
+    }
+
+    if (forth.awaitingRawInput) {
+        typeCharacter(charCode);
+        maybeResumeForth();
+        return;
+    }
+
+    if (charCode === 10) {
+        typeCharacter(32);
+        maybeResumeForth();
+    } else {
+        typeCharacter(charCode);
+        updateBusyIndicator();
+    }
+}
+
+function addchar(char) {
+    feedForthChar(char);
+}
+
+function typeError(aString) {
+    for (let i = 0; i < aString.length; i++) {
+        typeCharacter(aString.charCodeAt(i));
+    }
+    typeCharacter(10);
+}
+
+function typeOk() {
+    typeError("OK");
+}
+
+function specialchar(char) {
+    const forth = currentForth();
+
+    switch (char) {
+        case 8:  // backspace
+        case 46: // delete
+            feedForthChar(95);
+            break;
+        case 9:  // tab
+            feedForthChar(9);
+            break;
+        case 10:
+        case 13:
+            updateBusyIndicator();
+            break;
+        case 27:
+            if (forth && typeof forth.abortToQuit === "function") {
+                forth.abortToQuit();
+                updateBusyIndicator();
+            }
+            break;
+        default:
+            updateBusyIndicator();
+    }
+}
+
 function keydown_nonmod(e) {
     keydown_keycode = e.keyCode;
 
@@ -246,27 +445,30 @@ function keydown_nonmod(e) {
     if (Object.keys(keydown_keys).length > 1) {
         return false;
     }
+
     switch (e.which) {
+        case 8: // backspace
+            if (e.charCode == 0) {
+                e.preventDefault();
+                specialchar(8);
+            }
+            break;
         case 9: // tab
             if (e.charCode == 0) {
                 e.preventDefault();
-
-                e.preventDefault()
-                specialchar(9)
+                specialchar(9);
             }
             break;
         case 13: // enter
-            addchar(13);
-            specialchar(13);
+            e.preventDefault();
+            addchar(10);
+            specialchar(10);
             break;
         case 46: // del
             if (e.charCode == 0) {
                 e.preventDefault();
                 specialchar(46);
-                printBuffer = [];
             }
-            //addchar(46);
-            //specialchar(127);
             break;
         default: // all other characters are handled by the keypress handler
     }
@@ -283,7 +485,10 @@ function keydown(e) {
         return;
     }
     switch (e.which) {
-        case 27: // esc  - ignore
+        case 27: // esc
+            e.preventDefault();
+            specialchar(27);
+            break;
         case 17: // ctrl - ignore
         case 224: // cmd  - ignore
             break;
@@ -339,8 +544,20 @@ function setCursorPosition() {
     });
 }
 
+function installForthUiBridge() {
+    captureBootstrapRun();
+
+    globalThis.run = run;
+    globalThis.reset = reset;
+    globalThis.addchar = addchar;
+    globalThis.specialchar = specialchar;
+    globalThis.typeError = typeError;
+    globalThis.typeOk = typeOk;
+}
+
 // onLoad setup
 $(function() {
+    installForthUiBridge();
     move_page();
     setCursorPosition();
     $.ionSound({
@@ -372,12 +589,13 @@ $(function() {
 
     $(document).ready(function() {
         $('#Carriage').bind('wheel', function(e) {
-			var delta = event.deltaY;
-			if (event.deltaMode === 1)
-				delta *= char_height;
-			else if (event.deltaMode === 2)
-				delta *= char_height * 20;
-			
+            var delta = e.originalEvent ? e.originalEvent.deltaY : event.deltaY;
+            var deltaMode = e.originalEvent ? e.originalEvent.deltaMode : event.deltaMode;
+            if (deltaMode === 1)
+                delta *= char_height;
+            else if (deltaMode === 2)
+                delta *= char_height * 20;
+
             y = Math.min(maxY, y - delta);
             y = Math.max(minY, y);
             $(function() {

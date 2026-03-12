@@ -5,6 +5,19 @@
 	font-style: normal;
 }
 
+:root {
+	--monitor-text-color: #ffd00e;
+	--monitor-glow-rgb: 255, 208, 14;
+	--monitor-gradient-opacity: 0.25;
+	--monitor-output-shadow: 0 0 8px var(--monitor-text-color);
+	--monitor-char-shadow: 0 0 16px var(--monitor-text-color);
+	--monitor-cursor-shadow: 0 0 12px var(--monitor-text-color);
+}
+
+html.monitor-gradient-off {
+	--monitor-gradient-opacity: 0;
+}
+
 @font-face {
   font-family: 'IBM VGA 8x16';
   src: local("IBM VGA 8x16"), url('WebPlus_IBM_VGA_8x16.woff') format('woff');
@@ -102,7 +115,7 @@ h3 {
 	left:0;right:0;
 	background-color: #160e07;
 	background-image: radial-gradient(
-		rgba(255, 208, 15, 0.25), black 120%
+		rgba(var(--monitor-glow-rgb), var(--monitor-gradient-opacity)), black 120%
 	);
 	font-family:  'IBM VGA 8x16', monospace;
 	font-size: 2.5vmin;
@@ -119,8 +132,8 @@ h3 {
 	/*  box-shadow: 8px 8px 4px #888; */
 	white-space: nowrap;
 	z-index: 2;
-        text-shadow: 0 0 8px #ffd00e;
-        color: #ffd00e;
+        text-shadow: var(--monitor-output-shadow);
+        color: var(--monitor-text-color);
 
  
     position: relative;
@@ -139,7 +152,7 @@ h3 {
 
 .char {
 	//transform:scale(1,1.25);
-	text-shadow: 0 0 16px #ffd00e;
+	text-shadow: var(--monitor-char-shadow);
 	font-family:  'IBM VGA 8x16', monospace;
 	font-size: min(1.998vw, 2.664vmin);
 	//font-size: 3.33vmin;
@@ -181,10 +194,10 @@ h3 {
         font-family: TeleType, Courier, "Courier New", monospace;
 	font-size: 20px;
         animation: blinker 1s step-start infinite;
-        color: #ffd00e;
+        color: var(--monitor-text-color);
 	position: absolute;
 	z-index: 2;
-        text-shadow: 0 0 12px #ffd00e;
+        text-shadow: var(--monitor-cursor-shadow);
 	border: 0px solid white;  /*
 				display: none;*/
 }

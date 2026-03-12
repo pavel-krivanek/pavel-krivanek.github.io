@@ -445,71 +445,6 @@ class Forth {
     }
     inputBufferEmpty() { return  this.inputBuffer.length === 0 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     privWord() {
         let length = 0;
         let charCode;
@@ -864,7 +799,8 @@ class ForthStandardMemoryInitializer extends ForthMemoryInitializer {
         ForthCodeUpdate,
         ForthCodeSaveBuffers,
         ForthCodeEmptyBuffers,
-        ForthCodeFlush
+        ForthCodeFlush,
+        ForthCodeLoad
         ]); }
 }
 
@@ -1615,7 +1551,16 @@ class ForthCodeKey extends ForthCodeWithHead {
     name() { return "key"; }
     execute() {
         this.forth.awaitingRawInput = false;
-        let input = this.forth.readInputBuffer();
+        let usesBlock = this.forth.readsFromBlock();
+
+        // If we have reached the end of the block (or empty terminal buffer),
+        // halt execution and fallback to waiting for console input.
+        if (this.forth.atInputEnd(usesBlock)) {
+            this.forth.noInput();
+            return;
+        }
+
+        let input = this.forth.readCharacter(usesBlock);
         if (this.forth.isRunning()) this.push(input);
     }
 }
@@ -1695,6 +1640,7 @@ class ForthCodeInterpret extends ForthCodeWithHead {
         let executeImmediate = false;
         let addressLengthPair = this.forth.privWord();
         let address = addressLengthPair[0];
+console.log(address);
         let length = addressLengthPair[1];
         if (length === 0) return;
         let aCodeword = 0;
@@ -1737,8 +1683,8 @@ class ForthCodeInterpret extends ForthCodeWithHead {
 
 class ForthCodeQuit extends ForthCodeWithHeadCompiled {
     name() { return "quit"; }
-    flags() { return this.forth.flagImmediate(); }
-    codewordLabels() { return ["INTERPRET", "BRANCH", -4 ]}
+    flags() { return 0; } // QUIT should never be immediate
+    codewordLabels() { return["INTERPRET", "BRANCH", -4 ]}
 }
 
 // Literal primitives
@@ -1880,14 +1826,29 @@ class ForthCodeConvert extends ForthCodeWithHead {
     }
 }
 
+class ForthCodeLoad extends ForthCodeWithHeadCompiled {
+    name() { return "LOADPRIM"; }
+    flags() { return 0; }
+    codewordLabels() {
+        return [
+            "BLK", "FETCH", "TOR",
+            ">IN", "FETCH", "TOR",
+            "BLK", "STORE",
+            "LIT", 0, ">IN", "STORE",
 
+            ">IN", "FETCH",
+            "LIT", 1024,
+            "LT",
+            "ZBRANCH", 8,
 
-
-
-
-
-
-
+            "INTERPRET",
+            "BRANCH", -18,
+            "FROMR", ">IN", "STORE",
+            "FROMR", "BLK", "STORE",
+            "EXIT"
+        ];
+    }
+}
 
 class ForthCodeWord extends ForthCodeWithHead {
     name() { return "word"; }
@@ -2085,7 +2046,28 @@ if (typeof window !== "undefined") {
     window.forth = forth;
 }
 forth.init();
+
 let source = `
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+: --> IMMEDIATE
+    1 BLK +!
+    0 >IN !
+;
+
 : / /MOD SWAP DROP ;
 : MOD /MOD DROP ;
 
@@ -2096,6 +2078,7 @@ let source = `
 
 : '\\n' 10 ;
 : BL   32 ;
+-->
 : CR '\\n' EMIT ;
 : SPACE BL EMIT ;
 : NEGATE 0 SWAP - ;
@@ -2105,14 +2088,13 @@ let source = `
 
 : LITERAL IMMEDIATE
     ' LIT , , ;
-
+-->
 : ':'
 	[
 	CHAR :
 	]
 	LITERAL
 ;
-
 : ';' [ CHAR ; ] LITERAL ;
 : '(' [ CHAR ( ] LITERAL ;
 : ')' [ CHAR ) ] LITERAL ;
@@ -2120,9 +2102,7 @@ let source = `
 : 'A' [ CHAR A ] LITERAL ;
 : '0' [ CHAR 0 ] LITERAL ;
 : '-' [ CHAR - ] LITERAL ;
-: '.' [ CHAR . ] LITERAL ;
-
-
+: '.' [ CHAR . ] LITERAL ; -->
 : [COMPILE] IMMEDIATE
 	WORD
 	FIND
@@ -2135,7 +2115,7 @@ let source = `
 	>CFA
 	,
 ;
-
+-->
 : IF IMMEDIATE
 	' 0BRANCH ,
 	HERE @
@@ -2147,7 +2127,7 @@ let source = `
 	HERE @ SWAP -
 	SWAP !
 ;
-
+-->
 : ELSE IMMEDIATE
 	' BRANCH ,
 	HERE @
@@ -2161,7 +2141,7 @@ let source = `
 : BEGIN IMMEDIATE
 	HERE @
 ;
-
+-->
 : UNTIL IMMEDIATE
 	' 0BRANCH ,
 	HERE @ -
@@ -2173,7 +2153,7 @@ let source = `
 	HERE @ -
 	,
 ;
-
+-->
 : WHILE IMMEDIATE
 	' 0BRANCH ,
 	HERE @
@@ -2188,12 +2168,12 @@ let source = `
 	HERE @ SWAP -
 	SWAP !
 ;
-
+-->
 : UNLESS IMMEDIATE
 	' NOT ,
 	[COMPILE] IF
 ;
-
+-->
 : ( IMMEDIATE
 	1
 	BEGIN
@@ -2208,7 +2188,7 @@ let source = `
 		THEN
 	DUP 0= UNTIL
 	DROP
-;
+; -->
 (
     From now on we can use ( ... ) for comments.
 )
@@ -2216,12 +2196,12 @@ let source = `
 : NIP ( x y -- y ) SWAP DROP ;
 : TUCK ( x y -- y x y ) SWAP OVER ;
 : PICK ( x_u ... x_1 x_0 u -- x_u ... x_1 x_0 x_u )
-	1+		( add one because of 'u' on the stack )
-	2 *		( multiply by the word size )
-	DSP@ +		( add to the stack pointer )
-	@    		( and fetch )
+	1+	( add one because of 'u' on the stack )
+	2 *	( multiply by the word size )
+	DSP@ + ( add to the stack pointer )
+	@    	 ( and fetch )
 ;
-
+-->
 : SPACES	( n -- )
 	BEGIN
 		DUP 0>		( while n > 0 )
@@ -2231,30 +2211,28 @@ let source = `
 	REPEAT
 	DROP
 ;
-
 ( Standard words for manipulating BASE. )
 : BINARY  ( -- )  2 BASE ! ;
 : OCTAL   ( -- )  8 BASE ! ;
 : DECIMAL ( -- ) 10 BASE ! ;
 : HEX     ( -- ) 16 BASE ! ;
-
+-->
 ( This is the underlying recursive definition of U. )
 : U.		( u -- )
 	BASE @ U/MOD	( width rem quot )
     ?DUP IF			( if quotient <> 0 then )
 		RECURSE		( print the quotient )
 	THEN
-
 	( print the remainder )
 	DUP 10 < IF
-		'0'		( decimal digits 0..9 )
+		'0'	( decimal digits 0..9 )
 	ELSE
-		10 -		( hex and beyond digits A..Z )
+		10 -	( hex and beyond digits A..Z )
 		'A'
 	THEN
 	+
 	EMIT
-;
+; -->
 
 : .S		( -- )
 	DSP@		( get current stack pointer )
@@ -2267,7 +2245,7 @@ let source = `
 	REPEAT
 	DROP
 ;
-
+-->
 : UWIDTH	( u -- width )
 	BASE @ U/	( rem quot )
 	?DUP IF		( if quotient <> 0 then )
@@ -2276,55 +2254,34 @@ let source = `
 		1		( return 1 )
 	THEN
 ;
-
+-->
 : U.R		( u width -- )
-	SWAP		( width u )
-	DUP		( width u u )
-	UWIDTH		( width u uwidth )
-	ROT		( u uwidth width )
-	SWAP -		( u width-uwidth )
-	( At this point if the requested width is narrower, we'll have a negative number on the stack.
-	  Otherwise the number on the stack is the number of spaces to print.  But SPACES won't print
-	  a negative number of spaces anyway, so it's now safe to call SPACES ... )
+	SWAP
+	DUP
+	UWIDTH
+	ROT
+	SWAP -
 	SPACES
-	( ... and then call the underlying implementation of U. )
 	U.
 ;
-
-: .R		( n width -- )
-	SWAP		( width n )
-	DUP 0< IF
-		NEGATE		( width u )
-		1		( save a flag to remember that it was negative | width n 1 )
-		SWAP		( width 1 u )
-		ROT		( 1 u width )
-		1-		( 1 u width-1 )
+-->
+: .R ( n width -- )
+	SWAP DUP 0< IF
+		NEGATE 1 SWAP ROT 1-
 	ELSE
-		0		( width u 0 )
-		SWAP		( width 0 u )
-		ROT		( 0 u width )
+		0 SWAP ROT
 	THEN
-	SWAP		( flag width u )
-	DUP		( flag width u u )
-    UWIDTH		( flag width u uwidth )
- 	ROT		( flag u uwidth width )
-	SWAP -		( flag u width-uwidth )
-
-	SPACES		( flag u )
-	SWAP		( u flag )
-
-	IF			( was it negative? print the - character )
+	SWAP DUP UWIDTH ROT SWAP - SPACES SWAP
+	IF
 		'-' EMIT
 	THEN
-
 	U.
 ;
-
+    
 : . 0 .R SPACE ;
 : U. U. SPACE ;
-
+-->
 : ? ( addr -- ) @ . ;
-
 : WITHIN
 	-ROT		( b c a )
 	OVER		( b c a c )
@@ -2339,10 +2296,10 @@ let source = `
 		FALSE
 	THEN
 ;
-
+-->
 : DEPTH		( -- n )
 	S0 @ DSP@ -
-	2- 2 U/			( adjust because S0 was on the stack when we pushed DSP )
+	2- 2 U/
 ;
 
 : ALIGNED	( addr -- addr )
@@ -2352,225 +2309,162 @@ let source = `
 : ALIGN HERE @ ALIGNED HERE ! ;
 
 : C,
-	HERE @ C!	( store the character in the compiled image )
-	1 HERE +!	( increment HERE pointer by 1 byte )
+	HERE @ C!
+	1 HERE +!
 ;
-
-: S" IMMEDIATE		( -- addr len )
-	STATE @ IF	( compiling? )
-		' LITSTRING ,	( compile LITSTRING )
-		HERE @		( save the address of the length word on the stack )
-		0 ,		( dummy length - we don't know what it is yet )
-		BEGIN
-			KEY 		( get next character of the string )
-			DUP '"' <>
-		WHILE
-			C,		( copy character )
-		REPEAT
-		DROP		( drop the double quote character at the end )
-		DUP		( get the saved address of the length word )
-		HERE @ SWAP -	( calculate the length )
-		2-		( subtract 2 (because we measured from the start of the length word) )
-		SWAP !		( and back-fill the length location )
-		 ALIGN		( round up to next multiple of 2 bytes for the remaining code )
-	ELSE		( immediate mode )
-		HERE @		( get the start address of the temporary space )
-		BEGIN
-			KEY
-			DUP '"' <>
-		WHILE
-			OVER C!		( save next character )
-			1+		( increment address )
-		REPEAT
-		DROP		( drop the final " character )
-		HERE @ -	( calculate the length )
-		HERE @		( push the start address )
-		SWAP 		( addr len )
+-->
+: S" IMMEDIATE ( -- addr len )
+	STATE @ IF ' LITSTRING , HERE @ 0 ,
+		BEGIN KEY DUP '"' <> WHILE C, REPEAT DROP
+		DUP HERE @ SWAP - 2- SWAP ! ALIGN
+	ELSE HERE @
+		BEGIN KEY DUP '"' <> WHILE
+                OVER C! 1+ REPEAT DROP
+		HERE @ - HERE @ SWAP
 	THEN
 ;
-
-: ." IMMEDIATE		( -- )
-	STATE @ IF	( compiling? )
-		[COMPILE] S"	( read the string, and compile LITSTRING, etc. )
-		' TELL ,	( compile the final TELL )
+-->
+: ." IMMEDIATE ( -- )
+	STATE @ IF
+		[COMPILE] S" ' TELL ,
 	ELSE
-		( In immediate mode, just read characters and print them until we get
-		  to the ending double quote. )
 		BEGIN
-			KEY
-			DUP '"' = IF
-				DROP	( drop the double quote character )
-				EXIT	( return from this function )
-			THEN
+			KEY DUP '"' = IF DROP EXIT THEN
 			EMIT
 		AGAIN
 	THEN
 ;
-
+-->
 : CONSTANT
-	WORD		( get the name (the name follows CONSTANT) )
-	CREATEHEAD  ( make the dictionary entry )
-	DOCOL ,		( append DOCOL (the codeword field of this word) )
-	' LIT ,		( append the codeword LIT )
-	,		( append the value on the top of the stack )
-	' EXIT ,	( append the codeword EXIT )
+	WORD
+	CREATEHEAD
+	DOCOL ,
+	' LIT ,
+	,
+	' EXIT ,
 ;
 
 
 
 : ALLOT		( n -- addr )
-	HERE @ SWAP	( here n )
-	HERE +!		( adds n to HERE, after this the old value of HERE is still on the stack )
+	HERE @ SWAP
+	HERE +!
 ;
-
+-->
 : CELLS ( n -- n ) 2 * ;
 
 : VARIABLE
-	1 CELLS ALLOT	( allocate 1 cell of memory, push the pointer to this memory )
-	WORD CREATEHEAD	( make the dictionary entry (the name follows VARIABLE) )
-	DOCOL ,		( append DOCOL (the codeword field of this word) )
-	' LIT ,		( append the codeword LIT )
-	,		( append the pointer to the new memory )
-	' EXIT ,	( append the codeword EXIT )
+	1 CELLS ALLOT
+	WORD CREATEHEAD
+	DOCOL ,
+	' LIT ,
+	,
+	' EXIT ,
 ;
-
+-->
 : VALUE		( n -- )
-	WORD CREATEHEAD	( make the dictionary entry (the name follows VALUE) )
-	DOCOL ,		( append DOCOL )
-	' LIT ,		( append the codeword LIT )
-	,		( append the initial value )
-	' EXIT ,	( append the codeword EXIT )
-;
+	WORD CREATEHEAD
 
+	DOCOL ,
+	' LIT ,
+	,
+	' EXIT ,
+;
+-->
 : TO IMMEDIATE	( n -- )
-	WORD		( get the name of the value )
-	FIND		( look it up in the dictionary )
-	>DFA		( get a pointer to the first data field (the 'LIT') )
-	2+		( increment to point at the value )
-	STATE @ IF	( compiling? )
-		' LIT ,		( compile LIT )
-		,		( compile the address of the value )
-		' ! ,		( compile ! )
-	ELSE		( immediate mode )
-		!		( update it straightaway )
+	WORD
+	FIND
+	>DFA
+	2+
+	STATE @ IF
+		' LIT ,
+		,
+		' ! ,
+	ELSE
+		!
 	THEN
 ;
-
+-->
 : +TO IMMEDIATE
-	WORD		( get the name of the value )
-	FIND		( look it up in the dictionary )
-	>DFA		( get a pointer to the first data field (the 'LIT') )
-	2+		( increment to point at the value )
-	STATE @ IF	( compiling? )
-		' LIT ,		( compile LIT )
-		,		( compile the address of the value )
-		' +! ,		( compile +! )
-	ELSE		( immediate mode )
-		+!		( update it straightaway )
+	WORD
+	FIND
+	>DFA
+	2+
+	STATE @ IF
+		' LIT ,
+		,
+		' +! ,
+	ELSE
+		+!
 	THEN
-;
-
+; 
+-->
 : ID.
 	2+		( skip over the link pointer )
 	DUP C@		( get the flags/length byte )
-	F-LENMASK AND	( mask out the flags - just want the length )
+	F-LENMASK AND	( just want the length )
 
 	BEGIN
-		DUP 0>		( length > 0? )
+		DUP 0>
 	WHILE
-		SWAP 1+		( addr len -- len addr+1 )
-		DUP C@		( len addr -- len addr char | get the next character)
-		EMIT		( len addr char -- len addr | and print it)
-		SWAP 1-		( len addr -- addr len-1    | subtract one from length )
+		SWAP 1+
+		DUP C@
+		EMIT
+		SWAP 1-
 	REPEAT
 	2DROP		( len addr -- )
 ;
-
+-->
 : ?HIDDEN
-	2+		( skip over the link pointer )
-	C@		( get the flags/length byte )
-	F-HIDDEN AND	( mask the F-HIDDEN flag and return it (as a truth value) )
+	2+
+	C@
+	F-HIDDEN AND
 ;
 : ?IMMEDIATE
-	2+		( skip over the link pointer )
-	C@		( get the flags/length byte )
-	F-IMMED AND	( mask the F-IMMED flag and return it (as a truth value) )
-;
-
+	2+
+	C@
+	F-IMMED AND
+; 
+-->
 : WORDS
-	CONTEXT @ @	( start at CONTEXT dictionary entry )
+	CONTEXT @ @
 	BEGIN
-		?DUP		( while link pointer is not null )
+		?DUP
 	WHILE
-		DUP ?HIDDEN NOT IF	( ignore hidden words )
-			DUP ID.		( but if not hidden, print the word )
+		DUP ?HIDDEN NOT IF
+			DUP ID.
 			SPACE
 		THEN
-		@		( dereference the link pointer - go to previous word )
+		@
 	REPEAT
 	CR
 ;
-
+-->
 : FORGET
-	WORD FIND	( find the word, gets the dictionary entry address )
+	WORD FIND
 	DUP @ CURRENT @ !
 	DUP @ LATEST !
-	HERE !		( and store HERE with the dictionary address )
+	HERE !
 ;
-
-: DUMP		( addr len -- )
-    CR
-	BASE @ -ROT		( save the current BASE at the bottom of the stack )
-	HEX			( and switch to hexadecimal mode )
-
-	BEGIN
-		?DUP		( while len > 0 )
-	WHILE
-		OVER 4 U.R	( print the address )
-		SPACE
-
-		( print up to 16 words on this line )
-		2DUP		( addr len addr len )
-		1- 15 AND 1+	( addr len addr linelen )
-		BEGIN
-			?DUP		( while linelen > 0 )
-		WHILE
-			SWAP		( addr len linelen addr )
-			DUP C@		( addr len linelen addr byte )
-			2 .R SPACE	( print the byte )
-			1+ SWAP 1-	( addr len linelen addr -- addr len addr+1 linelen-1 )
-		REPEAT
-		DROP		( addr len )
-
-		( print the ASCII equivalents )
-		2DUP 1- 15 AND 1+ ( addr len addr linelen )
-		BEGIN
-			?DUP		( while linelen > 0)
-		WHILE
-			SWAP		( addr len linelen addr )
-			DUP C@		( addr len linelen addr byte )
-			DUP 32 128 WITHIN IF	( 32 <= c < 128? )
-				EMIT
-			ELSE
-				DROP '.' EMIT
-			THEN
-			1+ SWAP 1-	( addr len linelen addr -- addr len addr+1 linelen-1 )
-		REPEAT
-		DROP		( addr len )
-		CR
-
-		DUP 1- 15 AND 1+ ( addr len linelen )
-		TUCK		( addr linelen len linelen )
-		-		( addr linelen len-linelen )
-		>R + R>		( addr+linelen len-linelen )
-	REPEAT
-
-	DROP			( restore stack )
-	BASE !			( restore saved BASE )
-;
-
+-->
+: DUMP ( addr len -- )
+ CR BASE @ -ROT HEX
+ BEGIN ?DUP WHILE
+  OVER 4 U.R SPACE
+  2DUP 1- 15 AND 1+
+  BEGIN ?DUP WHILE SWAP DUP C@ 2 .R SPACE 1+ SWAP 1- REPEAT DROP
+  2DUP 1- 15 AND 1+
+  BEGIN ?DUP WHILE
+   SWAP DUP C@ DUP 32 128 WITHIN IF EMIT ELSE DROP '.' EMIT THEN
+   1+ SWAP 1-
+  REPEAT DROP
+  CR
+  DUP 1- 15 AND 1+ TUCK - >R + R>
+  REPEAT
+  DROP BASE !
+; -->
 : CASE IMMEDIATE
-	0		( push 0 to mark the bottom of the stack )
+	0 ( push 0 to mark the bottom of the stack )
 ;
 
 
@@ -2584,140 +2478,73 @@ let source = `
 : ENDOF IMMEDIATE
 	[COMPILE] ELSE	( ENDOF is the same as ELSE )
 ;
-
+-->
 : ENDCASE IMMEDIATE
-	' DROP ,	( compile DROP )
+ ' DROP ,	( compile DROP )
 
-	( keep compiling THEN until we get to our zero marker )
-	BEGIN
-		?DUP
-	WHILE
-		[COMPILE] THEN
-	REPEAT
+ ( keep compiling THEN until we get to our zero marker )
+ BEGIN
+ 	?DUP
+ WHILE
+ 	[COMPILE] THEN
+ REPEAT
 ;
-
+-->
 : CFA>
 	CONTEXT @ @	( start at CONTEXT dictionary entry )
 	BEGIN
-		?DUP		( while link pointer is not null )
+		?DUP
 	WHILE
-		2DUP SWAP	( cfa curr curr cfa )
-		< IF		( current dictionary entry < cfa? )
-			NIP		( leave curr dictionary entry on the stack )
+		2DUP SWAP
+		< IF
+			NIP
 			EXIT
 		THEN
-		@		( follow link pointer back )
+		@
 	REPEAT
 	DROP		( restore stack )
 	0		( sorry, nothing found )
 ;
-
-: SEE
-	WORD FIND	( find the dictionary entry to decompile )
-
-	( Now we search again, looking for the next word in the dictionary.  This gives us
-	  the length of the word that we will be decompiling.  (Well, mostly it does). )
-	HERE @		( address of the end of the last compiled word )
-	LATEST @	( word last curr )
-	BEGIN
-		2 PICK		( word last curr word )
-		OVER		( word last curr word curr )
-		<>		( word last curr word<>curr? )
-	WHILE			( word last curr )
-		NIP		( word curr )
-		DUP @		( word curr prev (which becomes: word last curr) )
-	REPEAT
-
-	DROP		( at this point, the stack is: start-of-word end-of-word )
-	SWAP		( end-of-word start-of-word )
-
-	( begin the definition with : NAME [IMMEDIATE] )
-	':' EMIT SPACE DUP ID. SPACE
-	DUP ?IMMEDIATE IF ." IMMEDIATE " THEN
-
-	>DFA		( get the data address, ie. points after DOCOL | end-of-word start-of-data )
-
-	( now we start decompiling until we hit the end of the word )
-	BEGIN		( end start )
-		2DUP >
-	WHILE
-		DUP @		( end start codeword )
-
-		CASE
-		' LIT OF		( is it LIT ? )
-			2 + DUP @		( get next word which is the integer constant )
-			.			( and print it )
-		ENDOF
-		' LITSTRING OF		( is it LITSTRING ? )
-			[ CHAR S ] LITERAL EMIT '"' EMIT SPACE ( print S"<space> )
-			2 + DUP @		( get the length word )
-			SWAP 2 + SWAP		( end start+4 length )
-			2DUP TELL		( print the string )
-			'"' EMIT SPACE		( finish the string with a final quote )
-			+ ALIGNED		( end start+4+len, aligned )
-			2 -			( because we're about to add 2 below )
-		ENDOF
-		' 0BRANCH OF		( is it 0BRANCH ? )
-			." 0BRANCH ( "
-			2 + DUP @		( print the offset )
-			.
-			." ) "
-		ENDOF
-		' BRANCH OF		( is it BRANCH ? )
-			." BRANCH ( "
-			2 + DUP @		( print the offset )
-			.
-			." ) "
-		ENDOF
-		' ' OF			( is it ' (TICK) ? )
-			[ CHAR ' ] LITERAL EMIT SPACE
-			2 + DUP @		( get the next codeword )
-			CFA>			( and force it to be printed as a dictionary entry )
-			ID. SPACE
-		ENDOF
-		' EXIT OF		( is it EXIT? )
-			( We expect the last word to be EXIT, and if it is then we don't print it
-			  because EXIT is normally implied by ;.  EXIT can also appear in the middle
-			  of words, and then it needs to be printed. )
-			2DUP			( end start end start )
-			2 +			( end start end start+4 )
-			<> IF			( end start | we're not at the end )
-				." EXIT "
-			THEN
-		ENDOF
-					( default case: )
-			DUP			( in the default case we always need to DUP before using )
-			CFA>			( look up the codeword to get the dictionary entry )
-			ID. SPACE		( and print it )
-		ENDCASE
-
-		2 +		( end start+2 )
-	REPEAT
-
-	';' EMIT CR
-
-	2DROP		( restore stack )
-;
-
-
+-->
+: SEE WORD FIND HERE @ LATEST @
+  BEGIN 2 PICK OVER <> WHILE NIP DUP @ REPEAT DROP SWAP
+  ':' EMIT SPACE DUP ID. SPACE DUP ?IMMEDIATE
+  IF ." IMMEDIATE " THEN >DFA BEGIN 2DUP > WHILE DUP @ CASE
+    ' LIT OF 2 + DUP @ . ENDOF
+    ' LITSTRING OF [ CHAR S ] LITERAL EMIT '"' EMIT SPACE
+      2 + DUP @ SWAP 2 + SWAP 2DUP TELL '"' EMIT SPACE
+      + ALIGNED 2 - ENDOF
+    ' 0BRANCH OF ." 0BRANCH ( " 2 + DUP @ . ." ) " ENDOF
+    ' BRANCH OF ." BRANCH ( " 2 + DUP @ . ." ) " ENDOF
+    ' ' OF [ CHAR ' ] LITERAL EMIT SPACE
+      2 + DUP @ CFA> ID. SPACE ENDOF
+    ' EXIT OF 2DUP 2 + <> IF ." EXIT " THEN ENDOF
+    DUP CFA> ID. SPACE ENDCASE
+    2 + REPEAT ';' EMIT CR 2DROP ;
+-->
 : :NONAME
-	0 0 CREATEHEAD	( create a word with no name - we need a dictionary header because ; expects it )
-	HERE @		( current HERE value is the address of the codeword, ie. the xt )
-	DOCOL ,		( compile DOCOL (the codeword) )
-	]		( go into compile mode )
+	0 0 CREATEHEAD
+	HERE @
+	DOCOL ,
+	]
 ;
 
 : ['] IMMEDIATE
 	' LIT ,		( compile LIT )
 ;
-
-: DO IMMEDIATE  ['] SWAP , ['] >R , ['] >R , [COMPILE] BEGIN ;
-: LOOP IMMEDIATE ['] R> , ['] R> , ['] SWAP , ['] 1+ ,  ['] 2DUP ,  ['] = ,
-    ['] -ROT , ['] SWAP , ['] >R , ['] >R , [COMPILE] UNTIL ['] RDROP , ['] RDROP , ;
-: +LOOP IMMEDIATE ['] R> , ['] R> , ['] SWAP , ['] ROT , ['] + ,  ['] 2DUP ,  ['] = ,
-    ['] -ROT , ['] SWAP , ['] >R , ['] >R , [COMPILE] UNTIL ['] RDROP , ['] RDROP , ;
+-->
+: DO IMMEDIATE  ['] SWAP , ['] >R , ['] >R ,
+     [COMPILE] BEGIN ;
+: LOOP IMMEDIATE ['] R> , ['] R> , ['] SWAP ,
+       ['] 1+ ,  ['] 2DUP ,  ['] = ,
+    ['] -ROT , ['] SWAP , ['] >R , ['] >R ,
+    [COMPILE] UNTIL ['] RDROP , ['] RDROP , ;
+: +LOOP IMMEDIATE ['] R> , ['] R> , ['] SWAP ,
+        ['] ROT , ['] + ,  ['] 2DUP ,  ['] = ,
+    ['] -ROT , ['] SWAP , ['] >R , ['] >R ,
+    [COMPILE] UNTIL ['] RDROP , ['] RDROP , ;
 : LEAVE R> R> R> DROP DUP 1+ >R >R >R ;
-
+-->
 : R@ RSP@ 2+ @ ;
 : I RSP@ 2+ @ ;
 : I' RSP@ 4 + @ ;
@@ -2731,17 +2558,18 @@ let source = `
 : 0. 0 0 ;
 
 : ' WORD FIND >CFA ;
-
+-->
 : MAX 2DUP > IF DROP ELSE SWAP DROP THEN ;
 : MIN 2DUP > IF SWAP DROP ELSE DROP THEN ;
 
 HEX
-DFFC CONSTANT PAD
+CFFC CONSTANT PAD
 DECIMAL
 
-
+-->
 : LEAVE R> R> R> DROP DUP >R >R >R ;
 : -ROT ROT ROT ;
+-->
 : FILL          ( A C V )
     SWAP        ( A V C )
     BEGIN
@@ -2757,7 +2585,7 @@ DECIMAL
     REPEAT
     2DROP DROP
     ;
-
+-->
     : COUNT DUP 1+ SWAP C@ ;
     : TEXT PAD 72 32 FILL WORD  ( A L )
     DUP -ROT                    ( L A L )
@@ -2772,22 +2600,22 @@ DECIMAL
 : CREATE
     WORD CREATEHEAD DODOES , 0 ,
 ;
-
+-->
 : DOES> IMMEDIATE
-    ['] LIT , HERE @ 6 CELLS + , ['] LATEST , ['] @ , ['] >DFA , ['] ! , ['] EXIT ,
+    ['] LIT , HERE @ 6 CELLS + , ['] LATEST , ['] @ ,
+    ['] >DFA , ['] ! , ['] EXIT ,
 ;
 
 : VOCABULARY
 	CREATE 0 ,
-	DOES> CONTEXT !
-;
+	DOES> CONTEXT ! ;
 
 : 2@ DUP 2+ @ SWAP @ ;
 : 2! TUCK 2+ ! ! ;
 
 : 2CONSTANT CREATE , , DOES> 2@ ;
 : 2VARIABLE CREATE 0 , 0 , DOES> ;
-
+-->
 : S>D DUP 0< IF -1 ELSE 0 THEN ;
 
 
@@ -2796,7 +2624,7 @@ DECIMAL
 ( --- Arithmetic & Double Math --- )
 : */ ( n1 n2 n3 -- q ) */MOD SWAP DROP ;
 : U* ( u1 u2 -- ud ) UM* ;
-
+-->
 : D+ ( l1 h1 l2 h2 -- l3 h3 )
     ROT + >R     ( l1 l2 )      ( R: h1+h2 )
     OVER OVER +  ( l1 l2 l3 )
@@ -2810,11 +2638,7 @@ DECIMAL
 : DABS ( d -- |d| ) DUP 0< IF DNEGATE THEN ;
 : M+ ( d n -- d+n ) S>D D+ ;
 : M/ ( d n -- q ) FM/MOD NIP ;
-
-( M*/ is omitted because doing true 48-bit intermediate math )
-( in high-level 16-bit Forth is a massive undertaking not suitable )
-( for a simple alias. )
-
+ -->
 ( --- Comparisons --- )
 : D= ( d1 d2 -- f ) ROT = -ROT = AND ;
 : D0= ( d -- f ) OR 0= ;
@@ -2825,7 +2649,7 @@ DECIMAL
     ELSE
         >R >R 2DROP R> R> >
     THEN ;
-
+-->
 : DU< ( d1 d2 -- f )
     ROT 2DUP = IF
         2DROP U<
@@ -2833,13 +2657,15 @@ DECIMAL
         >R >R 2DROP R> R> SWAP U<
     THEN ;
 
-: DMIN ( d1 d2 -- min ) 2OVER 2OVER D< IF 2DROP ELSE 2SWAP 2DROP THEN ;
-: DMAX ( d1 d2 -- max ) 2OVER 2OVER D< IF 2SWAP 2DROP ELSE 2DROP THEN ;
+: DMIN ( d1 d2 -- min ) 2OVER 2OVER D< IF 2DROP
+  ELSE 2SWAP 2DROP THEN ;
+: DMAX ( d1 d2 -- max ) 2OVER 2OVER D< IF 2SWAP
+  2DROP ELSE 2DROP THEN ;
 
 ( --- String & Memory --- )
 : TYPE ( addr len -- ) TELL ;
 : >TYPE ( addr len -- ) TYPE ;
-
+-->
 : -TRAILING ( addr len -- addr len' )
     BEGIN
         DUP 0> IF
@@ -2848,7 +2674,7 @@ DECIMAL
             ELSE TRUE THEN
         ELSE TRUE THEN
     UNTIL ;
-
+-->
 : -TEXT ( addr1 len addr2 -- diff )
     >R BEGIN
         DUP 0>
@@ -2860,7 +2686,7 @@ DECIMAL
         R> 1+ >R
     REPEAT
     2DROP R> DROP 0 ;
-
+-->
 : MOVE ( addr1 addr2 u -- )
     0 DO
         OVER @ OVER !
@@ -2876,33 +2702,26 @@ DECIMAL
 
 : ERASE ( addr u -- ) 0 FILL ;
 : BLANK ( addr u -- ) BL FILL ;
-
+-->
 ( --- Character I/O --- )
 VARIABLE SPAN
+-->
 : EXPECT ( addr len -- )
-    0 SPAN !
-    OVER + SWAP ( end-addr curr-addr )
-    BEGIN
-        2DUP = IF TRUE ELSE
-            KEY
-            DUP 10 = OVER 13 = OR IF
-                DROP SPACE TRUE
-            ELSE
-                DUP 8 = OVER 127 = OR IF
-                    DROP
-                    SPAN @ 0> IF
-                        -1 SPAN +!
-                        1- 8 EMIT BL EMIT 8 EMIT
-                    THEN FALSE
-                ELSE
-                    DUP EMIT
-                    OVER C!
-                    1+ 1 SPAN +! FALSE
-                THEN
-            THEN
-        THEN
-    UNTIL
-    2DROP ;
+  0 SPAN ! OVER + SWAP
+  BEGIN
+    2DUP = IF TRUE ELSE
+      KEY DUP 10 = OVER 13 = OR IF
+        DROP SPACE TRUE
+      ELSE DUP 8 = OVER 127 = OR IF
+        DROP SPAN @ 0> IF
+          -1 SPAN +! 1- 8 EMIT BL EMIT 8 EMIT
+        THEN FALSE
+      ELSE
+        DUP EMIT OVER C! 1+ 1 SPAN +! FALSE THEN
+      THEN
+    THEN
+  UNTIL 2DROP
+; -->
 
 ( --- Compilation --- )
 : COMPILE IMMEDIATE
@@ -2915,11 +2734,11 @@ VARIABLE HLD
 : <# ( -- ) PAD HLD ! ;
 : HOLD ( char -- ) HLD @ 1- DUP HLD ! C! ;
 : #> ( d -- addr len ) 2DROP HLD @ PAD OVER - ;
-
+-->
 : # ( d -- d' )
     BASE @ FM/MOD ( rem quot )
     SWAP DUP 9 > IF 7 + THEN '0' + HOLD
-    0 ; ( simplified: return single quot padded to double 0 )
+    0 ;
 
 : #S ( d -- 0 0 )
     BEGIN # 2DUP OR 0= UNTIL ;
@@ -2929,9 +2748,10 @@ VARIABLE HLD
 : D. ( d -- )
     DUP >R ( save high cell to return stack )
     DABS <# #S R> SIGN #> TYPE SPACE ;
-
+-->
 : D.R ( d width -- )
-    >R DUP >R DABS <# #S R> SIGN #> ( addr len ) ( R: width )
+    >R DUP >R DABS <# #S R> SIGN #> ( addr len )
+    ( R: width )
     R> OVER - SPACES TYPE ;
 
 ( --- Operating System & Variables --- )
@@ -2943,18 +2763,14 @@ VARIABLE ORIG-LATEST LATEST @ ORIG-LATEST !
 : EMPTY ( -- )
     ORIG-HERE @ HERE !
     ORIG-LATEST @ LATEST ! ;
-
+-->
 ( ABORT" is provided as a JS immediate primitive. )
-
-
-
-
 
 VARIABLE OFFSET 0 OFFSET !
 VARIABLE SCR
 VARIABLE R#
 : H HERE ;
-
+-->
 ( --- Virtual Memory --- )
 : LIST ( n -- )
     DUP SCR !
@@ -2969,7 +2785,7 @@ VARIABLE R#
         SPACE
         DUP I 64 * + 64 -TRAILING TYPE CR
     LOOP DROP ;
-
+ -->
 : L LIST ;
 
 : LOAD ( n -- )
@@ -2985,18 +2801,14 @@ VARIABLE R#
     R> >IN !
     R> BLK !
 ;
-
+-->
 : THRU ( n1 n2 -- )
     1+ SWAP DO I LOAD LOOP
 ;
 
-: --> IMMEDIATE
-    1 BLK +!
-    0 >IN !
-;
-
 : COPY ( n1 n2 -- )
-    SWAP BLOCK SWAP BUFFER 1024 CMOVE UPDATE SAVE-BUFFERS
+    SWAP BLOCK SWAP BUFFER 1024 CMOVE UPDATE
+    SAVE-BUFFERS
 ;
 
 : WIPE ( n -- )
@@ -3004,25 +2816,23 @@ VARIABLE R#
 ;
 
 : SCRUB ( n -- ) WIPE ;
-
+-->
 : /LOOP IMMEDIATE
-    ['] R> , ['] R> ,       ( -- inc index limit )
-    ['] SWAP , ['] ROT ,    ( -- limit index inc )
-    ['] + ,                 ( -- limit index' )
-    ['] 2DUP ,              ( -- limit index' limit index' )
-    ['] SWAP , ['] U< ,     ( -- limit index' flag_continue )
-    ['] 0= ,                ( -- limit index' flag_exit )
-    ['] -ROT , ['] SWAP ,   ( -- exit_flag index' limit )
-    ['] >R , ['] >R ,       ( -- exit_flag )
+    ['] R> , ['] R> ,     ( -- inc index limit )
+    ['] SWAP , ['] ROT ,  ( -- limit index inc )
+    ['] + ,               ( -- limit index' )
+    ['] 2DUP ,            ( -- limit index' limit index' )
+    ['] SWAP , ['] U< ,   ( -- limit index' flag_continue )
+    ['] 0= ,              ( -- limit index' flag_exit )
+    ['] -ROT , ['] SWAP , ( -- exit_flag index' limit )
+    ['] >R , ['] >R ,     ( -- exit_flag )
     [COMPILE] UNTIL
     ['] RDROP , ['] RDROP ,
 ;
-
-( --- EDITOR vocabulary (Starting Forth style subset) --- )
-
+-->
+( --- EDITOR vocabulary (Starting Forth style subset) )
 VOCABULARY EDITOR
 EDITOR DEFINITIONS
-
 VARIABLE ED-LINE
 0 ED-LINE !
 VARIABLE ED-CURSOR
@@ -3034,18 +2844,13 @@ VARIABLE ED-TEMP2
 VARIABLE ED-SAVE1
 VARIABLE ED-SAVE2
 VARIABLE ED-MATCH
-
+-->
 HERE @ 64 ALLOT CONSTANT ED-IBUF
 VARIABLE ED-ILEN
 0 ED-ILEN !
 HERE @ 64 ALLOT CONSTANT ED-FBUF
 VARIABLE ED-FLEN
 0 ED-FLEN !
-
-
-
-
-
 : .OK S" ok" TELL ;
 : .NONE S" NONE" TELL ;
 
@@ -3055,7 +2860,7 @@ VARIABLE ED-FLEN
     DUP 13 = IF DROP TRUE EXIT THEN
     0=
 ;
-
+-->
 : SET-CURSOR ( n -- )
     DUP ED-CURSOR !
     64 MOD R# !
@@ -3071,40 +2876,27 @@ VARIABLE ED-FLEN
 
 : CLINE-ADDR ( -- addr )
     ED-LINE @ LINE-ADDR
-;
-
+; -->
 : LINE-END ( -- n )
     ED-LINE @ 1+ 64 *
 ;
-
+-->
 : PARSE-INTO ( addr lenaddr -- )
-    PARSE-LENPTR !
-    PARSE-BUF !
-    KEY DUP END-PARSE? IF
-        DROP
-        EXIT
+  PARSE-LENPTR ! PARSE-BUF !
+  KEY DUP END-PARSE? IF DROP EXIT THEN
+  DUP BL = IF
+    DROP KEY DUP END-PARSE? IF
+      DROP 0 PARSE-LENPTR @ ! EXIT
     THEN
-    DUP BL = IF
-        DROP
-        KEY DUP END-PARSE? IF
-            DROP
-            0 PARSE-LENPTR @ !
-            EXIT
-        THEN
+  THEN
+  0 PARSE-LENPTR @ !
+  BEGIN DUP END-PARSE? NOT WHILE
+    PARSE-LENPTR @ @ 64 < IF
+      DUP PARSE-BUF @ PARSE-LENPTR @ @ + C!
+      1 PARSE-LENPTR @ +!
     THEN
-    0 PARSE-LENPTR @ !
-    BEGIN
-        DUP END-PARSE? NOT
-    WHILE
-        PARSE-LENPTR @ @ 64 < IF
-            DUP PARSE-BUF @ PARSE-LENPTR @ @ + C!
-            1 PARSE-LENPTR @ +!
-        THEN
-        KEY
-    REPEAT
-    DROP
-;
-
+    KEY
+  REPEAT DROP ; -->
 : >INSERT ( addr len -- )
     DUP ED-ILEN !
     ED-IBUF 64 BLANK
@@ -3120,7 +2912,7 @@ VARIABLE ED-FLEN
 : LINE>INSERT ( addr -- )
     DUP 64 -TRAILING >INSERT DROP
 ;
-
+-->
 : PUT-INSERT ( addr -- )
     DUP 64 BLANK
     ED-IBUF OVER ED-ILEN @ CMOVE
@@ -3130,11 +2922,9 @@ VARIABLE ED-FLEN
 : FIND-MATCH? ( pos -- f )
     CUR-BLOCK-ADDR + ED-FLEN @ ED-FBUF -TEXT 0=
 ;
-
+-->
 : SEARCH-BLOCK ( start limit -- f )
     ED-TEMP2 !
-
-
     BEGIN
         DUP ED-TEMP2 @ <
     WHILE
@@ -3146,9 +2936,8 @@ VARIABLE ED-FLEN
         1+
     REPEAT
     DROP FALSE
-
 ;
-
+-->
 : FOUND>STATE ( pos -- )
     DUP 64 / ED-LINE !
     ED-FLEN @ + SET-CURSOR
@@ -3161,7 +2950,7 @@ VARIABLE ED-FLEN
     SEARCH-BLOCK
     DUP IF ED-MATCH @ FOUND>STATE THEN
 ;
-
+-->
 : SEARCH-CURRENT-LINE ( -- f )
     ED-FLEN @ 0= IF FALSE EXIT THEN
     ED-CURSOR @
@@ -3169,27 +2958,23 @@ VARIABLE ED-FLEN
     SEARCH-BLOCK
     DUP IF ED-MATCH @ FOUND>STATE THEN
 ;
-
+-->
 : TYPE-CURRENT-LINE ( -- )
     CLINE-ADDR 64 -TRAILING NIP ED-TEMP2 !
-    ED-CURSOR @ ED-LINE @ 64 * - DUP 0< IF DROP 0 THEN ED-TEMP !
+    ED-CURSOR @ ED-LINE @ 64 * - DUP
+    0< IF DROP 0 THEN ED-TEMP !
     ED-TEMP @ ED-TEMP2 @ MAX ED-MATCH !
     0
-    BEGIN
-        DUP ED-MATCH @ <
+    BEGIN DUP ED-MATCH @ <
     WHILE
         DUP ED-TEMP @ = IF 94 EMIT THEN
-        DUP ED-TEMP2 @ < IF
-            CLINE-ADDR OVER + C@ EMIT
-        ELSE
-            BL EMIT
-        THEN
+        DUP ED-TEMP2 @ < IF CLINE-ADDR OVER + C@ EMIT
+        ELSE BL EMIT THEN
         1+
     REPEAT
     DUP ED-TEMP @ = IF 94 EMIT THEN
     DROP
-;
-
+; -->
 : .LINE-OK ( -- )
     TYPE-CURRENT-LINE
     SPACE ED-LINE @ . SPACE .OK CR
@@ -3203,7 +2988,7 @@ VARIABLE ED-FLEN
 : L ( -- )
     SCR @ LIST
 ;
-
+-->
 : T ( n -- )
     DUP ED-LINE !
     64 * SET-CURSOR
@@ -3215,7 +3000,7 @@ VARIABLE ED-FLEN
     CLINE-ADDR PUT-INSERT
     UPDATE
 ;
-
+-->
 : (U) ( -- )
     ED-LINE @ 14 <= IF
         ED-LINE @ 1+ LINE-ADDR
@@ -3227,12 +3012,11 @@ VARIABLE ED-FLEN
     CLINE-ADDR PUT-INSERT
     UPDATE
 ;
-
 : U ( -- )
     ED-IBUF ED-ILEN PARSE-INTO
     (U)
 ;
-
+-->
 : X ( -- )
     CLINE-ADDR LINE>INSERT
     ED-LINE @ 15 < IF
@@ -3243,7 +3027,7 @@ VARIABLE ED-FLEN
     15 LINE-ADDR 64 BLANK
     UPDATE
 ;
-
+-->
 : M ( block line -- )
     SWAP ED-TEMP ! ED-TEMP2 !
     X
@@ -3251,7 +3035,7 @@ VARIABLE ED-FLEN
     ED-TEMP2 @ ED-LINE !
     (U)
 ;
-
+-->
 : F ( -- )
     ED-FBUF ED-FLEN PARSE-INTO
     SEARCH-CURRENT-BLOCK IF
@@ -3260,44 +3044,29 @@ VARIABLE ED-FLEN
         .NONE CR
     THEN
 ;
-
+-->
 : I ( -- )
-    ED-IBUF ED-ILEN PARSE-INTO
-    ED-ILEN @ 0= IF
-        .LINE-OK
-        EXIT
-    THEN
-    LINE-END ED-CURSOR @ - DUP 0<= IF
-        DROP
-        .LINE-OK
-        EXIT
-    THEN
-    DUP ED-ILEN @ > IF
-        LINE-END ED-CURSOR @ - ED-ILEN @ -
-        CUR-BLOCK-ADDR ED-CURSOR @ +
-        DUP ED-ILEN @ +
-        ROT <CMOVE
-    ELSE
-        DROP
-    THEN
-    ED-IBUF
-    CUR-BLOCK-ADDR ED-CURSOR @ +
-    LINE-END ED-CURSOR @ - ED-ILEN @ MIN
-    CMOVE
-    ED-CURSOR @ ED-ILEN @ + LINE-END MIN SET-CURSOR
-    UPDATE
-    .LINE-OK
-;
-
+  ED-IBUF ED-ILEN PARSE-INTO
+  ED-ILEN @ 0= IF .LINE-OK EXIT THEN
+  LINE-END ED-CURSOR @ - DUP 0<= IF
+    DROP .LINE-OK EXIT
+  THEN
+  DUP ED-ILEN @ > IF
+    LINE-END ED-CURSOR @ - ED-ILEN @ -
+    CUR-BLOCK-ADDR ED-CURSOR @ + DUP ED-ILEN @ +
+    ROT <CMOVE
+  ELSE DROP THEN
+  ED-IBUF CUR-BLOCK-ADDR ED-CURSOR @ +
+  LINE-END ED-CURSOR @ - ED-ILEN @ MIN CMOVE
+  ED-CURSOR @ ED-ILEN @ + LINE-END MIN SET-CURSOR
+  UPDATE .LINE-OK
+; -->
 : E ( -- )
     ED-FLEN @ 0= IF
-        .LINE-OK
-        EXIT
+        .LINE-OK EXIT
     THEN
     ED-CURSOR @ ED-FLEN @ - DUP ED-LINE @ 64 * < IF
-        DROP
-        .LINE-OK
-        EXIT
+        DROP .LINE-OK EXIT
     THEN
     ED-TEMP !
     CUR-BLOCK-ADDR ED-CURSOR @ +
@@ -3307,7 +3076,7 @@ VARIABLE ED-FLEN
     ED-TEMP @ SET-CURSOR
     UPDATE
     .LINE-OK
-;
+; -->
 
 : D ( -- )
     ED-FBUF ED-FLEN PARSE-INTO
@@ -3317,40 +3086,23 @@ VARIABLE ED-FLEN
         .NONE CR
     THEN
 ;
-
+-->
 : R ( -- )
-    ED-IBUF ED-ILEN PARSE-INTO
-    ED-FLEN @ 0= IF
-        .LINE-OK
-        EXIT
-    THEN
-    ED-CURSOR @ ED-FLEN @ - ED-TEMP !
-    ED-ILEN @ ED-FLEN @ > IF
-        ED-ILEN @ ED-FLEN @ - ED-TEMP2 !
-        LINE-END ED-CURSOR @ - ED-TEMP2 @ - DUP 0> IF
-            CUR-BLOCK-ADDR ED-CURSOR @ +
-            DUP ED-TEMP2 @ +
-            ROT <CMOVE
-        ELSE
-            DROP
-        THEN
-    THEN
-    ED-ILEN @ ED-FLEN @ < IF
-        CUR-BLOCK-ADDR ED-CURSOR @ +
-        CUR-BLOCK-ADDR ED-TEMP @ + ED-ILEN @ +
-        LINE-END ED-CURSOR @ - CMOVE
-        LINE-END ED-FLEN @ ED-ILEN @ - -
-        ED-FLEN @ ED-ILEN @ - BLANK
-    THEN
-    ED-IBUF
-    CUR-BLOCK-ADDR ED-TEMP @ +
-    LINE-END ED-TEMP @ - ED-ILEN @ MIN
-    CMOVE
-    ED-TEMP @ ED-ILEN @ + LINE-END MIN SET-CURSOR
-    UPDATE
-    .LINE-OK
-;
-
+  ED-IBUF ED-ILEN PARSE-INTO
+  ED-FLEN @ 0= IF .LINE-OK EXIT THEN
+  ED-CURSOR @ ED-FLEN @ - ED-TEMP ! ED-ILEN @ ED-FLEN @ > IF
+    ED-ILEN @ ED-FLEN @ - ED-TEMP2 ! LINE-END ED-CURSOR @ -
+    ED-TEMP2 @ - DUP 0> IF CUR-BLOCK-ADDR ED-CURSOR @ +
+      DUP ED-TEMP2 @ + ROT <CMOVE ELSE DROP THEN THEN
+  ED-ILEN @ ED-FLEN @ < IF CUR-BLOCK-ADDR ED-CURSOR @ +
+    CUR-BLOCK-ADDR ED-TEMP @ + ED-ILEN @ +
+    LINE-END ED-CURSOR @ - CMOVE
+    LINE-END ED-FLEN @ ED-ILEN @ - - ED-FLEN @ ED-ILEN @ -
+    BLANK THEN
+  ED-IBUF CUR-BLOCK-ADDR ED-TEMP @ +
+  LINE-END ED-TEMP @ - ED-ILEN @ MIN CMOVE
+  ED-TEMP @ ED-ILEN @ + LINE-END MIN SET-CURSOR UPDATE
+  .LINE-OK ; -->
 : TILL ( -- )
     ED-FBUF ED-FLEN PARSE-INTO
     ED-FLEN @ 0= IF
@@ -3366,35 +3118,23 @@ VARIABLE ED-FLEN
         .NONE CR
     THEN
     ED-SAVE1 @ ED-FLEN !
-;
-
+; -->
 : D-LINE ( n -- ) T ;  ( convenience only, not used )
-
-
 : S ( n -- )
-    ED-FBUF ED-FLEN PARSE-INTO
-    FALSE ED-TEMP !
-    SEARCH-CURRENT-BLOCK IF
-        TRUE ED-TEMP !
+    ED-FBUF ED-FLEN PARSE-INTO FALSE ED-TEMP !
+    SEARCH-CURRENT-BLOCK IF TRUE ED-TEMP !
     ELSE
         SCR @ 1+ SWAP
         DO
-            I SCR !
-            0 ED-LINE !
-            0 SET-CURSOR
+            I SCR ! 0 ED-LINE ! 0 SET-CURSOR
             SEARCH-CURRENT-BLOCK IF
                 TRUE ED-TEMP !
                 LEAVE
             THEN
         LOOP
     THEN
-    ED-TEMP @ IF
-        .LINE-BLOCK-OK
-    ELSE
-        .NONE CR
-    THEN
-;
-
+    ED-TEMP @ IF .LINE-BLOCK-OK ELSE .NONE CR THEN
+; -->
 : N ( -- ) 1 SCR +! ;
 : B ( -- ) -1 SCR +! ;
 : FLUSH ( -- ) SAVE-BUFFERS ;
@@ -3403,15 +3143,15 @@ DROP
 DROP
 
 FORTH DEFINITIONS
-
-( --------------------------------------------------------------------- )
+-->
+( ---------------------------------------- )
 
 : TESTING ; ( will be forgotten )
 
 : HASH
  SWAP 1+ XOR
 ;
-
+-->
 : HASH-N ( x1 x2 ... xn n -- h )
  0 >R
  BEGIN
@@ -3425,7 +3165,7 @@ FORTH DEFINITIONS
 
 VARIABLE TEST-NUMBER
 VARIABLE TDEPTH
-
+-->
 : TSTART
     0 TEST-NUMBER !
 ;
@@ -3440,7 +3180,7 @@ VARIABLE TDEPTH
     HASH-N
     DEPTH TDEPTH !
 ;
-
+-->
 : }T
     DEPTH TDEPTH @ -
     HASH-N
@@ -3453,22 +3193,23 @@ VARIABLE TDEPTH
 ;
 
 : TEND ;
-
+-->
 TSTART
 
     HEX
     T{ -> }T
 
     T{ : BITSSET? IF 0 0 ELSE 0 THEN ; -> }T
-    T{  0 BITSSET? -> 0 }T      ( ZERO IS ALL BITS CLEAR )
-    T{  1 BITSSET? -> 0 0 }T      ( OTHER NUMBER HAVE AT LEAST ONE BIT )
+    T{  0 BITSSET? -> 0 }T   ( ZERO IS ALL BITS CLEAR )
+    T{  1 BITSSET? -> 0 0 }T
+      ( OTHER NUMBER HAVE AT LEAST ONE BIT )
     T{ -1 BITSSET? -> 0 0 }T
 
     T{ 0 0 AND -> 0 }T
     T{ 0 1 AND -> 0 }T
     T{ 1 0 AND -> 0 }T
     T{ 1 1 AND -> 1 }T
-
+-->
     T{ 0 INVERT 1 AND -> 1 }T
     T{ 1 INVERT 1 AND -> 0 }T
 
@@ -3482,7 +3223,7 @@ TSTART
     T{ 0S 1S AND -> 0S }T
     T{ 1S 0S AND -> 0S }T
     T{ 1S 1S AND -> 1S }T
-
+-->
     T{ 0S 0S OR -> 0S }T
     T{ 0S 1S OR -> 1S }T
     T{ 1S 0S OR -> 1S }T
@@ -3495,7 +3236,7 @@ TSTART
 
     BINARY 1000000000000000 CONSTANT MSB
     HEX
-
+-->
     T{ 0S 2* -> 0S }T
     T{ 1 2* -> 2 }T
     T{ 4000 2* -> 8000 }T
@@ -3508,7 +3249,7 @@ TSTART
     T{ 1S 2/ -> 1S }T
     T{ 1S 1 XOR 2/ -> 1S }T
     T{ MSB 2/ MSB AND -> MSB }T
-
+-->
     T{ 1 0 LSHIFT -> 1 }T
     T{ 1 1 LSHIFT -> 2 }T
     T{ 1 2 LSHIFT -> 4 }T
@@ -3523,7 +3264,7 @@ TSTART
     T{ 8000 F RSHIFT -> 1 }T
     T{ MSB 1 RSHIFT MSB AND -> 0 }T
     T{ MSB 1 RSHIFT 2* -> MSB }T
-
+-->
     0 INVERT                    CONSTANT MAX-UINT
     0 INVERT 1 RSHIFT           CONSTANT MAX-INT
     0 INVERT 1 RSHIFT INVERT    CONSTANT MIN-INT
@@ -3532,7 +3273,7 @@ TSTART
 
     0S CONSTANT <FALSE>
     1S CONSTANT <TRUE>
-
+-->
     T{ 0 0= -> <TRUE> }T
     T{ 1 0= -> <FALSE> }T
     T{ 2 0= -> <FALSE> }T
@@ -3548,7 +3289,7 @@ TSTART
     T{ -1 0 = -> <FALSE> }T
     T{ 0 1 = -> <FALSE> }T
     T{ 0 -1 = -> <FALSE> }T
-
+-->
     T{ 0 0< -> <FALSE> }T
     T{ -1 0< -> <TRUE> }T
     T{ MIN-INT 0< -> <TRUE> }T
@@ -3563,6 +3304,7 @@ TSTART
     T{ MIN-INT MAX-INT < -> <TRUE> }T
     T{ 0 MAX-INT < -> <TRUE> }T
     T{ 0 0 < -> <FALSE> }T
+-->
     T{ 1 1 < -> <FALSE> }T
     T{ 1 0 < -> <FALSE> }T
     T{ 2 1 < -> <FALSE> }T
@@ -3571,7 +3313,7 @@ TSTART
     T{ 0 MIN-INT < -> <FALSE> }T
     T{ MAX-INT MIN-INT < -> <FALSE> }T
     T{ MAX-INT 0 < -> <FALSE> }T
-
+-->
     T{ 0 1 > -> <FALSE> }T
     T{ 1 2 > -> <FALSE> }T
     T{ -1 0 > -> <FALSE> }T
@@ -3585,6 +3327,7 @@ TSTART
     T{ 2 1 > -> <TRUE> }T
     T{ 0 -1 > -> <TRUE> }T
     T{ 1 -1 > -> <TRUE> }T
+-->
     T{ 0 MIN-INT > -> <TRUE> }T
     T{ MAX-INT MIN-INT > -> <TRUE> }T
     T{ MAX-INT 0 > -> <TRUE> }T
@@ -3598,6 +3341,7 @@ TSTART
     T{ 1 1 U< -> <FALSE> }T
     T{ 1 0 U< -> <FALSE> }T
     T{ 2 1 U< -> <FALSE> }T
+-->
     T{ MID-UINT 0 U< -> <FALSE> }T
     T{ MAX-UINT 0 U< -> <FALSE> }T
     T{ MAX-UINT MID-UINT U< -> <FALSE> }T
@@ -3612,6 +3356,7 @@ TSTART
     T{ 0 0 MIN -> 0 }T
     T{ 1 1 MIN -> 1 }T
     T{ 1 0 MIN -> 0 }T
+-->
     T{ 2 1 MIN -> 1 }T
     T{ 0 -1 MIN -> -1 }T
     T{ 1 -1 MIN -> -1 }T
@@ -3626,6 +3371,7 @@ TSTART
     T{ MIN-INT 0 MAX -> 0 }T
     T{ MIN-INT MAX-INT MAX -> MAX-INT }T
     T{ 0 MAX-INT MAX -> MAX-INT }T
+-->
     T{ 0 0 MAX -> 0 }T
     T{ 1 1 MAX -> 1 }T
     T{ 1 0 MAX -> 1 }T
@@ -3635,7 +3381,7 @@ TSTART
     T{ 0 MIN-INT MAX -> 0 }T
     T{ MAX-INT MIN-INT MAX -> MAX-INT }T
     T{ MAX-INT 0 MAX -> MAX-INT }T
-
+-->
     T{ 1 2 2DROP -> }T
     T{ 1 2 2DUP -> 1 2 1 2 }T
     T{ 1 2 3 4 2OVER -> 1 2 3 4 1 2 }T
@@ -3650,6 +3396,7 @@ TSTART
     T{ 0 DROP -> }T
     T{ 1 2 DROP -> 1 }T
     T{ 1 DUP -> 1 1 }T
+-->
     T{ 1 2 OVER -> 1 2 1 }T
     T{ 1 2 3 ROT -> 2 3 1 }T
     T{ 1 2 SWAP -> 2 1 }T
@@ -3664,6 +3411,7 @@ TSTART
     T{ 5 0 + -> 5 }T
     T{ 0 -5 + -> -5 }T
     T{ -5 0 + -> -5 }T
+-->
     T{ 1 2 + -> 3 }T
     T{ 1 -2 + -> -1 }T
     T{ -1 2 + -> 1 }T
@@ -3678,6 +3426,7 @@ TSTART
     T{ 1 2 - -> -1 }T
     T{ 1 -2 - -> 3 }T
     T{ -1 2 - -> -3 }T
+-->
     T{ -1 -2 - -> 1 }T
     T{ 0 1 - -> -1 }T
     T{ MID-UINT+1 1 - -> MID-UINT }T
@@ -3691,7 +3440,7 @@ TSTART
     T{ 1 1- -> 0 }T
     T{ 0 1- -> -1 }T
     T{ MID-UINT+1 1- -> MID-UINT }T
-
+-->
     T{ 0 NEGATE -> 0 }T
     T{ 1 NEGATE -> -1 }T
     T{ -1 NEGATE -> 1 }T
@@ -3702,7 +3451,7 @@ TSTART
     T{ 1 ABS -> 1 }T
     T{ -1 ABS -> 1 }T
     T{ MIN-INT ABS -> MID-UINT+1 }T
-
+-->
     T{ 0 S>D -> 0 0 }T
     T{ 1 S>D -> 1 0 }T
     T{ 2 S>D -> 2 0 }T
@@ -3716,6 +3465,7 @@ TSTART
     T{ 1 0 M* -> 0 S>D }T
     T{ 1 2 M* -> 2 S>D }T
     T{ 2 1 M* -> 2 S>D }T
+-->
     T{ 3 3 M* -> 9 S>D }T
     T{ -3 3 M* -> -9 S>D }T
     T{ 3 -3 M* -> -9 S>D }T
@@ -3729,7 +3479,7 @@ TSTART
     T{ MIN-INT MIN-INT M* -> 0 MSB 1 RSHIFT }T
     T{ MAX-INT MIN-INT M* -> MSB MSB 2/ }T
     T{ MAX-INT MAX-INT M* -> 1 MSB 2/ INVERT }T
-
+-->
     T{ 0 0 UM* -> 0 0 }T
     T{ 0 1 UM* -> 0 0 }T
     T{ 1 0 UM* -> 0 0 }T
@@ -3741,8 +3491,7 @@ TSTART
     T{ MID-UINT+1          4 UM* ->           0 2 }T
     T{         1S          2 UM* -> 1S 1 LSHIFT 1 }T
     T{   MAX-UINT   MAX-UINT UM* ->    1 1 INVERT }T
-
-
+-->
     T{ 0 0 * -> 0 }T
     T{ 0 1 * -> 0 }T
     T{ 1 0 * -> 0 }T
@@ -3756,7 +3505,7 @@ TSTART
     T{ MID-UINT+1 1 RSHIFT 2 * -> MID-UINT+1 }T
     T{ MID-UINT+1 2 RSHIFT 4 * -> MID-UINT+1 }T
     T{ MID-UINT+1 1 RSHIFT MID-UINT+1 OR 2 * -> MID-UINT+1 }T
-
+-->
     T{ DECIMAL 131071. HEX 2CONSTANT 2c0 -> }T
     T{ 2c0 -> 1 -1 }T
 
@@ -3768,13 +3517,11 @@ TSTART
     T{ : cd2 2CONSTANT ; -> }T
     T{ -1 -2 cd2 2c2 -> }T
     T{ 2c2 -> -1 -2 }T
-
+-->
     (
         T{ 4 5 2CONSTANT 2c3 IMMEDIATE 2c3 -> 4 5 }T
         T{ : cd6 2c3 2LITERAL ; cd6 -> 4 5 }T
     )
-
-
 
     T{ 2VARIABLE 2v1 -> }T
     T{ 0. 2v1 2! ->    }T
@@ -3783,12 +3530,13 @@ TSTART
     T{       2v1 2@ -> -1 -2 }T
     T{ : cd2 2VARIABLE ; -> }T
     T{ cd2 2v2 -> }T
+-->
     T{ : cd3 2v2 2! ; -> }T
     T{ -2 -1 cd3 -> }T
     T{ 2v2 2@ -> -2 -1 }T
     T{ 2VARIABLE 2v3 IMMEDIATE 5 6 2v3 2! -> }T
     T{ 2v3 2@ -> 5 6 }T
-
+-->
     T{       0 S>D              1 FM/MOD ->  0       0 }T
     T{       1 S>D              1 FM/MOD ->  0       1 }T
     T{       2 S>D              1 FM/MOD ->  0       2 }T
@@ -3802,6 +3550,7 @@ TSTART
     T{       2 S>D              2 FM/MOD ->  0       1 }T
     T{      -1 S>D             -1 FM/MOD ->  0       1 }T
     T{      -2 S>D             -2 FM/MOD ->  0       1 }T
+-->
     T{       7 S>D              3 FM/MOD ->  1       2 }T
     T{       7 S>D             -3 FM/MOD -> -2      -3 }T
     T{      -7 S>D              3 FM/MOD ->  2      -3 }T
@@ -3816,6 +3565,7 @@ TSTART
     T{       2 MIN-INT M*       2 FM/MOD ->  0 MIN-INT }T
     T{       2 MIN-INT M* MIN-INT FM/MOD ->  0       2 }T
     T{       1 MAX-INT M*       1 FM/MOD ->  0 MAX-INT }T
+-->
     T{       1 MAX-INT M* MAX-INT FM/MOD ->  0       1 }T
     T{       2 MAX-INT M*       2 FM/MOD ->  0 MAX-INT }T
     T{       2 MAX-INT M* MAX-INT FM/MOD ->  0       2 }T
@@ -3830,6 +3580,7 @@ TSTART
     T{       1 2       1 */MOD ->       1 2       1 T*/MOD }T
     T{       2 2       1 */MOD ->       2 2       1 T*/MOD }T
     T{      -1 2       1 */MOD ->      -1 2       1 T*/MOD }T
+-->
     T{      -2 2       1 */MOD ->      -2 2       1 T*/MOD }T
     T{       0 2      -1 */MOD ->       0 2      -1 T*/MOD }T
     T{       1 2      -1 */MOD ->       1 2      -1 T*/MOD }T
@@ -3841,6 +3592,7 @@ TSTART
     T{      -2 2      -2 */MOD ->      -2 2      -2 T*/MOD }T
     T{       7 2       3 */MOD ->       7 2       3 T*/MOD }T
     T{       7 2      -3 */MOD ->       7 2      -3 T*/MOD }T
+-->
     T{      -7 2       3 */MOD ->      -7 2       3 T*/MOD }T
     T{      -7 2      -3 */MOD ->      -7 2      -3 T*/MOD }T
     T{ MAX-INT 2 MAX-INT */MOD -> MAX-INT 2 MAX-INT T*/MOD }T
@@ -3851,8 +3603,9 @@ TSTART
     ( Arithmetic )
     T{ 10 2 5 */ -> 4 }T
     T{ 3 4 U* -> 12 0 }T
-
+-->
     ( Double Addition & Math )
+
     T{ 1 0 2 0 D+ -> 3 0 }T
     T{ -1 0 1 0 D+ -> 0 1 }T  ( Carry test )
     T{ 5 0 2 0 D- -> 3 0 }T
@@ -3860,7 +3613,7 @@ TSTART
     T{ 1 0 DNEGATE -> -1 -1 }T
     T{ -1 -1 DABS -> 1 0 }T
     T{ -1 0 1 M+ -> 0 1 }T
-
+-->
     ( Double Comparisons )
     T{ 1 2 1 2 D= -> <TRUE> }T
     T{ 1 2 3 4 D= -> <FALSE> }T
@@ -3871,12 +3624,11 @@ TSTART
     T{ -1 -1 0 0 DU< -> <FALSE> }T
     T{ 1 0 2 0 DMIN -> 1 0 }T
     T{ 1 0 2 0 DMAX -> 2 0 }T
-
     ( Memory )
     VARIABLE B1 2 ALLOT
     VARIABLE B2 2 ALLOT
     T{ 0 B1 ! 0 B2 ! B1 B2 1 MOVE B2 @ -> 0 }T
-
+-->
     ( Strings )
     : STR1 S" ABC" ;
     : STR2 S" ABD" ;
@@ -3890,7 +3642,7 @@ TSTART
     T{ 0 0 <# #S #> NIP -> 1 }T
     T{ 123 0 <# #S #> NIP -> 3 }T
     T{ 123 0 <# #S #> DROP C@ -> 49 }T ( ASCII '1' )
-
+-->
     ( Block primitives and buffers )
     : PUT-BLOCK ( addr len n -- )
         >R
@@ -3901,30 +3653,37 @@ TSTART
     ;
 
     T{ 20 WIPE -> }T
-    T{ CHAR X 20 BUFFER C! UPDATE SAVE-BUFFERS EMPTY-BUFFERS 20 BLOCK C@ -> CHAR X }T
-
+    T{ CHAR X 20 BUFFER C! UPDATE SAVE-BUFFERS
+    EMPTY-BUFFERS 20 BLOCK C@ -> CHAR X }T
+-->
     T{ 21 WIPE -> }T
-    T{ CHAR Y 21 BUFFER C! UPDATE EMPTY-BUFFERS 21 BLOCK C@ -> BL }T
+    T{ CHAR Y 21 BUFFER C! UPDATE EMPTY-BUFFERS 21
+    BLOCK C@ -> BL }T
 
     T{ 22 WIPE -> }T
-    T{ CHAR Z 22 BUFFER C! UPDATE FLUSH 22 BLOCK C@ -> CHAR Z }T
+    T{ CHAR Z 22 BUFFER C! UPDATE FLUSH 22 BLOCK C@
+    -> CHAR Z }T
 
     T{ 23 WIPE -> }T
-    T{ CHAR Q 23 BUFFER C! UPDATE SAVE-BUFFERS 23 24 COPY 24 BLOCK C@ -> CHAR Q }T
+    T{ CHAR Q 23 BUFFER C! UPDATE SAVE-BUFFERS 23 24
+    COPY 24 BLOCK C@ -> CHAR Q }T
 
     T{ 25 WIPE 25 BLOCK C@ -> BL }T
+-->
+    T{ S" : BLOCK-LOAD-A 333 ; " 26 PUT-BLOCK 26 LOAD
+    BLOCK-LOAD-A -> 333 }T
 
-    T{ S" : BLOCK-LOAD-A 333 ; " 26 PUT-BLOCK 26 LOAD BLOCK-LOAD-A -> 333 }T
-
-    T{ S" : BLOCK-LOAD-B 444 ; 28 LOAD : BLOCK-LOAD-D 666 ; " 27 PUT-BLOCK
+    T{ S" : BLOCK-LOAD-B 444 ; 28 LOAD : BLOCK-LOAD-D
+    666 ; " 27 PUT-BLOCK
        S" : BLOCK-LOAD-C 555 ; " 28 PUT-BLOCK
-       27 LOAD BLOCK-LOAD-B BLOCK-LOAD-C BLOCK-LOAD-D -> 444 555 666 }T
+       27 LOAD BLOCK-LOAD-B BLOCK-LOAD-C BLOCK-LOAD-D
+       -> 444 555 666 }T
 
     HEX
 
     DECIMAL
 TEND
-
+-->
 : STAR 42 EMIT ;
 : STARS   0 DO STAR  LOOP ;
 : MARGIN  CR 30 SPACES ;
@@ -3942,9 +3701,25 @@ FORGET TESTING
 
 
 let lines = source.replace(/\t/g, "    ").split(/\r?\n/);
-let blockContents =[];
-for (let i = 0; i < lines.length; i += 16) {
-  blockContents.push(lines.slice(i, i + 16));
+
+let blockContents = [];
+let currentBlock = [];
+
+for (let i = 0; i < lines.length; i++) {
+  let line = lines[i];
+  currentBlock.push(line);
+
+  let endsBlock = line.trimEnd().endsWith("-->");
+  let maxLinesReached = currentBlock.length === 16;
+
+  if (endsBlock || maxLinesReached) {
+    blockContents.push(currentBlock);
+    currentBlock = [];
+  }
+}
+
+if (currentBlock.length > 0) {
+  blockContents.push(currentBlock);
 }
 
 blockContents.forEach((blockLines, blockIndex) => {
@@ -3958,7 +3733,9 @@ blockContents.forEach((blockLines, blockIndex) => {
   });
 });
 
-forth.input(source);
+let bootstrapCode = "1 LOADPRIM";
+
+forth.input(bootstrapCode);
 
 forth.run();
 

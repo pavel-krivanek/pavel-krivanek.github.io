@@ -8,6 +8,86 @@
       <script type="text/javascript" src="ion.sound.min.js"></script>
       <script src="teletype.js" type="text/javascript"></script>
       <script src="forth.js" type="text/javascript"></script>
+      <script>
+         (() => {
+            const monitorThemes = [
+               { color: '#ffd00e', glowRgb: '255, 208, 14' },
+               { color: '#57ff57', glowRgb: '87, 255, 87' },
+               { color: '#f5f5f5', glowRgb: '245, 245, 245' }
+            ];
+            const centralGlowLevels = [0, 0.12, 0.25, 0.4];
+            const letterGlowScales = [0, 0.5, 1, 1.5];
+
+            let themeIndex = 0;
+            let centralGlowIndex = 2;
+            let letterGlowIndex = 2;
+
+            function applyMonitorTheme() {
+               const theme = monitorThemes[themeIndex];
+               document.documentElement.style.setProperty('--monitor-text-color', theme.color);
+               document.documentElement.style.setProperty('--monitor-glow-rgb', theme.glowRgb);
+               applyLetterGlowState();
+            }
+
+            function applyCentralGlowState() {
+               document.documentElement.style.setProperty(
+                  '--monitor-gradient-opacity',
+                  centralGlowLevels[centralGlowIndex]
+               );
+            }
+
+            function applyLetterGlowState() {
+               const theme = monitorThemes[themeIndex];
+               const scale = letterGlowScales[letterGlowIndex];
+               document.documentElement.style.setProperty(
+                  '--monitor-output-shadow',
+                  `0 0 ${8 * scale}px ${theme.color}`
+               );
+               document.documentElement.style.setProperty(
+                  '--monitor-char-shadow',
+                  `0 0 ${16 * scale}px ${theme.color}`
+               );
+               document.documentElement.style.setProperty(
+                  '--monitor-cursor-shadow',
+                  `0 0 ${12 * scale}px ${theme.color}`
+               );
+            }
+
+            window.toggleMonitorPalette = function() {
+               themeIndex = (themeIndex + 1) % monitorThemes.length;
+               applyMonitorTheme();
+            };
+
+            window.toggleMonitorGlow = function() {
+               centralGlowIndex = (centralGlowIndex + 1) % centralGlowLevels.length;
+               applyCentralGlowState();
+            };
+
+            window.toggleLetterGlow = function() {
+               letterGlowIndex = (letterGlowIndex + 1) % letterGlowScales.length;
+               applyLetterGlowState();
+            };
+
+            window.addEventListener('keydown', function(event) {
+               if (event.key === 'F2') {
+                  event.preventDefault();
+                  window.toggleMonitorPalette();
+               } else if (event.key === 'F3') {
+                  event.preventDefault();
+                  window.toggleMonitorGlow();
+               } else if (event.key === 'F4') {
+                  event.preventDefault();
+                  window.toggleLetterGlow();
+               }
+            }, true);
+
+            document.addEventListener('DOMContentLoaded', function() {
+               applyCentralGlowState();
+               applyLetterGlowState();
+               applyMonitorTheme();
+            });
+         })();
+      </script>
    </head>
    <body onload="printer(); run()">
       <div class="controls">

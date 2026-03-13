@@ -2729,6 +2729,11 @@ VARIABLE SPAN
     ' LIT , ,
     ' , , ;
 
+: [CHAR] IMMEDIATE
+  CHAR
+  [COMPILE] LITERAL
+;
+-->
 ( --- Pictured Numeric Output --- )
 VARIABLE HLD
 : <# ( -- ) PAD HLD ! ;

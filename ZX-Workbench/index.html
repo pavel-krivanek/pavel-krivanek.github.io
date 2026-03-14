@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>ZX Workbench</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="./codemirror/lib/codemirror.css" />
+  <style>
+html{--w:min(90vw,111.17647vh);--h:min(90vh,72.85714vw);--x:50vw;--y:50vh;--s:17rem;--i:#eee;overscroll-behavior:none;&.f{--w:min(105vw,135.48387vh);--h:min(109.67742vh,85vw);&.t{--w:min(100vw,123.52941vh);--h:min(100vh,80.95238vw)}&:not(.m,.p){cursor:none}}&.l:not(.r){--x:calc(50vw + var(--s)/2)}&.r:not(.l){--x:calc(50vw - var(--s)/2)}&.t #s{filter:url(#crt)}&.h{#h{align-items:center;background:#1f1b1b;color:#466;display:flex;flex-flow:column;inset:0;justify-content:space-between;>*{max-height:100%;max-width:100%;width:fit-content}kbd{color:#488;font:inherit;padding:0 2px}}#k,#p,#s{display:none}}&:not(.e){background:#000}body{color:#eee;font:.9em sans-serif;margin:0}&:not([class]){cursor:wait;overflow:hidden;visibility:hidden;header{display:flex;flex-flow:column;inset:0;position:fixed;visibility:visible;h1{font-size:7vh}p{letter-spacing:.1em}b{color:var(--f)}}}#f{outline:none;user-select:none;>*{position:fixed}i{height:var(--h)}#p:not(html.p *){display:none}}aside{accent-color:var(--i);box-sizing:border-box;color:var(--i);cursor:default;display:flex;flex-flow:column;padding:1em;section{margin:0 0 .5rem}}#l{--i:#dd7f6e;>:last-child{font-size:.7em;letter-spacing:.4ex;margin-top:auto;opacity:.7;order:1;text-align:center}&:after{left:0}}#r{--i:#91c08c;summary{font-weight:600;&::marker{content:"▸ "}}[open]>summary{border-bottom:1px solid;margin:0 0 .75em;&::marker{content:"▾ "}}&:after{right:0}}&:after{position:fixed}}header{justify-content:center;text-align:center;h1{font-size:2em;font-weight:500;letter-spacing:-.1ex;margin:.1ex}p{margin:.1em}nav{font-size:90%;margin:1em}}a{color:inherit;text-decoration:inherit}dl{margin:8px 0}dt{height:0}dd{margin:0 0 0 4em}ul{list-style:none;padding:0}*{scrollbar-color:var(--i) #0000;scrollbar-width:thin}#s{height:var(--h);left:calc(var(--x) - var(--w)/2);top:calc(var(--y) - var(--h)/2);width:var(--w)}#m{background:#9804;border-radius:4px;box-sizing:border-box;color:#ffc;left:calc(40vw - 4em);padding:4px 1em;position:fixed;text-align:center;text-shadow:0 0 3px #000;top:0;visibility:visible;width:calc(20vw + 8em)}#m,#p{transition:all .1s}#p{fill:#555;backdrop-filter:blur(2px);left:var(--x);margin:-5vh;mix-blend-mode:screen;top:var(--y);width:10vh}.f #p{left:50%;margin:0 -3vh;top:93vh;width:6vh;fill:#333}#b{animation:b 2s linear infinite;background:#2228 linear-gradient(-45deg,currentcolor 25%,#2228 0,#2228 50%,currentcolor 0,currentcolor 75%,#2228 0,#2228);background-size:32px 32px;border:0 solid;color:#d55;height:2px;inset:0;position:fixed;visibility:visible;&.t{background-image:none}}#t{visibility:hidden}#e,#t{position:fixed}#e{background:red;border-radius:50%;bottom:2vh;box-shadow:0 0 .6vmin .2vmin red;height:.8vmin;left:2vh;width:.8vmin}@keyframes b{0%{background-position:32px 32px}to{background-position:0 0}}@media (hover:hover) and (min-width:650px){#s{transition:all .1s}aside{background:#222c;overflow-y:auto;transition:left .1s,right .1s;width:var(--s);&,&:after{bottom:0;box-sizing:border-box;position:fixed;top:0}&:after{content:"";padding:30vh 1px;width:4px}}#l{background:#121011ee;left:calc(0vw - var(--s));padding:1em 1vw 1em 3vw}#r{background:#0f150fee;padding:env(titlebar-area-height,1em) 1vw 1em;right:calc(0vw - var(--s))}.l #l{left:0}.r #r{right:0}.m:not(.l,.e) #l:after,.m:not(.r,.e) #r:after{background:var(--i) content-box;opacity:.3}details{margin:0 0 .5em}}@media not all and (hover:hover) and (min-width:650px){html{&:not(.l,.r) aside,.d{display:none}&.l,&.r{--w:8rem;--h:auto;body{background:#181818;box-sizing:border-box;display:flex;flex-direction:column;gap:1ex;min-height:100vh;padding:1ex}aside{display:contents}header{min-height:7rem;padding:.5rem 9rem 0 0}#f{padding:3vw;position:absolute;right:0;top:0}#s{border-radius:3px;filter:none;position:static}#p{display:none}}}}@media (max-aspect-ratio:7/8){html{--y:calc(var(--h)/2)}.f #k{cursor:default;display:flex;flex-wrap:wrap;font:3vw/1.3 helvetica,sans-serif;height:min(50vw,92vh - var(--h));left:0;padding:0 .7vw;right:0;top:var(--h);touch-action:none;user-select:none;>*{background:#345;border-radius:.3vw;margin:.38vw;position:relative;width:9.1vw}>:not(.w){text-indent:.5vw}>.w{align-items:center;display:flex;font-size:67%;justify-content:center;text-align:center;text-transform:uppercase}>.p{position:relative;top:.3vw}}}button,select{background:var(--i);border:0;border-radius:3px;color:#000;font-size:.9em;height:1.7em;margin:4px 4px 4px 0;padding:0 1em;position:relative}#v button,.u>li>button{background:none;border:0;color:inherit;cursor:pointer;font:inherit;height:auto;margin:0;padding:0 1px;text-align:center;word-break:break-word}option{background:#fff}[type=checkbox]{display:none;&+:before{content:"2";left:0;position:absolute;text-align:center;visibility:hidden;width:1em}&:checked{&+:before{visibility:visible}}}#v{align-items:center;display:flex;margin:.5em;>*>svg>*+*+*{display:none}:checked{&+*>svg{>*+*{display:none}>*+*+*{display:revert}}&+*+*{accent-color:#888}}}.u{margin:0;>li{clear:both;margin:.3em 0;>.x{float:right;text-align:center;width:3ex;&:not(:last-child){display:none}&:after{content:"812"}}>div{float:right;font-size:.85em;>*{height:1.4em;margin:0 .2ex;padding:0 .6em}}}>.s>:first-child:after{content:" •"}}@media not (scripting:enabled){html{cursor:not-allowed!important}}
+  </style>
+  <style>
+:root {
+  --wb-bg: #0f1115;
+  --wb-panel: #171a21;
+  --wb-panel-2: #1d2230;
+  --wb-editor-bg: #10141c;
+  --wb-border: #2e3647;
+  --wb-border-strong: #4c5770;
+  --wb-muted: #a8b3c7;
+  --wb-text: #e8eefc;
+  --wb-accent: #6ea8fe;
+  --wb-accent-2: #8cc0ff;
+  --wb-danger: #ff7272;
+  --wb-ok: #79d18c;
+  --wb-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --wb-sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --shell-gap: 12px;
+  --splitter-width: 12px;
+  --split-left: clamp(430px, 51vw, 860px);
+  --qaop-x: 320px;
+  --qaop-y: 210px;
+  --qaop-w: 640px;
+  --qaop-h: 419px;
+}
+html[data-theme="white"] {
+  --wb-bg: #eef2f8;
+  --wb-panel: #ffffff;
+  --wb-panel-2: #f6f8fc;
+  --wb-editor-bg: #fbfcfe;
+  --wb-border: #d4dceb;
+  --wb-border-strong: #b3bfd3;
+  --wb-muted: #5e6b82;
+  --wb-text: #182235;
+  --wb-accent: #2b6dff;
+  --wb-accent-2: #4d86ff;
+  --wb-danger: #c44343;
+  --wb-ok: #217a3d;
+}
+* { box-sizing: border-box; }
+html, body {
+  height: 100%;
+  margin: 0;
+  background: var(--wb-bg) !important;
+  color: var(--wb-text);
+  font-family: var(--wb-sans);
+  overflow: hidden;
+}
+html:not([class]), body { visibility: visible !important; cursor: default !important; }
+body { color: var(--wb-text); }
+a, a:visited { color: inherit; }
+#appShell {
+  position: fixed;
+  inset: var(--shell-gap);
+  display: grid;
+  grid-template-columns: minmax(420px, var(--split-left)) var(--splitter-width) minmax(420px, 1fr);
+  gap: 0;
+  z-index: 40;
+}
+#workbenchApp,
+.emulator-pane {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0)), var(--wb-panel);
+  border: 1px solid var(--wb-border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0,0,0,.24);
+}
+#workbenchApp {
+  grid-template-rows: auto auto auto minmax(280px, 1fr) minmax(210px, .7fr);
+}
+#workbenchApp[data-editor-view="disasm"],
+#workbenchApp[data-editor-view="debugger"] {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+#workbenchApp[data-editor-view="disasm"] .wb-toolbar,
+#workbenchApp[data-editor-view="disasm"] .wb-statusbar,
+#workbenchApp[data-editor-view="disasm"] .wb-bottom,
+#workbenchApp[data-editor-view="debugger"] .wb-toolbar,
+#workbenchApp[data-editor-view="debugger"] .wb-statusbar,
+#workbenchApp[data-editor-view="debugger"] .wb-bottom {
+  display: none;
+}
+.splitter {
+  position: relative;
+  margin: 8px 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: col-resize;
+  touch-action: none;
+  outline: none;
+}
+.splitter::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  bottom: 10px;
+  width: 4px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.18), rgba(255,255,255,.08));
+}
+.splitter:hover::before,
+.splitter:focus-visible::before,
+body.is-resizing .splitter::before {
+  background: linear-gradient(180deg, rgba(110,168,254,.55), rgba(110,168,254,.95), rgba(110,168,254,.55));
+}
+#appShell button,
+#appShell select,
+#appShell input,
+#appShell textarea {
+  font-family: var(--wb-sans);
+}
+#appShell button,
+#appShell select,
+#appShell input[type="text"],
+#appShell input[type="number"] {
+  appearance: none;
+  border: 1px solid var(--wb-border);
+  background: color-mix(in srgb, var(--wb-panel-2) 86%, transparent);
+  color: var(--wb-text);
+  border-radius: 9px;
+  min-height: 30px;
+  padding: 0 10px;
+  font: 600 12px/1 var(--wb-sans);
+}
+#appShell button { cursor: pointer; }
+#appShell button.primary { background: linear-gradient(180deg, #2f73ff, #235dde); border-color: #3f7fff; color: #fff; }
+#appShell button.secondary { background: color-mix(in srgb, var(--wb-panel-2) 92%, transparent); }
+#appShell button.ghost { background: transparent; }
+#appShell button:disabled { opacity: .55; cursor: not-allowed; }
+#appShell input[type="checkbox"] {
+  display: inline-block !important;
+  appearance: auto;
+  inline-size: 14px;
+  block-size: 14px;
+  margin: 0;
+  accent-color: var(--wb-accent);
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+#appShell input[type="checkbox"] + span::before { content: none !important; }
+#appShell input[type="range"] {
+  appearance: auto;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.wb-toolbar,
+.wb-statusbar,
+.emulator-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--wb-border);
+}
+.wb-toolbar,
+.emulator-controls { background: var(--wb-panel-2); }
+.wb-statusbar {
+  color: var(--wb-muted);
+  font-size: 12px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.06);
+  white-space: nowrap;
+  min-height: 26px;
+}
+.status-pill.ok { color: #b9efc6; }
+.status-pill.err { color: #ffc0c0; }
+html[data-theme="white"] .status-pill { background: rgba(0,0,0,.03); border-color: rgba(0,0,0,.08); }
+.spacer { flex: 1 1 auto; }
+.wb-editor-wrap { min-height: 0; background: var(--wb-editor-bg); }
+.wb-editor-tabs,
+.wb-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px 0;
+  background: var(--wb-panel-2);
+  border-bottom: 1px solid var(--wb-border);
+}
+.wb-editor-tab,
+.wb-tab {
+  min-height: 30px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  background: transparent;
+  border-color: transparent;
+  color: var(--wb-muted);
+}
+.wb-editor-tab.active,
+.wb-tab.active {
+  background: var(--wb-editor-bg);
+  border-color: var(--wb-border);
+  border-bottom-color: var(--wb-editor-bg);
+  color: var(--wb-text);
+}
+.wb-disasm-meta { color: var(--wb-muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wb-editor-panels,
+.wb-tab-panels,
+.wb-bottom,
+.wb-editor-panel,
+.wb-disasm-host,
+.wb-editor-host { min-height: 0; }
+.wb-editor-panels { height: 100%; }
+.wb-editor-panel { display: none; height: 100%; }
+.wb-editor-panel.active { display: block; }
+.wb-editor-host,
+.wb-disasm-host { height: 100%; }
+#source,
+#disasmOutput {
+  width: 100%;
+  height: 100%;
+  resize: none;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--wb-text);
+  font: 13px/1.45 var(--wb-mono);
+}
+.wb-disasm-toolbar {
+  display: flex;
+  gap: 6px;
+  align-items: end;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--wb-border);
+  background: color-mix(in srgb, var(--wb-panel-2) 82%, transparent);
+  flex-wrap: wrap;
+}
+
+.debugger-host {
+  display: grid;
+  grid-template-rows: auto minmax(220px, 1fr) minmax(190px, .58fr);
+  min-height: 0;
+  height: 100%;
+  background: var(--wb-editor-bg);
+}
+.debugger-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--wb-border);
+  background: color-mix(in srgb, var(--wb-panel-2) 82%, transparent);
+}
+.debugger-disasm,
+.debugger-registers { min-height: 0; }
+.debugger-disasm {
+  border-bottom: 1px solid var(--wb-border);
+  background: var(--wb-editor-bg);
+}
+.debugger-disasm textarea,
+.debugger-disasm .CodeMirror {
+  height: 100%;
+}
+.debugger-registers {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: color-mix(in srgb, var(--wb-panel) 86%, var(--wb-editor-bg));
+}
+.debugger-registers__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--wb-border);
+}
+.debugger-shortcuts {
+  color: var(--wb-muted);
+  font-size: 11px;
+}
+.register-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+  padding: 10px;
+  overflow: auto;
+  align-content: start;
+}
+.reg-card {
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 10px;
+  background: rgba(255,255,255,.03);
+  padding: 8px 9px;
+  display: grid;
+  gap: 4px;
+}
+html[data-theme="white"] .reg-card {
+  background: rgba(0,0,0,.025);
+  border-color: rgba(0,0,0,.08);
+}
+html[data-theme="white"] .reg-card__label {
+  color: #516075;
+}
+html[data-theme="white"] .reg-card__value,
+html[data-theme="white"] .reg-card code {
+  color: #10203a;
+  font-weight: 700;
+}
+.reg-card__label {
+  color: var(--wb-muted);
+  font-size: 11px;
+}
+.reg-card__value,
+.reg-card code {
+  font: 600 13px/1.2 var(--wb-mono);
+}
+.reg-card--wide {
+  grid-column: span 2;
+}
+.cm-breakpoint-gutter {
+  width: 1.6em;
+}
+.cm-debug-marker {
+  display: inline-block;
+  min-width: 1.4em;
+  text-align: center;
+  color: var(--wb-danger);
+  font-size: 12px;
+  font-weight: 700;
+}
+.cm-debug-marker.is-current {
+  color: var(--wb-accent-2);
+}
+.cm-current-pc-line {
+  background: rgba(110, 168, 254, .12);
+}
+html[data-theme="white"] .cm-current-pc-line {
+  background: rgba(43, 109, 255, .08);
+}
+.wb-field {
+  display: inline-grid;
+  gap: 4px;
+  color: var(--wb-muted);
+  font-size: 11px;
+}
+.wb-field input,
+.wb-field select { min-width: 0; }
+.wb-bottom { display: grid; grid-template-rows: auto 1fr; border-top: 1px solid var(--wb-border); }
+.wb-tab-panels { min-height: 0; background: var(--wb-editor-bg); }
+.wb-tab-panel { display: none; height: 100%; overflow: auto; padding: 12px; }
+.wb-tab-panel.active { display: block; }
+#panel-listing pre,
+#hexOutput {
+  margin: 0;
+  white-space: pre;
+  font: 13px/1.45 var(--wb-mono);
+  color: var(--wb-text);
+}
+#hexOutput { width: 100%; height: 100%; resize: none; border: 0; background: transparent; outline: none; }
+#panel-notes { color: var(--wb-muted); font-size: 13px; line-height: 1.5; }
+#panel-notes code { font-family: var(--wb-mono); color: var(--wb-text); }
+.CodeMirror {
+  height: 100% !important;
+  font: 13px/1.45 var(--wb-mono);
+  background: var(--wb-editor-bg);
+  color: var(--wb-text);
+}
+.CodeMirror-gutters {
+  background: color-mix(in srgb, var(--wb-editor-bg) 94%, transparent);
+  border-right: 1px solid var(--wb-border);
+}
+.CodeMirror-linenumber { color: #6a7288; }
+html[data-theme="white"] .CodeMirror-linenumber { color: #7a869b; }
+.CodeMirror-cursor { border-left-color: var(--wb-accent); }
+.cm-error-line { background: rgba(255, 114, 114, 0.14); }
+.cm-comment { color: #7784a0; }
+.cm-keyword, .cm-directive { color: #8cc0ff; }
+.cm-def { color: #ffd479; }
+.cm-number { color: #e2a8ff; }
+.cm-string { color: #8fd19e; }
+.cm-variable-2 { color: #f2b984; }
+html[data-theme="white"] .cm-comment { color: #7d8799; }
+html[data-theme="white"] .cm-keyword, html[data-theme="white"] .cm-directive { color: #245fd3; }
+html[data-theme="white"] .cm-def { color: #9a5d00; }
+html[data-theme="white"] .cm-number { color: #8a3dad; }
+html[data-theme="white"] .cm-string { color: #177043; }
+html[data-theme="white"] .cm-variable-2 { color: #a45a00; }
+.emulator-pane {
+  position: relative;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  background: radial-gradient(circle at top, rgba(255,255,255,.05), transparent 42%), #0b0e14;
+}
+html[data-theme="white"] .emulator-pane {
+  background: radial-gradient(circle at top, rgba(0,0,0,.04), transparent 42%), #eef2f7;
+}
+.emulator-controls {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+.emu-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.emu-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--wb-border);
+  border-radius: 9px;
+  background: rgba(255,255,255,.03);
+  font-size: 12px;
+  color: var(--wb-text);
+}
+html[data-theme="white"] .emu-check { background: rgba(0,0,0,.025); }
+.emu-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--wb-border);
+  border-radius: 9px;
+  background: rgba(255,255,255,.03);
+  font-size: 12px;
+  color: var(--wb-muted);
+}
+.emu-field select,
+.emu-field input[type="range"] { min-height: 0; border: 0; background: transparent; }
+.emu-field--range { min-width: 170px; }
+.emu-row .hint {
+  color: var(--wb-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.emulator-snapshots {
+  border-bottom: 1px solid var(--wb-border);
+  background: rgba(255,255,255,.015);
+}
+.emulator-snapshots > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--wb-muted);
+  user-select: none;
+}
+.emulator-snapshots > summary::-webkit-details-marker { display: none; }
+.emulator-snapshots > summary::before {
+  content: "▾";
+  display: inline-block;
+  margin-right: 8px;
+  transition: transform .14s ease;
+}
+.emulator-snapshots:not([open]) > summary::before { transform: rotate(-90deg); }
+.emulator-snapshots__body { padding: 0 12px 10px; }
+.emulator-snapshots__bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.snapshot-list {
+  display: grid;
+  gap: 6px;
+  max-height: 180px;
+  overflow: auto;
+}
+.snapshot-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 8px;
+  border: 1px solid var(--wb-border);
+  border-radius: 10px;
+  background: rgba(255,255,255,.025);
+}
+.snapshot-item.is-active { border-color: var(--wb-accent); box-shadow: inset 0 0 0 1px rgba(110,168,254,.18); }
+.snapshot-item__meta {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.snapshot-item__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.snapshot-item__details { color: var(--wb-muted); font-size: 11px; }
+.snapshot-item__actions { display: inline-flex; gap: 6px; }
+.snapshot-item__actions button { min-height: 28px; padding-inline: 9px; }
+.snapshot-empty { color: var(--wb-muted); font-size: 12px; padding: 4px 2px; }
+.emulator-stage-wrap { min-height: 0; padding: 12px; }
+.emulator-stage {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  padding: 14px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+  border: 1px solid rgba(255,255,255,.06);
+}
+html[data-theme="white"] .emulator-stage {
+  background: linear-gradient(180deg, rgba(255,255,255,.72), rgba(245,248,253,.7));
+  border-color: rgba(0,0,0,.06);
+}
+.emulator-screen-slot {
+  position: relative;
+  height: 100%;
+  min-height: 260px;
+  border-radius: 12px;
+  background: #05070b;
+  overflow: hidden;
+}
+#f {
+  position: absolute !important;
+  inset: 0;
+  z-index: 1;
+  outline: none !important;
+  user-select: none;
+}
+#f > * { position: absolute !important; }
+#s,
+#f > i {
+  left: calc(var(--qaop-x) - var(--qaop-w) / 2) !important;
+  top: calc(var(--qaop-y) - var(--qaop-h) / 2) !important;
+  width: var(--qaop-w) !important;
+  height: var(--qaop-h) !important;
+}
+#s { image-rendering: pixelated; }
+#p {
+  left: var(--qaop-x) !important;
+  top: var(--qaop-y) !important;
+  margin: -5vh;
+  width: 10vh;
+  opacity: .7;
+  z-index: 3;
+}
+#b { position: absolute !important; left: 0; right: 0; top: 0; z-index: 4; }
+#m {
+  position: absolute !important;
+  left: 12px !important;
+  top: 12px !important;
+  right: auto !important;
+  width: auto !important;
+  max-width: min(440px, calc(100% - 24px));
+  z-index: 5 !important;
+}
+#l, #r, #k, #e, #t { display: none !important; }
+html:not(.h) #h { display: none !important; }
+header nav, .d { display: none !important; }
+body.is-resizing { cursor: col-resize; user-select: none; }
+body.is-resizing .CodeMirror * { pointer-events: none; }
+@media (max-width: 1180px) {
+  #appShell {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(360px, 1fr) minmax(340px, .95fr);
+    gap: 12px;
+  }
+  .splitter { display: none; }
+  #workbenchApp, .emulator-pane { min-height: 0; }
+}
+@media (max-width: 720px) {
+  :root { --shell-gap: 8px; }
+  .emu-row .hint { white-space: normal; }
+  .wb-disasm-meta { display: none; }
+  .emulator-stage-wrap { padding: 10px; }
+}
+</style>
+</head>
+<body>
+  <div id="appShell">
+    <section id="workbenchApp" aria-label="ZX Workbench" data-editor-view="source">
+      <div class="wb-editor-tabs">
+        <button class="wb-editor-tab active" data-editor-tab="source">Source</button>
+        <button class="wb-editor-tab" data-editor-tab="disasm">Disassembly</button>
+        <button class="wb-editor-tab" data-editor-tab="debugger">Debugger</button>
+        <div class="spacer"></div>
+        <span class="wb-disasm-meta" id="disasmMeta">Refresh to capture a snapshot from emulator memory.</span>
+      </div>
+      <div class="wb-toolbar">
+        <button class="primary" id="btnAssemble">Assemble</button>
+        <button id="btnRunSna">Run SNA</button>
+        <button id="btnRunTap">Run TAP</button>
+        <button class="secondary" id="btnDownloadSna">Download SNA</button>
+        <button class="secondary" id="btnDownloadTap">Download TAP</button>
+        <button class="ghost" id="btnCopyHex">Copy HEX</button>
+        <div class="spacer"></div>
+        <button class="ghost" id="btnResetSource">Reset sample</button>
+      </div>
+      <div class="wb-statusbar">
+        <span class="status-pill" id="compileStatus">Not assembled yet</span>
+        <span class="status-pill" id="programStats">Bytes: —</span>
+        <span class="status-pill" id="emulatorStatus">Emulator: starting…</span>
+      </div>
+      <div class="wb-editor-wrap">
+        <div class="wb-editor-panels">
+          <div class="wb-editor-panel active" id="editor-panel-source">
+            <div class="wb-editor-host"><textarea id="source" spellcheck="false"></textarea></div>
+          </div>
+          <div class="wb-editor-panel" id="editor-panel-disasm">
+            <div class="wb-disasm-toolbar">
+              <label class="wb-field"><span>Start address</span><input id="disasmAddress" type="text" value="0x8000" spellcheck="false" /></label>
+              <label class="wb-field"><span>Lines</span><input id="disasmLines" type="number" min="1" max="2048" value="160" /></label>
+              <button class="secondary" id="btnDisasmPc">Use PC</button>
+              <button class="primary" id="btnRefreshDisasm">Refresh</button>
+            </div>
+            <div class="wb-disasm-host"><textarea id="disasmOutput" spellcheck="false" readonly></textarea></div>
+          </div>
+          <div class="wb-editor-panel" id="editor-panel-debugger">
+            <div class="debugger-host">
+              <div class="debugger-toolbar">
+                <button class="primary" id="btnDbgContinue">Continue</button>
+                <button id="btnDbgBreak">Break</button>
+                <button id="btnDbgRestart">Restart</button>
+                <button id="btnDbgStepOver">Step Over</button>
+                <button id="btnDbgStepInto">Step Into</button>
+                <button id="btnDbgStepOut">Step Out</button>
+                <button class="ghost" id="btnDbgRunToCursor">Run to Cursor</button>
+                <button class="ghost" id="btnDbgRefresh">Refresh</button>
+                <div class="spacer"></div>
+                <label class="wb-field"><span>Lines</span><input id="dbgLines" type="number" min="20" max="400" value="120" /></label>
+              </div>
+              <div class="debugger-disasm"><textarea id="debuggerDisasmOutput" spellcheck="false" readonly></textarea></div>
+              <div class="debugger-registers">
+                <div class="debugger-registers__header">
+                  <span class="status-pill" id="debuggerStatus">Debugger: ready</span>
+                  <span class="debugger-shortcuts">F9 breakpoint · Ctrl+F10 run to cursor · F10 step over · F11 step into · Shift+F11 step out · F5 continue</span>
+                </div>
+                <div class="register-grid" id="debuggerRegisters"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="wb-bottom">
+        <div class="wb-tabs">
+          <button class="wb-tab active" data-tab="listing">Listing</button>
+          <button class="wb-tab" data-tab="hex">HEX</button>
+          <button class="wb-tab" data-tab="notes">Notes</button>
+        </div>
+        <div class="wb-tab-panels">
+          <div class="wb-tab-panel active" id="panel-listing"></div>
+          <div class="wb-tab-panel" id="panel-hex"><textarea id="hexOutput" readonly></textarea></div>
+          <div class="wb-tab-panel" id="panel-notes">
+            <p><strong>Shortcuts</strong></p>
+            <p><code>Ctrl+Enter</code> assemble, <code>F5</code> run snapshot, <code>Shift+F5</code> run tape, <code>F6</code> refresh disassembly.</p>
+            <p>Debugger tab: <code>F5</code> continue, <code>Shift+F5</code> break, <code>F9</code> toggle breakpoint, <code>Ctrl+F10</code> run to cursor, <code>F10</code>/<code>F11</code>/<code>Shift+F11</code> step over/into/out.</p>
+            <p><strong>Entry point</strong></p>
+            <p>Use <code>.ENT label</code> when you want the generated snapshot to start directly at your program entry point.</p>
+            <p><strong>Disassembly</strong></p>
+            <p>The Disassembly tab uses the uploaded <code>z80cpu.js</code> decoder against one captured emulator snapshot. Enter an address, click <code>Refresh</code>, and the listing is generated from that one frozen memory image.</p>
+            <p><strong>Generated files</strong></p>
+            <p><code>Run SNA</code> builds a Spectrum snapshot and loads it immediately. <code>Run TAP</code> builds a tape image and hands it to the emulator’s normal file-loading path.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div id="panelSplitter" class="splitter" role="separator" aria-orientation="vertical" aria-label="Resize editor and emulator panels" tabindex="0"></div>
+
+    <section class="emulator-pane" aria-label="Emulator panel">
+      <div class="emulator-controls">
+        <div class="emu-row">
+          <button id="btnEmuPause">Pause</button>
+          <button id="btnEmuReset">Reset</button>
+          <button id="btnEmuOpen">Open</button>
+          <button id="btnEmuSave">Save</button>
+          <label class="emu-field"><span>Machine</span><select id="emuMachineSelect"><option value="48">48K</option><option value="128">128K</option><option value="tc2048">TC2048</option></select></label>
+          <label class="emu-check"><input type="checkbox" id="emuToggleAy" /><span>AY</span></label>
+          <label class="emu-check"><input type="checkbox" id="emuToggleKj" /><span>Kempston</span></label>
+          <label class="emu-check"><input type="checkbox" id="emuToggleIf1" /><span>Interface</span></label>
+        </div>
+        <div class="emu-row">
+          <label class="emu-check"><input type="checkbox" id="emuToggleCrt" /><span>CRT</span></label>
+          <label class="emu-check"><input type="checkbox" id="emuToggleBw" /><span>B/W</span></label>
+          <button class="ghost" id="btnEmuLayout">Keyboard layout</button>
+          <label class="emu-check"><input type="checkbox" id="emuToggleMute" /><span>Mute</span></label>
+          <label class="emu-field emu-field--range"><span>Volume</span><input id="emuVolume" type="range" min="0" max="100" step="1" value="100" /></label>
+          <label class="emu-field"><span>Theme</span><select id="themeSelect"><option value="auto">OS default</option><option value="black">Black</option><option value="white">White</option></select></label>
+          <div class="spacer"></div>
+        </div>
+      </div>
+      <details class="emulator-snapshots" id="snapshotsPanel" open>
+        <summary>Snapshots</summary>
+        <div class="emulator-snapshots__body">
+          <div class="emulator-snapshots__bar">
+            <button id="btnSnapshotCreate">Create snapshot</button>
+            <button class="ghost" id="btnSnapshotRefresh">Refresh</button>
+          </div>
+          <div id="snapshotList" class="snapshot-list" role="list"></div>
+        </div>
+      </details>
+      <div class="emulator-stage-wrap">
+        <div class="emulator-stage">
+          <div id="emulatorScreenSlot" class="emulator-screen-slot">
+            <main id=f tabindex=-1>
+<canvas id=s><q>© 1982 Sinclair Research Ltd</q></canvas>
+<div id=k hidden></div>
+<div id=h hidden><img id=qaopKeyboardImage src="" alt="ZX Spectrum keyboard layout" loading=lazy><p><kbd>Shift</kbd> acts as <kbd>Caps&#x202F;Shift</kbd> • <kbd>Alt</kbd> acts as <kbd>Symbol&#x202F;Shift</kbd> • use <kbd>Tab</kbd> for <kbd>Extend&#x202F;Mode</kbd> • <kbd>Home</kbd> for <kbd>Edit</kbd></div>
+<svg id=p viewBox=0,0,31,31><path d="m0 4q0-4 4-4h23q4 0 4 4v23q0 4-4 4h-23q-4 0-4-4m7-2h6v-19h-6m11 19h6v-19h-6"></svg>
+<i></i></main>
+            <div id=b hidden></div>
+            <div id=m hidden></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+<b id=e hidden></b>
+  <aside id=l>
+<header>
+<h1><span>ZX Workbench</span></h1><p>ZX Spectrum emulator<nav><a href=about>about</a> • <a href=games>games</a> • <a href=links>links</a> • <a href=donate>donate</a></nav></header><section><input type=checkbox><button disabled data-c=pause>Pause</button>
+<button disabled data-c=reset>Reset</button>
+<button disabled data-c=open>Open</button>
+<button disabled data-c=save>Save</button><br><select disabled data-c=model>
+<option value=48>Spectrum 48 K
+<option value=128>Spectrum 128 K
+<option value=tc2048>Timex TC 2048</select>
+<input type=checkbox><button disabled data-c=ay>AY</button>
+<input type=checkbox><button disabled data-c=kj>Kempston</button>
+<input type=checkbox><button disabled data-c=if1>Interface 1</button><p id=v><input type=checkbox><button data-c=mute><svg width=25 height=17 stroke=currentcolor stroke-width=1.5 fill=none><path fill=currentcolor d="M0 6.5h4l4-3v12l-4-3h-4"/><path d="M10 6.5 a3 3 0 010 5M12 5a 5 5 0 010 8M14 3.5a 7 7 0 010 11"/><path d="M12 6.5l6 6m0-6l-6 6"/></svg></button>
+<input type=range title=Volume></section><section class=d><dl class=keys><dt>Shift<dd>Caps Shift<dt>Alt<dd>Symbol Shift<dt>Tab<dd>Extended mode<dt>Home<dd>Edit<dt>Del<dd>Reset, restart<dt>F1<dd><a href=about rel=help target=_top>About...</a><dt>F2<dd>Remember<dt>F3<dd>Restore<dt>F6<dd data-c=crt>CRT distortion<dt>F7<dd data-c=bw>Black &amp; white<dt>F8<dd data-c=layout>Keyboard layout<dt>F10<dd>Mute<dt>Pause<dd>Pause<dt>Ctrl O<dd>Open<dt>Ctrl S<dd>Save<dt>Insert<dd><a rel=search href=games target=_top>Games...</a></dl></section><section><button data-c=share hidden>Share link...</button></section>
+<a href=//torinak.com/~jb/ rel=author>© Jan Bobrowski</a></aside>
+  <aside id=r>
+<details open id=u hidden><summary>User list</summary>
+<ul class=u></ul></details>
+<details open id=z><summary>Snapshots</summary>
+<ul class=u></ul>
+<button disabled data-c=remember>Create</button></details></aside>
+  <svg id=t></svg>
+
+  <script src="./codemirror/lib/codemirror.js"></script>
+  <script src="./codemirror/addon/mode/simple.js"></script>
+  <script src="./codemirror/addon/edit/matchbrackets.js"></script>
+  <script src="./codemirror/addon/selection/active-line.js"></script>
+  <script>
+    window.QAOP_ASSET_BASE = window.QAOP_ASSET_BASE || "/qaop/";
+    (function() {
+      const wrapHistory = method => {
+        const original = history[method].bind(history);
+        history[method] = function(state, unused, url) {
+          try {
+            if (url === undefined) return original(state, unused);
+            return original(state, unused, location.pathname + location.search + location.hash);
+          } catch (err) {
+            try { return original(state, unused); } catch (_) { return undefined; }
+          }
+        };
+      };
+      wrapHistory("replaceState");
+      wrapHistory("pushState");
+      try {
+        if (navigator.serviceWorker && navigator.serviceWorker.register) {
+          navigator.serviceWorker.register = () => Promise.resolve({ update() {}, index: { add() {} } });
+        }
+      } catch (err) {}
+    })();
+  </script>
+  <script src="./asmz80.js"></script>
+  <script src="./emulator/00-namespace.js"></script>
+  <script src="./emulator/05-shared-helpers.js"></script>
+  <script>globalThis.__qaop && (globalThis.__qaop.m = window.QAOP_ASSET_BASE);</script>
+  <script src="./emulator/10-ui-shell.js"></script>
+  <script src="./emulator/20-machine-core.js"></script>
+  <script src="./emulator/30-runtime-media.js"></script>
+  <script src="./emulator/40-persistence-startup.js"></script>
+  <script src="./z80-disassembler.js"></script>
+  <script src="./workbench-app.js"></script>
+
+</body>
+</html>

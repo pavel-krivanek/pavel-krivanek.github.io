@@ -88,7 +88,7 @@
     };
     Q.I = self != top;
     loadBinaryResource({
-      F: m + "roms"
+      F: "qaop/roms"
     }, {}, e => {
       var t,
         r,

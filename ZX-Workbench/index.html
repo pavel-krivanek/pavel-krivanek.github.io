@@ -60,13 +60,17 @@
                 <div class="spacer"></div>
                 <label class="wb-field"><span>Lines</span><input id="dbgLines" type="number" min="20" max="400" value="120" /></label>
               </div>
-              <div class="debugger-disasm"><textarea id="debuggerDisasmOutput" spellcheck="false" readonly></textarea></div>
-              <div class="debugger-registers">
-                <div class="debugger-registers__header">
-                  <span class="status-pill" id="debuggerStatus">Debugger: ready</span>
-                  <span class="debugger-shortcuts">F9 breakpoint · Ctrl+F10 run to cursor · F10 step over · F11 step into · Shift+F11 step out · F5 continue</span>
+              <div class="debugger-panes" id="debuggerSplitHost">
+                <div class="debugger-disasm debugger-pane" id="debuggerDisasmPane"><textarea id="debuggerDisasmOutput" spellcheck="false" readonly></textarea></div>
+                <div id="debuggerPaneSplitter" class="debugger-pane-splitter" role="separator" aria-orientation="horizontal" aria-label="Resize disassembly and registers panes" tabindex="0"></div>
+                <div class="debugger-registers debugger-pane" id="debuggerRegistersPane">
+                  <div class="debugger-registers__header">
+                    <span class="status-pill" id="debuggerStatus">Debugger: ready</span>
+                    <span class="debugger-shortcuts">F9 breakpoint · Ctrl+F10 run to cursor · F10 step over · F11 step into · Shift+F11 step out · F5 continue</span>
+                  </div>
+                  <div class="debugger-registers__top" id="debuggerRegistersTop"></div>
+                  <div class="register-grid" id="debuggerRegisters"></div>
                 </div>
-                <div class="register-grid" id="debuggerRegisters"></div>
               </div>
             </div>
           </div>

@@ -7,6 +7,7 @@
   const QAOP_SCREEN_RATIO = 4 / 3;
   const DISASM_DEFAULT_LINES = 160;
   const DEBUG_DEFAULT_LINES = 120;
+  const DEBUGGER_SPLIT_KEY = 'z80-workbench-debugger-split';
   const DEFAULT_SOURCE = [
     '.ORG 32768',
     '.ENT START',
@@ -47,6 +48,16 @@
   let debuggerBreakpointPluginInstalled = false;
   let lastObservedPauseState = null;
 
+  const DEBUGGER_REGISTER_BASES = {
+    HEX: { radix: 16, digits: '0123456789ABCDEF' },
+    DEC: { radix: 10, digits: '0123456789' },
+    BIN: { radix: 2, digits: '01' },
+    OCT: { radix: 8, digits: '01234567' }
+  };
+  const DEBUGGER_REGISTER_BASE_ORDER = ['DEC', 'HEX', 'BIN', 'OCT'];
+  const DEBUGGER_REGISTER_BASE_LABELS = { DEC: 'D', HEX: 'H', BIN: 'B', OCT: 'O' };
+  const debuggerRegisterFormats = Object.create(null);
+
   const workbenchAppEl = document.getElementById('workbenchApp');
   const sourceEl = document.getElementById('source');
   const disasmOutputEl = document.getElementById('disasmOutput');
@@ -55,6 +66,11 @@
   const disasmLinesEl = document.getElementById('disasmLines');
   const disasmMetaEl = document.getElementById('disasmMeta');
   const dbgLinesEl = document.getElementById('dbgLines');
+  const debuggerSplitHostEl = document.getElementById('debuggerSplitHost');
+  const debuggerDisasmPaneEl = document.getElementById('debuggerDisasmPane');
+  const debuggerRegistersPaneEl = document.getElementById('debuggerRegistersPane');
+  const debuggerPaneSplitterEl = document.getElementById('debuggerPaneSplitter');
+  const debuggerRegistersTopEl = document.getElementById('debuggerRegistersTop');
   const debuggerRegistersEl = document.getElementById('debuggerRegisters');
   const debuggerStatusEl = document.getElementById('debuggerStatus');
   const listingPanel = document.getElementById('panel-listing');
@@ -573,6 +589,7 @@
     else if (name === 'disasm') setTimeout(() => disasmEditor ? disasmEditor.refresh() : disasmOutputEl.focus(), 0);
     else if (name === 'debugger') {
       setTimeout(() => {
+        refreshDebuggerPaneLayout();
         if (debuggerEditor) debuggerEditor.refresh();
         else debuggerDisasmOutputEl?.focus();
         refreshDebuggerView({ activate: false });
@@ -593,6 +610,467 @@
 
   function formatByte(value) {
     return (value >>> 0).toString(16).toUpperCase().padStart(2, '0');
+  }
+
+  function installDebuggerRegisterStyles() {
+    if (document.getElementById('debugger-register-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'debugger-register-styles';
+    style.textContent = `
+      .debugger-host {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-height: 0;
+        height: 100%;
+      }
+      .debugger-panes {
+        --debugger-disasm-height: 340px;
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .debugger-pane {
+        min-height: 0;
+      }
+      .debugger-disasm {
+        flex: 0 0 var(--debugger-disasm-height);
+        min-height: 120px;
+        overflow: hidden;
+      }
+      .debugger-disasm .CodeMirror,
+      .debugger-disasm textarea {
+        height: 100%;
+      }
+      .debugger-pane-splitter {
+        flex: 0 0 8px;
+        position: relative;
+        cursor: row-resize;
+        touch-action: none;
+      }
+      .debugger-pane-splitter::before {
+        content: '';
+        position: absolute;
+        left: 8px;
+        right: 8px;
+        top: 50%;
+        height: 1px;
+        transform: translateY(-50%);
+        background: color-mix(in srgb, var(--wb-border-strong, #667) 70%, transparent);
+      }
+      .debugger-pane-splitter::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 36px;
+        height: 4px;
+        transform: translate(-50%, -50%);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--wb-accent, #6ea8fe) 52%, transparent);
+      }
+      .debugger-pane-splitter:hover::after,
+      .debugger-pane-splitter:focus-visible::after {
+        background: color-mix(in srgb, var(--wb-accent, #6ea8fe) 88%, transparent);
+      }
+      .debugger-pane-splitter:focus-visible {
+        outline: none;
+      }
+      body.is-resizing-debugger {
+        cursor: row-resize;
+        user-select: none;
+      }
+      .debugger-registers {
+        flex: 1 1 auto;
+        min-height: 126px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        overflow: hidden;
+      }
+      .debugger-registers__header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px 8px;
+        min-height: 0;
+        padding: 4px 8px 2px;
+      }
+      .debugger-shortcuts {
+        font-size: 10px;
+        opacity: 0.66;
+      }
+      .debugger-registers__top {
+        display: grid;
+        gap: 2px;
+        padding: 0 6px 2px;
+        flex: 0 0 auto;
+      }
+      .register-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(134px, 1fr));
+        gap: 2px 4px;
+        align-content: start;
+        overflow: auto;
+        padding: 2px 6px 6px;
+      }
+      .reg-topbar {
+        display: grid;
+        gap: 2px;
+        margin: 0;
+      }
+      .reg-flagline,
+      .reg-statebar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 2px;
+      }
+      .reg-topbar__label {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        min-height: 18px;
+        padding: 0 4px;
+        border-radius: 5px;
+        border: 1px solid color-mix(in srgb, var(--wb-border, #445) 86%, transparent);
+        background: color-mix(in srgb, var(--wb-panel-2, #1d2230) 90%, transparent);
+        color: var(--wb-muted, #a8b3c7);
+        font: 700 10px/1 var(--wb-sans, system-ui, sans-serif);
+      }
+      .reg-flag,
+      .reg-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 18px;
+        padding: 0 5px;
+        border-radius: 5px;
+        border: 1px solid color-mix(in srgb, var(--wb-border, #445) 86%, transparent);
+        background: color-mix(in srgb, var(--wb-panel-2, #1d2230) 90%, transparent);
+        color: var(--wb-muted, #a8b3c7);
+        font: 700 10px/1 var(--wb-mono, ui-monospace, monospace);
+      }
+      .reg-flag.is-on {
+        color: var(--wb-text, #e8eefc);
+        background: color-mix(in srgb, var(--wb-accent, #6ea8fe) 22%, var(--wb-panel-2, #1d2230));
+        border-color: color-mix(in srgb, var(--wb-accent, #6ea8fe) 54%, transparent);
+      }
+      .reg-chip__key {
+        color: var(--wb-muted, #a8b3c7);
+        margin-right: 3px;
+      }
+      .reg-section {
+        grid-column: 1 / -1;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        opacity: 0.62;
+        padding: 3px 2px 0;
+      }
+      .reg-row {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 3px;
+        min-width: 0;
+        margin: 0;
+        padding: 1px 3px;
+        border: 1px solid color-mix(in srgb, var(--wb-border, #445) 86%, transparent);
+        border-radius: 6px;
+        background: color-mix(in srgb, var(--wb-panel, #171a21) 82%, var(--wb-editor-bg, #10141c));
+      }
+      .reg-row__name {
+        min-width: 20px;
+        color: var(--wb-muted, #a8b3c7);
+        font: 700 10px/1 var(--wb-sans, system-ui, sans-serif);
+        white-space: nowrap;
+      }
+      .reg-row__input {
+        min-width: 0;
+        width: 100%;
+        height: 20px;
+        min-height: 20px !important;
+        padding: 0 5px !important;
+        border-radius: 4px !important;
+        border: 1px solid color-mix(in srgb, var(--wb-border, #445) 86%, transparent) !important;
+        background: color-mix(in srgb, var(--wb-panel-2, #1d2230) 92%, transparent) !important;
+        color: var(--wb-text, #e8eefc) !important;
+        font: 700 11px/1 var(--wb-mono, ui-monospace, monospace) !important;
+      }
+      .reg-row__input:focus {
+        outline: none;
+        border-color: color-mix(in srgb, var(--wb-accent, #6ea8fe) 70%, transparent) !important;
+      }
+      .reg-row__base {
+        width: 18px;
+        height: 18px;
+        min-height: 18px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border-radius: 4px !important;
+        border: 1px solid color-mix(in srgb, var(--wb-border-strong, #667) 72%, transparent) !important;
+        background: color-mix(in srgb, var(--wb-panel-2, #1d2230) 92%, transparent) !important;
+        color: var(--wb-muted, #a8b3c7) !important;
+        font: 800 9px/1 var(--wb-sans, system-ui, sans-serif) !important;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+      }
+      .reg-row__base:hover,
+      .reg-row__base:focus-visible {
+        color: var(--wb-text, #e8eefc) !important;
+        border-color: color-mix(in srgb, var(--wb-accent, #6ea8fe) 60%, transparent) !important;
+        outline: none;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function refreshDebuggerPaneLayout() {
+    if (!debuggerSplitHostEl) {
+      if (debuggerEditor) debuggerEditor.refresh();
+      return;
+    }
+    const current = parseFloat(debuggerSplitHostEl.style.getPropertyValue('--debugger-disasm-height'))
+      || parseFloat(getComputedStyle(debuggerSplitHostEl).getPropertyValue('--debugger-disasm-height'));
+    if (Number.isFinite(current) && debuggerSplitHostEl.getBoundingClientRect().height > 0) applyDebuggerSplitHeight(current, false);
+    else if (debuggerEditor) debuggerEditor.refresh();
+  }
+
+  function applyDebuggerSplitHeight(px, persist) {
+    if (!debuggerSplitHostEl || !debuggerPaneSplitterEl) {
+      if (debuggerEditor) debuggerEditor.refresh();
+      return;
+    }
+    const hostRect = debuggerSplitHostEl.getBoundingClientRect();
+    if (!hostRect.height) {
+      debuggerSplitHostEl.style.setProperty('--debugger-disasm-height', `${Math.max(120, Math.round(px || 0) || 340)}px`);
+      return;
+    }
+    const splitterHeight = debuggerPaneSplitterEl.getBoundingClientRect().height || 8;
+    const minTop = 120;
+    const minBottom = 150;
+    const maxTop = Math.max(minTop, hostRect.height - splitterHeight - minBottom);
+    const next = clamp(Math.round(px), minTop, maxTop);
+    debuggerSplitHostEl.style.setProperty('--debugger-disasm-height', `${next}px`);
+    debuggerPaneSplitterEl.setAttribute('aria-valuenow', String(next));
+    debuggerPaneSplitterEl.setAttribute('aria-valuemin', String(minTop));
+    debuggerPaneSplitterEl.setAttribute('aria-valuemax', String(maxTop));
+    if (persist) {
+      try { localStorage.setItem(DEBUGGER_SPLIT_KEY, String(next)); } catch (err) {}
+    }
+    requestAnimationFrame(() => debuggerEditor?.refresh());
+  }
+
+  function setupDebuggerSplitter() {
+    if (!debuggerPaneSplitterEl || !debuggerSplitHostEl) return;
+
+    let pointerId = null;
+    let hostTop = 0;
+
+    const onPointerMove = ev => {
+      if (pointerId == null || ev.pointerId !== pointerId) return;
+      applyDebuggerSplitHeight(ev.clientY - hostTop, false);
+    };
+
+    const stopDrag = ev => {
+      if (pointerId == null || (ev && ev.pointerId != null && ev.pointerId !== pointerId)) return;
+      document.body.classList.remove('is-resizing-debugger');
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', stopDrag);
+      window.removeEventListener('pointercancel', stopDrag);
+      try { debuggerPaneSplitterEl.releasePointerCapture(pointerId); } catch (err) {}
+      const current = parseFloat(debuggerSplitHostEl.style.getPropertyValue('--debugger-disasm-height'))
+        || parseFloat(getComputedStyle(debuggerSplitHostEl).getPropertyValue('--debugger-disasm-height'));
+      if (Number.isFinite(current)) applyDebuggerSplitHeight(current, true);
+      pointerId = null;
+    };
+
+    debuggerPaneSplitterEl.addEventListener('pointerdown', ev => {
+      ev.preventDefault();
+      pointerId = ev.pointerId;
+      hostTop = debuggerSplitHostEl.getBoundingClientRect().top;
+      document.body.classList.add('is-resizing-debugger');
+      debuggerPaneSplitterEl.setPointerCapture(pointerId);
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', stopDrag);
+      window.addEventListener('pointercancel', stopDrag);
+    });
+
+    debuggerPaneSplitterEl.addEventListener('keydown', ev => {
+      const current = parseFloat(debuggerSplitHostEl.style.getPropertyValue('--debugger-disasm-height'))
+        || parseFloat(getComputedStyle(debuggerSplitHostEl).getPropertyValue('--debugger-disasm-height'))
+        || Math.round(debuggerSplitHostEl.getBoundingClientRect().height * 0.58);
+      if (ev.key === 'ArrowUp') {
+        ev.preventDefault();
+        applyDebuggerSplitHeight(current - (ev.shiftKey ? 60 : 20), true);
+      } else if (ev.key === 'ArrowDown') {
+        ev.preventDefault();
+        applyDebuggerSplitHeight(current + (ev.shiftKey ? 60 : 20), true);
+      } else if (ev.key === 'Home') {
+        ev.preventDefault();
+        applyDebuggerSplitHeight(120, true);
+      } else if (ev.key === 'End') {
+        ev.preventDefault();
+        const hostRect = debuggerSplitHostEl.getBoundingClientRect();
+        const splitterHeight = debuggerPaneSplitterEl.getBoundingClientRect().height || 8;
+        applyDebuggerSplitHeight(hostRect.height - splitterHeight - 150, true);
+      }
+    });
+
+    let saved = null;
+    try {
+      saved = parseFloat(localStorage.getItem(DEBUGGER_SPLIT_KEY));
+    } catch (err) {
+      saved = null;
+    }
+    if (Number.isFinite(saved)) applyDebuggerSplitHeight(saved, false);
+    else applyDebuggerSplitHeight(Math.round((debuggerSplitHostEl.getBoundingClientRect().height || 586) * 0.58), false);
+
+    window.addEventListener('resize', () => refreshDebuggerPaneLayout());
+  }
+
+  function getDebuggerRegisterBase(registerKey) {
+    const base = debuggerRegisterFormats[registerKey];
+    return DEBUGGER_REGISTER_BASES[base] ? base : 'HEX';
+  }
+
+  function setDebuggerRegisterBase(registerKey, base) {
+    debuggerRegisterFormats[registerKey] = DEBUGGER_REGISTER_BASES[base] ? base : 'HEX';
+  }
+
+  function getDebuggerRegisterBaseLabel(base) {
+    return DEBUGGER_REGISTER_BASE_LABELS[base] || 'H';
+  }
+
+  function cycleDebuggerRegisterBase(registerKey) {
+    const current = getDebuggerRegisterBase(registerKey);
+    const index = DEBUGGER_REGISTER_BASE_ORDER.indexOf(current);
+    const next = DEBUGGER_REGISTER_BASE_ORDER[(index + 1 + DEBUGGER_REGISTER_BASE_ORDER.length) % DEBUGGER_REGISTER_BASE_ORDER.length];
+    setDebuggerRegisterBase(registerKey, next);
+    return next;
+  }
+
+  function maxValueForBits(bits) {
+    return Math.pow(2, bits) - 1;
+  }
+
+  function normalizeValueForBits(value, bits) {
+    return Number(value) & maxValueForBits(bits);
+  }
+
+  function formatDebuggerRegisterValue(value, bits, base) {
+    const normalized = normalizeValueForBits(value, bits);
+    switch (base) {
+      case 'DEC': return String(normalized);
+      case 'BIN': return normalized.toString(2).toUpperCase().padStart(bits, '0');
+      case 'OCT': return normalized.toString(8).toUpperCase().padStart(Math.ceil(bits / 3), '0');
+      case 'HEX':
+      default: return normalized.toString(16).toUpperCase().padStart(Math.ceil(bits / 4), '0');
+    }
+  }
+
+  function parseDebuggerRegisterValue(text, bits, base) {
+    let raw = String(text || '').trim().replace(/[\s_]+/g, '');
+    if (!raw) return { error: 'value is empty' };
+    if (base === 'HEX') raw = raw.replace(/^\$/i, '').replace(/^0x/i, '').replace(/h$/i, '');
+    else if (base === 'BIN') raw = raw.replace(/^%/i, '').replace(/^0b/i, '').replace(/b$/i, '');
+    else if (base === 'OCT') raw = raw.replace(/^0o/i, '').replace(/o$/i, '').replace(/q$/i, '');
+    const baseInfo = DEBUGGER_REGISTER_BASES[base] || DEBUGGER_REGISTER_BASES.HEX;
+    const matcher = new RegExp('^[' + baseInfo.digits + ']+$', 'i');
+    if (!matcher.test(raw)) return { error: `expected ${base} digits` };
+    const value = parseInt(raw, baseInfo.radix);
+    if (!Number.isFinite(value)) return { error: 'value is not a number' };
+    const maxValue = maxValueForBits(bits);
+    if (value < 0 || value > maxValue) return { error: `must be between 0 and ${maxValue}` };
+    return { value };
+  }
+
+  const DEBUGGER_REGISTER_SPECS = [
+    { key: 'pc', label: 'PC', bits: 16, group: 'Pairs', get: s => s.pc ?? 0, set: (s, v) => { s.pc = v & 0xFFFF; } },
+    { key: 'sp', label: 'SP', bits: 16, group: 'Pairs', get: s => s.sp ?? 0, set: (s, v) => { s.sp = v & 0xFFFF; } },
+    { key: 'af', label: 'AF', bits: 16, group: 'Pairs', get: s => ((s.a ?? 0) << 8) | (s.f ?? 0), set: (s, v) => { s.a = v >> 8 & 0xFF; s.f = v & 0xFF; } },
+    { key: 'bc', label: 'BC', bits: 16, group: 'Pairs', get: s => s.bc ?? 0, set: (s, v) => { s.bc = v & 0xFFFF; } },
+    { key: 'de', label: 'DE', bits: 16, group: 'Pairs', get: s => s.de ?? 0, set: (s, v) => { s.de = v & 0xFFFF; } },
+    { key: 'hl', label: 'HL', bits: 16, group: 'Pairs', get: s => s.hl ?? 0, set: (s, v) => { s.hl = v & 0xFFFF; } },
+    { key: 'ix', label: 'IX', bits: 16, group: 'Pairs', get: s => s.ix ?? 0, set: (s, v) => { s.ix = v & 0xFFFF; } },
+    { key: 'iy', label: 'IY', bits: 16, group: 'Pairs', get: s => s.iy ?? 0, set: (s, v) => { s.iy = v & 0xFFFF; } },
+    { key: 'wz', label: 'WZ', bits: 16, group: 'Pairs', get: s => s.wz ?? 0, set: (s, v) => { s.wz = v & 0xFFFF; } },
+
+    { key: 'a', label: 'A', bits: 8, group: 'Singles', get: s => s.a ?? 0, set: (s, v) => { s.a = v & 0xFF; } },
+    { key: 'f', label: 'F', bits: 8, group: 'Singles', get: s => s.f ?? 0, set: (s, v) => { s.f = v & 0xFF; } },
+    { key: 'b', label: 'B', bits: 8, group: 'Singles', get: s => (s.bc ?? 0) >> 8 & 0xFF, set: (s, v) => { s.bc = (v & 0xFF) << 8 | ((s.bc ?? 0) & 0xFF); } },
+    { key: 'c', label: 'C', bits: 8, group: 'Singles', get: s => (s.bc ?? 0) & 0xFF, set: (s, v) => { s.bc = ((s.bc ?? 0) & 0xFF00) | (v & 0xFF); } },
+    { key: 'd', label: 'D', bits: 8, group: 'Singles', get: s => (s.de ?? 0) >> 8 & 0xFF, set: (s, v) => { s.de = (v & 0xFF) << 8 | ((s.de ?? 0) & 0xFF); } },
+    { key: 'e', label: 'E', bits: 8, group: 'Singles', get: s => (s.de ?? 0) & 0xFF, set: (s, v) => { s.de = ((s.de ?? 0) & 0xFF00) | (v & 0xFF); } },
+    { key: 'h', label: 'H', bits: 8, group: 'Singles', get: s => (s.hl ?? 0) >> 8 & 0xFF, set: (s, v) => { s.hl = (v & 0xFF) << 8 | ((s.hl ?? 0) & 0xFF); } },
+    { key: 'l', label: 'L', bits: 8, group: 'Singles', get: s => (s.hl ?? 0) & 0xFF, set: (s, v) => { s.hl = ((s.hl ?? 0) & 0xFF00) | (v & 0xFF); } },
+    { key: 'i', label: 'I', bits: 8, group: 'Singles', get: s => s.i ?? 0, set: (s, v) => { s.i = v & 0xFF; } },
+    { key: 'r', label: 'R', bits: 8, group: 'Singles', get: s => s.r ?? 0, set: (s, v) => { s.r = v & 0xFF; } },
+    { key: 'ixh', label: 'IXH', bits: 8, group: 'Singles', get: s => (s.ix ?? 0) >> 8 & 0xFF, set: (s, v) => { s.ix = (v & 0xFF) << 8 | ((s.ix ?? 0) & 0xFF); } },
+    { key: 'ixl', label: 'IXL', bits: 8, group: 'Singles', get: s => (s.ix ?? 0) & 0xFF, set: (s, v) => { s.ix = ((s.ix ?? 0) & 0xFF00) | (v & 0xFF); } },
+    { key: 'iyh', label: 'IYH', bits: 8, group: 'Singles', get: s => (s.iy ?? 0) >> 8 & 0xFF, set: (s, v) => { s.iy = (v & 0xFF) << 8 | ((s.iy ?? 0) & 0xFF); } },
+    { key: 'iyl', label: 'IYL', bits: 8, group: 'Singles', get: s => (s.iy ?? 0) & 0xFF, set: (s, v) => { s.iy = ((s.iy ?? 0) & 0xFF00) | (v & 0xFF); } },
+
+    { key: 'af_alt', label: "AF'", bits: 16, group: 'Alternate pairs', get: s => ((s.a_ ?? 0) << 8) | (s.f_ ?? 0), set: (s, v) => { s.a_ = v >> 8 & 0xFF; s.f_ = v & 0xFF; } },
+    { key: 'bc_alt', label: "BC'", bits: 16, group: 'Alternate pairs', get: s => s.bc_ ?? 0, set: (s, v) => { s.bc_ = v & 0xFFFF; } },
+    { key: 'de_alt', label: "DE'", bits: 16, group: 'Alternate pairs', get: s => s.de_ ?? 0, set: (s, v) => { s.de_ = v & 0xFFFF; } },
+    { key: 'hl_alt', label: "HL'", bits: 16, group: 'Alternate pairs', get: s => s.hl_ ?? 0, set: (s, v) => { s.hl_ = v & 0xFFFF; } },
+
+    { key: 'a_alt', label: "A'", bits: 8, group: 'Alternate singles', get: s => s.a_ ?? 0, set: (s, v) => { s.a_ = v & 0xFF; } },
+    { key: 'f_alt', label: "F'", bits: 8, group: 'Alternate singles', get: s => s.f_ ?? 0, set: (s, v) => { s.f_ = v & 0xFF; } },
+    { key: 'b_alt', label: "B'", bits: 8, group: 'Alternate singles', get: s => (s.bc_ ?? 0) >> 8 & 0xFF, set: (s, v) => { s.bc_ = (v & 0xFF) << 8 | ((s.bc_ ?? 0) & 0xFF); } },
+    { key: 'c_alt', label: "C'", bits: 8, group: 'Alternate singles', get: s => (s.bc_ ?? 0) & 0xFF, set: (s, v) => { s.bc_ = ((s.bc_ ?? 0) & 0xFF00) | (v & 0xFF); } },
+    { key: 'd_alt', label: "D'", bits: 8, group: 'Alternate singles', get: s => (s.de_ ?? 0) >> 8 & 0xFF, set: (s, v) => { s.de_ = (v & 0xFF) << 8 | ((s.de_ ?? 0) & 0xFF); } },
+    { key: 'e_alt', label: "E'", bits: 8, group: 'Alternate singles', get: s => (s.de_ ?? 0) & 0xFF, set: (s, v) => { s.de_ = ((s.de_ ?? 0) & 0xFF00) | (v & 0xFF); } },
+    { key: 'h_alt', label: "H'", bits: 8, group: 'Alternate singles', get: s => (s.hl_ ?? 0) >> 8 & 0xFF, set: (s, v) => { s.hl_ = (v & 0xFF) << 8 | ((s.hl_ ?? 0) & 0xFF); } },
+    { key: 'l_alt', label: "L'", bits: 8, group: 'Alternate singles', get: s => (s.hl_ ?? 0) & 0xFF, set: (s, v) => { s.hl_ = ((s.hl_ ?? 0) & 0xFF00) | (v & 0xFF); } }
+  ];
+  const DEBUGGER_REGISTER_SPEC_MAP = Object.fromEntries(DEBUGGER_REGISTER_SPECS.map(spec => [spec.key, spec]));
+
+  function renderEditableRegisterCard(snapshot, spec) {
+    const base = getDebuggerRegisterBase(spec.key);
+    const value = formatDebuggerRegisterValue(spec.get(snapshot), spec.bits, base);
+    return `
+      <div class="reg-row" data-register-card="${spec.key}">
+        <div class="reg-row__name">${escapeHtml(spec.label)}</div>
+        <input class="reg-row__input" data-register="${spec.key}" type="text" value="${escapeHtml(value)}" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="${escapeHtml(spec.label)} value (${escapeHtml(base)})" />
+        <button class="reg-row__base" type="button" data-register="${spec.key}" data-base="${base}" aria-label="${escapeHtml(spec.label)} base ${escapeHtml(base)}" title="${escapeHtml(base)}">${getDebuggerRegisterBaseLabel(base)}</button>
+      </div>
+    `;
+  }
+
+  async function applyDebuggerRegisterValue(registerKey) {
+    const spec = DEBUGGER_REGISTER_SPEC_MAP[registerKey];
+    if (!spec || !debuggerRegistersEl) return;
+    const input = debuggerRegistersEl.querySelector(`.reg-row__input[data-register="${registerKey}"]`);
+    const baseButton = debuggerRegistersEl.querySelector(`.reg-row__base[data-register="${registerKey}"]`);
+    const base = baseButton?.dataset.base || getDebuggerRegisterBase(registerKey);
+    const parsed = parseDebuggerRegisterValue(input?.value, spec.bits, base);
+    if (parsed.error) {
+      setDebuggerStatus(`Register ${spec.label}: ${parsed.error}`, 'err');
+      return;
+    }
+    try {
+      await ensureDebuggerPaused();
+      const runtime = getDebuggerRuntime();
+      if (runtime.flushPrefixCycles) runtime.flushPrefixCycles();
+      if (typeof runtime.captureState !== 'function' || typeof runtime.setStateAndRefresh !== 'function') {
+        throw new Error('Qaop state update API is not available.');
+      }
+      const snapshot = runtime.captureState();
+      spec.set(snapshot, parsed.value);
+      runtime.setStateAndRefresh(snapshot);
+      queueUiSync();
+      refreshDebuggerView({ snapshot, activate: false });
+      setDebuggerStatus(`Register ${spec.label} = ${formatDebuggerRegisterValue(parsed.value, spec.bits, base)} (${base})`, 'ok');
+    } catch (err) {
+      setDebuggerStatus('Debugger error: ' + (err.message || err), 'err');
+    }
   }
 
   function parseAddress(text, fallback) {
@@ -936,38 +1414,50 @@ async function ensureDebuggerBreakpointPlugin() {
 
   function renderRegisterState(snapshot) {
     if (!debuggerRegistersEl) return;
-    if (!snapshot) { debuggerRegistersEl.innerHTML = ''; return; }
+    if (!snapshot) {
+      if (debuggerRegistersTopEl) debuggerRegistersTopEl.innerHTML = '';
+      debuggerRegistersEl.innerHTML = '';
+      return;
+    }
     const flags = unpackFlags(snapshot.f || 0);
     const flagsAlt = unpackFlags(snapshot.f_ || 0);
-    const cards = [
-      ['PC', formatWord(snapshot.pc || 0)],
-      ['SP', formatWord(snapshot.sp || 0)],
-      ['AF', `${formatByte(snapshot.a || 0)} ${formatByte(snapshot.f || 0)}`],
-      ['BC', formatWord(snapshot.bc || 0)],
-      ['DE', formatWord(snapshot.de || 0)],
-      ['HL', formatWord(snapshot.hl || 0)],
-      ['IX', formatWord(snapshot.ix || 0)],
-      ['IY', formatWord(snapshot.iy || 0)],
-      ["AF'", `${formatByte(snapshot.a_ || 0)} ${formatByte(snapshot.f_ || 0)}`],
-      ["BC'", formatWord(snapshot.bc_ || 0)],
-      ["DE'", formatWord(snapshot.de_ || 0)],
-      ["HL'", formatWord(snapshot.hl_ || 0)],
-      ['I', formatByte(snapshot.i || 0)],
-      ['R', formatByte(snapshot.r || 0)],
+    const flagOrder = ['S', 'Z', 'Y', 'H', 'X', 'P', 'N', 'C'];
+    const renderFlagLine = (label, flagState) => (
+      `<div class="reg-flagline"><span class="reg-topbar__label">${escapeHtml(label)}</span>${flagOrder.map(name => `<span class="reg-flag${flagState[name] ? ' is-on' : ''}" title="${escapeHtml(name)}">${escapeHtml(name)}</span>`).join('')}</div>`
+    );
+    const stateItems = [
       ['IM', String(snapshot.im == null ? 0 : snapshot.im)],
       ['IFF', String(snapshot.iff == null ? 0 : snapshot.iff)],
-      ['WZ', formatWord(snapshot.wz || 0)],
       ['PX', String(snapshot.px || 0)],
-      ['HALT', snapshot.halt ? 'yes' : 'no'],
-      ['Flags', `S${+flags.S} Z${+flags.Z} H${+flags.H} P/V${+flags.P} N${+flags.N} C${+flags.C}`, 'reg-card--wide'],
-      ["Flags'", `S${+flagsAlt.S} Z${+flagsAlt.Z} H${+flagsAlt.H} P/V${+flagsAlt.P} N${+flagsAlt.N} C${+flagsAlt.C}`, 'reg-card--wide']
+      ['HALT', snapshot.halt ? '1' : '0']
     ];
-    debuggerRegistersEl.innerHTML = cards.map(([label, value, extraClass]) => (
-      `<div class="reg-card${extraClass ? ' ' + extraClass : ''}"><div class="reg-card__label">${escapeHtml(label)}</div><code class="reg-card__value">${escapeHtml(value)}</code></div>`
-    )).join('');
+    const topHtml = `
+      <div class="reg-topbar">
+        ${renderFlagLine('F', flags)}
+      </div>
+    `;
+    const sections = [
+      ['Pairs', DEBUGGER_REGISTER_SPECS.filter(spec => spec.group === 'Pairs')],
+      ['Singles', DEBUGGER_REGISTER_SPECS.filter(spec => spec.group === 'Singles')],
+      ["Alt pairs", DEBUGGER_REGISTER_SPECS.filter(spec => spec.group === 'Alternate pairs')],
+      ["Alt singles", DEBUGGER_REGISTER_SPECS.filter(spec => spec.group === 'Alternate singles')]
+    ];
+    const sectionHtml = sections.map(([title, specs]) => {
+      const cards = specs.map(spec => renderEditableRegisterCard(snapshot, spec)).join('');
+      return `<div class="reg-section">${escapeHtml(title)}</div>${cards}`;
+    }).join('');
+    const bottomHtml = `
+      <div class="reg-section">State</div>
+      <div class="reg-topbar" style="grid-column: 1 / -1; padding: 0 2px;">
+        <div class="reg-statebar"> ${renderFlagLine('F', flags)} &nbsp; ${renderFlagLine("F'", flagsAlt)} &nbsp; ${stateItems.map(([label, value]) => `<span class="reg-chip"><span class="reg-chip__key">${escapeHtml(label)}</span>${escapeHtml(value)}</span>`).join('')}</div>
+      </div>
+    `;
+    if (debuggerRegistersTopEl) debuggerRegistersTopEl.innerHTML = topHtml;
+    debuggerRegistersEl.innerHTML = sectionHtml + bottomHtml;
   }
 
   function refreshDebuggerView(options = {}) {
+
     try {
       const snapshot = options.snapshot || captureSnapshotState();
       const pc = typeof snapshot.pc === 'number' ? snapshot.pc & 0xFFFF : 0;
@@ -1506,6 +1996,28 @@ async function continueDebugger(options = {}) {
     document.querySelectorAll('.wb-tab').forEach(btn => btn.addEventListener('click', () => activateBottomTab(btn.dataset.tab)));
     document.querySelectorAll('.wb-editor-tab').forEach(btn => btn.addEventListener('click', () => activateEditorTab(btn.dataset.editorTab)));
 
+    debuggerRegistersEl?.addEventListener('click', ev => {
+      const baseButton = ev.target.closest('.reg-row__base');
+      if (!baseButton) return;
+      const registerKey = baseButton.dataset.register;
+      cycleDebuggerRegisterBase(registerKey);
+      const scrollTop = debuggerRegistersEl.scrollTop;
+      try {
+        renderRegisterState(captureSnapshotState());
+        debuggerRegistersEl.scrollTop = scrollTop;
+        const replacement = debuggerRegistersEl.querySelector(`.reg-row__base[data-register="${registerKey}"]`);
+        replacement?.focus({ preventScroll: true });
+      } catch (err) {
+        setDebuggerStatus('Debugger error: ' + (err.message || err), 'err');
+      }
+    });
+    debuggerRegistersEl?.addEventListener('keydown', ev => {
+      const input = ev.target.closest('.reg-row__input');
+      if (!input || ev.key !== 'Enter') return;
+      ev.preventDefault();
+      applyDebuggerRegisterValue(input.dataset.register);
+    });
+
     window.addEventListener('keydown', ev => {
       const typingIntoWorkbench = !!(ev.target && (ev.target.closest('.CodeMirror') || ev.target.closest('#workbenchApp')));
       const editorView = workbenchAppEl?.dataset.editorView || 'source';
@@ -1573,11 +2085,13 @@ async function continueDebugger(options = {}) {
 
   initTheme();
   configureKeyboardImage();
+  installDebuggerRegisterStyles();
   ensureCodeMirror();
   loadSource();
   wireUi();
   restoreSnapshotsPanelState();
   setupSplitter();
+  setupDebuggerSplitter();
   setupViewportObserver();
   updateDebuggerButtons();
 

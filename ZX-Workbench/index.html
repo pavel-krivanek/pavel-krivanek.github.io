@@ -86,15 +86,238 @@
           <div class="wb-tab-panel active" id="panel-listing"></div>
           <div class="wb-tab-panel" id="panel-hex"><textarea id="hexOutput" readonly></textarea></div>
           <div class="wb-tab-panel" id="panel-notes">
-            <p><strong>Shortcuts</strong></p>
-            <p><code>Ctrl+Enter</code> assemble, <code>F5</code> run snapshot, <code>Shift+F5</code> run tape, <code>F6</code> refresh disassembly.</p>
-            <p>Debugger tab: <code>F5</code> continue, <code>Shift+F5</code> break, <code>F9</code> toggle breakpoint, <code>Ctrl+F10</code> run to cursor, <code>F10</code>/<code>F11</code>/<code>Shift+F11</code> step over/into/out.</p>
-            <p><strong>Entry point</strong></p>
-            <p>Use <code>.ENT label</code> when you want the generated snapshot to start directly at your program entry point.</p>
-            <p><strong>Disassembly</strong></p>
-            <p>The Disassembly tab uses the uploaded <code>z80cpu.js</code> decoder against one captured emulator snapshot. Enter an address, click <code>Refresh</code>, and the listing is generated from that one frozen memory image.</p>
-            <p><strong>Generated files</strong></p>
-            <p><code>Run SNA</code> builds a Spectrum snapshot and loads it immediately. <code>Run TAP</code> builds a tape image and hands it to the emulator’s normal file-loading path.</p>
+<p><strong>Z80 Assembler User Help</strong></p>
+
+<p>This document describes the source language accepted by the assembler from an end-user point of view: source line structure, labels, expressions, instructions, directives, macros, conditional assembly, segments, and common usage patterns.</p>
+
+<p><strong>1. Basic line structure</strong></p>
+<p>A source line may contain a label, an instruction or directive, operands, and a comment.</p>
+<pre><code>label: opcode operand1, operand2 ; comment</code></pre>
+<p>Whitespace is flexible. Empty lines are allowed. Comments begin with <code>;</code> and continue to the end of the line.</p>
+<pre><code>START: LD A,1 ; load constant into A</code></pre>
+
+<p><strong>2. Case and naming</strong></p>
+<p>Mnemonics, directives, registers, conditions, and labels are case-insensitive. Source may be written in upper case, lower case, or mixed case.</p>
+<pre><code>ld a,1
+LD A,1</code></pre>
+<p>Labels may use letters, digits, underscore, and hyphen. A label normally ends with a colon.</p>
+<pre><code>loop:
+copy_1:
+my-label:</code></pre>
+<p>For clarity and portability of source style, use the colon form consistently.</p>
+
+<p><strong>3. Registers and addressing forms</strong></p>
+<p>Common 8-bit registers are supported: <code>A B C D E H L</code>.</p>
+<p>Common 16-bit register pairs are supported: <code>BC DE HL SP AF IX IY</code>.</p>
+<p>Special registers used by some transfer instructions are supported: <code>I</code> and <code>R</code>.</p>
+<p>Indexed high and low halves are supported: <code>IXH IXL IYH IYL</code>.</p>
+<p>Typical memory addressing forms include:</p>
+<pre><code>(HL)
+(BC)
+(DE)
+(1234H)
+(IX+5)
+(IX-2)
+(IY+3)</code></pre>
+<p>Indexed displacements must fit in signed 8-bit range.</p>
+
+<p><strong>4. Numbers and character strings</strong></p>
+<p>Numbers may be written in decimal, hexadecimal, or binary forms.</p>
+<pre><code>123
+$7B
+0x7B
+7Bh
+%1010
+1010b</code></pre>
+<p>Character strings may be written in double quotes or single quotes.</p>
+<pre><code>"HELLO"
+'A'</code></pre>
+<p>Escape sequences such as newline and tab are accepted in string literals.</p>
+
+<p><strong>5. Expressions</strong></p>
+<p>Operands and directive arguments may use expressions. The current location counter is written as <code>$</code>.</p>
+<pre><code>LD A,VALUE+1
+JP START+$10
+DW $</code></pre>
+<p>Low-byte and high-byte extraction are available with prefix operators.</p>
+<pre><code>DB &lt;LABEL
+DB &gt;LABEL</code></pre>
+<p>Named helpers such as <code>lsb()</code> and <code>msb()</code> may also be used.</p>
+<pre><code>DB lsb(LABEL), msb(LABEL)</code></pre>
+<p>Arithmetic and expression functions may be used in constants, address calculations, and conditional assembly.</p>
+
+<p><strong>6. Instructions</strong></p>
+<p>The assembler supports normal Z80 instruction families including data transfer, arithmetic, logic, shifts and rotates, bit operations, calls, jumps, returns, block instructions, interrupt control, and indexed addressing.</p>
+<p>Examples:</p>
+<pre><code>LD A,B
+LD HL,$8000
+LD (IX+1),A
+ADD A,10
+ADC HL,DE
+BIT 3,(IY+2)
+SET 5,A
+JP NZ,LOOP
+JR C,NEXT
+DJNZ AGAIN
+IN A,(10H)
+OUT (C),A</code></pre>
+<p>Relative branches such as <code>JR</code> and <code>DJNZ</code> must reach a target within relative branch range.</p>
+
+<p><strong>7. Conditions</strong></p>
+<p>Conditional instruction forms use the standard Z80 conditions:</p>
+<pre><code>NZ Z NC C PO PE P M</code></pre>
+<p>Examples:</p>
+<pre><code>JP Z,DONE
+CALL NC,HANDLER
+RET M</code></pre>
+
+<p><strong>8. Symbol definition</strong></p>
+<p>Constants may be defined with <code>EQU</code> or <code>=</code>.</p>
+<pre><code>BUFFER_SIZE EQU 64
+SCREEN = $4000</code></pre>
+<p>Use symbolic names for addresses, constants, bit positions, and structure offsets.</p>
+
+<p><strong>9. Data definition directives</strong></p>
+<p><code>DB</code> defines bytes. Strings in <code>DB</code> expand to one byte per character.</p>
+<pre><code>DB 0,1,2,"ABC"</code></pre>
+<p><code>DW</code> defines 16-bit words.</p>
+<pre><code>DW START,BUFFER,1234H</code></pre>
+<p><code>DS</code> reserves storage.</p>
+<pre><code>DS 32
+DS 16,0</code></pre>
+<p><code>FCB</code> is a byte-definition alias. <code>FDB</code> is a word-definition alias. <code>RMB</code> is a reserve-storage alias.</p>
+<p><code>BSZ</code> and <code>ZMB</code> reserve zero-filled storage.</p>
+<pre><code>BSZ 64
+ZMB 128</code></pre>
+<p><code>FILL</code> repeats one value a given number of times.</p>
+<pre><code>FILL 0FFH,16</code></pre>
+
+<p><strong>10. String-oriented directives</strong></p>
+<p><code>.CSTR</code> emits characters followed by a trailing zero byte.</p>
+<pre><code>.CSTR "READY"</code></pre>
+<p><code>.PSTR</code> emits a length byte followed by the characters.</p>
+<pre><code>.PSTR "HELLO"</code></pre>
+<p><code>.ISTR</code> emits characters in high-bit terminated form, suitable for software conventions that mark the last character.</p>
+<pre><code>.ISTR "NAME"</code></pre>
+
+<p><strong>11. Repetition shorthand</strong></p>
+<p>A repeated data form may be written with <code>DUP(...)</code>.</p>
+<pre><code>DB 8 DUP(0)
+DW 4 DUP($FFFF)</code></pre>
+<p>This is useful for buffers, tables, and padding.</p>
+
+<p><strong>12. Origin and layout control</strong></p>
+<p><code>ORG</code> sets the assembly location.</p>
+<pre><code>ORG $8000</code></pre>
+<p><code>ALIGN</code> advances the location counter to the next alignment boundary.</p>
+<pre><code>ALIGN 16</code></pre>
+<p>Use these directives to control program placement, tables, vectors, and page boundaries.</p>
+
+<p><strong>13. Segments</strong></p>
+<p>The assembler supports code and data segmentation directives.</p>
+<pre><code>.CSEG
+.DSEG
+.ESEG
+.BSSEG</code></pre>
+<p>Use <code>.CSEG</code> for executable code, <code>.DSEG</code> for initialized data, and <code>.BSSEG</code> for uninitialized storage. Keep segment usage consistent within a project.</p>
+
+<p><strong>14. Phase control</strong></p>
+<p><code>.PHASE</code> temporarily changes the logical assembly address without permanently changing the underlying placement, and <code>.DEPHASE</code> ends that phase.</p>
+<pre><code>.PHASE $0100
+.DEPHASE</code></pre>
+<p>This is useful for code that runs at one logical address but is stored elsewhere.</p>
+
+<p><strong>15. Conditional assembly</strong></p>
+<p>Conditional assembly is available with <code>IF</code>, <code>IFN</code>, <code>ELSE</code>, and <code>ENDIF</code>.</p>
+<pre><code>IF DEBUG
+DB "TRACE"
+ELSE
+DB 0
+ENDIF</code></pre>
+<p><code>IFN</code> assembles the following block when the expression is false or zero.</p>
+<p>Use straightforward, fully resolvable expressions in conditional assembly. Avoid nesting conditional blocks.</p>
+
+<p><strong>16. Include files and binary inclusion</strong></p>
+<p><code>.INCLUDE</code> inserts another source file.</p>
+<pre><code>.INCLUDE "macros.inc"</code></pre>
+<p><code>.INCBIN</code> inserts raw binary data from a file.</p>
+<pre><code>.INCBIN "sprite.bin"</code></pre>
+<p>Use include files for shared constants, macros, device definitions, and common routines.</p>
+
+<p><strong>17. Macros</strong></p>
+<p>Define a macro with <code>.MACRO</code> and end it with <code>.ENDM</code>.</p>
+<pre><code>.MACRO PUSHALL
+PUSH BC
+PUSH DE
+PUSH HL
+.ENDM</code></pre>
+<p>Invoke a macro by writing its name as an instruction.</p>
+<pre><code>PUSHALL</code></pre>
+<p>Macro arguments are referenced as <code>%%1</code>, <code>%%2</code>, and so on.</p>
+<pre><code>.MACRO LOAD8
+LD %%1,%%2
+.ENDM
+
+LOAD8 A,10</code></pre>
+
+<p><strong>18. Repeated macro blocks</strong></p>
+<p><code>.REPT</code> repeats a block a fixed number of times and uses <code>.ENDM</code> to terminate the repeated block.</p>
+<pre><code>.REPT 4
+DB 0
+.ENDM</code></pre>
+
+<p><strong>19. Local scoping with blocks</strong></p>
+<p><code>.BLOCK</code> and <code>.ENDBLOCK</code> create a local block scope for labels.</p>
+<pre><code>.BLOCK
+LOCAL1: NOP
+.ENDBLOCK</code></pre>
+<p>A label that begins with <code>@</code> may be used when a label needs to remain visible outside the current block.</p>
+<pre><code>@ENTRY:</code></pre>
+
+<p><strong>20. End of source</strong></p>
+<p>Use <code>END</code> or <code>.END</code> to mark the logical end of the source file.</p>
+<pre><code>END</code></pre>
+
+<p><strong>21. Common aliases</strong></p>
+<p>Several directive names are accepted as aliases.</p>
+<pre><code>DEFB, .DB, .BYTE  -> DB
+DEFW, .DW         -> DW
+DEFS, .RES        -> DS</code></pre>
+<p>Use one naming style consistently within a project.</p>
+
+<p><strong>22. Practical example</strong></p>
+<pre><code>ORG $8000
+
+COUNT   EQU 10
+BUFFER  EQU $9000
+
+START:  LD HL,BUFFER
+        LD B,COUNT
+LOOP:   LD (HL),0
+        INC HL
+        DJNZ LOOP
+        JP DONE
+
+DONE:   .CSTR "OK"
+        END</code></pre>
+
+<p><strong>23. Good usage advice</strong></p>
+<p>Prefer explicit labels with a trailing colon.</p>
+<p>Keep one instruction or directive per line.</p>
+<p>Use symbols instead of hard-coded addresses whenever possible.</p>
+<p>Use <code>DB</code> for bytes, <code>DW</code> for 16-bit values, and <code>DS</code> or reserve aliases for storage.</p>
+<p>Use <code>JR</code> and <code>DJNZ</code> only when the destination is known to be in relative range.</p>
+<p>Use <code>.BLOCK</code> to keep local labels tidy in larger modules.</p>
+<p>Keep conditional assembly simple and non-nested.</p>
+<p>Use include files for project-wide constants and macros.</p>
+
+<p><strong>24. Minimal template</strong></p>
+<pre><code>ORG $8000
+
+MAIN:   NOP
+        JP MAIN
+
+END</code></pre>
           </div>
         </div>
       </div>

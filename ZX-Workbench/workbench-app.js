@@ -110,7 +110,7 @@
 
   function configureKeyboardImage() {
     if (!qaopKeyboardImageEl) return;
-    qaopKeyboardImageEl.src = joinAssetPath(window.QAOP_ASSET_BASE || 'qaop/', 'Keyboard.svg');
+    qaopKeyboardImageEl.src = joinAssetPath(window.QAOP_ASSET_BASE || 'qaop/', 'keyboard.svg');
   }
 
   function setStatus(el, text, kind) {

@@ -327,12 +327,30 @@
       const line = error && error.s ? error.s.numline : null;
       markErrorLine(line);
       const lineText = line ? sourceText.split(/\r?\n/)[line - 1] : '';
-      let message = line ? `Error on line ${line}: ${error.msg}` : `Internal error: ${error}`;
+      const rawMessage =  typeof error === 'string'
+            ? error
+            : (error && (error.msg || error.message)) || String(error);
+
+      let inferredLine = line;
+      if (!inferredLine && typeof rawMessage === 'string') {
+         const m = rawMessage.match(/\bline\s+(\d+)\b/i);
+         if (m) inferredLine = Number(m[1]);
+      }
+
+      let message = inferredLine
+          ? `Error on line ${inferredLine}: ${rawMessage.replace(/\s*\bline\s+\d+\b[:,-]?\s*/i, '')}`
+          : rawMessage;
+
       if (/\bENT\b/.test(lineText) && !/\.ENT\b/i.test(lineText)) message += ' — use .ENT, not ENT';
       setStatus(compileStatus, message, 'err');
       programStats.textContent = 'Bytes: —';
       hexOutput.value = '';
-      listingPanel.innerHTML = '<pre>' + escapeHtml(String(error.msg || error)) + '</pre>';
+      listingPanel.innerHTML =
+        '<pre>' +
+         escapeHtml(
+            inferredLine  ? `Error on line ${inferredLine}: ${rawMessage}` : rawMessage
+         ) +
+         '</pre>';
       lastBuild = null;
       lastSourceHash = sourceHash;
       activateBottomTab('listing');

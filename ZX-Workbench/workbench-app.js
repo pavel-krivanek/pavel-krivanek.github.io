@@ -4,7 +4,10 @@
   const THEME_KEY = 'z80-workbench-theme';
   const SNAPSHOTS_OPEN_KEY = 'z80-workbench-snapshots-open';
   const BREAKPOINTS_KEY = 'z80-workbench-breakpoints';
-  const QAOP_SCREEN_RATIO = 4 / 3;
+  const EMULATOR_ZOOM_KEY = 'z80-workbench-emulator-zoom';
+  const RAW_DISPLAY_KEY = 'z80-workbench-raw-display';
+  const QAOP_FRAME_WIDTH_FALLBACK = 336;
+  const QAOP_FRAME_HEIGHT_FALLBACK = 272;
   const DISASM_DEFAULT_LINES = 160;
   const DEBUG_DEFAULT_LINES = 120;
   const DEBUGGER_SPLIT_KEY = 'z80-workbench-debugger-split';
@@ -47,6 +50,8 @@
   let debuggerPendingBreak = null;
   let debuggerBreakpointPluginInstalled = false;
   let lastObservedPauseState = null;
+  let emulatorZoomMode = 'fit';
+  let rawDisplayMode = false;
 
   const DEBUGGER_REGISTER_BASES = {
     HEX: { radix: 16, digits: '0123456789ABCDEF' },
@@ -95,6 +100,8 @@
   const if1ToggleEl = document.getElementById('emuToggleIf1');
   const crtToggleEl = document.getElementById('emuToggleCrt');
   const bwToggleEl = document.getElementById('emuToggleBw');
+  const zoomSelectEl = document.getElementById('emuZoomSelect');
+  const rawDisplayToggleEl = document.getElementById('emuToggleRawDisplay');
   const muteToggleEl = document.getElementById('emuToggleMute');
   const volumeEl = document.getElementById('emuVolume');
   const layoutButtonEl = document.getElementById('btnEmuLayout');
@@ -413,16 +420,176 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  function getQaopFrameMetrics() {
+    const runtime = globalThis.__qaop;
+    const width = Math.max(1, Number(runtime?.U1) || QAOP_FRAME_WIDTH_FALLBACK);
+    const height = Math.max(1, Number(runtime?.L5) || QAOP_FRAME_HEIGHT_FALLBACK);
+    return { width, height, ratio: width / height };
+  }
+
+  function isQaopCanvasRuntimeReady() {
+    const runtime = globalThis.__qaop;
+    return !!(
+      runtime &&
+      typeof runtime.attachCanvas === 'function' &&
+      typeof runtime.captureState === 'function' &&
+      window.qaop &&
+      typeof window.qaop.command === 'function'
+    );
+  }
+
+  function refreshQaopCanvasScale() {
+    const runtime = globalThis.__qaop;
+    const canvas = document.getElementById('s');
+    const probe = document.querySelector('#f > i');
+    if (!(isQaopCanvasRuntimeReady() && canvas && probe)) return;
+    const rect = probe.getBoundingClientRect();
+    const height = rect.height || probe.offsetHeight || 0;
+    if (!height) return;
+    try {
+      runtime.attachCanvas(canvas, height);
+    } catch (err) {
+      console.warn('Deferred QAOP canvas resize until runtime is fully initialized.', err);
+    }
+  }
+
+  function installQaopDisplayHook() {
+    const runtime = globalThis.__qaop;
+    if (!(runtime && typeof runtime.attachCanvas === 'function') || runtime.__workbenchDisplayHookInstalled) return;
+    const originalAttachCanvas = runtime.attachCanvas;
+    runtime.attachCanvas = function attachCanvasWorkbenchOverride(canvas, height) {
+      const { height: frameHeight } = getQaopFrameMetrics();
+      const effectiveHeight = rawDisplayMode
+        ? Math.min(Number(height) || 0, Math.max(1, frameHeight * 2 - 1))
+        : height;
+      return originalAttachCanvas.call(this, canvas, effectiveHeight);
+    };
+    runtime.__workbenchDisplayHookInstalled = true;
+  }
+
+  function normalizeZoomMode(value) {
+    const raw = String(value == null ? 'fit' : value).trim().toLowerCase();
+    if (!raw || raw === 'fit' || raw === 'auto' || raw === 'window') return 'fit';
+    const match = raw.match(/^(\d+)(?:x)?$/);
+    if (!match) return 'fit';
+    const scale = clamp(parseInt(match[1], 10) || 0, 1, 6);
+    return String(scale);
+  }
+
+  function applyEmulatorZoomMode(value, persist) {
+    emulatorZoomMode = normalizeZoomMode(value);
+    if (zoomSelectEl) zoomSelectEl.value = emulatorZoomMode;
+    if (emulatorScreenSlot) emulatorScreenSlot.dataset.zoomMode = emulatorZoomMode;
+    if (persist) {
+      try { localStorage.setItem(EMULATOR_ZOOM_KEY, emulatorZoomMode); } catch (err) {}
+    }
+    updateEmulatorViewport();
+  }
+
+  function disableQaopDisplayEffects() {
+    if (!(window.qaop && typeof window.qaop.command === 'function')) return;
+    window.qaop.command('crt', false);
+    window.qaop.command('bw', false);
+    queueUiSync();
+  }
+
+  function syncDisplayFilterLock() {
+    const locked = !!rawDisplayMode;
+    if (crtToggleEl) {
+      crtToggleEl.disabled = locked;
+      crtToggleEl.closest('label')?.classList.toggle('is-disabled', locked);
+    }
+    if (bwToggleEl) {
+      bwToggleEl.disabled = locked;
+      bwToggleEl.closest('label')?.classList.toggle('is-disabled', locked);
+    }
+  }
+
+  function applyRawDisplayMode(enabled, persist, syncRuntime = true) {
+    rawDisplayMode = !!enabled;
+    if (rawDisplayToggleEl) rawDisplayToggleEl.checked = rawDisplayMode;
+    if (emulatorScreenSlot) emulatorScreenSlot.dataset.rawDisplay = rawDisplayMode ? '1' : '0';
+    syncDisplayFilterLock();
+    if (rawDisplayMode) {
+      if (crtToggleEl) crtToggleEl.checked = false;
+      if (bwToggleEl) bwToggleEl.checked = false;
+      if (syncRuntime) disableQaopDisplayEffects();
+    }
+    refreshQaopCanvasScale();
+    if (persist) {
+      try { localStorage.setItem(RAW_DISPLAY_KEY, rawDisplayMode ? '1' : '0'); } catch (err) {}
+    }
+  }
+
+  function initEmulatorDisplayOptions() {
+    let storedZoom = 'fit';
+    let storedRaw = false;
+    try {
+      storedZoom = localStorage.getItem(EMULATOR_ZOOM_KEY) || 'fit';
+      storedRaw = localStorage.getItem(RAW_DISPLAY_KEY) === '1';
+    } catch (err) {}
+    applyEmulatorZoomMode(storedZoom, false);
+    applyRawDisplayMode(storedRaw, false, false);
+  }
+
+  function installEmulatorDisplayStyles() {
+    if (document.getElementById('workbench-emulator-display-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'workbench-emulator-display-styles';
+    style.textContent = `
+      .emu-check.is-disabled {
+        opacity: 0.6;
+      }
+      #emulatorScreenSlot[data-zoom-mode]:not([data-zoom-mode="fit"]) canvas,
+      #emulatorScreenSlot[data-zoom-mode]:not([data-zoom-mode="fit"]) #s,
+      #emulatorScreenSlot[data-raw-display="1"] canvas,
+      #emulatorScreenSlot[data-raw-display="1"] #s {
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+      }
+      #emulatorScreenSlot[data-raw-display="1"] #f,
+      #emulatorScreenSlot[data-raw-display="1"] #f *,
+      #emulatorScreenSlot[data-raw-display="1"] #f::before,
+      #emulatorScreenSlot[data-raw-display="1"] #f::after {
+        filter: none !important;
+        backdrop-filter: none !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   function updateEmulatorViewport() {
     if (!emulatorScreenSlot) return;
     const rect = emulatorScreenSlot.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
-    let width = Math.floor(rect.width);
-    let height = Math.floor(width / QAOP_SCREEN_RATIO);
-    if (height > rect.height) {
-      height = Math.floor(rect.height);
-      width = Math.floor(height * QAOP_SCREEN_RATIO);
+
+    const { width: frameWidth, height: frameHeight, ratio: frameRatio } = getQaopFrameMetrics();
+
+    let width;
+    let height;
+    if (emulatorZoomMode === 'fit') {
+      width = Math.floor(rect.width);
+      height = Math.floor(width / frameRatio);
+      if (height > rect.height) {
+        height = Math.floor(rect.height);
+        width = Math.floor(height * frameRatio);
+      }
+    } else {
+      const scale = clamp(parseInt(emulatorZoomMode, 10) || 1, 1, 6);
+      width = frameWidth * scale;
+      height = frameHeight * scale;
+      if (width > rect.width || height > rect.height) {
+        width = Math.floor(rect.width);
+        height = Math.floor(width / frameRatio);
+        if (height > rect.height) {
+          height = Math.floor(rect.height);
+          width = Math.floor(height * frameRatio);
+        }
+      }
     }
+
     const x = Math.floor(rect.width / 2);
     const y = Math.floor(rect.height / 2);
     emulatorScreenSlot.style.setProperty('--qaop-x', `${x}px`);
@@ -1694,11 +1861,14 @@ async function continueDebugger(options = {}) {
     if (ayToggleEl) ayToggleEl.checked = !!state.ay;
     if (kjToggleEl) kjToggleEl.checked = !!state.kj;
     if (if1ToggleEl) if1ToggleEl.checked = !!state.if1;
-    if (crtToggleEl) crtToggleEl.checked = !!settings.crt;
-    if (bwToggleEl) bwToggleEl.checked = !!settings.bw;
+    if (zoomSelectEl) zoomSelectEl.value = emulatorZoomMode;
+    if (rawDisplayToggleEl) rawDisplayToggleEl.checked = rawDisplayMode;
+    if (crtToggleEl) crtToggleEl.checked = rawDisplayMode ? false : !!settings.crt;
+    if (bwToggleEl) bwToggleEl.checked = rawDisplayMode ? false : !!settings.bw;
     if (muteToggleEl) muteToggleEl.checked = !!settings.mute;
     if (volumeEl) volumeEl.value = String(clamp(Math.round(((settings.volume == null ? 1 : settings.volume) * 100)), 0, 100));
     if (layoutButtonEl) layoutButtonEl.classList.toggle('secondary', document.documentElement.classList.contains('h'));
+    syncDisplayFilterLock();
     if (lastObservedPauseState !== pauseState) {
       lastObservedPauseState = pauseState;
       if (pauseState && debuggerRunning) {
@@ -1966,13 +2136,23 @@ async function continueDebugger(options = {}) {
       commandQaop('if1', if1ToggleEl.checked);
     });
     crtToggleEl.addEventListener('change', async () => {
+      if (rawDisplayMode) {
+        crtToggleEl.checked = false;
+        return;
+      }
       await waitForQaop();
       commandQaop('crt', crtToggleEl.checked);
     });
     bwToggleEl.addEventListener('change', async () => {
+      if (rawDisplayMode) {
+        bwToggleEl.checked = false;
+        return;
+      }
       await waitForQaop();
       commandQaop('bw', bwToggleEl.checked);
     });
+    zoomSelectEl?.addEventListener('change', () => applyEmulatorZoomMode(zoomSelectEl.value, true));
+    rawDisplayToggleEl?.addEventListener('change', () => applyRawDisplayMode(rawDisplayToggleEl.checked, true));
     muteToggleEl.addEventListener('change', async () => {
       await waitForQaop();
       commandQaop('mute', muteToggleEl.checked);
@@ -2086,8 +2266,10 @@ async function continueDebugger(options = {}) {
   initTheme();
   configureKeyboardImage();
   installDebuggerRegisterStyles();
+  installEmulatorDisplayStyles();
   ensureCodeMirror();
   loadSource();
+  initEmulatorDisplayOptions();
   wireUi();
   restoreSnapshotsPanelState();
   setupSplitter();
@@ -2096,6 +2278,9 @@ async function continueDebugger(options = {}) {
   updateDebuggerButtons();
 
   waitForQaop().then(() => {
+    installQaopDisplayHook();
+    if (rawDisplayMode) disableQaopDisplayEffects();
+    refreshQaopCanvasScale();
     syncEmulatorControls();
     ensureDebuggerBreakpointPlugin().catch(() => {});
     refreshSnapshotList().catch(() => {});

@@ -1,95 +1,1136 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-	<title>Z-Type</title>
-	<style type="text/css">
-		html,body {
-			background-color: #25272b;
-			background-position: 54px 105px;
-			background-attachment: fixed;
-			background-repeat: no-repeat;
-			color: #fff;
-			font-family: helvetica, arial, sans-serif;
-			margin: 0;
-			padding: 0;
-			font-size: 12pt;
-		}
-		
-		#canvas {
-			border: 1px solid #555;
-			xposition: absolute;
-			left: 0;
-			top: 0;
-			width: 360px;
-			height: 640px;
-			background-color: #000;
-		}
-		
-		#game {
-			position: absolute;
-			left: 0;
-			right: 0;
-			top: 0;
-			bottom: 0;
-			margin: auto;
-			width: 360px;
-			height: 640px;
-		}
-		
-		#nocanvas {
-			width: 360px;
-			margin: 150px auto;
-		}
-		
-		a {
-			color: #3388ff;
-		}
-		
-		img {
-			border: 0;
-		}
-		
-		.made-with-impact {
-			position: absolute;
-			text-align: center;
-			bottom: 32px;
-			right: 32px;
-		}
-		#sc-left {
-			width: 160px;
-			height: 600px;
-			position: absolute;
-			left: 32px;
-			top: 0;
-			bottom: 0;
-			margin: auto;
-		}
-		#sc-right {
-			width: 160px;
-			height: 600px;
-			position: absolute;
-			right: 32px;
-			top: 0;
-			bottom: 0;
-			margin: auto;
-		}
-	</style>
-	<meta name="description" content="Type To Shoot Game made with ImpactJS"/>
-	<script type="text/javascript" src="ztype.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>colorType</title>
+<style>
+  :root {
+    --bg: #05080a;
+    --panel: rgba(8, 16, 20, 0.86);
+    --line: rgba(255, 230, 90, 0.25);
+    --glow: #ffe84d;
+    --glow-soft: #b7ff5d;
+    --ship: #77ecff;
+    --danger: #ff5f5f;
+    --text: #f7f2be;
+    --dim: #9ea58f;
+    --lock: #9ffffa;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Consolas, "Lucida Console", Monaco, monospace;
+  }
+  body {
+    position: relative;
+  }
+  canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    background:
+      radial-gradient(circle at 50% 120%, rgba(22, 48, 80, 0.28), transparent 38%),
+      radial-gradient(circle at 50% 100%, rgba(0, 180, 255, 0.08), transparent 30%),
+      linear-gradient(180deg, #05080a 0%, #061019 100%);
+  }
+  .panel {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    z-index: 2;
+    pointer-events: none;
+  }
+  #hud {
+    top: 14px;
+    display: grid;
+    gap: 10px;
+  }
+  .hud-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .stat {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 14px;
+    min-width: 112px;
+    box-shadow: 0 0 18px rgba(255, 232, 77, 0.06);
+  }
+  .stat .label {
+    display: block;
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+  .stat .value {
+    display: block;
+    font-size: 22px;
+    color: var(--text);
+  }
+  .wide {
+    min-width: 180px;
+  }
+  .mode-alpha { color: var(--glow-soft); }
+  .mode-alt { color: var(--lock); }
 
+  #keyboardWrap {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    width: min(341px, 46vw);
+    pointer-events: none;
+    background: rgba(5, 8, 10, 0.72);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 11px;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 0 24px rgba(0, 0, 0, 0.25);
+  }
+  #keyboardTitle {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 7px;
+  }
+  .keyrow {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) 22px repeat(4, minmax(0, 1fr));
+    gap: 5px;
+    margin-bottom: 5px;
+    align-items: center;
+  }
+  .splitgap {
+    grid-column: 5;
+    width: 22px;
+    height: 1px;
+  }
+  .key {
+    height: 25px;
+    border: 1px solid rgba(255, 230, 90, 0.2);
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--glow);
+    text-shadow: 0 0 10px rgba(255, 232, 77, 0.2);
+  }
+  .key.blank {
+    border-color: rgba(255, 255, 255, 0.06);
+    color: rgba(255,255,255,0.08);
+  }
+  .key.alt {
+    color: var(--lock);
+    text-shadow: 0 0 10px rgba(130, 255, 255, 0.16);
+  }
+  .spacekey {
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 29px;
+    border-radius: 7px;
+    padding: 6px 9px;
+    border: 1px solid rgba(255, 230, 90, 0.2);
+    background: rgba(255, 255, 255, 0.03);
+    font-size: 12px;
+    color: var(--text);
+  }
+  .spacekey b {
+    color: var(--glow-soft);
+  }
+  .spacekey.alt b {
+    color: var(--lock);
+  }
+  .mini {
+    font-size: 9px;
+    color: var(--dim);
+    letter-spacing: 0.04em;
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: grid;
+    place-items: center;
+    background: radial-gradient(circle at 50% 45%, rgba(20, 28, 34, 0.92), rgba(4, 7, 10, 0.96));
+    padding: 22px;
+  }
+  .overlay.hidden { display: none; }
+  .card {
+    width: min(860px, 100%);
+    background: rgba(6, 10, 12, 0.9);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 28px;
+    box-shadow: 0 0 36px rgba(0, 0, 0, 0.4), inset 0 0 28px rgba(255, 232, 77, 0.03);
+  }
+  h1, h2 {
+    margin: 0 0 12px 0;
+    font-weight: 700;
+    color: var(--text);
+  }
+  h1 {
+    font-size: clamp(28px, 5vw, 52px);
+    letter-spacing: 0.04em;
+  }
+  h2 {
+    font-size: clamp(22px, 3vw, 32px);
+  }
+  .subtitle {
+    color: var(--dim);
+    line-height: 1.6;
+    font-size: 15px;
+    margin-bottom: 20px;
+    max-width: 70ch;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin: 18px 0 22px;
+  }
+  button {
+    pointer-events: auto;
+    cursor: pointer;
+    border: 1px solid rgba(255, 230, 90, 0.3);
+    border-radius: 12px;
+    padding: 14px 16px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+  }
+  button:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255, 230, 90, 0.55);
+    box-shadow: 0 0 18px rgba(255, 232, 77, 0.08);
+  }
+  button strong {
+    display: block;
+    font-size: 18px;
+    margin-bottom: 5px;
+  }
+  button span {
+    color: var(--dim);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .notes {
+    display: grid;
+    gap: 10px;
+    color: var(--dim);
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  .notes code {
+    color: var(--text);
+    background: rgba(255,255,255,0.04);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+  .scoreline {
+    font-size: 18px;
+    margin: 8px 0 18px;
+    color: var(--text);
+  }
+
+  @media (max-width: 820px) {
+    .panel {
+      left: 10px;
+      right: 10px;
+    }
+    #keyboardWrap {
+      right: 10px;
+      bottom: 10px;
+      width: min(288px, 54vw);
+      padding: 8px;
+    }
+    .keyrow {
+      grid-template-columns: repeat(4, minmax(0, 1fr)) 14px repeat(4, minmax(0, 1fr));
+      gap: 3px;
+    }
+    .splitgap {
+      width: 14px;
+    }
+    .key {
+      font-size: 13px;
+      height: 23px;
+    }
+    .spacekey {
+      min-height: 26px;
+      font-size: 11px;
+      padding: 5px 8px;
+    }
+    .mini {
+      font-size: 8px;
+    }
+    .card {
+      padding: 20px;
+    }
+  }
+</style>
 </head>
 <body>
-	<div id="sc-left">
-	</div>
-	
-	</div>
-	
-	<div id="game">
-		<canvas id="canvas">
-			<div id="nocanvas">
-				To play this game you need a good Browser
-			</div>
-		</canvas>
-	</div>
+<canvas id="game"></canvas>
+
+<div id="hud" class="panel">
+  <div class="hud-row">
+    <div class="stat"><span class="label">Score</span><span id="score" class="value">0</span></div>
+    <div class="stat"><span class="label">Lives</span><span id="lives" class="value">0</span></div>
+    <div class="stat"><span class="label">Wave</span><span id="wave" class="value">1</span></div>
+    <div class="stat"><span class="label">Mode</span><span id="mode" class="value mode-alpha">ALPHA</span></div>
+    <div class="stat wide"><span class="label">Input</span><span id="buffer" class="value">—</span></div>
+    <div class="stat wide"><span class="label">Target</span><span id="target" class="value">—</span></div>
+  </div>
+  <div id="keyboardWrap">
+    <div id="keyboardTitle">colorForth key layer</div>
+    <div id="keyboard"></div>
+  </div>
+</div>
+
+<div id="menu" class="overlay">
+  <div class="card">
+    <h1>colorType</h1>
+    <div class="subtitle">
+      Defend the ship at the bottom center by typing the enemy callsigns. The physical keys follow the
+      colorForth 27-key cluster. Early waves use only the letter layer. Later waves start mixing in the
+      symbol and number layer. <b>Space</b> toggles the layer at any time.
+    </div>
+    <div class="grid">
+      <button data-difficulty="easy">
+        <strong>Easy</strong>
+        <span>Very slow opening, very few ships, wide recovery room after mistakes.</span>
+      </button>
+      <button data-difficulty="normal">
+        <strong>Normal</strong>
+        <span>Still relaxed at the start, then ramps into a steady typing flow.</span>
+      </button>
+      <button data-difficulty="hard">
+        <strong>Hard</strong>
+        <span>Noticeably faster and denser, with earlier mixed-symbol callsigns.</span>
+      </button>
+      <button data-difficulty="brutal">
+        <strong>Brutal</strong>
+        <span>Aggressive pressure, quicker switches, and small recovery windows.</span>
+      </button>
+    </div>
+    <div class="notes">
+      <div><code>Space</code> toggles ALPHA/SYMBOL mode.</div>
+      <div><code>Backspace</code> or <code>Esc</code> clears the current lock so you can retarget.</div>
+      <div>The top-right key on the alternate top row is intentionally blank, matching the reference layout.</div>
+    </div>
+  </div>
+</div>
+
+<div id="gameOver" class="overlay hidden">
+  <div class="card">
+    <h2>Ship lost</h2>
+    <div id="finalScore" class="scoreline">Score: 0</div>
+    <div class="notes" style="margin-bottom: 20px;">
+      <div>Enemy names start as plain words built from the letter layer, then evolve into mixed callsigns with symbols and digits.</div>
+      <div>Switching layers cleanly matters more than raw speed once later waves arrive.</div>
+    </div>
+    <button id="restartButton">
+      <strong>Play again</strong>
+      <span>Return to difficulty selection.</span>
+    </button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  const scoreEl = document.getElementById("score");
+  const livesEl = document.getElementById("lives");
+  const waveEl = document.getElementById("wave");
+  const modeEl = document.getElementById("mode");
+  const bufferEl = document.getElementById("buffer");
+  const targetEl = document.getElementById("target");
+  const keyboardEl = document.getElementById("keyboard");
+  const menuEl = document.getElementById("menu");
+  const gameOverEl = document.getElementById("gameOver");
+  const finalScoreEl = document.getElementById("finalScore");
+  const restartButton = document.getElementById("restartButton");
+
+  const sound = {
+    ctx: null,
+    master: null
+  };
+
+  const baseWords = ["that", "this", "with", "from", "your", "have", "more", "will", "home", "about", "page", "search", "free", "other", "time", "they", "site", "what", "which", "their", "news", "there", "only", "when", "contact", "here", "business", "also", "help", "view", "online", "first", "been", "would", "were", "services", "some", "these", "click", "like", "service", "than", "find", "price", "date", "back", "people", "list", "name", "over", "state", "year", "into", "email", "health", "world", "next", "used", "work", "last", "most", "products", "music", "data", "make", "them", "should", "product", "system", "post", "city", "policy", "number", "such", "please", "support", "message", "after", "best", "software", "then", "good", "video", "well", "where", "info", "rights", "public", "books", "high", "school", "through", "each", "links", "review", "years", "order", "very", "privacy", "book", "items", "company", "read", "group", "need", "many", "user", "said", "does", "under", "general", "research", "mail", "full", "reviews", "program", "life", "know", "games", "days", "part", "could", "great", "united", "hotel", "real", "item", "center", "must", "store", "travel", "comments", "made", "report", "member", "details", "line", "terms", "before", "hotels", "send", "right", "type", "because", "local", "those", "using", "results", "office", "national", "design", "take", "posted", "internet", "address", "within", "states", "area", "want", "phone", "shipping", "reserved", "between", "forum", "family", "long", "based", "code", "show", "even", "black", "check", "special", "prices", "website", "index", "being", "women", "much", "sign", "file", "link", "open", "today", "south", "case", "same", "pages", "version", "section", "found", "sports", "house", "related", "security", "both", "county", "american", "photo", "game", "members", "power", "while", "care", "network", "down", "computer", "systems", "three", "total", "place", "download", "without", "access", "think", "north", "current", "posts", "media", "control", "water", "history", "pictures", "personal", "since", "guide", "shop", "board", "location", "change", "white", "text", "small", "rating", "rate", "children", "during", "return", "students", "shopping", "account", "times", "sites", "level", "digital", "profile", "previous", "form", "events", "love", "main", "call", "hours", "image", "title", "another", "shall", "property", "class", "still", "money", "quality", "every", "listing", "content", "country", "private", "little", "visit", "save", "tools", "reply", "customer", "december", "compare", "movies", "include", "college", "value", "article", "york", "card", "provide", "food", "source", "author", "press", "learn", "sale", "around", "print", "course", "canada", "process", "teen", "room", "stock", "training", "credit", "point", "science", "advanced", "west", "sales", "look", "english", "left", "team", "estate", "select", "windows", "photos", "thread", "week", "category", "note", "live", "large", "gallery", "table", "register", "however", "october", "november", "market", "library", "really", "action", "start", "series", "model", "features", "industry", "plan", "human", "provided", "required", "second", "cost", "movie", "forums", "march", "better", "going", "medical", "test", "friend", "come", "server", "study", "cart", "staff", "articles", "feedback", "again", "play", "looking", "issues", "april", "never", "users", "complete", "street", "topic", "comment", "things", "working", "against", "standard", "person", "below", "mobile", "less", "blog", "party", "payment", "student", "programs", "offers", "legal", "above", "recent", "park", "stores", "side", "problem", "give", "memory", "social", "august", "quote", "language", "story", "sell", "options", "rates", "create", "body", "young", "america", "field", "east", "paper", "single", "club", "example", "girls", "password", "latest", "road", "gift", "question", "changes", "night", "hard", "texas", "four", "status", "browse", "issue", "range", "building", "seller", "court", "february", "always", "result", "audio", "light", "write", "offer", "blue", "groups", "easy", "given", "files", "event", "release", "analysis", "request", "making", "picture", "needs", "possible", "might", "month", "star", "areas", "future", "space", "hand", "cards", "problems", "london", "meeting", "become", "interest", "child", "keep", "enter", "share", "similar", "garden", "schools", "million", "added", "listed", "baby", "learning", "energy", "delivery", "popular", "term", "film", "stories", "reports", "welcome", "central", "images", "notice", "original", "head", "radio", "until", "cell", "color", "self", "council", "away", "includes", "track", "archive", "once", "others", "format", "least", "society", "months", "safety", "friends", "sure", "trade", "edition", "cars", "messages", "tell", "further", "updated", "able", "having", "provides", "david", "already", "green", "studies", "close", "common", "drive", "specific", "several", "gold", "living", "called", "short", "arts", "display", "limited", "powered", "means", "director", "daily", "beach", "past", "natural", "whether", "five", "upon", "period", "planning", "database", "says", "official", "weather", "land", "average", "done", "window", "france", "region", "island", "record", "direct", "records", "district", "calendar", "costs", "style", "front", "update", "parts", "ever", "early", "miles", "sound", "resource", "present", "either", "document", "word", "works", "material", "bill", "written", "talk", "federal", "hosting", "rules", "final", "tickets", "thing", "centre", "cheap", "kids", "finance", "true", "minutes", "else", "mark", "third", "rock", "gifts", "europe", "reading", "topics", "tips", "plus", "auto", "cover", "usually", "edit", "together", "videos", "percent", "fast", "function", "fact", "unit", "getting", "global", "tech", "meet", "economic", "player", "lyrics", "often", "submit", "germany", "amount", "watch", "included", "feel", "though", "bank", "risk", "thanks", "deals", "various", "words", "linux", "weight", "town", "heart", "received", "choose", "archives", "points", "error", "camera", "girl", "toys", "clear", "golf", "receive", "domain", "methods", "chapter", "makes", "policies", "loan", "wide", "beauty", "manager", "india", "position", "taken", "sort", "listings", "models", "michael", "known", "half", "cases", "step", "florida", "simple", "quick", "none", "wireless", "license", "paul", "friday", "lake", "whole", "annual", "later", "basic", "sony", "shows", "church", "method", "purchase", "active", "response", "practice", "hardware", "figure", "fire", "holiday", "chat", "enough", "designed", "along", "among", "death", "writing", "speed", "html", "loss", "face", "brand", "discount", "higher", "effects", "created", "remember", "yellow", "increase", "kingdom", "base", "near", "thought", "stuff", "french", "storage", "doing", "loans", "shoes", "entry", "stay", "nature", "orders", "africa", "summary", "turn", "mean", "growth", "notes", "agency", "king", "monday", "european", "activity", "copy", "although", "pics", "western", "income", "force", "cash", "overall", "river", "package", "contents", "seen", "players", "engine", "port", "album", "regional", "stop", "supplies", "started", "views", "plans", "double", "build", "screen", "exchange", "types", "soon", "lines", "continue", "across", "benefits", "needed", "season", "apply", "someone", "held", "anything", "printer", "believe", "effect", "asked", "mind", "sunday", "lost", "tour", "menu", "volume", "cross", "anyone", "mortgage", "hope", "silver", "wish", "inside", "solution", "mature", "role", "rather", "weeks", "addition", "came", "supply", "nothing", "certain", "running", "lower", "union", "clothing", "fine", "names", "robert", "homepage", "hour", "skills", "bush", "islands", "advice", "career", "military", "rental", "decision", "leave", "british", "teens", "huge", "woman", "kind", "sellers", "middle", "move", "cable", "taking", "values", "division", "coming", "tuesday", "lesbian", "machine", "logo", "length", "actually", "nice", "score", "client", "returns", "capital", "follow", "sample", "sent", "shown", "saturday", "england", "culture", "band", "flash", "lead", "george", "choice", "went", "starting", "thursday", "courses", "consumer", "airport", "foreign", "artist", "outside", "levels", "channel", "letter", "mode", "phones", "ideas", "fund", "summer", "allow", "degree", "contract", "button", "releases", "homes", "super", "male", "matter", "custom", "virginia", "almost", "took", "located", "multiple", "asian", "editor", "cause", "song", "cnet", "focus", "late", "fall", "featured", "idea", "rooms", "female", "thomas", "primary", "cancer", "numbers", "reason", "tool", "browser", "spring", "answer", "voice", "friendly", "schedule", "purpose", "feature", "comes", "police", "everyone", "approach", "cameras", "brown", "physical", "hill", "maps", "medicine", "deal", "hold", "ratings", "chicago", "forms", "glass", "happy", "smith", "wanted", "thank", "safe", "unique", "survey", "prior", "sport", "ready", "feed", "animal", "sources", "mexico", "regular", "secure", "simply", "evidence", "station", "round", "favorite", "option", "master", "valley", "recently", "probably", "rentals", "built", "blood", "improve", "hall", "larger", "anti", "networks", "earth", "parents", "nokia", "impact", "transfer", "kitchen", "strong", "carolina", "wedding", "hospital", "ground", "overview", "ship", "owners", "disease", "paid", "italy", "perfect", "hair", "classic", "basis", "command", "cities", "william", "express", "anal", "award", "distance", "tree", "peter", "ensure", "thus", "wall", "involved", "extra", "pussy", "partners", "budget", "rated", "guides", "success", "maximum", "existing", "quite", "selected", "patients", "warning", "horse", "vote", "forward", "flowers", "stars", "lists", "owner", "retail", "animals", "useful", "directly", "ways", "rule", "housing", "takes", "bring", "catalog", "searches", "trying", "mother", "told", "traffic", "input", "strategy", "feet", "agent", "valid", "modern", "senior", "ireland", "sexy", "teaching", "door", "grand", "testing", "trial", "charge", "units", "instead", "canadian", "cool", "normal", "wrote", "ships", "entire", "leading", "metal", "positive", "fitness", "chinese", "opinion", "asia", "football", "abstract", "uses", "output", "funds", "greater", "likely", "develop", "artists", "guest", "seems", "pass", "trust", "contains", "session", "multi", "republic", "fees", "vacation", "century", "academic", "skin", "graphics", "indian", "prev", "mary", "expected", "ring", "grade", "dating", "pacific", "mountain", "filter", "mailing", "vehicle", "longer", "consider", "northern", "behind", "panel", "floor", "german", "buying", "match", "proposed", "default", "require", "iraq", "boys", "outdoor", "deep", "morning", "allows", "rest", "protein", "plant", "reported", "pool", "mini", "politics", "partner", "authors", "boards", "faculty", "parties", "fish", "mission", "string", "sense", "modified", "pack", "released", "stage", "internal", "goods", "born", "unless", "richard", "detailed", "race", "approved", "target", "except", "ability", "maybe", "moving", "brands", "places", "pretty", "spain", "southern", "yourself", "winter", "rape", "battery", "youth", "pressure", "boston", "incest", "debt", "keywords", "medium", "core", "break", "purposes", "sets", "dance", "wood", "itself", "defined", "papers", "playing", "awards", "studio", "reader", "virtual", "device", "answers", "rent", "remote", "dark", "external", "offered", "theory", "remove", "surface", "minimum", "visual", "host", "variety", "teachers", "isbn", "martin", "manual", "block", "agents", "repair", "fair", "civil", "steel", "songs", "fixed"];
+
+  const alphaMap = {
+    KeyQ: "p", KeyW: "y", KeyE: "f", KeyR: "i",
+    KeyU: "g", KeyI: "c", KeyO: "r", KeyP: "l",
+    KeyA: "a", KeyS: "o", KeyD: "e", KeyF: "u",
+    KeyJ: "h", KeyK: "t", KeyL: "n", Semicolon: "s",
+    KeyZ: "q", KeyX: "k", KeyC: "x", KeyV: "d",
+    KeyM: "b", Comma: "m", Period: "w", Slash: "v"
+  };
+
+  const altMap = {
+    KeyQ: ":", KeyW: ";", KeyE: "!", KeyR: "@",
+    KeyU: "1", KeyI: "2", KeyO: "3", KeyP: "",
+    KeyA: "z", KeyS: "j", KeyD: ".", KeyF: ",",
+    KeyJ: "4", KeyK: "5", KeyL: "6", Semicolon: "0",
+    KeyZ: "*", KeyX: "/", KeyC: "+", KeyV: "-",
+    KeyM: "7", Comma: "8", Period: "9", Slash: "?"
+  };
+
+  const keyRows = [
+    ["KeyQ", "KeyW", "KeyE", "KeyR", "KeyU", "KeyI", "KeyO", "KeyP"],
+    ["KeyA", "KeyS", "KeyD", "KeyF", "KeyJ", "KeyK", "KeyL", "Semicolon"],
+    ["KeyZ", "KeyX", "KeyC", "KeyV", "KeyM", "Comma", "Period", "Slash"]
+  ];
+
+  const digitChars = ["1", "2", "3", "4", "5", "6", "0", "7", "8", "9"];
+  const symbolChars = [":", ";", "!", "@", ".", ",", "*", "/", "+", "-", "?"];
+
+  const profiles = {
+    easy:    { label: "Easy",    lives: 8, spawn: 3.2, speed: 24, maxEnemies: 2, stageBias: 0.72 },
+    normal:  { label: "Normal",  lives: 6, spawn: 2.45, speed: 31, maxEnemies: 3, stageBias: 0.82 },
+    hard:    { label: "Hard",    lives: 5, spawn: 1.9, speed: 40, maxEnemies: 4, stageBias: 0.94 },
+    brutal:  { label: "Brutal",  lives: 4, spawn: 1.45, speed: 52, maxEnemies: 5, stageBias: 1.05 }
+  };
+
+  const wordsByLength = new Map();
+  for (const word of baseWords) {
+    const len = word.length;
+    if (!wordsByLength.has(len)) wordsByLength.set(len, []);
+    wordsByLength.get(len).push(word);
+  }
+
+  const state = {
+    width: 0,
+    height: 0,
+    dpr: Math.max(1, Math.min(2, window.devicePixelRatio || 1)),
+    running: false,
+    profile: profiles.normal,
+    difficultyKey: "normal",
+    stars: [],
+    enemies: [],
+    missiles: [],
+    particles: [],
+    nextEnemyId: 1,
+    score: 0,
+    kills: 0,
+    lives: 0,
+    elapsed: 0,
+    spawnTimer: 0,
+    wave: 1,
+    mode: "alpha",
+    buffer: "",
+    lockedEnemyId: null,
+    shake: 0,
+    messageFlash: 0,
+    lastTime: 0
+  };
+
+  function ensureAudio() {
+    if (sound.ctx) {
+      if (sound.ctx.state === "suspended") sound.ctx.resume();
+      return;
+    }
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    sound.ctx = new AudioCtx();
+    sound.master = sound.ctx.createGain();
+    sound.master.gain.value = 0.055;
+    sound.master.connect(sound.ctx.destination);
+  }
+
+  function beep({ freq = 440, freqEnd = freq, type = "square", duration = 0.05, volume = 0.08, attack = 0.003, release = 0.045, when = 0 } = {}) {
+    ensureAudio();
+    if (!sound.ctx || !sound.master) return;
+
+    const now = sound.ctx.currentTime + when;
+    const osc = sound.ctx.createOscillator();
+    const gain = sound.ctx.createGain();
+
+    osc.type = type;
+    osc.frequency.setValueAtTime(Math.max(40, freq), now);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(40, freqEnd), now + duration);
+
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, volume), now + attack);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration + release);
+
+    osc.connect(gain);
+    gain.connect(sound.master);
+    osc.start(now);
+    osc.stop(now + duration + release + 0.02);
+  }
+
+  function soundShoot() {
+    beep({ freq: 980, freqEnd: 260, type: "square", duration: 0.04, volume: 0.05, release: 0.02 });
+  }
+
+  function soundError() {
+    beep({ freq: 180, freqEnd: 120, type: "sawtooth", duration: 0.06, volume: 0.045, release: 0.03 });
+  }
+
+  function soundMode() {
+    const up = state.mode === "alpha";
+    beep({ freq: up ? 460 : 280, freqEnd: up ? 700 : 180, type: "triangle", duration: 0.07, volume: 0.055, release: 0.03 });
+  }
+
+  function soundKill() {
+    beep({ freq: 260, freqEnd: 780, type: "square", duration: 0.08, volume: 0.07, release: 0.05 });
+    beep({ freq: 180, freqEnd: 420, type: "triangle", duration: 0.1, volume: 0.04, when: 0.015, release: 0.05 });
+  }
+
+  function soundDamage() {
+    beep({ freq: 240, freqEnd: 70, type: "sawtooth", duration: 0.15, volume: 0.08, release: 0.07 });
+    beep({ freq: 110, freqEnd: 50, type: "square", duration: 0.12, volume: 0.04, when: 0.02, release: 0.05 });
+  }
+
+  function resetArenaAfterLifeLoss() {
+    state.enemies = [];
+    state.missiles = [];
+    state.lockedEnemyId = null;
+    state.buffer = "";
+    state.spawnTimer = 2.8;
+  }
+
+  function resize() {
+    state.width = window.innerWidth;
+    state.height = window.innerHeight;
+    canvas.width = Math.floor(state.width * state.dpr);
+    canvas.height = Math.floor(state.height * state.dpr);
+    ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+    if (!state.stars.length) {
+      for (let i = 0; i < 120; i += 1) {
+        state.stars.push(makeStar(true));
+      }
+    }
+  }
+
+  function makeStar(randomY = false) {
+    return {
+      x: Math.random() * state.width,
+      y: randomY ? Math.random() * state.height : -10 - Math.random() * state.height * 0.2,
+      size: Math.random() * 1.8 + 0.4,
+      speed: 12 + Math.random() * 42,
+      alpha: 0.2 + Math.random() * 0.7
+    };
+  }
+
+  function rand(min, max) {
+    return min + Math.random() * (max - min);
+  }
+
+  function pick(list) {
+    return list[(Math.random() * list.length) | 0];
+  }
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function playerPos() {
+    return { x: state.width * 0.5, y: state.height - 56 };
+  }
+
+  function currentStage() {
+    const timeFactor = state.elapsed * 0.18;
+    const scoreFactor = state.score * 0.012;
+    const raw = (timeFactor + scoreFactor) * state.profile.stageBias;
+    return clamp(Math.floor(raw), 0, 5);
+  }
+
+  function currentWave() {
+    return 1 + currentStage();
+  }
+
+  function sampleBaseWord(stage) {
+    const baseMin = clamp(4 + Math.floor(stage / 2), 4, 7);
+    const baseMax = clamp(6 + Math.floor(stage / 2), baseMin, 8);
+    const pools = [];
+    for (let len = baseMin; len <= baseMax; len += 1) {
+      const bucket = wordsByLength.get(len);
+      if (bucket && bucket.length) pools.push(bucket);
+    }
+    return pick(pools.length ? pick(pools) : baseWords);
+  }
+
+  function buildEnemyWord(stage) {
+    const base = sampleBaseWord(stage);
+    if (stage <= 1) return base;
+
+    const patterns = [
+      () => base,
+      () => base + pick(digitChars),
+      () => pick(digitChars) + base,
+      () => base + pick(symbolChars),
+      () => pick(symbolChars) + base,
+      () => base + pick(digitChars) + pick(symbolChars),
+      () => pick(symbolChars) + base + pick(digitChars),
+      () => base + pick(symbolChars) + pick(digitChars),
+      () => pick(digitChars) + base + pick(symbolChars)
+    ];
+
+    if (stage === 2) return pick(patterns.slice(0, 4))();
+    if (stage === 3) return pick(patterns.slice(1, 7))();
+    return pick(patterns.slice(2))();
+  }
+
+  function uniqueEnemyWord(stage) {
+    const active = new Set(state.enemies.map(enemy => enemy.word));
+    for (let attempt = 0; attempt < 24; attempt += 1) {
+      const word = buildEnemyWord(stage);
+      if (!active.has(word)) return word;
+    }
+    return buildEnemyWord(stage);
+  }
+
+  function spawnEnemy() {
+    const stage = currentStage();
+    const word = uniqueEnemyWord(stage);
+    const x = rand(80, Math.max(81, state.width - 80));
+    const y = -40;
+    const speed = state.profile.speed * (1 + stage * 0.12) * rand(0.9, 1.15);
+    state.enemies.push({
+      id: state.nextEnemyId++,
+      word,
+      x,
+      y,
+      speed,
+      radius: 18 + Math.min(18, word.length * 1.4),
+      hits: 0,
+      fired: 0,
+      flash: 0,
+      entered: false
+    });
+  }
+
+  function fireMissile(enemy) {
+    const player = playerPos();
+    enemy.fired += 1;
+    state.missiles.push({
+      x: player.x,
+      y: player.y - 18,
+      targetId: enemy.id,
+      speed: 540,
+      trail: []
+    });
+    soundShoot();
+  }
+
+  function explode(x, y, count, color = "#ffe84d") {
+    for (let i = 0; i < count; i += 1) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = rand(28, 180);
+      state.particles.push({
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life: rand(0.28, 0.7),
+        maxLife: rand(0.28, 0.7),
+        size: rand(1.2, 3.6),
+        color
+      });
+    }
+  }
+
+  function destroyEnemy(enemy) {
+    state.score += Math.round(enemy.word.length * 12 + currentStage() * 6);
+    state.kills += 1;
+    state.wave = currentWave();
+    explode(enemy.x, enemy.y, 18, "#9ffffa");
+    soundKill();
+    state.enemies = state.enemies.filter(item => item.id !== enemy.id);
+    if (state.lockedEnemyId === enemy.id) {
+      state.lockedEnemyId = null;
+      state.buffer = "";
+    }
+  }
+
+  function hitPlayer(enemy) {
+    state.enemies = state.enemies.filter(item => item.id !== enemy.id);
+    state.lives -= 1;
+    state.shake = Math.max(state.shake, 10);
+    explode(enemy.x, enemy.y, 20, "#ff7b7b");
+    const player = playerPos();
+    explode(player.x, player.y, 16, "#77ecff");
+    soundDamage();
+    if (state.lockedEnemyId === enemy.id) {
+      state.lockedEnemyId = null;
+      state.buffer = "";
+    }
+    if (state.lives <= 0) {
+      endGame();
+      return;
+    }
+    resetArenaAfterLifeLoss();
+  }
+
+  function getEnemyById(id) {
+    return state.enemies.find(enemy => enemy.id === id) || null;
+  }
+
+  function priority(enemy) {
+    const player = playerPos();
+    return enemy.y + (state.height - Math.hypot(player.x - enemy.x, player.y - enemy.y)) * 0.15;
+  }
+
+  function clearLock() {
+    state.buffer = "";
+    state.lockedEnemyId = null;
+  }
+
+  function handleMistake() {
+    state.shake = Math.max(state.shake, 4);
+    state.messageFlash = 0.15;
+    soundError();
+  }
+
+  function handleChar(char) {
+    if (!state.running) return;
+
+    let enemy = getEnemyById(state.lockedEnemyId);
+    if (!enemy) {
+      const candidates = state.enemies
+        .filter(item => item.word.startsWith(char))
+        .sort((a, b) => priority(b) - priority(a));
+      if (!candidates.length) {
+        handleMistake();
+        return;
+      }
+      enemy = candidates[0];
+      state.lockedEnemyId = enemy.id;
+      state.buffer = "";
+    }
+
+    const expected = enemy.word[state.buffer.length];
+    if (expected !== char) {
+      handleMistake();
+      return;
+    }
+
+    state.buffer += char;
+    enemy.flash = 0.14;
+    fireMissile(enemy);
+
+    if (state.buffer.length >= enemy.word.length) {
+      state.lockedEnemyId = null;
+      state.buffer = "";
+    }
+  }
+
+  function toggleMode() {
+    state.mode = state.mode === "alpha" ? "alt" : "alpha";
+    renderKeyboard();
+    soundMode();
+  }
+
+  function keyToChar(code) {
+    const map = state.mode === "alpha" ? alphaMap : altMap;
+    const value = map[code];
+    return typeof value === "string" ? value : null;
+  }
+
+  function updateHud() {
+    scoreEl.textContent = String(state.score);
+    livesEl.textContent = String(Math.max(0, state.lives));
+    waveEl.textContent = String(currentWave());
+    modeEl.textContent = state.mode === "alpha" ? "ALPHA" : "SYMBOL";
+    modeEl.className = "value " + (state.mode === "alpha" ? "mode-alpha" : "mode-alt");
+    bufferEl.textContent = state.buffer || "—";
+    const target = getEnemyById(state.lockedEnemyId);
+    targetEl.textContent = target ? target.word : "—";
+  }
+
+  function renderKeyboard() {
+    const map = state.mode === "alpha" ? alphaMap : altMap;
+    keyboardEl.innerHTML = "";
+
+    for (const row of keyRows) {
+      const rowEl = document.createElement("div");
+      rowEl.className = "keyrow";
+      row.forEach((code, index) => {
+        if (index === 4) {
+          const split = document.createElement("div");
+          split.className = "splitgap";
+          rowEl.appendChild(split);
+        }
+        const key = document.createElement("div");
+        const value = map[code];
+        key.className = "key " + (state.mode === "alt" ? "alt" : "") + (!value ? " blank" : "");
+        key.textContent = value || "";
+        rowEl.appendChild(key);
+      });
+      keyboardEl.appendChild(rowEl);
+    }
+
+    const space = document.createElement("div");
+    space.className = "spacekey " + (state.mode === "alt" ? "alt" : "");
+    const left = document.createElement("span");
+    left.innerHTML = "<b>SPACE</b> layer";
+    const right = document.createElement("span");
+    right.className = "mini";
+    right.textContent = state.mode === "alpha" ? "letters" : "symbols / digits";
+    space.append(left, right);
+    keyboardEl.appendChild(space);
+  }
+
+  function startGame(key) {
+    ensureAudio();
+    state.profile = profiles[key];
+    state.difficultyKey = key;
+    state.running = true;
+    state.enemies = [];
+    state.missiles = [];
+    state.particles = [];
+    state.score = 0;
+    state.kills = 0;
+    state.lives = state.profile.lives;
+    state.elapsed = 0;
+    state.spawnTimer = 2.4;
+    state.wave = 1;
+    state.mode = "alpha";
+    state.buffer = "";
+    state.lockedEnemyId = null;
+    state.nextEnemyId = 1;
+    state.shake = 0;
+    state.messageFlash = 0;
+    menuEl.classList.add("hidden");
+    gameOverEl.classList.add("hidden");
+    renderKeyboard();
+    updateHud();
+  }
+
+  function endGame() {
+    state.running = false;
+    finalScoreEl.textContent = "Score: " + state.score + "  |  Difficulty: " + state.profile.label;
+    gameOverEl.classList.remove("hidden");
+  }
+
+  function update(dt) {
+    if (!state.running) return;
+
+    state.elapsed += dt;
+    state.wave = currentWave();
+    state.shake = Math.max(0, state.shake - dt * 18);
+    state.messageFlash = Math.max(0, state.messageFlash - dt * 6);
+
+    for (const star of state.stars) {
+      star.y += star.speed * dt;
+      if (star.y > state.height + 10) {
+        star.x = Math.random() * state.width;
+        star.y = -8;
+        star.size = Math.random() * 1.8 + 0.4;
+        star.speed = 12 + Math.random() * 42;
+        star.alpha = 0.2 + Math.random() * 0.7;
+      }
+    }
+
+    state.spawnTimer -= dt;
+    const stage = currentStage();
+    const maxEnemies = state.profile.maxEnemies + Math.floor(stage / 2);
+    const cooldownScale = 1 + stage * 0.12 + state.elapsed * 0.008;
+
+    while (state.spawnTimer <= 0 && state.enemies.length < maxEnemies) {
+      spawnEnemy();
+      state.spawnTimer += state.profile.spawn / cooldownScale * rand(0.88, 1.18);
+    }
+
+    const player = playerPos();
+
+    for (const enemy of [...state.enemies]) {
+      const dx = player.x - enemy.x;
+      const dy = player.y - enemy.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      enemy.x += (dx / dist) * enemy.speed * dt;
+      enemy.y += (dy / dist) * enemy.speed * dt;
+      enemy.flash = Math.max(0, enemy.flash - dt);
+
+      if (dist < 30) {
+        hitPlayer(enemy);
+      }
+    }
+
+    for (const missile of [...state.missiles]) {
+      const enemy = getEnemyById(missile.targetId);
+      if (!enemy) {
+        state.missiles = state.missiles.filter(item => item !== missile);
+        continue;
+      }
+
+      const dx = enemy.x - missile.x;
+      const dy = enemy.y - missile.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      missile.trail.push({ x: missile.x, y: missile.y, life: 0.16 });
+      if (missile.trail.length > 9) missile.trail.shift();
+
+      if (dist <= enemy.radius * 0.55) {
+        enemy.hits += 1;
+        enemy.flash = 0.18;
+        state.missiles = state.missiles.filter(item => item !== missile);
+        explode(enemy.x, enemy.y, 8, "#ffe84d");
+        if (enemy.hits >= enemy.word.length) {
+          destroyEnemy(enemy);
+        }
+        continue;
+      }
+
+      missile.x += (dx / dist) * missile.speed * dt;
+      missile.y += (dy / dist) * missile.speed * dt;
+      for (const step of missile.trail) {
+        step.life -= dt;
+      }
+      missile.trail = missile.trail.filter(step => step.life > 0);
+    }
+
+    for (const particle of [...state.particles]) {
+      particle.life -= dt;
+      particle.x += particle.vx * dt;
+      particle.y += particle.vy * dt;
+      particle.vx *= 0.985;
+      particle.vy *= 0.985;
+      if (particle.life <= 0) {
+        state.particles = state.particles.filter(item => item !== particle);
+      }
+    }
+
+    updateHud();
+  }
+
+  function drawWord(enemy, locked) {
+    const word = enemy.word;
+    const charWidth = 12;
+    const totalWidth = word.length * charWidth;
+    const startX = enemy.x - totalWidth / 2;
+    const y = enemy.y - enemy.radius - 14;
+
+    ctx.font = "18px Consolas, monospace";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+
+    for (let i = 0; i < word.length; i += 1) {
+      const ch = word[i];
+      if (i < enemy.hits) {
+        ctx.fillStyle = "#66f2ff";
+      } else if (i < enemy.fired) {
+        ctx.fillStyle = "#c9ff83";
+      } else if (locked) {
+        ctx.fillStyle = "#fff7c4";
+      } else {
+        ctx.fillStyle = "#ffe84d";
+      }
+      ctx.fillText(ch, startX + i * charWidth, y);
+    }
+  }
+
+  function drawEnemy(enemy) {
+    const locked = state.lockedEnemyId === enemy.id;
+    ctx.save();
+    ctx.translate(enemy.x, enemy.y);
+    const flash = enemy.flash > 0 ? enemy.flash * 255 : 0;
+    const stroke = locked ? "#9ffffa" : `rgba(${255}, ${232}, ${77}, ${0.7 + enemy.flash * 0.7})`;
+    const fillAlpha = locked ? 0.24 : 0.16 + enemy.flash * 0.3;
+
+    ctx.lineWidth = locked ? 2.2 : 1.5;
+    ctx.strokeStyle = stroke;
+    ctx.fillStyle = `rgba(20, 36, 44, ${fillAlpha})`;
+
+    ctx.beginPath();
+    ctx.moveTo(0, -enemy.radius);
+    ctx.lineTo(enemy.radius * 0.72, -4);
+    ctx.lineTo(enemy.radius * 0.52, enemy.radius * 0.72);
+    ctx.lineTo(0, enemy.radius * 0.4);
+    ctx.lineTo(-enemy.radius * 0.52, enemy.radius * 0.72);
+    ctx.lineTo(-enemy.radius * 0.72, -4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(-enemy.radius * 0.9, 4);
+    ctx.lineTo(enemy.radius * 0.9, 4);
+    ctx.stroke();
+
+    if (flash > 0) {
+      ctx.fillStyle = `rgba(255, 248, 210, ${Math.min(0.32, enemy.flash * 0.6)})`;
+      ctx.beginPath();
+      ctx.arc(0, 0, enemy.radius * 0.76, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+    drawWord(enemy, locked);
+  }
+
+  function drawPlayer() {
+    const player = playerPos();
+    ctx.save();
+    ctx.translate(player.x, player.y);
+
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#77ecff";
+    ctx.fillStyle = "rgba(16, 36, 54, 0.55)";
+    ctx.beginPath();
+    ctx.moveTo(0, -24);
+    ctx.lineTo(20, 12);
+    ctx.lineTo(6, 8);
+    ctx.lineTo(0, 20);
+    ctx.lineTo(-6, 8);
+    ctx.lineTo(-20, 12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(0, -9);
+    ctx.lineTo(0, 12);
+    ctx.moveTo(-10, 11);
+    ctx.lineTo(10, 11);
+    ctx.stroke();
+
+    ctx.fillStyle = "#c5f7ff";
+    ctx.beginPath();
+    ctx.arc(0, -2, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawMissiles() {
+    for (const missile of state.missiles) {
+      for (const step of missile.trail) {
+        ctx.fillStyle = `rgba(255, 232, 77, ${Math.max(0, step.life / 0.16) * 0.35})`;
+        ctx.beginPath();
+        ctx.arc(step.x, step.y, 2.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.strokeStyle = "#ffe84d";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(missile.x, missile.y);
+      ctx.lineTo(missile.x - 7, missile.y + 10);
+      ctx.moveTo(missile.x, missile.y);
+      ctx.lineTo(missile.x + 7, missile.y + 10);
+      ctx.stroke();
+    }
+  }
+
+  function drawParticles() {
+    for (const particle of state.particles) {
+      const alpha = Math.max(0, particle.life / particle.maxLife);
+      ctx.fillStyle = particle.color.replace(")", "");
+      ctx.fillStyle = particle.color.startsWith("#")
+        ? particle.color
+        : particle.color;
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function render() {
+    ctx.clearRect(0, 0, state.width, state.height);
+
+    const shakeX = state.shake ? rand(-state.shake, state.shake) : 0;
+    const shakeY = state.shake ? rand(-state.shake, state.shake) : 0;
+    ctx.save();
+    ctx.translate(shakeX, shakeY);
+
+    for (const star of state.stars) {
+      ctx.fillStyle = `rgba(180, 220, 255, ${star.alpha})`;
+      ctx.fillRect(star.x, star.y, star.size, star.size);
+    }
+
+    const player = playerPos();
+    ctx.strokeStyle = "rgba(119, 236, 255, 0.08)";
+    ctx.beginPath();
+    ctx.moveTo(0, player.y + 18);
+    ctx.lineTo(state.width, player.y + 18);
+    ctx.stroke();
+
+    drawPlayer();
+    drawMissiles();
+    for (const enemy of state.enemies) drawEnemy(enemy);
+    drawParticles();
+
+    if (state.messageFlash > 0) {
+      ctx.fillStyle = `rgba(255, 95, 95, ${state.messageFlash * 0.35})`;
+      ctx.fillRect(0, 0, state.width, state.height);
+    }
+
+    ctx.restore();
+  }
+
+  function tick(timestamp) {
+    if (!state.lastTime) state.lastTime = timestamp;
+    const dt = clamp((timestamp - state.lastTime) / 1000, 0, 0.033);
+    state.lastTime = timestamp;
+    update(dt);
+    render();
+    requestAnimationFrame(tick);
+  }
+
+  document.addEventListener("keydown", (event) => {
+    if (event.code === "Space") {
+      event.preventDefault();
+      if (!menuEl.classList.contains("hidden") || !gameOverEl.classList.contains("hidden")) return;
+      toggleMode();
+      return;
+    }
+
+    if (!state.running) return;
+
+    if (event.code === "Backspace" || event.code === "Escape") {
+      event.preventDefault();
+      clearLock();
+      updateHud();
+      return;
+    }
+
+    const char = keyToChar(event.code);
+    if (!char) return;
+
+    event.preventDefault();
+    handleChar(char);
+  });
+
+  document.querySelectorAll("[data-difficulty]").forEach((button) => {
+    button.addEventListener("click", () => {
+      startGame(button.dataset.difficulty);
+    });
+  });
+
+  restartButton.addEventListener("click", () => {
+    gameOverEl.classList.add("hidden");
+    menuEl.classList.remove("hidden");
+  });
+
+  window.addEventListener("resize", resize);
+
+  resize();
+  renderKeyboard();
+  updateHud();
+  requestAnimationFrame(tick);
+})();
+</script>
 </body>
 </html>

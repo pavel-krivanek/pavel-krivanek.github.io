@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>micro-PROLOG Backtracked (program293)</title>
+  <style>
+    @font-face {
+      font-family: "ZX Spectrum";
+      src: url("zx_spectrum-webfont.woff2") format("woff2");
+      font-weight: normal;
+      font-style: normal;
+      font-display: block;
+    }
+    :root {
+      color-scheme: light;
+      --bg: #f6f3ea;
+      --bg-accent: #edf3fb;
+      --fg: #1f1b36;
+      --muted: #665f82;
+      --ok: #176d56;
+      --err: #a22f55;
+      --panel: rgba(255, 252, 245, 0.88);
+      --panel-2: rgba(248, 243, 231, 0.94);
+      --panel-3: rgba(238, 231, 214, 0.98);
+      --border: #b6b0d0;
+      --border-soft: #d8d2eb;
+      --accent: #2563eb;
+      --accent-2: #9d4edd;
+      --accent-3: #f3b700;
+      --shadow: 0 16px 42px rgba(44, 33, 96, 0.14);
+      --placeholder: rgba(31, 27, 54, 0.46);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      --zx-font: "ZX Spectrum", ui-monospace, "Courier New", "Liberation Mono", monospace;
+      --terminal-font-zx: var(--zx-font);
+      --terminal-font-normal: var(--mono);
+      --terminal-font-current: var(--terminal-font-zx);
+      --zx-paper: #ffff00;
+      --zx-ink: #000000;
+      --zx-frame-outer: #00ff00;
+      --zx-frame-inner: #00c000;
+      --zx-button-bg: #000000;
+      --zx-button-fg: #ffff00;
+    }
+    :root[data-theme-resolved="light"] {
+      color-scheme: light;
+      --bg: #f6f3ea;
+      --bg-accent: #edf3fb;
+      --fg: #1f1b36;
+      --muted: #665f82;
+      --ok: #176d56;
+      --err: #a22f55;
+      --panel: rgba(255, 252, 245, 0.88);
+      --panel-2: rgba(248, 243, 231, 0.94);
+      --panel-3: rgba(238, 231, 214, 0.98);
+      --border: #b6b0d0;
+      --border-soft: #d8d2eb;
+      --accent: #2563eb;
+      --accent-2: #9d4edd;
+      --accent-3: #f3b700;
+      --shadow: 0 16px 42px rgba(44, 33, 96, 0.14);
+      --placeholder: rgba(31, 27, 54, 0.46);
+      --zx-paper: #ffff00;
+      --zx-ink: #000000;
+      --zx-frame-outer: #00ff00;
+      --zx-frame-inner: #00c000;
+      --zx-button-bg: #000000;
+      --zx-button-fg: #ffff00;
+    }
+    :root[data-theme-resolved="dark"] {
+      color-scheme: dark;
+      --bg: #15112a;
+      --bg-accent: #111b38;
+      --fg: #f3f0ff;
+      --muted: #c4bddc;
+      --ok: #71e2bb;
+      --err: #ff9abc;
+      --panel: rgba(29, 22, 56, 0.9);
+      --panel-2: rgba(37, 28, 70, 0.95);
+      --panel-3: rgba(50, 37, 92, 0.98);
+      --border: #7c73a8;
+      --border-soft: #6657b2;
+      --accent: #5fb0ff;
+      --accent-2: #c86bff;
+      --accent-3: #ffd056;
+      --shadow: 0 20px 50px rgba(0, 0, 0, 0.36);
+      --placeholder: rgba(243, 240, 255, 0.58);
+      --zx-paper: #ffff00;
+      --zx-ink: #000000;
+      --zx-frame-outer: #00ff00;
+      --zx-frame-inner: #00c000;
+      --zx-button-bg: #000000;
+      --zx-button-fg: #ffff00;
+    }
+    * { box-sizing: border-box; }
+
+    :root[data-theme-resolved="dark"] button { border-color: color-mix(in srgb, var(--border) 58%, white 42%); }
+    :root[data-theme-resolved="dark"] textarea,
+    :root[data-theme-resolved="dark"] pre,
+    :root[data-theme-resolved="dark"] input[type="number"] { border-color: color-mix(in srgb, var(--border) 76%, white 24%); }
+    :root[data-theme-resolved="dark"] .panel { border-color: color-mix(in srgb, var(--border) 60%, white 40%); }
+    :root[data-theme-resolved="dark"] .topbar-actions select,
+    :root[data-theme-resolved="dark"] .file-item,
+    :root[data-theme-resolved="dark"] .clause-list,
+    :root[data-theme-resolved="dark"] body.repl-font-normal .zx-terminal-screen,
+    :root[data-theme-resolved="dark"] body.repl-font-normal #runReplInput,
+    :root[data-theme-resolved="dark"] body.repl-font-normal .zx-shell-toolbar button,
+    :root[data-theme-resolved="dark"] .repl-display-row select { border-color: color-mix(in srgb, var(--border) 58%, white 42%); }
+    body {
+      margin: 0;
+      font-family: var(--mono);
+      background:
+        radial-gradient(circle at top left, rgba(157, 78, 221, 0.10), transparent 34%),
+        radial-gradient(circle at top right, rgba(37, 99, 235, 0.12), transparent 30%),
+        linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0) 26%),
+        linear-gradient(160deg, var(--bg) 0%, var(--bg-accent) 100%);
+      color: var(--fg);
+      line-height: 1.45;
+    }
+    button, input, textarea, pre {
+      font-family: var(--mono);
+      font-size: 14px;
+    }
+    button {
+      padding: 8px 12px;
+      border: 1px solid color-mix(in srgb, var(--border) 26%, white 74%);
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.08) 100%), linear-gradient(180deg, var(--panel) 0%, var(--panel-3) 100%);
+      color: var(--fg);
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+      text-transform: none;
+      letter-spacing: 0.01em;
+      transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease, filter 120ms ease;
+    }
+    button:hover:not(:disabled) { filter: brightness(1.02); transform: translateY(-1px); box-shadow: 0 10px 24px rgba(0,0,0,0.16); }
+    button:disabled { opacity: 0.55; cursor: default; filter: none; }
+    textarea, pre, input[type="number"] {
+      width: 100%;
+      border: 1px solid color-mix(in srgb, var(--border) 28%, white 72%);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.08);
+      color: var(--fg);
+      padding: 10px 12px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    textarea::placeholder,
+    input::placeholder {
+      color: var(--placeholder);
+      opacity: 1;
+    }
+    textarea { resize: vertical; min-height: 260px; }
+    .editor-textarea {
+      min-height: 460px;
+      resize: vertical;
+      tab-size: 4;
+      white-space: pre;
+      overflow-wrap: normal;
+      word-break: normal;
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+    .editor-toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .editor-toolbar .muted { font-size: 12px; }
+    pre {
+      margin: 0;
+      min-height: 180px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    code {
+      font-family: var(--mono);
+      background: rgba(127,127,127,0.12);
+      padding: 0 4px;
+      border-radius: 4px;
+    }
+    .muted { color: var(--muted); }
+    .ok { color: var(--ok); }
+    .err { color: var(--err); }
+    .hidden-file-input { display: none; }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 380px minmax(0, 1fr);
+      gap: 16px;
+      max-width: 1720px;
+      margin: 0 auto;
+      padding: 20px 16px 28px;
+      align-items: start;
+    }
+    body.library-hidden .app-shell { grid-template-columns: minmax(0, 1fr); }
+    .file-sidebar {
+      position: sticky;
+      top: 12px;
+      min-width: 0;
+      align-self: start;
+    }
+    body.library-hidden .file-sidebar { display: none; }
+    .main-column { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+    .panel {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0) 26%),
+        linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+      border: 1px solid color-mix(in srgb, var(--border) 24%, white 76%);
+      border-radius: 20px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+    .file-panel {
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      border: 1px solid rgba(255,255,255,0.14);
+      pointer-events: none;
+    }
+    .topbar {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    .title-block {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+      min-width: 0;
+      max-width: min(100%, 720px);
+    }
+    .app-title {
+      font: 700 38px/1.03 var(--sans);
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+    .topbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .app-title .accent-retro {
+      font-family: inherit;
+      font-size: 1em;
+      font-weight: 500;
+      letter-spacing: inherit;
+      color: var(--muted);
+      vertical-align: baseline;
+      margin-left: 0.32em;
+      display: inline-block;
+      transform: none;
+    }
+    .title-rainbow {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      width: min(100%, 520px);
+      height: 6px;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .title-rainbow span:nth-child(1) { background: #ff0002; }
+    .title-rainbow span:nth-child(2) { background: #fdff00; }
+    .title-rainbow span:nth-child(3) { background: #00ff03; }
+    .title-rainbow span:nth-child(4) { background: #01fffe; }
+    .title-subtitle {
+      font: 500 14px/1.35 var(--sans);
+      color: var(--muted);
+      max-width: 64ch;
+    }
+    .topbar-actions label { font: 600 13px/1.2 var(--sans); display: inline-flex; align-items: center; gap: 6px; }
+    .topbar-actions select { font-family: var(--mono); font-size: 13px; padding: 8px 11px; border: 1px solid color-mix(in srgb, var(--border) 26%, white 74%); border-radius: 12px; background: var(--panel); color: var(--fg); box-shadow: 0 6px 18px rgba(0,0,0,0.10); }
+
+    .main-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .main-tab-button {
+      font-family: var(--sans);
+      font-weight: 700;
+      background: linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.04) 100%), linear-gradient(180deg, var(--panel-3) 0%, var(--panel-2) 100%);
+      border-radius: 999px;
+      padding: 9px 15px;
+      min-width: 8ch;
+    }
+    .main-tab-button.active {
+      background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
+      color: #ffffff;
+      border-color: transparent;
+      text-shadow: none;
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.22);
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .file-panel {
+      max-height: calc(100vh - 24px);
+      overflow: auto;
+      padding: 9px;
+    }
+    .file-panel h2 { margin: 0 0 6px 0; font: 600 16px/1.2 var(--sans); }
+    .file-panel p { margin: 0 0 8px 0; font-size: 13px; }
+    .file-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin: 8px 0;
+    }
+    .file-actions button, .file-secondary-actions button, .file-primary-actions button {
+      padding: 6px 8px;
+      font-size: 13px;
+    }
+    .file-primary-actions, .file-secondary-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin: 8px 0;
+    }
+    .file-drop-zone {
+      border: 2px dashed var(--border-soft);
+      border-radius: 16px;
+      padding: 10px;
+      text-align: center;
+      background: repeating-linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.08) 10px, rgba(0,0,0,0.03) 10px, rgba(0,0,0,0.03) 20px);
+      color: var(--muted);
+      font-size: 12px;
+      margin: 8px 0;
+    }
+    .file-drop-zone.active {
+      border-color: var(--accent);
+      background: rgba(0,255,0,0.08);
+      color: var(--fg);
+    }
+    .file-list { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+    .file-item {
+      width: 100%;
+      text-align: left;
+      border-radius: 16px;
+      padding: 9px 10px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.03) 100%), var(--panel);
+      border: 1px solid color-mix(in srgb, var(--border-soft) 24%, white 76%);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.08);
+    }
+    .file-item.active { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent), 0 10px 24px rgba(0,0,0,0.12); }
+    .file-item-header, .file-item-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      align-items: baseline;
+    }
+    .file-item-name { font-weight: 600; word-break: break-word; }
+    .file-item-key { font-size: 11px; color: var(--muted); word-break: break-all; }
+    .file-badge { font-size: 11px; border: 1px solid var(--border); border-radius: 999px; padding: 1px 6px; }
+    .file-badge.readonly { border-color: var(--accent); color: var(--ok); background: rgba(255,255,255,0.08); }
+    .file-summary { font-size: 12px; margin-top: 6px; }
+
+
+    .clause-viewer-panel { padding: 8px; }
+    .clause-viewer-toolbar {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .clause-module-picker {
+      min-width: 180px;
+      max-width: 100%;
+    }
+    .clause-viewer-toolbar .muted { margin-left: auto; font-size: 12px; }
+    .clause-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      max-height: calc(100vh - 220px);
+      overflow: auto;
+      padding: 0;
+      border: 1px solid color-mix(in srgb, var(--border) 22%, white 78%);
+      border-radius: 16px;
+      background: var(--bg);
+    }
+    .clause-item {
+      display: block;
+      padding: 8px 10px;
+      border: 0;
+      border-radius: 0;
+      border-bottom: 1px solid var(--border);
+      background: transparent;
+      cursor: default;
+      word-break: break-word;
+      font-family: var(--mono);
+      font-size: 13px;
+    }
+    .clause-item:last-child { border-bottom: 0; }
+    .clause-body {
+      display: block;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      min-height: 0;
+      width: auto;
+      background: transparent;
+      color: inherit;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font: inherit;
+      line-height: 1.3;
+    }
+    .clause-item:hover { background: rgba(127,127,127,0.08); }
+    .clause-item.selected {
+      background: rgba(0, 121, 215, 0.14);
+      border-color: rgba(0, 121, 215, 0.55);
+    }
+    .clause-item.dragging { opacity: 0.55; }
+    .clause-item.drop-before { border-top: 2px solid var(--accent); }
+    .clause-item.drop-after { border-bottom: 2px solid var(--accent); }
+    .clause-index {
+      color: var(--muted);
+      min-width: 2.5em;
+      text-align: right;
+    }
+    .clause-text { white-space: pre-wrap; }
+    .clause-empty {
+      padding: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .repl-tab-inner { display: flex; flex-direction: column; gap: 8px; }
+    .zx-shell-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .zx-shell-toolbar button {
+      font-family: var(--sans);
+      font-weight: 700;
+      text-transform: none;
+      letter-spacing: 0.01em;
+      border-radius: 12px;
+    }
+    .zx-shell-status {
+      font-family: var(--sans);
+      margin-left: auto;
+      color: var(--fg);
+      font-size: 13px;
+    }
+    .zx-terminal-screen {
+      width: 100%;
+      min-height: 132px;
+      border: 18px solid var(--zx-frame-outer);
+      box-shadow: none;
+      background: var(--zx-paper);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 16px;
+    }
+    #replTranscript {
+      font-family: var(--terminal-font-current);
+      font-size: 18px;
+      line-height: 1.25;
+      flex: 1 1 auto;
+      min-height: 72px;
+      max-height: 48vh;
+      overflow: auto;
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      color: var(--zx-ink);
+      border: 0;
+      border-radius: 0;
+    }
+    .zx-input-line {
+      display: grid;
+      grid-template-columns: auto auto 1fr auto;
+      gap: 10px;
+      align-items: baseline;
+    }
+    .zx-prompt {
+      font-family: var(--terminal-font-current);
+      font-size: 18px;
+      line-height: 1.25;
+      color: var(--zx-ink);
+      user-select: none;
+      padding-bottom: 0;
+      align-self: baseline;
+    }
+    .zx-inline-tail {
+      font-family: var(--terminal-font-current);
+      font-size: 18px;
+      line-height: 1.25;
+      color: var(--zx-ink);
+      user-select: none;
+      white-space: pre;
+      min-width: 0;
+      align-self: baseline;
+    }
+    #replInput {
+      font-family: var(--terminal-font-current);
+      font-size: 18px;
+      line-height: 1.25;
+      min-height: 38px;
+      max-height: 200px;
+      resize: none;
+      overflow-y: hidden;
+      background: transparent;
+      color: var(--zx-ink);
+      border: 0;
+      border-radius: 0;
+      padding: 0;
+      margin: 0;
+      align-self: baseline;
+      outline: none;
+      box-shadow: none;
+    }
+    #replInput::placeholder { color: rgba(0, 0, 0, 0.48); opacity: 1; }
+    #runReplInput {
+      font-family: var(--zx-font);
+      background: var(--zx-button-bg);
+      color: var(--zx-button-fg);
+      border: 2px solid var(--zx-button-bg);
+      border-radius: 0;
+      padding: 8px 11px 7px 11px;
+      box-shadow: 4px 4px 0 rgba(0,0,0,0.2);
+    }
+    #runReplInput:hover:not(:disabled) {
+      background: #111111;
+      color: var(--zx-button-fg);
+      filter: none;
+    }
+    #replBreak {
+      font-family: var(--mono);
+      background: linear-gradient(180deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.08) 100%), linear-gradient(180deg, var(--panel) 0%, var(--panel-3) 100%);
+      color: var(--fg);
+      border: 1px solid color-mix(in srgb, var(--border) 26%, white 74%);
+      border-radius: 12px;
+      padding: 8px 12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+      text-transform: none;
+      letter-spacing: 0.01em;
+    }
+    #replBreak:hover:not(:disabled) {
+      background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.12) 100%), linear-gradient(180deg, var(--panel) 0%, var(--panel-3) 100%);
+      color: var(--fg);
+      filter: brightness(1.02);
+    }
+    body.repl-font-normal { --terminal-font-current: var(--terminal-font-normal); }
+    body.repl-font-normal .zx-terminal-screen {
+      min-height: 0;
+      border: 1px solid color-mix(in srgb, var(--border) 20%, white 80%);
+      background: var(--panel);
+      padding: 14px;
+      box-shadow: none;
+      border-radius: 14px;
+    }
+    body.repl-font-normal #replTranscript {
+      font-family: var(--mono);
+      font-size: 15px;
+      min-height: 121px;
+      background: transparent;
+      color: var(--fg);
+      border: 0;
+      border-radius: 0;
+      padding: 0;
+    }
+    body.repl-font-normal .zx-prompt {
+      font-family: var(--mono);
+      font-size: 15px;
+      color: var(--fg);
+      padding-bottom: 0;
+      align-self: baseline;
+    }
+    body.repl-font-normal .zx-inline-tail {
+      font-family: var(--mono);
+      font-size: 15px;
+      color: var(--fg);
+    }
+    body.repl-font-normal #replInput {
+      font-family: var(--mono);
+      font-size: 15px;
+      min-height: 36px;
+      background: transparent;
+      color: var(--fg);
+      border: 0;
+      border-radius: 0;
+      padding: 0;
+      margin: 0;
+      align-self: baseline;
+    }
+    body.repl-font-normal #replInput::placeholder { color: var(--placeholder); opacity: 1; }
+    body.repl-font-normal #runReplInput,
+    body.repl-font-normal .zx-shell-toolbar button {
+      font-family: var(--mono);
+      background: var(--bg);
+      color: var(--fg);
+      border: 1px solid color-mix(in srgb, var(--border) 20%, white 80%);
+      border-radius: 10px;
+      text-transform: none;
+      letter-spacing: 0;
+      box-shadow: none;
+    }
+    body.repl-font-normal #runReplInput:hover:not(:disabled),
+    body.repl-font-normal .zx-shell-toolbar button:hover:not(:disabled) {
+      background: var(--panel);
+      color: var(--fg);
+      filter: none;
+    }
+
+    .file-sidebar .panel h2 { margin: 0 0 6px; font-size: 18px; }
+    .file-sidebar .muted { font-size: 12px; }
+    .file-actions, .file-primary-actions { gap: 6px; }
+    .file-list { gap: 4px; }
+    .file-item { padding: 6px 7px; }
+    .topbar { padding: 12px 14px 16px; }
+    .main-tabs { gap: 8px; }
+    .main-tab-button { padding: 8px 13px; }
+    .repl-tab-inner { padding: 10px; }
+    .repl-workspace-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+    }
+    .repl-workspace-main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .zx-terminal-screen { width: 100%; }
+    .repl-controls-footer {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    .repl-display-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .repl-display-row label {
+      font: 600 13px/1.2 var(--sans);
+    }
+    .repl-display-row select {
+      font-family: var(--mono);
+      font-size: 13px;
+      padding: 6px 8px;
+      border: 2px solid var(--border);
+      border-radius: 0;
+      background: var(--panel);
+      color: var(--fg);
+    }
+    .spectrum-screen-panel {
+      margin-top: 0;
+      display: none;
+      gap: 8px;
+      flex-direction: column;
+      min-width: 280px;
+    }
+    .spectrum-screen-panel.active {
+      display: flex;
+    }
+    .spectrum-screen-frame {
+      position: relative;
+      width: min(42vw, 512px);
+      min-width: 256px;
+      aspect-ratio: 4 / 3;
+      border: 10px solid #d7d700;
+      border-radius: 18px;
+      background: #d7d700;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06), 0 14px 30px rgba(0,0,0,0.22);
+      overflow: hidden;
+    }
+    .spectrum-screen-frame canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    .spectrum-screen-meta {
+      font-size: 12px;
+    }
+
+
+    .topbar, .file-panel, .clause-viewer-panel, .repl-tab-inner, .help-panel {
+      backdrop-filter: blur(2px);
+    }
+    .file-panel h2, .help-panel h2, .panel h2 {
+      font-family: var(--sans);
+      font-weight: 800;
+      letter-spacing: 0.01em;
+    }
+    .editor-toolbar .muted, .file-panel p, .file-summary, .spectrum-screen-meta, .zx-shell-status {
+      color: var(--muted);
+    }
+    .editor-textarea, #replInput, #replTranscript, .clause-body {
+      caret-color: var(--accent-2);
+    }
+    .editor-textarea {
+      background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03));
+    }
+    .editor-toolbar button#runEditorSource {
+      background: linear-gradient(180deg, var(--accent) 0%, var(--accent-2) 100%);
+      color: #fff;
+      border-color: var(--fg);
+    }
+    .editor-toolbar button#saveEditorSource {
+      background: linear-gradient(180deg, var(--accent-3) 0%, var(--panel-3) 100%);
+    }
+    .clause-list {
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.01));
+      border: 1px solid color-mix(in srgb, var(--border) 30%, white 70%);
+      border-radius: 16px;
+    }
+    .clause-item:hover { background: rgba(255,255,255,0.1); }
+    .clause-item.selected {
+      background: rgba(70, 224, 255, 0.18);
+      border-color: rgba(70, 224, 255, 0.7);
+    }
+    .topbar::after { display: none; }
+    .repl-tab-inner.panel {
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      padding: 4px 0 0;
+      overflow: visible;
+    }
+    .repl-tab-inner.panel::before { display: none; }
+
+    @media (min-width: 1080px) {
+      .repl-workspace-row {
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+    }
+    .repl-controls-footer .zx-shell-toolbar {
+      order: 1;
+      flex: 1 1 auto;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .repl-controls-footer .zx-shell-status {
+      order: 2;
+      margin-left: auto;
+    }
+    .help-frame {
+      width: 100%;
+      min-height: 240px;
+      height: 240px;
+      border: 0;
+      background: transparent;
+      display: block;
+      overflow: hidden;
+    }
+    .help-panel h2, .panel h2 { margin: 0 0 8px 0; font: 600 16px/1.25 var(--sans); }
+    .help-panel h3 { margin: 10px 0 6px 0; font: 600 14px/1.25 var(--sans); }
+    .help-panel p, .help-panel li, .panel p { margin: 0 0 8px 0; }
+    .help-panel ul { margin: 0 0 10px 18px; padding: 0; }
+
+    @media (max-width: 1250px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .file-sidebar { position: static; }
+      body.library-hidden .app-shell { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell" id="appShell">
+    <aside class="file-sidebar" id="fileSidebar">
+      <section class="panel file-panel">
+        <h2>Tape / file library</h2>
+        <p class="muted">Bundled libraries are read-only. User files stay in browser storage and can be imported, downloaded, and loaded again through <code>LOAD</code> / <code>SAVE</code>.</p>
+        <div class="file-actions">
+          <button id="importWorkspaceFiles">Import file(s)</button>
+          <button id="downloadSelectedFile">Download selected</button>
+          <button id="deleteSelectedFile">Delete selected</button>
+        </div>
+        <div id="fileDropZone" class="file-drop-zone">Drop <code>.txt</code>, <code>.pl</code>, <code>.lpa</code>, or <code>.prolog</code> here</div>
+                <p id="selectedFileMeta" class="muted file-summary">No file selected.</p>
+        <div id="fileListSummary" class="muted file-summary"></div>
+        <div id="fileList" class="file-list" aria-label="Available files"></div>
+        <input id="importFileInput" class="hidden-file-input" type="file" accept=".txt,.pl,.prolog,.lpa,text/plain" multiple />
+        <input id="importZipInput" class="hidden-file-input" type="file" accept=".zip,application/zip" />
+      </section>
+    </aside>
+
+    <main class="main-column">
+      <section class="panel topbar">
+        <div class="title-block">
+          <h1 class="app-title">micro-PROLOG <span class="accent-retro">Backtracked</span></h1>
+          <div class="title-rainbow" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+          <div class="title-subtitle">ECMAScript reimplementation of ZX Spectrum micro-PROLOG</div>
+        </div>
+        <div class="topbar-actions">
+          <label for="themeMode">Theme
+            <select id="themeMode" aria-label="Theme mode">
+              <option value="system">System</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </label>
+          <button id="toggleSidebar">Hide library</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="main-tabs" role="tablist" aria-label="Main content tabs">
+          <button class="main-tab-button active" data-tab="repl" role="tab" aria-selected="true">REPL</button>
+          <button class="main-tab-button" data-tab="editor" role="tab" aria-selected="false">Editor</button>
+          <button class="main-tab-button" data-tab="clauses" role="tab" aria-selected="false">System clauses</button>
+          <button class="main-tab-button" data-tab="about" role="tab" aria-selected="false">About</button>
+        </div>
+      </section>
+
+      <section class="tab-panel active" data-tab-panel="repl">
+        <section class="panel repl-tab-inner">
+          <div class="repl-workspace-row">
+            <div class="repl-workspace-main">
+              <div class="zx-terminal-screen">
+                <pre id="replTranscript" class="terminal"></pre>
+                <div class="zx-input-line">
+                  <span class="zx-prompt"></span>
+                  <span id="replInlineTail" class="zx-inline-tail"></span>
+                  <textarea id="replInput" spellcheck="false" rows="1" placeholder="Type here..."></textarea>
+                  <button id="runReplInput">RUN</button>
+                </div>
+              </div>
+              <div class="repl-display-row">
+                <label for="replDisplayMode">Output mode</label>
+                <select id="replDisplayMode">
+                  <option value="normal">Normal</option>
+                  <option value="hybrid">Hybrid</option>
+                </select>
+              </div>
+            </div>
+            <div id="spectrumScreenPanel" class="spectrum-screen-panel" aria-live="polite">
+              <div class="spectrum-screen-frame">
+                <canvas id="spectrumGraphicsCanvas" width="256" height="192"></canvas>
+                <canvas id="spectrumTextCanvas" width="256" height="192"></canvas>
+              </div>
+              <div id="spectrumScreenMeta" class="muted spectrum-screen-meta">Spectrum screen idle.</div>
+            </div>
+          </div>
+          <div class="repl-controls-footer">
+            <div class="zx-shell-toolbar">
+              <button id="replInitFromSimple">LOAD SIMPLE</button>
+              <button id="replClearTranscript">Clear</button>
+                            <button id="toggleReplFont">Use boring style</button>
+              <button id="replBreak" disabled>BREAK (Esc)</button>
+            </div>
+            <span id="replStatus" class="zx-shell-status">REPL not initialized</span>
+          </div>
+        </section>
+      </section>
+
+      <section class="tab-panel" data-tab-panel="editor">
+        <section class="panel">
+          <div class="editor-toolbar">
+            <button id="runEditorSource">Run</button>
+            <button id="saveEditorSource">Save as .pl file</button>
+            <span id="editorStatus" class="muted">Editor content is cached in browser storage. Press Ctrl+Enter to run.</span>
+          </div>
+          <textarea id="editorSource" class="editor-textarea" spellcheck="false" rows="24" placeholder="Type micro-PROLOG source here..."></textarea>
+        </section>
+      </section>
+
+      <section class="tab-panel" data-tab-panel="clauses">
+        <section class="panel clause-viewer-panel">
+          <div class="clause-viewer-toolbar">
+            <label>
+              Module:
+              <select id="clauseModuleSelect" class="clause-module-picker" aria-label="Module shown in clauses list"></select>
+            </label>
+            <span id="clauseViewerSummary" class="muted">No current system loaded.</span>
+          </div>
+          <div id="clauseList" class="clause-list" aria-label="Current system clauses"></div>
+        </section>
+      </section>
+
+      </section>
+
+      <section class="tab-panel" data-tab-panel="about">
+        <section class="panel help-panel">
+          <iframe class="help-frame" src="about.html" title="about"></iframe>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      function measuredHelpHeight(frame) {
+        try {
+          var doc = frame.contentDocument;
+          if (!doc) return 0;
+          return Math.max(
+            doc.documentElement ? doc.documentElement.scrollHeight : 0,
+            doc.body ? doc.body.scrollHeight : 0,
+            doc.documentElement ? doc.documentElement.offsetHeight : 0,
+            doc.body ? doc.body.offsetHeight : 0
+          );
+        } catch (err) {
+          return 0;
+        }
+      }
+      function applyHelpHeight(frame, height) {
+        if (!frame || !height || !isFinite(height)) return;
+        var px = Math.max(240, Math.ceil(height));
+        if (frame.__microprologAppliedHelpHeight === px) return;
+        frame.__microprologAppliedHelpHeight = px;
+        frame.style.height = px + 'px';
+      }
+      function measureAndApply(frame) {
+        applyHelpHeight(frame, measuredHelpHeight(frame));
+      }
+      function setupHelpFrames() {
+        var frames = Array.prototype.slice.call(document.querySelectorAll('iframe.help-frame'));
+        frames.forEach(function (frame) {
+          frame.setAttribute('scrolling', 'no');
+          frame.addEventListener('load', function () {
+            measureAndApply(frame);
+            try { frame.contentWindow.postMessage({ type: 'microprolog-help-parent-ready' }, '*'); } catch (err) {}
+            setTimeout(function () { measureAndApply(frame); }, 121);
+            setTimeout(function () { measureAndApply(frame); }, 600);
+          });
+        });
+        window.addEventListener('message', function (event) {
+          var data = event && event.data;
+          if (!data || data.type !== 'microprolog-help-height') return;
+          frames.forEach(function (frame) {
+            if (frame.contentWindow === event.source) applyHelpHeight(frame, data.height);
+          });
+        });
+        window.addEventListener('resize', function () { frames.forEach(measureAndApply); });
+        setTimeout(function () { frames.forEach(measureAndApply); }, 250);
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupHelpFrames);
+      } else {
+        setupHelpFrames();
+      }
+    })();
+  </script>
+
+  <script src="core/terms.js"></script>
+  <script src="core/unify.js"></script>
+  <script src="core/freshen.js"></script>
+  <script src="core/workspace.js"></script>
+  <script src="core/lexer.js"></script>
+  <script src="core/reader.js"></script>
+  <script src="core/engine.js"></script>
+  <script src="core/loader.js"></script>
+  <script src="core/transcript_profiles.js"></script>
+  <script src="core/shell.js"></script>
+  <script src="core/spectrum_adapter.js"></script>
+  <script src="core/index.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>

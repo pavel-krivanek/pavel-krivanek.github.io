@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>About — micro-PROLOG Backtracked</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f6f3ea;
+  --bg-accent: #edf3fb;
+  --fg: #1f1b36;
+  --muted: #665f82;
+  --panel: rgba(255, 252, 245, 0.88);
+  --panel-2: rgba(248, 243, 231, 0.94);
+  --border: #b6b0d0;
+  --accent: #2563eb;
+  --shadow: 0 16px 42px rgba(44, 33, 96, 0.14);
+}
+:root[data-theme-resolved="dark"] {
+  color-scheme: dark;
+  --bg: #15112a;
+  --bg-accent: #111b38;
+  --fg: #f3f0ff;
+  --muted: #c4bddc;
+  --panel: rgba(29, 22, 56, 0.9);
+  --panel-2: rgba(37, 28, 70, 0.95);
+  --border: #7c73a8;
+  --accent: #5fb0ff;
+  --shadow: 0 20px 50px rgba(0, 0, 0, 0.36);
+}
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  margin: 0;
+  padding: 14px;
+  font: 14px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  background:
+    radial-gradient(circle at top left, rgba(157, 78, 221, 0.10), transparent 34%),
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.12), transparent 30%),
+    linear-gradient(160deg, var(--bg) 0%, var(--bg-accent) 100%);
+  color: var(--fg);
+}
+article {
+  background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+  border: 1px solid color-mix(in srgb, var(--border) 24%, white 76%);
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: var(--shadow);
+}
+h1, h2 { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+h1 { margin: 0 0 10px; font-size: 22px; line-height: 1.2; }
+h2 { margin: 20px 0 8px; font-size: 16px; line-height: 1.25; }
+p { margin: 0 0 10px; }
+ul { margin: 10px 0; padding-left: 20px; }
+li { margin: 0 0 10px; }
+a { color: var(--accent); }
+.small { color: var(--muted); }
+</style>
+</head>
+<body>
+<article>
+  <h1>About</h1>
+ 
+  <p><strong>micro-PROLOG Backtracked</strong> resurrects the classic ZX Spectrum micro-PROLOG and SIMPLE workflows for the modern web. By moving the environment to the browser, this implementation bypasses the severe memory constraints of 1980s hardware.</p>
+
+  <p>This implementation was created as a fan project without access to the original micro-PROLOG source code; consequently, its behavior and internal logic may differ from the 1982 original.</p>
+
+  <h2>Primary resources</h2>
+  <ul>
+    <li><strong>Primer</strong><br><a href="https://worldofspectrum.org/pub/sinclair/games-info/m/Micro-PROLOGPrimer.pdf" target="_blank" rel="noopener noreferrer">Micro-PROLOG Primer</a></li>
+    <li><strong>Reference manual</strong><br><a href="https://archive.org/details/zx-spectrum-micro-prolog-programmers-reference-manual" target="_blank" rel="noopener noreferrer">ZX Spectrum Micro-PROLOG Programmer's Reference Manual</a></li>
+  </ul>
+
+  <h2>About micro-PROLOG</h2>
+  <p>Developed in the late 1970s at Imperial College London and later distributed by <a href="https://lpai.uk/" target="_blank" rel="noopener noreferrer">Logic Programming Associates</a> (LPA), micro-PROLOG was a pioneering adaptation of logic programming for 8-bit microcomputers. Its unique feature was its high level of accessibility; it replaced complex formal logic syntax with a SIMPLE interface that used English-like structures, making it intuitive for non-programmers. Historically, it was a cornerstone of the UK’s Microelectronics Education Programme, serving as the first introduction to Artificial Intelligence and symbolic reasoning for an entire generation of students. By shrinking a language that previously required mainframe power to fit on home computers, it proved that sophisticated computational logic could be a universal educational tool.</p>
+
+  <h2>Books</h2>
+  <ul>
+    <li><strong>Learning Micro-PROLOG: a problem-solving approach</strong> — Anne Conway and Jim Balchin<br><a href="https://archive.org/details/learningmicropro00conl" target="_blank" rel="noopener noreferrer">Archive.org edition</a></li>
+    <li><strong>Micro PROLOG And Artificial Intelligence</strong> — K. L. Clark and F. G. McCabe<br><a href="https://archive.org/details/micro-prolog-and-artificial-intelligence" target="_blank" rel="noopener noreferrer">Archive.org edition</a></li>
+    <li><strong>The Purple Planet: Micro-PROLOG for the Spectrum 48K</strong> — Ian Mellor<br><a href="https://archive.org/details/the-purple-planet" target="_blank" rel="noopener noreferrer">Archive.org edition</a></li>
+  </ul>
+</article>
+<script>
+(function () {
+  var lastSentHeight = 0;
+  var scheduled = false;
+  function syncThemeFromParent() {
+    try {
+      var parentRoot = parent && parent.document && parent.document.documentElement;
+      if (!parentRoot) return;
+      var resolved = parentRoot.getAttribute('data-theme-resolved') || 'light';
+      document.documentElement.setAttribute('data-theme-resolved', resolved);
+    } catch (err) {}
+  }
+  function measuredContentHeight() {
+    var body = document.body;
+    var root = document.documentElement;
+    var h = Math.max(
+      body ? body.scrollHeight : 0,
+      root ? root.scrollHeight : 0,
+      body ? Math.ceil(body.getBoundingClientRect().height) : 0,
+      root ? Math.ceil(root.getBoundingClientRect().height) : 0
+    );
+    return Math.max(1, h);
+  }
+  function reportHeightNow() {
+    scheduled = false;
+    syncThemeFromParent();
+    var h = measuredContentHeight();
+    if (h === lastSentHeight) return;
+    lastSentHeight = h;
+    try { parent.postMessage({ type: 'microprolog-help-height', height: h }, '*'); } catch (err) {}
+  }
+  function scheduleReport() {
+    if (scheduled) return;
+    scheduled = true;
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(reportHeightNow);
+    else setTimeout(reportHeightNow, 0);
+  }
+  function watchParentTheme() {
+    try {
+      var parentRoot = parent && parent.document && parent.document.documentElement;
+      if (!parentRoot || typeof MutationObserver === 'undefined') return;
+      var mo = new MutationObserver(scheduleReport);
+      mo.observe(parentRoot, { attributes: true, attributeFilter: ['data-theme-resolved'] });
+    } catch (err) {}
+  }
+  window.addEventListener('load', function () { syncThemeFromParent(); scheduleReport(); watchParentTheme(); });
+  window.addEventListener('resize', scheduleReport);
+  window.addEventListener('message', function (event) {
+    if (event && event.data && event.data.type === 'microprolog-help-parent-ready') scheduleReport();
+  });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(scheduleReport).catch(function () {});
+  if (typeof ResizeObserver !== 'undefined' && document.body) {
+    var ro = new ResizeObserver(scheduleReport);
+    ro.observe(document.body);
+  }
+  setTimeout(scheduleReport, 0);
+  setTimeout(scheduleReport, 121);
+  setTimeout(scheduleReport, 600);
+})();
+</script>
+</body>
+</html>

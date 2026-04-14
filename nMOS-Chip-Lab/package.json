@@ -1,0 +1,1 @@
+{"name":"chip-layout-sim","version":"0.6.0","type":"commonjs","scripts":{"test":"node tests.js"}}

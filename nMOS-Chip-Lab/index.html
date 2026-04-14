@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nMOS Chip Lab v0.8.10</title>
+<style>
+:root{
+  color-scheme: light;
+  --bg:#eef1f5;
+  --panel:#ffffff;
+  --panel2:#f7f9fc;
+  --line:#d7dce5;
+  --line-strong:#b8c1cf;
+  --text:#18212f;
+  --muted:#5c6678;
+  --accent:#2f6fed;
+  --accent-soft:#e8f0ff;
+  --soft:#f4f6fa;
+  --soft2:#edf1f7;
+  --button-top:#ffffff;
+  --button-bot:#ffffff;
+  --menu-top:#ffffff;
+  --menu-bot:#ffffff;
+  --toolbar-top:#fbfcfe;
+  --toolbar-bot:#fbfcfe;
+  --ok:#1f7a42;
+  --warn:#8b6300;
+  --bad:#b32727;
+  --grid-bg:#ffffff;
+  --grid-line:#e3e8f0;
+  --grid-bound:#2f6fed;
+  --canvas-edge:#bcc6d6;
+  --tab-top:#f4f7fc;
+  --tab-bot:#f4f7fc;
+  --tab-active:#ffffff;
+  --shadow:0 10px 28px rgba(24,33,47,.08);
+}
+html[data-theme-effective="dark"]{
+  color-scheme: dark;
+  --bg:#161b22;
+  --panel:#1f2630;
+  --panel2:#232c37;
+  --line:#323c49;
+  --line-strong:#4c5969;
+  --text:#eef3fb;
+  --muted:#a9b6c8;
+  --accent:#7da8ff;
+  --accent-soft:#233757;
+  --soft:#27313d;
+  --soft2:#2a3542;
+  --button-top:#263240;
+  --button-bot:#263240;
+  --menu-top:#1f2630;
+  --menu-bot:#1f2630;
+  --toolbar-top:#1b232d;
+  --toolbar-bot:#1b232d;
+  --ok:#7cd89a;
+  --warn:#ffd36a;
+  --bad:#ff9f9f;
+  --grid-bg:#121820;
+  --grid-line:#283240;
+  --grid-bound:#7da8ff;
+  --canvas-edge:#4f5d6f;
+  --tab-top:#252f3b;
+  --tab-bot:#252f3b;
+  --tab-active:#1f2630;
+  --shadow:0 14px 36px rgba(0,0,0,.28);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0; font:13px/1.4 "Inter","Segoe UI",Tahoma,sans-serif; color:var(--text); background:var(--bg)}
+button,input,select,option{font:inherit}
+button,input,select,summary{border:1px solid var(--line); background:var(--button-top); color:var(--text); border-radius:8px}
+button{padding:6px 10px; cursor:pointer; transition:background-color .12s,border-color .12s,box-shadow .12s,transform .04s}
+button:hover{background:var(--soft)}
+button:active{transform:translateY(1px)}
+button.active{background:var(--accent-soft); border-color:var(--accent); color:var(--text)}
+button.tool.active{background:var(--accent-soft); border-color:var(--accent)}
+button.icon{padding:6px 8px; min-width:34px; font-size:15px}
+input,select{padding:6px 8px}
+select{appearance:none; -webkit-appearance:none; -moz-appearance:none; background:var(--button-top); color:var(--text); padding-right:28px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.2 4.1 6 7.9l3.8-3.8' fill='none' stroke='%236b7280' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 9px center}
+option{background:var(--panel); color:var(--text)}
+html[data-theme-effective="dark"] select{background-color:var(--panel2); color:var(--text); background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.2 4.1 6 7.9l3.8-3.8' fill='none' stroke='%23d7e3f5' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 9px center; background-size:12px 12px}
+html[data-theme-effective="dark"] option{background-color:var(--panel2); color:var(--text)}
+input[type="number"]{width:82px}
+input[type="text"]{width:100%}
+.srOnly{position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden}
+.hidden{display:none !important}
+.menuBar{display:flex; align-items:center; gap:4px; padding:8px 12px; border-bottom:1px solid var(--line); background:var(--panel); position:sticky; top:0; z-index:20; box-shadow:0 1px 0 rgba(0,0,0,.03)}
+.menuSpacer{flex:1}
+.themePicker{display:flex; align-items:center; gap:8px; color:var(--muted)}
+.themePicker select{min-width:110px}
+.menuRoot{position:relative}
+.menuButton{border:1px solid transparent; background:transparent; border-radius:6px; padding:6px 10px; cursor:pointer}
+.menuButton:hover,.menuButton.open{background:var(--accent-soft); border-color:var(--accent)}
+.menu{position:absolute; top:36px; left:0; min-width:260px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px; box-shadow:var(--shadow); display:none; gap:10px; z-index:30}
+.menu.open{display:grid}
+.menu .row,.toolbar,.tabBar,.minirow,.checks,.rightHeader,.signalHeader,.signalRow,.signalLevels,.tabsHeader{display:flex; align-items:center; gap:6px}
+.menu .grid2,.menu .grid4,.grid2,.grid3{display:grid; gap:8px 10px}
+.grid2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.menu .grid4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.toolbar{padding:8px 12px; border-bottom:1px solid var(--line); background:var(--toolbar-top); position:sticky; top:49px; z-index:19; flex-wrap:wrap; gap:8px}
+.appShell{display:grid; grid-template-columns:280px minmax(0,1fr) 360px; gap:12px; height:calc(100vh - 102px); padding:12px}
+.panel{background:var(--panel); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow)}
+.leftDock,.rightDock,.workspace{min-height:0}
+.leftDock{display:flex; flex-direction:column; gap:12px}
+.workspace{display:flex; flex-direction:column; min-width:0}
+.rightDock{display:flex; flex-direction:column; min-width:0; gap:12px}
+.compactPanel{padding:12px}
+.sectionTitle{font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted)}
+.muted,.tiny{color:var(--muted)} .tiny{font-size:12px}
+.toolGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.toolGrid button{padding:7px 8px;text-align:left}
+.toolSeparator{grid-column:1 / -1; height:0; border-top:1px solid var(--line); margin:2px 0 0 0}
+.menuColumn{display:flex; flex-direction:column; align-items:stretch; gap:8px}
+.menuColumn button,.menuColumn select{width:100%}
+.menuInlineRow{display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:8px}
+.menuInlineRow button{white-space:nowrap}
+.tool.utilityTool{display:flex; align-items:center; gap:8px}
+.tool.utilityTool .toolIcon{display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; font-size:15px; color:var(--muted)}
+.tool.utilityTool.active .toolIcon{color:var(--accent)}
+.boundsGrid input[type="number"]{width:56px}
+.viewBox{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.viewBox label,.checks label{display:flex; align-items:center; gap:6px; background:var(--soft); padding:7px 9px; border:1px solid var(--line); border-radius:8px}
+.paramGrid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px}
+.paramCard{border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--panel2)}
+.paramCard label{display:block; font-weight:600; margin-bottom:6px}
+.paramCard input{width:100%}
+.paramDesc{margin-top:6px; color:var(--muted); font-size:12px; line-height:1.4}
+.swatch{display:inline-block; width:11px; height:11px; border-radius:3px; border:1px solid rgba(0,0,0,.25); margin-right:6px; vertical-align:-1px}
+.tabBar{padding:12px 12px 0 12px; gap:6px; border-bottom:1px solid var(--line); background:transparent}
+.tabBar button{padding:9px 16px; border-radius:10px 10px 0 0; border:1px solid var(--line); border-bottom:none; background:var(--tab-top); position:relative; top:1px; box-shadow:none}
+.tabBar button.active{background:var(--tab-active); border-color:var(--line-strong); border-bottom:1px solid var(--tab-active); font-weight:700}
+.tabPanel{display:none; min-height:0; flex:1}
+.tabPanel.active{display:grid}
+#tabDie{grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr)}
+#tabWaveforms{grid-template-columns:minmax(0,1fr); gap:12px}
+#tabParams{grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr)}
+#tabWaveDefs{grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr)}
+.canvasWrap{position:relative; min-height:0}
+canvas#layout{display:block; width:100%; height:100%; background:var(--grid-bg); border:1px solid var(--canvas-edge); border-radius:12px; min-height:520px}
+.statusBar{display:flex; justify-content:space-between; gap:8px; padding:9px 12px; border-top:1px solid var(--line); background:var(--soft); border-radius:0 0 14px 14px}
+.statusInline{display:flex; flex-wrap:wrap; gap:10px}
+.rightHeader{justify-content:space-between; padding:12px 12px 0 12px}
+.scrollPanel{padding:12px; overflow:auto; min-height:0}
+.waveStack canvas,.waveGrid canvas{width:100%; height:auto; display:block; margin-bottom:8px; border:1px solid var(--canvas-edge); border-radius:10px; background:var(--grid-bg)}
+.waveGrid{overflow:auto; padding:12px}
+.summaryList{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px}
+.summaryList div,.statusList div{padding:8px 9px; background:var(--soft); border:1px solid var(--line); border-radius:10px}
+.statusList{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px}
+.checks{flex-wrap:wrap}
+.toggleRow{display:flex; justify-content:space-between; align-items:center; gap:10px}
+#paramsPanel{margin-top:8px}
+.signalCard{border:1px solid var(--line); border-radius:12px; padding:12px; background:var(--panel2)}
+.signalHeader{justify-content:space-between; margin-bottom:8px}
+.signalRow{align-items:center; margin-bottom:8px}
+.signalLevels{flex-wrap:wrap; gap:4px}
+.levelBtn{min-width:28px; padding:4px 0; border-radius:8px; text-align:center}
+.levelBtn.on{background:var(--accent-soft); border-color:var(--accent)}
+.levelBtn.off{background:var(--button-top)}
+.drawCanvas{display:block; width:100%; height:70px; border:1px solid var(--canvas-edge); border-radius:10px; background:var(--grid-bg); cursor:crosshair}
+.inlineTools{display:flex; gap:6px; flex-wrap:wrap}
+.ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+.dropOverlay{position:fixed; inset:0; background:rgba(47,111,237,.12); border:3px dashed var(--accent); display:none; align-items:center; justify-content:center; z-index:100; color:var(--text); font-size:22px; font-weight:700; pointer-events:none}
+.dropOverlay.show{display:flex}
+pre{white-space:pre-wrap; word-break:break-word; margin:0}
+table{width:100%; border-collapse:collapse; margin-top:6px}
+th,td{border:1px solid var(--line); padding:6px 7px; text-align:center}
+@media (max-width:1320px){.appShell{grid-template-columns:250px minmax(0,1fr) 320px}}
+@media (max-width:1100px){.appShell{grid-template-columns:1fr; height:auto}.leftDock,.rightDock,.workspace{min-height:auto}.toolbar,.menuBar{position:static} #tabWaveforms{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+  <div class="menuBar" role="menubar" aria-label="Application menu">
+    <div style="font-weight:700; color:var(--text); margin-right:10px; padding:0 4px">nMOS Chip Lab</div>
+    <div class="menuRoot">
+      <button class="menuButton" data-menu="fileMenu" aria-haspopup="true" aria-expanded="false">File</button>
+      <div id="fileMenu" class="menu" role="menu">
+        <div class="menuColumn"><div class="menuInlineRow"><select id="exampleSelect" aria-label="Choose a prepared layout example"><option value="inverter">Inverter</option><option value="nand">NAND</option></select><button id="btnLoadExample" aria-label="Load the selected example into the editable die">Load</button></div></div>
+        <div class="menuColumn"><button id="btnSaveDesign" aria-label="Save the current design, settings, and waveforms to a design file">Save design</button><button id="btnLoadDesign" aria-label="Load a saved design file into the editor">Load design</button><input id="designFileInput" type="file" accept=".json,.chipdesign" class="hidden" aria-label="Choose a saved design file to load"></div>
+        <div class="menuColumn"><button id="btnClearAll" aria-label="Erase all layers, contacts, ports, and labels from the current die">New blank die</button></div>
+      </div>
+    </div>
+    <div class="menuRoot">
+      <button class="menuButton" data-menu="editMenu" aria-haspopup="true" aria-expanded="false">Edit</button>
+      <div id="editMenu" class="menu" role="menu">
+        <div class="menuColumn"><button id="menuUndo" aria-label="Undo the last edit">Undo</button><button id="menuRedo" aria-label="Redo the last undone edit">Redo</button></div>
+        <div class="menuColumn"><button id="menuCopy" aria-label="Copy the current rectangular selection">Copy</button><button id="menuCut" aria-label="Cut the current rectangular selection">Cut</button><button id="menuPaste" aria-label="Paste the copied region at the cursor location">Paste</button></div>
+      </div>
+    </div>
+    <div class="menuRoot">
+      <button class="menuButton" data-menu="toolsMenu" aria-haspopup="true" aria-expanded="false">Tools</button>
+      <div id="toolsMenu" class="menu" role="menu">
+        <div class="sectionTitle" style="margin-top:8px">Bounds</div>
+        <label class="row"><input id="boundsEnabled" type="checkbox" aria-label="Enable manual die bounds that clip editing and cursor motion">Enable bounds</label>
+        <div class="grid4 boundsGrid"><label>x0 <input id="boundX0" type="number" value="0"></label><label>y0 <input id="boundY0" type="number" value="0"></label><label>x1 <input id="boundX1" type="number" value="31"></label><label>y1 <input id="boundY1" type="number" value="23"></label></div>
+        <div class="row"><button id="btnFitBounds" aria-label="Set the die bounds to cover the current layout with margin">Fit bounds</button><button id="btnClearBounds" aria-label="Disable and clear the manual die bounds">Clear bounds</button></div>
+      </div>
+    </div>
+    <div class="menuRoot">
+      <button class="menuButton" data-menu="simulationMenu" aria-haspopup="true" aria-expanded="false">Simulation</button>
+      <div id="simulationMenu" class="menu" role="menu">
+        <div class="grid2"><label>Replay ms <input id="visualMs" type="number" value="1" min="1" step="1"></label><label>dt ps <input id="dtPs" type="number" value="20" min="1" step="1"></label></div>
+        <div class="grid2"><label><input id="showCurrent" type="checkbox">Current overlay</label><label><input id="showPartial" type="checkbox" checked>Clip to replay</label></div>
+      </div>
+    </div>
+    <div class="menuSpacer"></div>
+    <label class="themePicker" aria-label="Theme mode selector">
+      <span>Theme</span>
+      <select id="themeMode" aria-label="Choose system, light, or dark theme">
+        <option value="system">System</option>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="toolbar">
+    <button id="btnUndo" class="icon" title="Undo" aria-label="Undo the last die edit">↶</button>
+    <button id="btnRedo" class="icon" title="Redo" aria-label="Redo the last undone die edit">↷</button>
+    <button id="btnCopy" class="icon" title="Copy" aria-label="Copy the current rectangular selection">⧉</button>
+    <button id="btnCut" class="icon" title="Cut" aria-label="Cut the current rectangular selection">✂</button>
+    <button id="btnPaste" class="icon" title="Paste" aria-label="Paste the copied selection at the current cursor location">📋</button>
+    <div style="width:1px;height:24px;background:#d5dce6;margin:0 2px"></div>
+    <button id="btnRun" class="icon" title="Run simulation" aria-label="Run extraction and simulation for the current die using the waveform definitions">▶</button>
+    <button id="btnVisual" class="icon" title="Replay transient" aria-label="Animate the transient result on the die grid">⏵</button>
+    <button id="btnStopVisual" class="icon" title="Stop replay" aria-label="Stop the transient replay">⏹</button>
+    <div style="width:1px;height:24px;background:#d5dce6;margin:0 2px"></div>
+    <button id="btnZoomIn" class="icon" title="Zoom in" aria-label="Zoom in on the die grid">＋</button>
+    <button id="btnZoomOut" class="icon" title="Zoom out" aria-label="Zoom out on the die grid">－</button>
+    <button id="btnFitView" class="icon" title="Fit view" aria-label="Fit the viewport to the active geometry, selection, and bounds">⌂</button>
+    <div style="width:1px;height:24px;background:#d5dce6;margin:0 2px"></div>
+    <button id="btnSaveToolbar" class="icon" title="Save design" aria-label="Save the current design to a design file">💾</button>
+    <button id="btnLoadToolbar" class="icon" title="Load design" aria-label="Load a saved design file into the editor">📂</button>
+</div>
+
+  <div class="appShell">
+    <aside class="leftDock">
+      <div class="panel compactPanel">
+        <div class="sectionTitle">Tools</div>
+        <div id="toolButtons" class="toolGrid" aria-label="Layer, contact, selection, erase, and per-signal port tools"></div>
+      </div>
+      <div class="panel compactPanel">
+        <div class="sectionTitle">View</div>
+        <div class="viewBox" style="margin-top:8px">
+          <label><input type="checkbox" data-layer="p" checked><span class="swatch" style="background:#8dd0a3"></span>P</label>
+          <label><input type="checkbox" data-layer="pDepl" checked><span class="swatch" style="background:#4ca36b"></span>P-depl</label>
+          <label><input type="checkbox" data-layer="n" checked><span class="swatch" style="background:#8ec1ff"></span>N</label>
+          <label><input type="checkbox" data-layer="poly" checked><span class="swatch" style="background:#d45858"></span>Poly</label>
+          <label><input type="checkbox" data-layer="metal1" checked><span class="swatch" style="background:#d4d8df"></span>Metal1</label>
+          <label><input type="checkbox" data-layer="contacts" checked><span class="swatch" style="background:#111827"></span>Contacts</label>
+          <label><input type="checkbox" data-layer="transistors" checked><span class="swatch" style="background:#ffffff"></span>Transistors</label>
+          <label><input type="checkbox" data-layer="junctions"><span class="swatch" style="background:#a855f7"></span>Junctions</label>
+          <label><input type="checkbox" data-layer="ports" checked><span class="swatch" style="background:#c59e56"></span>Ports</label>
+          <label><input type="checkbox" data-layer="labels" checked><span class="swatch" style="background:#6b7280"></span>Labels</label>
+        </div>
+      </div>
+      <div class="panel compactPanel">
+        <div class="sectionTitle">Status</div>
+        <div id="editorStatus" class="statusList" aria-live="polite"></div>
+      </div>
+    </aside>
+
+    <main class="workspace panel">
+      <div class="tabBar">
+        <button class="mainTab active" data-tab="Die" aria-label="Show the die editor tab">Die</button>
+        <button class="mainTab" data-tab="Waveforms" aria-label="Show the waveform results tab">Waveforms</button>
+        <button class="mainTab" data-tab="WaveDefs" aria-label="Show the waveform definitions tab">Waveform definitions</button>
+        <button class="mainTab" data-tab="Params" aria-label="Show the electrical parameters tab">Parameters</button>
+      </div>
+      <section id="tabDie" class="tabPanel active">
+        <div class="canvasWrap">
+          <canvas id="layout" tabindex="0" aria-label="Main die editor grid. This is an infinite, zoomable and pannable grid centered on the origin, used for placing diffusion, poly, metal, contacts, and ports. Mouse wheel zooms. Middle mouse button pans. Left mouse button edits or selects depending on the active tool."></canvas>
+        </div>
+      </section>
+      <section id="tabParams" class="tabPanel">
+        <div class="scrollPanel">
+          <div class="panel compactPanel">
+            <div class="sectionTitle">Parameters</div>
+            <div class="paramGrid" style="margin-top:10px">
+              <div class="paramCard"><label>VCC <input id="paramVcc" type="number" value="5.0" step="0.1"></label><div class="paramDesc">Supply voltage in volts. This is the logic-high rail driven onto the VCC port and the maximum voltage used in the transient plots.</div></div>
+              <div class="paramCard"><label>Vth enh <input id="paramVthEnh" type="number" value="0.8" step="0.1"></label><div class="paramDesc">Threshold voltage of enhancement nMOS transistors. Larger values make pull-down devices turn on later and weaker for the same gate voltage.</div></div>
+              <div class="paramCard"><label>Vth depl <input id="paramVthDepl" type="number" value="-2.0" step="0.1"></label><div class="paramDesc">Threshold voltage of depletion-load devices. Because it is normally negative, the load behaves partly on even with gate bias near zero.</div></div>
+              <div class="paramCard"><label>R□ p <input id="paramRsqP" type="number" value="3000" step="10"></label><div class="paramDesc">Sheet resistance of p diffusion in ohms per square. Higher values make p diffusion runs slower and more resistive.</div></div>
+              <div class="paramCard"><label>R□ n <input id="paramRsqN" type="number" value="220" step="10"></label><div class="paramDesc">Sheet resistance of n diffusion in ohms per square. This sets the resistance of n diffusion paths outside the active transistor channel model.</div></div>
+              <div class="paramCard"><label>R□ poly <input id="paramRsqPoly" type="number" value="45" step="1"></label><div class="paramDesc">Sheet resistance of polysilicon in ohms per square. This affects gate routing delay and any poly signal spine used in the layout.</div></div>
+              <div class="paramCard"><label>C p fF <input id="paramCapP" type="number" value="0.7" step="0.05"></label><div class="paramDesc">Capacitance added per p-diffusion cell in femtofarads. It models distributed parasitic loading from each p region cell.</div></div>
+              <div class="paramCard"><label>C n fF <input id="paramCapN" type="number" value="0.9" step="0.05"></label><div class="paramDesc">Capacitance added per n-diffusion cell in femtofarads. Larger values slow node transitions on n-diffusion regions.</div></div>
+              <div class="paramCard"><label>C poly fF <input id="paramCapPoly" type="number" value="0.4" step="0.05"></label><div class="paramDesc">Capacitance added per poly cell in femtofarads. This mostly affects gate and routing delay for long poly wires.</div></div>
+              <div class="paramCard"><label>C m1 fF <input id="paramCapM1" type="number" value="0.25" step="0.05"></label><div class="paramDesc">Capacitance added per metal1 cell in femtofarads. It represents wiring parasitics of the first metal layer.</div></div>
+              <div class="paramCard"><label>C junc fF <input id="paramJuncCap" type="number" value="0.12" step="0.02"></label><div class="paramDesc">Capacitance added for each p-to-n parasitic junction edge in femtofarads. This is the depletion capacitance at diffusion boundaries.</div></div>
+              <div class="paramCard"><label>C via fF <input id="paramContactCap" type="number" value="0.15" step="0.02"></label><div class="paramDesc">Capacitance added by each contact between metal and diffusion or poly in femtofarads.</div></div>
+              <div class="paramCard"><label>β/width <input id="paramBeta" type="number" value="0.0003" step="0.0001"></label><div class="paramDesc">Transistor strength coefficient per extracted unit width. Larger values make conducting transistors stronger and faster.</div></div>
+              <div class="paramCard"><label>λ <input id="paramLambda" type="number" value="0.03" step="0.01"></label><div class="paramDesc">Channel-length modulation factor. It changes how much transistor current still depends on drain voltage after turn-on.</div></div>
+              <div class="paramCard"><label>Depl scale <input id="paramDeplScale" type="number" value="0.12" step="0.01"></label><div class="paramDesc">Strength scaling used for depletion-mode loads relative to the nominal extracted device strength.</div></div>
+            </div>
+            <div class="minirow" style="margin-top:10px"><button id="btnApplyParams" aria-label="Apply the edited electrical parameters">Apply</button><button id="btnResetParams" aria-label="Restore the default electrical parameters">Reset</button></div>
+          </div>
+        </div>
+      </section>
+      <section id="tabWaveforms" class="tabPanel">
+        <div class="panel" style="display:flex;flex-direction:column;min-height:0">
+          <div class="rightHeader"><div class="sectionTitle" id="waveTitle">Waveforms</div><div class="tiny" id="waveStats"></div></div>
+          <div id="waveGridMain" class="waveGrid" aria-live="polite"></div>
+        </div>
+      </section>
+      <section id="tabWaveDefs" class="tabPanel">
+        <div class="scrollPanel">
+          <div class="panel compactPanel" style="margin-bottom:10px">
+            <div class="grid3">
+              <label>Interval ps <input id="wfIntervalPs" type="number" value="1000" min="1" step="1" aria-label="Duration of one waveform interval in picoseconds"></label>
+              <label>Intervals <input id="wfIntervalCount" type="number" value="6" min="1" step="1" aria-label="Number of intervals used by all input and expected output waveforms"></label>
+              <div class="inlineTools"><button id="wfAddInterval" aria-label="Add one interval column to every waveform definition">+ interval</button><button id="wfTrimInterval" aria-label="Remove the last interval column from every waveform definition">− interval</button></div>
+            </div>
+          </div>
+          <div class="tabsHeader" style="margin-bottom:8px"><div class="sectionTitle">Input waveforms</div><button id="wfAddInput" aria-label="Add a new input signal definition">Add input</button></div>
+          <div id="wfInputsList" style="display:grid;gap:10px;margin-bottom:14px"></div>
+          <div class="tabsHeader" style="margin-bottom:8px"><div class="sectionTitle">Expected output waveforms</div><button id="wfAddOutput" aria-label="Add a new expected output signal definition">Add output</button></div>
+          <div id="wfOutputsList" style="display:grid;gap:10px"></div>
+        </div>
+      </section>
+      <div class="statusBar">
+        <div class="statusInline"><span id="cursorReadout">Cursor 0,0</span><span id="toolReadout">Tool metal1</span><span id="boundsReadout">Bounds unbounded</span></div>
+        <div class="tiny">Infinite grid editor</div>
+      </div>
+    </main>
+
+    <aside class="rightDock">
+      <div class="panel compactPanel">
+        <div class="sectionTitle">Summary</div>
+        <div id="summary" class="summaryList" style="margin-top:8px"></div>
+      </div>
+      <div class="panel" style="display:flex;flex-direction:column;min-height:0">
+        <div class="rightHeader"><div class="sectionTitle">Waveforms</div><button id="toggleWaveforms" aria-label="Show or hide the waveform side panel">Hide</button></div>
+        <div id="waveWrap" class="scrollPanel">
+          <div id="waveforms" class="waveStack"></div>
+        </div>
+      </div>
+      <div class="panel compactPanel" style="overflow:auto;min-height:0">
+        <div class="sectionTitle">Simulation</div>
+        <div id="extra" style="margin-top:8px"></div>
+        <div id="conflicts" style="margin-top:10px"></div>
+      </div>
+    </aside>
+  </div>
+<script src="sim-core.js"></script>
+<script src="_ui_extract.js"></script>
+  <div id="dropOverlay" class="dropOverlay" aria-hidden="true">Drop design file to load</div>
+</body>
+</html>

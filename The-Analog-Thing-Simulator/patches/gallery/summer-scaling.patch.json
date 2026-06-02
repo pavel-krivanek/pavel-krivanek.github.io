@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "analog-thing-patch/v1",
+  "inventory": "that-prototype-board/v006",
+  "name": "Summer scaling and sign demo",
+  "description": "Combines a positive and a negative coefficient through a THAT-style negating summer.",
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "MINUS1"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.35,
+      "label": "positive term"
+    },
+    {
+      "id": "P2",
+      "coefficient": 0.2,
+      "label": "negative term"
+    },
+    {
+      "id": "SUM1"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / negated sum"
+    }
+  ],
+  "cables": [
+    {
+      "from": "PLUS1.out",
+      "to": "P1.in",
+      "label": "+0.35 term"
+    },
+    {
+      "from": "MINUS1.out",
+      "to": "P2.in",
+      "label": "-0.20 term"
+    },
+    {
+      "from": "P1.out",
+      "to": "SUM1.in1",
+      "label": "first summer input"
+    },
+    {
+      "from": "P2.out",
+      "to": "SUM1.in2",
+      "label": "second summer input"
+    },
+    {
+      "from": "SUM1.out",
+      "to": "OUT_Y.in",
+      "label": "summer output to Y"
+    }
+  ],
+  "outputs": {
+    "y": "OUT_Y.out",
+    "positiveTerm": "P1.out",
+    "negativeTerm": "P2.out",
+    "summer": "SUM1.out"
+  },
+  "parameters": {
+    "expectedY": -0.15
+  }
+}

@@ -1,0 +1,172 @@
+{
+  "schemaVersion": "analog-thing-design/v1",
+  "kind": "custom-design",
+  "inventory": "that-prototype-board/v006",
+  "metadata": {
+    "name": "Comparator switch",
+    "description": "The comparator selects one of two analog branches based on the sign of a + b.",
+    "author": "",
+    "source": "static custom-design gallery",
+    "tags": [
+      "gallery-design",
+      "hybrid-style block",
+      "comparator-switch"
+    ],
+    "createdAt": "2026-05-26T00:00:00.000Z",
+    "modifiedAt": "2026-05-26T00:00:00.000Z",
+    "notes": ""
+  },
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "MINUS1"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.3,
+      "label": "positive compare term"
+    },
+    {
+      "id": "P2",
+      "coefficient": 0.2,
+      "label": "negative compare term"
+    },
+    {
+      "id": "CMP1"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / selected branch"
+    }
+  ],
+  "coefficients": {
+    "P1": 0.3,
+    "P2": 0.2,
+    "P3": 0.5,
+    "P4": 0.5,
+    "P5": 0.5,
+    "P6": 0.5,
+    "P7": 0.5,
+    "P8": 0.5
+  },
+  "cables": [
+    {
+      "id": "cable-1",
+      "from": {
+        "logicalSocketId": "PLUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P1.in",
+        "physicalSocketId": null
+      },
+      "label": "a = +0.3",
+      "color": null
+    },
+    {
+      "id": "cable-2",
+      "from": {
+        "logicalSocketId": "MINUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P2.in",
+        "physicalSocketId": null
+      },
+      "label": "b = -0.2",
+      "color": null
+    },
+    {
+      "id": "cable-3",
+      "from": {
+        "logicalSocketId": "P1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "CMP1.a",
+        "physicalSocketId": null
+      },
+      "label": "first sign-test input",
+      "color": null
+    },
+    {
+      "id": "cable-4",
+      "from": {
+        "logicalSocketId": "P2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "CMP1.b",
+        "physicalSocketId": null
+      },
+      "label": "second sign-test input",
+      "color": null
+    },
+    {
+      "id": "cable-5",
+      "from": {
+        "logicalSocketId": "PLUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "CMP1.positive",
+        "physicalSocketId": null
+      },
+      "label": "selected when a + b > 0",
+      "color": null
+    },
+    {
+      "id": "cable-6",
+      "from": {
+        "logicalSocketId": "MINUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "CMP1.nonPositive",
+        "physicalSocketId": null
+      },
+      "label": "selected when a + b <= 0",
+      "color": null
+    },
+    {
+      "id": "cable-7",
+      "from": {
+        "logicalSocketId": "CMP1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "OUT_Y.in",
+        "physicalSocketId": null
+      },
+      "label": "selected signal to Y output",
+      "color": null
+    }
+  ],
+  "outputRouting": {
+    "channels": {
+      "X": null,
+      "Y": "OUT_Y.out",
+      "Z": null,
+      "U": null
+    },
+    "aliases": {
+      "y": "OUT_Y.out",
+      "compareA": "P1.out",
+      "compareB": "P2.out",
+      "selected": "CMP1.out"
+    }
+  },
+  "operationDefaults": {
+    "mode": "OP",
+    "duration": 0,
+    "dt": 0.01,
+    "sampleEvery": 1,
+    "opTime": 8,
+    "cycles": 3,
+    "clip": false
+  },
+  "notes": "",
+  "sourcePatchSchemaVersion": "analog-thing-patch/v1"
+}

@@ -1,0 +1,237 @@
+{
+  "schemaVersion": "analog-thing-design/v1",
+  "kind": "custom-design",
+  "inventory": "that-prototype-board/v006",
+  "metadata": {
+    "name": "First Steps Helper: Absolute Value",
+    "description": "Booklet Section 10.3 helper selecting the absolute value of adjustable input A.",
+    "author": "",
+    "source": "THAT First Steps v2 Section 10 helper template",
+    "tags": [
+      "first-steps",
+      "helper",
+      "absolute-value",
+      "comparator-helper"
+    ],
+    "createdAt": "2026-05-28T00:00:00.000Z",
+    "modifiedAt": "2026-05-28T00:00:00.000Z",
+    "notes": ""
+  },
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "MINUS1"
+    },
+    {
+      "id": "ZERO"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.3,
+      "label": "P1 input A knob"
+    },
+    {
+      "id": "SUM1",
+      "label": "A source summer"
+    },
+    {
+      "id": "INV1",
+      "label": "A source output"
+    },
+    {
+      "id": "INV2",
+      "label": "-A branch"
+    },
+    {
+      "id": "CMP1",
+      "label": "Comparator / absolute value"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / abs(A)"
+    }
+  ],
+  "coefficients": {
+    "P1": 0.3,
+    "P2": 0.5,
+    "P3": 0.5,
+    "P4": 0.5,
+    "P5": 0.5,
+    "P6": 0.5,
+    "P7": 0.5,
+    "P8": 0.5
+  },
+  "cables": [
+    {
+      "id": "cable-1",
+      "from": {
+        "logicalSocketId": "PLUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P1.in",
+        "physicalSocketId": null
+      },
+      "label": "A: +1 into coefficient knob",
+      "color": null
+    },
+    {
+      "id": "cable-2",
+      "from": {
+        "logicalSocketId": "P1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in1",
+        "physicalSocketId": null
+      },
+      "label": "A: first k contribution",
+      "color": null
+    },
+    {
+      "id": "cable-3",
+      "from": {
+        "logicalSocketId": "P1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in2",
+        "physicalSocketId": null
+      },
+      "label": "A: second k contribution",
+      "color": null
+    },
+    {
+      "id": "cable-4",
+      "from": {
+        "logicalSocketId": "MINUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in3",
+        "physicalSocketId": null
+      },
+      "label": "A: -1 offset for 2*k-1",
+      "color": null
+    },
+    {
+      "id": "cable-5",
+      "from": {
+        "logicalSocketId": "SUM1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "INV1.in",
+        "physicalSocketId": null
+      },
+      "label": "A: invert summer output to recover full-range signal",
+      "color": null
+    },
+    {
+      "id": "cable-6",
+      "from": {
+        "logicalSocketId": "INV1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "INV2.in",
+        "physicalSocketId": null
+      },
+      "label": "form -A",
+      "color": null
+    },
+    {
+      "id": "cable-7",
+      "from": {
+        "logicalSocketId": "INV1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "CMP1.a",
+        "physicalSocketId": null
+      },
+      "label": "test A",
+      "color": null
+    },
+    {
+      "id": "cable-8",
+      "from": {
+        "logicalSocketId": "ZERO.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "CMP1.b",
+        "physicalSocketId": null
+      },
+      "label": "compare against zero",
+      "color": null
+    },
+    {
+      "id": "cable-9",
+      "from": {
+        "logicalSocketId": "INV1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "CMP1.positive",
+        "physicalSocketId": null
+      },
+      "label": "if A>0 choose A",
+      "color": null
+    },
+    {
+      "id": "cable-10",
+      "from": {
+        "logicalSocketId": "INV2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "CMP1.nonPositive",
+        "physicalSocketId": null
+      },
+      "label": "otherwise choose -A",
+      "color": null
+    },
+    {
+      "id": "cable-11",
+      "from": {
+        "logicalSocketId": "CMP1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "OUT_Y.in",
+        "physicalSocketId": null
+      },
+      "label": "abs(A) to OUT Y",
+      "color": null
+    }
+  ],
+  "outputRouting": {
+    "channels": {
+      "X": null,
+      "Y": "OUT_Y.out",
+      "Z": null,
+      "U": null
+    },
+    "aliases": {
+      "y": "OUT_Y.out",
+      "abs": "OUT_Y.out",
+      "a": "INV1.out",
+      "minusA": "INV2.out",
+      "compare": "CMP1.out"
+    }
+  },
+  "operationDefaults": {
+    "mode": "OP",
+    "duration": 0,
+    "dt": 0.01,
+    "sampleEvery": 1,
+    "opTime": 8,
+    "cycles": 1,
+    "clip": false
+  },
+  "notes": "",
+  "sourcePatchSchemaVersion": "analog-thing-patch/v1"
+}

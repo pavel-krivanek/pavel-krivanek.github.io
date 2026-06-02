@@ -1,0 +1,339 @@
+{
+  "schemaVersion": "analog-thing-patch/v1",
+  "inventory": "that-prototype-board/v006",
+  "name": "First Steps: Bouncing Ball",
+  "description": "Runnable Section 9.8 Bouncing Ball approximation. Ideal diode/Z-diode overdrive blocks detect wall/floor penetration, capacitor states store x/vx/y/vy, and tuned spring-style contact forces create the repeated rebound trace. The vertical path uses a standard inverter module for the OUT Y sign convention; no hidden helper component is inserted.",
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "MINUS1"
+    },
+    {
+      "id": "P3",
+      "coefficient": 0.16,
+      "label": "P3 gravity coefficient g"
+    },
+    {
+      "id": "P4",
+      "coefficient": 0.2,
+      "label": "P4 vertical drag coefficient d"
+    },
+    {
+      "id": "CAP1",
+      "type": "capacitor",
+      "label": "Capacitor / horizontal velocity vx",
+      "initialState": 0.36
+    },
+    {
+      "id": "CAP2",
+      "type": "capacitor",
+      "label": "Capacitor / horizontal position x",
+      "initialState": -0.8
+    },
+    {
+      "id": "CAP3",
+      "type": "capacitor",
+      "label": "Capacitor / vertical velocity vy",
+      "initialState": 0
+    },
+    {
+      "id": "CAP4",
+      "type": "capacitor",
+      "label": "Capacitor / vertical position y",
+      "initialState": -0.8
+    },
+    {
+      "id": "INV1",
+      "label": "Inverter / -x for left-wall detector"
+    },
+    {
+      "id": "INV2",
+      "label": "Standard inverter / OUT Y sign convention"
+    },
+    {
+      "id": "D1",
+      "type": "diode",
+      "label": "Right-wall ideal diode x>+1",
+      "forwardDrop": 0
+    },
+    {
+      "id": "D2",
+      "type": "diode",
+      "label": "Left-wall ideal diode x<-1",
+      "forwardDrop": 0
+    },
+    {
+      "id": "ZD1",
+      "type": "z-diode",
+      "label": "Floor Z-diode y>+1",
+      "zenerVoltage": 1,
+      "mode": "positive-overdrive"
+    },
+    {
+      "id": "ZD2",
+      "type": "z-diode",
+      "label": "Ceiling Z-diode y<-1",
+      "zenerVoltage": 1,
+      "mode": "negative-overdrive"
+    },
+    {
+      "id": "D3",
+      "type": "diode",
+      "label": "Floor contact diode",
+      "forwardDrop": 0
+    },
+    {
+      "id": "SUM1",
+      "type": "summer",
+      "label": "Horizontal acceleration sum",
+      "inputs": [
+        {
+          "name": "right",
+          "weight": 200,
+          "required": false
+        },
+        {
+          "name": "left",
+          "weight": -200,
+          "required": false
+        },
+        {
+          "name": "drag",
+          "weight": 0.02,
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "SUM2",
+      "type": "summer",
+      "label": "Vertical acceleration sum",
+      "inputs": [
+        {
+          "name": "gravityNeg",
+          "weight": 1,
+          "required": false
+        },
+        {
+          "name": "drag",
+          "weight": 1,
+          "required": false
+        },
+        {
+          "name": "floor",
+          "weight": 300,
+          "required": false
+        },
+        {
+          "name": "ceiling",
+          "weight": -300,
+          "required": false
+        }
+      ]
+    },
+    {
+      "id": "OUT_X",
+      "label": "X / horizontal position x"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / vertical position y"
+    },
+    {
+      "id": "OUT_Z",
+      "label": "Z / horizontal velocity vx"
+    },
+    {
+      "id": "OUT_U",
+      "label": "U / vertical velocity vy"
+    }
+  ],
+  "cables": [
+    {
+      "from": "CAP1.out",
+      "to": "CAP2.in",
+      "label": "integrate horizontal velocity into x"
+    },
+    {
+      "from": "CAP3.out",
+      "to": "CAP4.in",
+      "label": "integrate vertical velocity into y"
+    },
+    {
+      "from": "CAP2.out",
+      "to": "D1.in",
+      "label": "right-wall detector input x"
+    },
+    {
+      "from": "PLUS1.out",
+      "to": "D1.reference",
+      "label": "right wall at +1 machine unit"
+    },
+    {
+      "from": "CAP2.out",
+      "to": "INV1.in",
+      "label": "invert x for left-wall detector"
+    },
+    {
+      "from": "INV1.out",
+      "to": "D2.in",
+      "label": "left-wall detector input -x"
+    },
+    {
+      "from": "PLUS1.out",
+      "to": "D2.reference",
+      "label": "left wall at -1 machine unit"
+    },
+    {
+      "from": "D1.out",
+      "to": "SUM1.right",
+      "label": "right-wall penetration pushes left"
+    },
+    {
+      "from": "D2.out",
+      "to": "SUM1.left",
+      "label": "left-wall penetration pushes right"
+    },
+    {
+      "from": "CAP1.out",
+      "to": "SUM1.drag",
+      "label": "horizontal drag damps vx"
+    },
+    {
+      "from": "SUM1.out",
+      "to": "CAP1.in",
+      "label": "horizontal acceleration updates vx"
+    },
+    {
+      "from": "CAP4.out",
+      "to": "ZD1.in",
+      "label": "floor detector y>+1"
+    },
+    {
+      "from": "CAP4.out",
+      "to": "ZD2.in",
+      "label": "ceiling detector y<-1"
+    },
+    {
+      "from": "ZD1.out",
+      "to": "D3.in",
+      "label": "floor Z-diode overdrive through ideal diode"
+    },
+    {
+      "from": "MINUS1.out",
+      "to": "P3.in",
+      "label": "-1 into P3 creates the gravity term -g"
+    },
+    {
+      "from": "P3.out",
+      "to": "SUM2.gravityNeg",
+      "label": "gravity contribution through standard coefficient P3"
+    },
+    {
+      "from": "CAP3.out",
+      "to": "P4.in",
+      "label": "vertical velocity through standard drag coefficient P4"
+    },
+    {
+      "from": "P4.out",
+      "to": "SUM2.drag",
+      "label": "vertical drag damps vy"
+    },
+    {
+      "from": "D3.out",
+      "to": "SUM2.floor",
+      "label": "floor contact pushes upward"
+    },
+    {
+      "from": "ZD2.out",
+      "to": "SUM2.ceiling",
+      "label": "ceiling contact pushes downward"
+    },
+    {
+      "from": "SUM2.out",
+      "to": "CAP3.in",
+      "label": "vertical acceleration updates vy"
+    },
+    {
+      "from": "CAP2.out",
+      "to": "OUT_X.in",
+      "label": "x to OUT X"
+    },
+    {
+      "from": "CAP4.out",
+      "to": "INV2.in",
+      "label": "standard inverter forms the visible OUT Y sign"
+    },
+    {
+      "from": "INV2.out",
+      "to": "OUT_Y.in",
+      "label": "visible y to OUT Y through a standard inverter module"
+    },
+    {
+      "from": "CAP1.out",
+      "to": "OUT_Z.in",
+      "label": "vx to OUT Z"
+    },
+    {
+      "from": "CAP3.out",
+      "to": "OUT_U.in",
+      "label": "vy to OUT U"
+    }
+  ],
+  "outputs": {
+    "x": "OUT_X.out",
+    "y": "OUT_Y.out",
+    "displayY": "OUT_Y.out",
+    "physicalY": "CAP4.out",
+    "vx": "OUT_Z.out",
+    "vy": "OUT_U.out",
+    "rightWallContact": "D1.out",
+    "leftWallContact": "D2.out",
+    "floorContact": "D3.out",
+    "ceilingContact": "ZD2.out",
+    "horizontalAcceleration": "SUM1.out",
+    "verticalAcceleration": "SUM2.out"
+  },
+  "parameters": {
+    "firstStepsExampleId": "first-steps-bouncing-ball",
+    "page": 22,
+    "equation": "xDot = vx; vxDot = wall/drag response; yDot = vy; vyDot = g - d*vy - c*max(y-1,0) + c*max(-y-1,0); OUT_Y is formed through standard INV2",
+    "x0": -0.8,
+    "vx0": 0.36,
+    "y0": -0.8,
+    "vy0": 0,
+    "gravity": 0.16,
+    "verticalDrag": 0.2,
+    "horizontalDrag": 0.02,
+    "wallStiffness": 200,
+    "floorStiffness": 300,
+    "boundary": 1,
+    "scopePreset": "xy",
+    "opTimeSeconds": 20,
+    "accessoryRuntime": "ideal diode/Z-diode overdrive plus capacitor state storage with tuned contact stiffness; OUT_Y sign is routed through standard inverter INV2, not a hidden display transform",
+    "expectedFinalAtOpTime": {
+      "vx": 0.1746915126802045,
+      "x": 1.0118863503788578,
+      "vy": -0.03575341455289606,
+      "y": 0.8791699642507337,
+      "displayY": -0.8791699642507337,
+      "visibleY": -0.8791699642507337,
+      "rightOverdrive": 0.011886350378857768,
+      "leftOverdrive": 0,
+      "floorOverdrive": 0,
+      "ceilingOverdrive": 0,
+      "floorContactCount": 4,
+      "rightWallContactCount": 2,
+      "leftWallContactCount": 1,
+      "peakY": 1.0314519286561619,
+      "minY": -0.8,
+      "displayPeakY": 0.8,
+      "displayMinY": -1.0314519286561619,
+      "maxX": 1.0228848149790064,
+      "minX": -1.0200085988067786
+    },
+    "expectedDisplayYAtOpTime": -0.8791699642507337
+  }
+}

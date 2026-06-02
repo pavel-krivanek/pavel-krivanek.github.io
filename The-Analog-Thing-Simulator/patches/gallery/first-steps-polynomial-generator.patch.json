@@ -1,0 +1,252 @@
+{
+  "schemaVersion": "analog-thing-patch/v1",
+  "inventory": "that-prototype-board/v006",
+  "name": "First Steps: Polynomial Generator",
+  "description": "Booklet-style active-block translation of First Steps Section 9.9. I1 ramps x from -1 to +1, I2 generates -x^2 through an XIR summing-junction helper, I3 generates x^3, and P2-P5 form d, c, b, and a terms for p(x).",
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "MINUS1"
+    },
+    {
+      "id": "I1",
+      "label": "Integrator / x ramp"
+    },
+    {
+      "id": "I2",
+      "label": "Integrator / -x^2"
+    },
+    {
+      "id": "I3",
+      "label": "Integrator / x^3"
+    },
+    {
+      "id": "XIR1",
+      "label": "XIR helper / second x input for -x^2"
+    },
+    {
+      "id": "XIR2",
+      "label": "XIR helper / second and third -x^2 inputs for x^3"
+    },
+    {
+      "id": "INV1",
+      "label": "Inverter / x^2"
+    },
+    {
+      "id": "INV2",
+      "label": "Inverter / -x^3 for negative a default"
+    },
+    {
+      "id": "INV3",
+      "label": "Inverter / final p(x)"
+    },
+    {
+      "id": "SUM1",
+      "label": "Summer / -(a*x^3 + b*x^2 + c*x + d)"
+    },
+    {
+      "id": "P1",
+      "coefficient": 1,
+      "label": "P1 tau ramp speed"
+    },
+    {
+      "id": "P2",
+      "coefficient": 0.1,
+      "label": "P2 constant term d"
+    },
+    {
+      "id": "P3",
+      "coefficient": 0.7,
+      "label": "P3 linear coefficient c"
+    },
+    {
+      "id": "P4",
+      "coefficient": 0.4,
+      "label": "P4 quadratic coefficient b"
+    },
+    {
+      "id": "P5",
+      "coefficient": 0.3,
+      "label": "P5 cubic coefficient |a|, fed from -x^3 for the default negative a"
+    },
+    {
+      "id": "OUT_X",
+      "label": "X / polynomial input x"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / polynomial output p(x)"
+    }
+  ],
+  "cables": [
+    {
+      "from": "PLUS1.out",
+      "to": "I1.ic",
+      "label": "+1 on IC makes I1.out start at x=-1"
+    },
+    {
+      "from": "MINUS1.out",
+      "to": "P1.in",
+      "label": "-1 through P1 sets the positive ramp derivative dx/dt"
+    },
+    {
+      "from": "P1.out",
+      "to": "I1.in1",
+      "label": "inverting integrator turns -tau into a positive x ramp"
+    },
+    {
+      "from": "PLUS1.out",
+      "to": "I2.ic",
+      "label": "+1 on IC makes I2.out start at -x^2=-1"
+    },
+    {
+      "from": "I1.out",
+      "to": "I2.in1",
+      "label": "first x contribution for d(-x^2)/dt=-2x"
+    },
+    {
+      "from": "I1.out",
+      "to": "XIR1.in1",
+      "label": "second x contribution through XIR1"
+    },
+    {
+      "from": "XIR1.out",
+      "to": "I2.sj",
+      "label": "XIR1 adds the second x input at the summing junction"
+    },
+    {
+      "from": "PLUS1.out",
+      "to": "I3.ic",
+      "label": "+1 on IC makes I3.out start at x^3=-1"
+    },
+    {
+      "from": "I2.out",
+      "to": "I3.in1",
+      "label": "first -x^2 contribution for d(x^3)/dt=3x^2"
+    },
+    {
+      "from": "I2.out",
+      "to": "XIR2.in1",
+      "label": "second -x^2 contribution through XIR2"
+    },
+    {
+      "from": "I2.out",
+      "to": "XIR2.in2",
+      "label": "third -x^2 contribution through XIR2"
+    },
+    {
+      "from": "XIR2.out",
+      "to": "I3.sj",
+      "label": "XIR2 adds two more -x^2 inputs at the summing junction"
+    },
+    {
+      "from": "I2.out",
+      "to": "INV1.in",
+      "label": "recover positive x^2 from -x^2"
+    },
+    {
+      "from": "I3.out",
+      "to": "INV2.in",
+      "label": "recover -x^3 so P5 can implement the default a=-0.3"
+    },
+    {
+      "from": "PLUS1.out",
+      "to": "P2.in",
+      "label": "constant term d"
+    },
+    {
+      "from": "I1.out",
+      "to": "P3.in",
+      "label": "linear term c*x"
+    },
+    {
+      "from": "INV1.out",
+      "to": "P4.in",
+      "label": "quadratic term b*x^2"
+    },
+    {
+      "from": "INV2.out",
+      "to": "P5.in",
+      "label": "cubic term a*x^3 with default negative sign"
+    },
+    {
+      "from": "P2.out",
+      "to": "SUM1.in1",
+      "label": "d into final polynomial summer"
+    },
+    {
+      "from": "P3.out",
+      "to": "SUM1.in2",
+      "label": "c*x into final polynomial summer"
+    },
+    {
+      "from": "P4.out",
+      "to": "SUM1.in3",
+      "label": "b*x^2 into final polynomial summer"
+    },
+    {
+      "from": "P5.out",
+      "to": "SUM1.in4",
+      "label": "a*x^3 into final polynomial summer"
+    },
+    {
+      "from": "SUM1.out",
+      "to": "INV3.in",
+      "label": "invert negating-summer output to get p(x)"
+    },
+    {
+      "from": "I1.out",
+      "to": "OUT_X.in",
+      "label": "x ramp to OUT X for X/Y display"
+    },
+    {
+      "from": "INV3.out",
+      "to": "OUT_Y.in",
+      "label": "polynomial p(x) to OUT Y"
+    }
+  ],
+  "outputs": {
+    "x": "OUT_X.out",
+    "y": "OUT_Y.out",
+    "polynomial": "OUT_Y.out",
+    "minusX2": "I2.out",
+    "x2": "INV1.out",
+    "x3": "I3.out",
+    "aTerm": "P5.out",
+    "bTerm": "P4.out",
+    "cTerm": "P3.out",
+    "dTerm": "P2.out"
+  },
+  "parameters": {
+    "firstStepsExampleId": "first-steps-polynomial-generator",
+    "page": 23,
+    "equation": "p(x) = a*x^3 + b*x^2 + c*x + d",
+    "scopePreset": "xy",
+    "rampRate": 1,
+    "a": -0.3,
+    "b": 0.4,
+    "c": 0.7,
+    "d": 0.1,
+    "opTimeSeconds": 2,
+    "coefficients": {
+      "P1": 1,
+      "P2": 0.1,
+      "P3": 0.7,
+      "P4": 0.4,
+      "P5": 0.3
+    },
+    "defaultPolynomial": "p(x) = -0.3*x^3 + 0.4*x^2 + 0.7*x + 0.1",
+    "expectedFinalAt2s": {
+      "x": 1,
+      "minusX2": -1,
+      "x3": 1,
+      "aTerm": -0.3,
+      "bTerm": 0.4,
+      "cTerm": 0.7,
+      "dTerm": 0.1,
+      "p": 0.9
+    }
+  }
+}

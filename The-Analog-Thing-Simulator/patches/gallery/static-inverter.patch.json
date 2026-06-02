@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "analog-thing-patch/v1",
+  "inventory": "that-prototype-board/v006",
+  "name": "Static inverter and coefficient demo",
+  "description": "A small serialized patch that feeds +1 through a potentiometer and inverter, demonstrating coefficient scaling and sign reversal.",
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.6,
+      "label": "P1 coefficient"
+    },
+    {
+      "id": "INV1"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / inverted scaled signal"
+    }
+  ],
+  "cables": [
+    {
+      "from": "PLUS1.out",
+      "to": "P1.in",
+      "label": "+1 machine unit into coefficient"
+    },
+    {
+      "from": "P1.out",
+      "to": "INV1.in",
+      "label": "scaled signal into inverter"
+    },
+    {
+      "from": "INV1.out",
+      "to": "OUT_Y.in",
+      "label": "negative scaled signal to Y output"
+    }
+  ],
+  "outputs": {
+    "y": "OUT_Y.out",
+    "scaled": "P1.out",
+    "inverted": "INV1.out"
+  },
+  "parameters": {
+    "expectedY": -0.6
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "schemaVersion": "analog-thing-design-template/v1",
+  "id": "blank-design",
+  "title": "Blank zero-output design",
+  "category": "starter",
+  "description": "A validation-clean starter design with a zero output placeholder.",
+  "sourceDesignId": null,
+  "defaultMode": "OP",
+  "runnable": true,
+  "tags": [
+    "template-design",
+    "blank",
+    "starter",
+    "design-template",
+    "blank-design"
+  ],
+  "walkthrough": [
+    {
+      "title": "Start from a known-good empty canvas",
+      "text": "The template intentionally routes ZERO to Y so validation and runtime checks succeed before any user edits are made.",
+      "socketFocus": [
+        "ZERO.out",
+        "OUT_Y.in"
+      ],
+      "controlFocus": [
+        "Y"
+      ]
+    },
+    {
+      "title": "Replace the placeholder",
+      "text": "Delete the ZERO to OUT_Y cable, add the components you need, then route the signal you want to inspect back to X, Y, Z, or U.",
+      "socketFocus": [],
+      "controlFocus": []
+    }
+  ],
+  "runOptions": {
+    "mode": "OP"
+  },
+  "design": {
+    "schemaVersion": "analog-thing-design/v1",
+    "kind": "custom-design",
+    "inventory": "that-prototype-board/v006",
+    "metadata": {
+      "name": "Blank zero-output design",
+      "description": "A safe starter design with a single zero-valued output, intended to be edited into a new custom program.",
+      "author": "",
+      "source": "built-in custom-design template",
+      "tags": [
+        "template-design",
+        "blank",
+        "starter"
+      ],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "modifiedAt": "2026-05-26T00:00:00.000Z",
+      "notes": "Delete or replace the ZERO to OUT_Y cable when starting a real patch. The placeholder keeps the template executable and validation-clean."
+    },
+    "components": [
+      {
+        "id": "ZERO"
+      },
+      {
+        "id": "OUT_Y",
+        "label": "Y / blank zero output"
+      }
+    ],
+    "coefficients": {
+      "P1": 0.5,
+      "P2": 0.5,
+      "P3": 0.5,
+      "P4": 0.5,
+      "P5": 0.5,
+      "P6": 0.5,
+      "P7": 0.5,
+      "P8": 0.5
+    },
+    "cables": [
+      {
+        "id": "cable-1",
+        "from": {
+          "logicalSocketId": "ZERO.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "OUT_Y.in",
+          "physicalSocketId": null
+        },
+        "label": "safe zero placeholder",
+        "color": null
+      }
+    ],
+    "outputRouting": {
+      "channels": {
+        "X": null,
+        "Y": "OUT_Y.out",
+        "Z": null,
+        "U": null
+      },
+      "aliases": {
+        "y": "OUT_Y.out",
+        "blank": "OUT_Y.out"
+      }
+    },
+    "operationDefaults": {
+      "mode": "OP",
+      "duration": 0,
+      "dt": 0.01,
+      "sampleEvery": 1,
+      "opTime": 8,
+      "cycles": 3,
+      "clip": false
+    },
+    "notes": "Safe blank/starter template. Replace the placeholder output and cable with the intended circuit.",
+    "sourcePatchSchemaVersion": null
+  }
+}

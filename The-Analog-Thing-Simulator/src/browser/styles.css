@@ -1,0 +1,2765 @@
+:root {
+  color-scheme: light;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f4f4f4;
+  color: #202124;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #f4f4f4;
+}
+
+main {
+  max-width: 1680px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+header {
+  margin-bottom: 18px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 1.75rem;
+}
+
+p {
+  line-height: 1.45;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.panel {
+  background: #ffffff;
+  border: 1px solid #dddddd;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.control-row {
+  margin-bottom: 14px;
+}
+
+.control-row label {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 650;
+  margin-bottom: 6px;
+}
+
+.control-row input[type="range"],
+.control-row input[type="number"],
+.control-row select {
+  width: 100%;
+}
+
+.control-row input[type="number"],
+.control-row select {
+  min-height: 34px;
+  padding: 4px 8px;
+  border: 1px solid #bdbdbd;
+  border-radius: 8px;
+  background: white;
+}
+
+button {
+  width: 100%;
+  min-height: 38px;
+  margin-top: 8px;
+  border: 1px solid #7b7b7b;
+  border-radius: 8px;
+  background: #f7f7f7;
+  cursor: pointer;
+  font-weight: 650;
+}
+
+button:hover {
+  background: #eeeeee;
+}
+
+.canvas-wrap {
+  overflow: auto;
+}
+
+canvas {
+  width: 100%;
+  max-width: 760px;
+  height: auto;
+  border: 1px solid #d8d8d8;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.status {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #eef5ff;
+  border: 1px solid #d5e7ff;
+  font-size: 0.92rem;
+}
+
+.status[data-overload="true"] {
+  background: #fff4f4;
+  border-color: #ffcaca;
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+}
+
+.legend span::before {
+  content: "";
+  display: inline-block;
+  width: 18px;
+  height: 3px;
+  margin-right: 6px;
+  vertical-align: middle;
+  background: currentColor;
+}
+
+.legend .position {
+  color: #1565c0;
+}
+
+.legend .velocity {
+  color: #c62828;
+}
+
+pre {
+  white-space: pre-wrap;
+  background: #111111;
+  color: #eeeeee;
+  border-radius: 8px;
+  padding: 12px;
+  max-height: 220px;
+  overflow: auto;
+}
+
+@media (max-width: 800px) {
+  main {
+    padding: 16px;
+  }
+
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.gallery-panel {
+  grid-column: 1 / -1;
+}
+
+.example-description {
+  margin-bottom: 0;
+  font-size: 0.95rem;
+  color: #4b5563;
+}
+
+.oscilloscope-panel {
+  min-width: 0;
+}
+
+.patch-panel-section {
+  margin-top: 18px;
+}
+
+.patch-panel-svg {
+  overflow-x: auto;
+  border: 1px solid #d6d6d6;
+  border-radius: 12px;
+  background: #fff;
+  padding: 8px;
+}
+
+.patch-panel-svg svg {
+  min-width: 900px;
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.panel-background {
+  fill: #fbfbfb;
+  stroke: #cfcfcf;
+  stroke-width: 2;
+}
+
+.panel-component rect {
+  fill: #ffffff;
+  stroke: #2f3b52;
+  stroke-width: 1.5;
+}
+
+.panel-component.constant rect {
+  fill: #f5f5f5;
+}
+
+.panel-component.integrator rect {
+  fill: #eef6ff;
+}
+
+.panel-component.inverter rect,
+.panel-component.summer rect {
+  fill: #fff7ed;
+}
+
+.panel-component.potentiometer rect {
+  fill: #f0fdf4;
+}
+
+.panel-component.output rect {
+  fill: #f7f0ff;
+}
+
+.component-label {
+  font-size: 15px;
+  font-weight: 700;
+  fill: #111827;
+}
+
+.component-role {
+  font-size: 9px;
+  fill: #4b5563;
+}
+
+.socket.input {
+  fill: #ffffff;
+  stroke: #111827;
+  stroke-width: 1.5;
+}
+
+.socket.output {
+  fill: #111827;
+}
+
+.panel-cable {
+  fill: none;
+  stroke: #606a7b;
+  stroke-width: 2.1;
+  opacity: 0.88;
+  marker-end: url(#arrow);
+}
+
+.patch-panel-svg marker path {
+  fill: #606a7b;
+}
+
+.lower-layout {
+  margin-top: 18px;
+}
+
+.tutorial-steps {
+  padding-left: 20px;
+}
+
+.tutorial-steps li {
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.cable-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 14px;
+}
+
+.cable-list li {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) auto minmax(120px, 1fr);
+  gap: 6px;
+  align-items: baseline;
+  padding: 6px 0;
+  border-bottom: 1px solid #eeeeee;
+  font-size: 0.9rem;
+}
+
+.cable-list span {
+  grid-column: 1 / -1;
+  color: #4b5563;
+}
+
+@media (max-width: 820px) {
+  .gallery-panel {
+    grid-column: auto;
+  }
+
+  .patch-panel-svg svg {
+    width: 900px;
+  }
+}
+
+.patch-editor-section {
+  margin-top: 18px;
+}
+
+.editor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 220px;
+  padding: 10px;
+  border: 1px solid #bdbdbd;
+  border-radius: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.84rem;
+  line-height: 1.35;
+  resize: vertical;
+}
+
+.patch-validation {
+  margin: 10px 0 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #cfe3d4;
+  background: #f0fdf4;
+  white-space: pre-wrap;
+  font-size: 0.92rem;
+}
+
+.patch-validation[data-valid="false"] {
+  border-color: #f4b4b4;
+  background: #fff1f1;
+}
+
+.button-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (max-width: 820px) {
+  .editor-grid,
+  .button-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.serialized-gallery-section .json-preview {
+  max-height: 24rem;
+  overflow: auto;
+  white-space: pre;
+}
+
+.template-bar {
+  border: 1px solid #d8dde4;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 14px;
+  background: #fbfcfe;
+}
+
+.template-parameters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.template-parameter {
+  display: grid;
+  gap: 4px;
+  border: 1px solid #e1e6ee;
+  border-radius: 10px;
+  padding: 8px;
+  background: #ffffff;
+}
+
+.template-parameter small,
+.muted {
+  color: #596579;
+}
+
+/* v012 SVG cable editing affordances */
+.socket {
+  cursor: crosshair;
+}
+.socket:hover,
+.socket:focus {
+  stroke-width: 3;
+  outline: none;
+}
+.panel-cable {
+  cursor: pointer;
+}
+.panel-cable:hover {
+  stroke-width: 3.5;
+}
+.cable-interaction-status {
+  white-space: pre-wrap;
+}
+
+
+/* v015 educational scaling and diagnostics affordances */
+.education-section {
+  margin-top: 18px;
+}
+
+.education-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.education-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.education-table th,
+.education-table td {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.education-diagnostic[data-overload="true"] {
+  border: 1px solid #f4b4b4;
+  border-radius: 8px;
+  padding: 8px;
+  background: #fff1f1;
+}
+
+.preview-cable {
+  stroke-dasharray: 6 4;
+  stroke-width: 3;
+  pointer-events: none;
+}
+
+.preview-cable[data-valid-target="true"] {
+  opacity: 0.95;
+}
+
+.preview-cable[data-valid-target="false"] {
+  opacity: 0.5;
+}
+
+@media (max-width: 820px) {
+  .education-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.packaging-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.guide-card {
+  border: 1px solid #d8dde6;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  background: #fbfcff;
+}
+
+.guide-card h3 {
+  margin-top: 0;
+}
+
+.troubleshooting-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.troubleshooting-list li {
+  border: 1px solid #d8dde6;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  background: #fbfcff;
+}
+
+.troubleshooting-list li[data-severity="error"] {
+  border-color: #b84a4a;
+}
+
+.troubleshooting-list li[data-severity="warning"] {
+  border-color: #b8860b;
+}
+
+#importExportSmokeTest[data-valid="false"] {
+  border-color: #b84a4a;
+}
+
+/* v017 THAT-style patch panel editor prototype */
+.patch-panel-svg {
+  background: linear-gradient(180deg, #fafafa 0%, #f1f1f1 100%);
+}
+
+.patch-panel-svg svg {
+  min-width: 1000px;
+}
+
+.panel-background {
+  fill: #dedede;
+}
+
+.that-top-strip rect,
+.that-patch-field rect,
+.that-front-panel rect {
+  fill: #fcfcfc;
+  stroke: #c7c7c7;
+  stroke-width: 1.4;
+}
+
+.top-connector rect {
+  fill: #ffffff;
+  stroke: #9ea3a8;
+  stroke-width: 1;
+}
+
+.top-connector text,
+.panel-group-title,
+.knob-label,
+.status-led-label,
+.component-mini {
+  font-size: 8px;
+  fill: #222;
+  letter-spacing: 0.08em;
+}
+
+.panel-group rect {
+  fill: #ffffff;
+  stroke: #d6d6d6;
+  stroke-width: 1;
+}
+
+.panel-module {
+  fill: #fcfcfc;
+  stroke: #2a2a2a;
+  stroke-width: 1;
+}
+
+.panel-component .component-label {
+  font-size: 8px;
+  font-weight: 700;
+  fill: #222;
+  letter-spacing: 0.04em;
+}
+
+.component-glyph,
+.component-glyph-line {
+  stroke: #111;
+  fill: none;
+  stroke-width: 1.3;
+}
+
+.component-glyph-text {
+  font-size: 14px;
+  font-weight: 700;
+  fill: #111;
+}
+
+.socket.input,
+.socket.output {
+  fill: #e2bf55;
+  stroke: #151515;
+  stroke-width: 1.2;
+}
+
+.socket.output {
+  fill: #111;
+  stroke: #e2bf55;
+}
+
+.panel-cable {
+  stroke: #6e7177;
+  stroke-width: 2.2;
+  fill: none;
+  opacity: 0.92;
+}
+
+.that-brand {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  fill: #111;
+}
+
+.panel-meter {
+  fill: #2b2b2b;
+  stroke: #1a1a1a;
+}
+
+.panel-meter-screen {
+  fill: #d8ddd2;
+  stroke: #3f3f3f;
+}
+
+.panel-meter-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 34px;
+  fill: #333;
+}
+
+.panel-knob {
+  fill: #2f2f2f;
+  stroke: #d0d0d0;
+  stroke-width: 1.4;
+}
+
+.panel-knob.small {
+  fill: #333;
+}
+
+.panel-knob-pointer {
+  stroke: #ffffff;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.status-led {
+  fill: #8bcf68;
+  stroke: #2f6a25;
+  stroke-width: 1;
+}
+
+.status-led-group:nth-of-type(2) .status-led {
+  fill: #f0cd57;
+  stroke: #8a6d12;
+}
+
+.status-led-group:nth-of-type(3) .status-led {
+  fill: #ef8787;
+  stroke: #9d2f2f;
+}
+
+/* v018 socket-pattern patch panel refinements */
+.patch-panel-svg svg {
+  min-width: 1080px;
+}
+
+.panel-group-title,
+.accessory-title,
+.socket-label,
+.component-label,
+.component-body-text,
+.top-connector text {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.panel-module {
+  fill: #fffdf8;
+}
+
+.socket-label {
+  font-size: 7px;
+  fill: #1e1e1e;
+  letter-spacing: 0.04em;
+}
+
+.component-body-text {
+  font-size: 11px;
+  font-weight: 700;
+  fill: #262626;
+}
+
+.socket.display-only,
+.socket.decorative {
+  fill: #f1ead1;
+  stroke: #777;
+  stroke-width: 1;
+}
+
+.socket-group.decorative text,
+.socket-group.display-only text {
+  fill: #666;
+}
+
+.accessory-area rect {
+  fill: #fbfbfb;
+  stroke: #d5d5d5;
+  stroke-width: 1;
+}
+
+.accessory-item rect {
+  fill: #f3f3f3;
+  stroke: #a7a7a7;
+  stroke-width: 1;
+}
+
+.accessory-item text,
+.accessory-title {
+  font-size: 8px;
+  fill: #333;
+}
+
+/* v019 uploaded-reference SVG panel overlay */
+.that-reference-panel .panel-reference-image {
+  pointer-events: none;
+}
+
+.that-reference-panel .socket-hit {
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 2;
+  cursor: crosshair;
+}
+
+.that-reference-panel .socket-hit:hover,
+.that-reference-panel .socket-hit:focus {
+  fill: rgba(255, 210, 72, 0.28);
+  stroke: #111;
+  outline: none;
+}
+
+.that-reference-panel .panel-cable {
+  stroke: #1565c0;
+  stroke-width: 2.4;
+  opacity: 0.82;
+  fill: none;
+}
+
+.that-reference-panel .panel-cable:hover {
+  stroke-width: 3.6;
+}
+
+
+/* v020 wider workbench layout for the uploaded THAT panel SVG */
+:root {
+  --workbench-max-width: 1680px;
+}
+
+body {
+  min-width: 0;
+}
+
+main {
+  max-width: var(--workbench-max-width);
+}
+
+.layout {
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+}
+
+.patch-panel-section {
+  width: 100%;
+}
+
+.patch-panel-svg {
+  overflow-x: auto;
+  padding: 12px;
+}
+
+.patch-panel-svg svg.that-reference-panel {
+  min-width: 1200px;
+  width: 100%;
+  max-width: none;
+}
+
+@media (min-width: 1500px) {
+  .patch-panel-svg svg.that-reference-panel {
+    min-width: 1320px;
+  }
+}
+
+@media (max-width: 980px) {
+  main {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .patch-panel-svg svg.that-reference-panel {
+    min-width: 1000px;
+  }
+}
+
+.panel-editor-toolbar {
+  display: grid;
+  grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: end;
+  margin: 12px 0;
+}
+
+.panel-editor-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.panel-editor-buttons button {
+  margin-top: 0;
+}
+
+.cable-interaction-status[data-dirty="true"] {
+  background: #fff8e1;
+  border-color: #f0d37a;
+}
+
+.that-reference-panel:focus,
+.socket-hit:focus,
+.panel-cable:focus {
+  outline: 3px solid #7aa7ff;
+  outline-offset: 2px;
+}
+
+.panel-cable[tabindex="0"] {
+  cursor: pointer;
+}
+
+.physical-socket.display-only,
+.physical-socket.unsupported {
+  stroke-dasharray: 3 2;
+  opacity: 0.42;
+}
+
+@media (max-width: 900px) {
+  .panel-editor-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-editor-buttons {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* v024 custom-design coefficient, operation, and routing controls */
+.custom-design-controls {
+  margin-top: 12px;
+}
+
+.custom-controls-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.2fr) minmax(240px, 1fr) minmax(240px, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.custom-controls-card {
+  border: 1px solid #d8dde6;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fbfcff;
+}
+
+.custom-controls-card h3 {
+  margin: 0 0 10px;
+}
+
+.coefficient-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.coefficient-control {
+  display: grid;
+  grid-template-columns: 1fr 74px;
+  gap: 6px 8px;
+  align-items: center;
+  border: 1px solid #e1e6ee;
+  border-radius: 10px;
+  padding: 8px;
+  background: #ffffff;
+}
+
+.coefficient-control label {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  font-weight: 650;
+}
+
+.coefficient-control input[type="range"] {
+  width: 100%;
+}
+
+.coefficient-control input[type="number"] {
+  width: 74px;
+  min-height: 32px;
+  padding: 4px 6px;
+  border: 1px solid #bdbdbd;
+  border-radius: 8px;
+}
+
+#customDesignWarnings[data-valid="false"] {
+  background: #fff8e1;
+  border-color: #f0d37a;
+}
+
+@media (max-width: 1080px) {
+  .custom-controls-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .coefficient-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel-cable.diagnostic-error,
+.panel-cable.invalid-cable {
+  stroke-width: 4;
+  stroke-dasharray: 8 4;
+}
+
+.patch-validation[data-valid="false"] pre {
+  white-space: pre-wrap;
+}
+
+/* v027-v028 custom-design save/load/import/export workflows and templates */
+.custom-design-storage-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(260px, 0.75fr);
+  gap: 14px;
+  align-items: start;
+  margin: 14px 0;
+}
+
+#customDesignImportJson {
+  width: 100%;
+  min-height: 150px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88rem;
+  border: 1px solid #bdbdbd;
+  border-radius: 10px;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+#designJsonFileInput {
+  max-width: 100%;
+}
+
+@media (max-width: 1080px) {
+  .custom-design-storage-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.template-walkthrough {
+  margin-top: 10px;
+  border: 1px solid #d8d8d8;
+  border-radius: 10px;
+  padding: 10px;
+  background: #fff;
+}
+
+.template-walkthrough h4 {
+  margin: 0 0 6px;
+}
+
+.template-walkthrough ol {
+  margin: 8px 0 0 20px;
+  padding: 0;
+}
+
+.template-walkthrough li + li {
+  margin-top: 6px;
+}
+
+/* v030 usability hardening: panel viewport controls, accessibility, and socket status states */
+.panel-viewport-toolbar {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: end;
+  margin-top: 8px;
+}
+
+.panel-viewport-buttons {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(80px, 1fr));
+  gap: 8px;
+}
+
+.panel-viewport-buttons button {
+  margin-top: 0;
+}
+
+.patch-panel-svg {
+  overflow: auto;
+  touch-action: pan-x pan-y;
+}
+
+.patch-panel-svg svg.that-reference-panel {
+  transition: transform 120ms ease-out;
+  transform-origin: 0 0;
+}
+
+.that-reference-panel .physical-socket.editable {
+  fill: rgba(255, 210, 72, 0.14);
+  stroke: rgba(17, 24, 39, 0.35);
+}
+
+.that-reference-panel .physical-socket.display-only {
+  fill: rgba(180, 180, 180, 0.14);
+  stroke: rgba(90, 90, 90, 0.55);
+  stroke-dasharray: 2 3;
+  opacity: 0.55;
+}
+
+.that-reference-panel .physical-socket.unsupported {
+  fill: rgba(255, 164, 28, 0.18);
+  stroke: rgba(128, 70, 0, 0.85);
+  stroke-dasharray: 4 2;
+  opacity: 0.72;
+}
+
+.that-reference-panel .physical-socket.invalid,
+.that-reference-panel .physical-socket[aria-invalid="true"] {
+  fill: rgba(220, 38, 38, 0.25);
+  stroke: #b91c1c;
+  stroke-width: 3;
+}
+
+.that-reference-panel .physical-socket[data-editable="true"]:hover,
+.that-reference-panel .physical-socket[data-editable="true"]:focus {
+  fill: rgba(255, 210, 72, 0.38);
+  stroke: #111827;
+  stroke-width: 3;
+}
+
+.that-reference-panel .panel-cable[role="button"]:focus {
+  stroke-width: 4;
+}
+
+@media (max-width: 1080px) {
+  .panel-viewport-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-viewport-buttons {
+    grid-template-columns: repeat(3, minmax(90px, 1fr));
+  }
+}
+
+/* v032 original-style panel polish and guided repair previews */
+.that-reference-panel .original-panel-socket {
+  vector-effect: non-scaling-stroke;
+}
+
+.that-reference-panel .physical-socket-core {
+  pointer-events: none;
+  fill: rgba(18, 18, 18, 0.72);
+  stroke: rgba(255, 255, 255, 0.82);
+  stroke-width: 0.7;
+}
+
+.that-reference-panel .physical-socket-core.display-only,
+.that-reference-panel .physical-socket-core.unsupported {
+  fill: rgba(120, 120, 120, 0.38);
+}
+
+.that-reference-panel .physical-socket-core.invalid {
+  fill: rgba(185, 28, 28, 0.86);
+}
+
+.that-reference-panel .socket-label {
+  pointer-events: none;
+  user-select: none;
+  font-size: 7px;
+  font-weight: 650;
+  fill: #181818;
+  paint-order: stroke;
+  stroke: rgba(255, 255, 255, 0.8);
+  stroke-width: 1.8px;
+  stroke-linejoin: round;
+}
+
+.that-reference-panel .socket-label-capacitors,
+.that-reference-panel .socket-label-diodes,
+.that-reference-panel .socket-label-z-diodes {
+  fill: #555;
+  font-size: 6.5px;
+}
+
+.that-reference-panel .original-panel-cable {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.that-reference-panel .original-panel-cable[data-original-route="true"] {
+  opacity: 0.78;
+}
+
+.that-reference-panel .original-panel-cable[data-cable-lane="1"],
+.that-reference-panel .original-panel-cable[data-cable-lane="3"],
+.that-reference-panel .original-panel-cable[data-cable-lane="5"] {
+  stroke-dasharray: 12 3;
+}
+
+.repair-preview {
+  margin-top: 10px;
+  border: 1px solid #d8dde6;
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #fbfcff;
+}
+
+.repair-preview summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.repair-preview ol {
+  margin: 8px 0 0 20px;
+  padding: 0;
+}
+
+.repair-preview li + li {
+  margin-top: 4px;
+}
+
+.repair-actions button[data-recommended="true"] {
+  border-color: #2f7d32;
+}
+
+.repair-actions button[data-destructive="true"] {
+  border-color: #b84a4a;
+}
+
+/* v036 adopted standalone patch-panel wiring editor */
+.adopted-patch-editor-section {
+  border-color: rgba(59, 130, 246, 0.38);
+}
+
+.adopted-patch-editor-host {
+  margin-top: 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0f172a;
+  min-height: 760px;
+}
+
+.adopted-patch-editor-frame {
+  display: block;
+  width: 100%;
+  height: 760px;
+  border: 0;
+  background: #f8fafc;
+}
+
+.adopted-editor-summary .compact-list {
+  columns: 2;
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+}
+
+@media (max-width: 900px) {
+  .adopted-patch-editor-host {
+    min-height: 680px;
+  }
+  .adopted-patch-editor-frame {
+    height: 680px;
+  }
+  .adopted-editor-summary .compact-list {
+    columns: 1;
+  }
+}
+
+/* v037 integrated patch-panel wire editor: extracted from analog_patch_panel_editor_v021 and
+   applied directly to the simulator's main patch panel instead of embedding a standalone page. */
+.patch-panel-svg {
+  width: min(100%, 1180px);
+  margin-inline: auto;
+  aspect-ratio: 800 / 638;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.that-reference-panel.integrated-patch-wire-editor {
+  background: #eee9dd;
+  outline: none;
+  touch-action: none;
+}
+
+.that-reference-panel.integrated-patch-wire-editor:focus-visible {
+  box-shadow: 0 0 0 3px rgba(35, 79, 125, 0.35) inset;
+}
+
+.that-reference-panel.integrated-patch-wire-editor [data-integrated-hidden-layer="true"] {
+  display: none;
+}
+
+.integrated-wire-layer .wire-path,
+.that-reference-panel .wire-path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 5.25;
+  stroke-opacity: 0.62;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.28));
+  pointer-events: none;
+}
+
+.integrated-wire-layer .wire-hit,
+.that-reference-panel .wire-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 16;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+
+.integrated-wire-layer .wire-selected,
+.that-reference-panel .wire-selected {
+  stroke-opacity: 0.86;
+  stroke-width: 6.4;
+}
+
+.integrated-wire-layer .wire-selected-outline,
+.that-reference-panel .wire-selected-outline {
+  fill: none;
+  stroke: rgba(255, 252, 237, 0.9);
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.integrated-temp-wire,
+.that-reference-panel .temp-wire {
+  fill: none;
+  stroke: rgba(30, 70, 120, 0.58);
+  stroke-width: 5;
+  stroke-dasharray: 9 7;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.integrated-connector-layer .connector-hit,
+.that-reference-panel .connector-hit {
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 2.4;
+  cursor: crosshair;
+  pointer-events: all;
+}
+
+.integrated-connector-layer .connector-hit:hover,
+.integrated-connector-layer .connector-hit.is-near,
+.integrated-connector-layer .connector-hit.is-start,
+.that-reference-panel .connector-hit:hover,
+.that-reference-panel .connector-hit.is-near,
+.that-reference-panel .connector-hit.is-start {
+  fill: rgba(35, 79, 125, 0.12);
+  stroke: rgba(35, 79, 125, 0.55);
+}
+
+.integrated-connector-layer .connector-hit.display-only,
+.integrated-connector-layer .connector-hit.unsupported,
+.integrated-connector-layer .connector-hit.unmapped {
+  cursor: not-allowed;
+}
+
+.integrated-handle-layer .endpoint-handle,
+.that-reference-panel .endpoint-handle {
+  fill: #fff8df;
+  stroke: #111;
+  stroke-width: 1.6;
+  cursor: grab;
+  pointer-events: all;
+}
+
+.integrated-handle-layer .endpoint-handle:active,
+.that-reference-panel .endpoint-handle:active {
+  cursor: grabbing;
+}
+
+/* v038 main-workbench layout: panel first, oscilloscope at right, details in tabs. */
+main {
+  max-width: 1920px;
+  padding: 18px;
+}
+
+.app-header {
+  margin-bottom: 12px;
+}
+
+.app-header p {
+  max-width: 1080px;
+  margin-top: 6px;
+}
+
+.app-workbench {
+  display: grid;
+  grid-template-columns: minmax(760px, 1fr) minmax(360px, 460px);
+  gap: 16px;
+  align-items: start;
+}
+
+.primary-patch-card {
+  order: 0;
+  min-width: 0;
+  padding: 12px;
+}
+
+.panel-title-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.panel-title-row h2,
+.oscilloscope-panel h2 {
+  margin-top: 0;
+}
+
+.section-lede {
+  margin: 4px 0 0;
+  color: #4b5563;
+}
+
+.panel-status-pill {
+  flex: 0 0 auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #f8fafc;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.main-load-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.mini-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px;
+  background: #fbfbfb;
+}
+
+.mini-card h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.primary-editor-toolbar {
+  display: grid;
+  grid-template-columns: minmax(140px, 180px) minmax(260px, 1fr) minmax(280px, 1.2fr);
+  gap: 10px;
+  align-items: end;
+  margin: 10px 0;
+}
+
+.panel-editor-buttons,
+.panel-viewport-buttons,
+.run-button-row,
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.panel-editor-buttons button,
+.panel-viewport-buttons button,
+.run-button-row button,
+.button-row button {
+  width: auto;
+  flex: 1 1 120px;
+}
+
+.patch-panel-section {
+  margin-top: 0;
+}
+
+.patch-panel-svg {
+  overflow: hidden;
+  padding: 6px;
+  min-height: min(62vh, 720px);
+  display: grid;
+  place-items: start stretch;
+}
+
+.patch-panel-svg svg {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+}
+
+.oscilloscope-panel {
+  position: sticky;
+  top: 12px;
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+}
+
+.simulation-controls {
+  margin-bottom: 12px;
+}
+
+.run-details {
+  margin-top: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #fbfbfb;
+}
+
+.run-details summary {
+  cursor: pointer;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.oscilloscope-canvas-wrap canvas,
+.oscilloscope-panel canvas {
+  max-width: none;
+}
+
+.secondary-tabs {
+  margin-top: 16px;
+}
+
+.tab-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.tab-button {
+  width: auto;
+  min-width: 190px;
+  background: #f8fafc;
+}
+
+.tab-button[aria-selected="true"] {
+  background: #111827;
+  border-color: #111827;
+  color: white;
+}
+
+.tab-panel[hidden] {
+  display: none;
+}
+
+.tab-panel > .panel + .panel {
+  margin-top: 14px;
+}
+
+.compact-template-parameters {
+  max-height: 150px;
+  overflow: auto;
+}
+
+@media (max-width: 1240px) {
+  .app-workbench {
+    grid-template-columns: 1fr;
+  }
+
+  .oscilloscope-panel {
+    position: static;
+    max-height: none;
+  }
+
+  .primary-editor-toolbar,
+  .main-load-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 800px) {
+  main {
+    padding: 12px;
+  }
+
+  .patch-panel-svg {
+    min-height: 0;
+  }
+
+  .panel-title-row {
+    display: block;
+  }
+}
+
+
+/* v039 correction: the integrated patch panel is the first functional surface and must fit fully. */
+.primary-patch-card > .patch-panel-svg:first-child {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.patch-panel-svg,
+.patch-panel-svg:first-child {
+  width: 100%;
+  max-width: 100%;
+  margin-inline: 0;
+  aspect-ratio: 800 / 638;
+  min-height: 0;
+  overflow: hidden;
+  place-items: stretch;
+}
+
+.patch-panel-svg svg.that-reference-panel,
+.patch-panel-svg svg.that-reference-panel.integrated-patch-wire-editor {
+  min-width: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  display: block;
+}
+
+.primary-patch-card .main-load-grid,
+.primary-patch-card .primary-editor-toolbar {
+  margin-top: 12px;
+}
+
+/* Browser number inputs should not reject exact values like REPF opTime=8 or dt=0.01 because of HTML step-base arithmetic. */
+#opTime,
+#dt,
+#customOpTime,
+#customDt {
+  scroll-margin-top: 1rem;
+}
+
+/* v040 device-first workbench */
+.device-app-shell {
+  max-width: 1860px;
+  padding: 14px;
+}
+
+.compact-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.compact-header h1 {
+  font-size: 1.35rem;
+  margin-bottom: 4px;
+}
+
+.compact-header p {
+  margin: 0;
+  color: #4b5563;
+}
+
+.device-indicator-strip {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.device-indicator-strip span {
+  min-width: 42px;
+  text-align: center;
+  border: 1px solid #c7c7c7;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-weight: 750;
+  font-size: 0.85rem;
+  color: #6b7280;
+  background: #f8fafc;
+}
+
+.device-indicator-strip span[data-active="true"] {
+  color: #111827;
+  background: #e5e7eb;
+  border-color: #6b7280;
+}
+
+.device-indicator-strip span[data-device-indicator="OL"][data-active="true"] {
+  color: #7f1d1d;
+  background: #fee2e2;
+  border-color: #ef4444;
+}
+
+.device-workbench {
+  display: grid;
+  grid-template-columns: minmax(880px, 1fr) minmax(360px, 460px);
+  gap: 14px;
+  align-items: start;
+}
+
+.device-workbench .patch-panel-section {
+  margin-top: 0;
+  padding: 12px;
+}
+
+.device-panel-title-row {
+  margin-bottom: 10px;
+}
+
+.device-workbench .patch-panel-svg {
+  max-height: calc(100vh - 230px);
+  min-height: 610px;
+  padding: 4px;
+}
+
+.device-workbench .patch-panel-svg svg {
+  min-width: 980px;
+}
+
+.device-side-panel {
+  position: sticky;
+  top: 12px;
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+  padding: 12px;
+}
+
+.device-side-panel h2 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.device-side-panel h3 {
+  margin: 14px 0 8px;
+  font-size: 0.95rem;
+}
+
+.scope-card canvas,
+.device-side-panel canvas {
+  max-width: 100%;
+  width: 100%;
+  border-radius: 10px;
+}
+
+.scope-legend {
+  min-height: 24px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 6px 0 10px;
+  font-size: 0.86rem;
+  color: #374151;
+}
+
+.scope-legend span::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 3px;
+  margin-right: 5px;
+  background: currentColor;
+  vertical-align: middle;
+}
+
+.output-port-status {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 6px 0 10px;
+}
+
+.output-port-pill {
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  padding: 4px 7px;
+  text-align: center;
+  font-size: 0.76rem;
+  background: #f9fafb;
+  color: #4b5563;
+  white-space: nowrap;
+}
+
+.output-port-pill[data-wired="true"] {
+  color: #064e3b;
+  background: #ecfdf5;
+  border-color: #34d399;
+}
+
+.output-port-pill[data-selected-channel~="CH1"] {
+  box-shadow: inset 0 -3px 0 #2563eb;
+}
+
+.output-port-pill[data-selected-channel~="CH2"] {
+  box-shadow: inset 0 -3px 0 #d97706;
+}
+
+.output-port-pill[data-selected-channel="CH1 CH2"] {
+  box-shadow: inset 0 -3px 0 #2563eb, inset 0 -6px 0 #d97706;
+}
+
+.control-grid.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 10px;
+}
+
+.device-controls .control-row {
+  margin-bottom: 10px;
+}
+
+.device-controls .control-row label {
+  font-size: 0.88rem;
+}
+
+.device-controls input[type="number"],
+.device-controls select {
+  min-height: 32px;
+}
+
+.device-controls input[type="checkbox"] {
+  justify-self: end;
+  width: 20px;
+  height: 20px;
+}
+
+.run-button-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.button-row.run-button-row button,
+.run-button-row button {
+  width: 100%;
+  margin-top: 0;
+}
+
+.section-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 10px;
+}
+
+.inline-select-row {
+  min-width: 110px;
+  margin-bottom: 0;
+}
+
+.panel-meter {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #f9fafb;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  margin-bottom: 8px;
+}
+
+.coefficient-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.coefficient-control {
+  display: grid;
+  grid-template-columns: 32px 1fr 54px;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.coefficient-control span {
+  font-weight: 750;
+}
+
+.coefficient-control output {
+  text-align: right;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+}
+
+.load-patch-section,
+.coefficient-section,
+.scope-card,
+.advanced-device-settings {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 12px;
+  margin-top: 12px;
+}
+
+.device-warning-box {
+  white-space: pre-wrap;
+  margin-top: 10px;
+}
+
+.primary-editor-toolbar {
+  margin-top: 10px;
+}
+
+.compact-button-row {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(34px, 1fr));
+  gap: 5px;
+}
+
+.compact-button-row button,
+.panel-editor-buttons button {
+  margin-top: 0;
+  min-height: 32px;
+  padding: 4px 6px;
+}
+
+.panel-editor-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.advanced-tools {
+  margin-top: 14px;
+}
+
+.advanced-tools > summary {
+  cursor: pointer;
+  font-weight: 750;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+
+.auto-run-control {
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.microcopy {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 0.82rem;
+}
+
+.status[data-stale="true"] {
+  color: #92400e;
+}
+
+.unit {
+  font-weight: 500;
+  color: #6b7280;
+}
+
+@media (max-width: 1280px) {
+  .device-workbench {
+    grid-template-columns: 1fr;
+  }
+  .device-side-panel {
+    position: static;
+    max-height: none;
+  }
+  .device-workbench .patch-panel-svg {
+    max-height: none;
+  }
+}
+
+/* v045 device-preset loading: selection previews first, Load applies explicitly. */
+.device-preset-summary {
+  margin-top: 10px;
+}
+
+.preset-summary-card {
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 10px;
+  background: #f9fafb;
+}
+
+.preset-summary-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.preset-summary-title span {
+  color: #6b7280;
+  font-size: 0.82rem;
+}
+
+.preset-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 10px;
+  margin: 0;
+}
+
+.preset-summary-grid div {
+  min-width: 0;
+}
+
+.preset-summary-grid dt {
+  font-size: 0.72rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.preset-summary-grid dd {
+  margin: 1px 0 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.preset-summary-card p {
+  margin: 8px 0 0;
+  color: #4b5563;
+  font-size: 0.82rem;
+}
+
+/* v049 workbench layout swap: choose whether the patch panel or oscilloscope gets the large area. */
+.layout-switch {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  padding: 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  background: #ffffff;
+  white-space: nowrap;
+}
+
+.layout-switch span {
+  padding: 0 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.layout-switch button {
+  width: auto;
+  min-height: 30px;
+  margin: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border-color: transparent;
+  background: transparent;
+  color: #374151;
+}
+
+.layout-switch button[aria-pressed="true"] {
+  background: #111827;
+  border-color: #111827;
+  color: #ffffff;
+}
+
+.device-workbench[data-workbench-layout="patch-focus"] {
+  grid-template-columns: minmax(880px, 1fr) minmax(360px, 460px);
+}
+
+.device-workbench[data-workbench-layout="patch-focus"] .patch-panel-section {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.device-workbench[data-workbench-layout="patch-focus"] .device-side-panel {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.device-workbench[data-workbench-layout="scope-focus"] {
+  grid-template-columns: minmax(760px, 1.35fr) minmax(340px, 0.75fr);
+}
+
+.device-workbench[data-workbench-layout="scope-focus"] .device-side-panel {
+  grid-column: 1;
+  grid-row: 1;
+  position: static;
+  max-height: none;
+}
+
+.device-workbench[data-workbench-layout="scope-focus"] .patch-panel-section {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.device-workbench[data-workbench-layout="scope-focus"] .scope-card canvas,
+.device-workbench[data-workbench-layout="scope-focus"] .device-side-panel canvas {
+  min-height: min(58vh, 620px);
+}
+
+.device-workbench[data-workbench-layout="scope-focus"] .patch-panel-svg {
+  min-height: 260px;
+  max-height: calc(100vh - 230px);
+  overflow: auto;
+}
+
+.device-workbench[data-workbench-layout="scope-focus"] .device-panel-title-row {
+  display: block;
+}
+
+.device-workbench[data-workbench-layout="scope-focus"] .panel-status-pill {
+  display: inline-block;
+  margin-top: 8px;
+}
+
+.device-workbench[data-workbench-layout="scope-focus"] .primary-editor-toolbar {
+  grid-template-columns: 1fr;
+}
+
+.device-workbench[data-workbench-layout="scope-focus"] .panel-editor-buttons,
+.device-workbench[data-workbench-layout="scope-focus"] .panel-viewport-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 1280px) {
+  .layout-switch {
+    order: 3;
+    flex-basis: 100%;
+    justify-content: start;
+    margin-left: 0;
+    width: fit-content;
+  }
+
+  .device-workbench[data-workbench-layout="patch-focus"],
+  .device-workbench[data-workbench-layout="scope-focus"] {
+    grid-template-columns: 1fr;
+  }
+
+  .device-workbench[data-workbench-layout="patch-focus"] .patch-panel-section,
+  .device-workbench[data-workbench-layout="patch-focus"] .device-side-panel,
+  .device-workbench[data-workbench-layout="scope-focus"] .patch-panel-section,
+  .device-workbench[data-workbench-layout="scope-focus"] .device-side-panel {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .device-workbench[data-workbench-layout="scope-focus"] .device-side-panel {
+    order: -1;
+  }
+
+  .device-workbench[data-workbench-layout="scope-focus"] .scope-card canvas,
+  .device-workbench[data-workbench-layout="scope-focus"] .device-side-panel canvas {
+    min-height: 0;
+  }
+}
+
+/* v051 patch-panel editing ergonomics: make selected wires and sockets legible without opening debug JSON. */
+.panel-status-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.panel-status-line span {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #d8dee8;
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: #f8fafc;
+  font-size: 0.82rem;
+}
+
+.panel-status-message {
+  margin-top: 6px;
+  color: #374151;
+}
+
+.panel-inspector-card {
+  border: 1px solid #d8e2f0;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 8px 10px;
+  margin: 7px 0;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
+.panel-inspector-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.panel-inspector-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: #eef6ff;
+  border: 1px solid #bfd7f3;
+  color: #173b65;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.panel-inspector-badge.warning {
+  background: #fff7e6;
+  border-color: #f2cf88;
+  color: #6b4200;
+}
+
+.wire-color-chip {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--wire-color, #2563eb);
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.45);
+}
+
+.panel-inspector-grid {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 4px 10px;
+  margin: 0;
+}
+
+.panel-inspector-grid dt {
+  color: #5b6472;
+  font-weight: 750;
+}
+
+.panel-inspector-grid dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.panel-inspector-hint {
+  margin: 6px 0 0;
+  color: #4b5563;
+}
+
+.integrated-handle-layer .endpoint-handle-halo,
+.that-reference-panel .endpoint-handle-halo {
+  fill: rgba(255, 255, 255, 0.78);
+  stroke: rgba(17, 24, 39, 0.28);
+  stroke-width: 2.4;
+  pointer-events: none;
+}
+
+.integrated-handle-layer .endpoint-handle,
+.that-reference-panel .endpoint-handle {
+  fill: #fff2a8;
+  stroke: #111827;
+  stroke-width: 2.2;
+}
+
+.integrated-handle-layer .endpoint-handle-label,
+.that-reference-panel .endpoint-handle-label {
+  fill: #111827;
+  stroke: rgba(255, 255, 255, 0.75);
+  stroke-width: 3px;
+  paint-order: stroke;
+  font-size: 14px;
+  font-weight: 850;
+  pointer-events: none;
+  user-select: none;
+}
+
+.integrated-connector-layer .connector-hit.is-inspected,
+.that-reference-panel .connector-hit.is-inspected {
+  fill: rgba(255, 242, 168, 0.38);
+  stroke: rgba(111, 69, 0, 0.72);
+  stroke-width: 3.2;
+}
+
+.primary-editor-toolbar {
+  border: 1px solid #e1e7ef;
+  border-radius: 12px;
+  padding: 8px;
+  background: #fbfdff;
+}
+
+
+/* v052 workflow guidance: explain stale traces, coefficient-input mistakes, and output-jack routing. */
+.workflow-hints {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.workflow-hint {
+  display: grid;
+  gap: 3px;
+  padding: 9px 10px;
+  border: 1px solid #d1d5db;
+  border-left-width: 4px;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 0.84rem;
+}
+
+.workflow-hint strong {
+  color: #111827;
+}
+
+.workflow-hint span {
+  line-height: 1.35;
+}
+
+.workflow-hint[data-level="warning"] {
+  border-left-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.workflow-hint[data-level="ok"] {
+  border-left-color: #10b981;
+  background: #ecfdf5;
+}
+
+.workflow-hint[data-level="info"] {
+  border-left-color: #3b82f6;
+  background: #eff6ff;
+}
+
+/* v075 physical accessory materialization preview in custom-design validation. */
+.accessory-materialization-preview {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.accessory-materialization-preview summary {
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.accessory-materialization-preview ol,
+.accessory-materialization-preview ul {
+  margin: 8px 0 8px 20px;
+  padding: 0;
+}
+
+.accessory-materialization-preview li {
+  margin: 4px 0;
+  line-height: 1.35;
+}
+
+/* v076 SVG-level physical accessory pair guidance. */
+.accessory-guidance-layer {
+  pointer-events: none;
+}
+
+
+.panel-accessory-guidance-status {
+  margin-top: 8px;
+  border: 1px solid #f3d08a;
+  border-radius: 10px;
+  background: #fffbeb;
+  padding: 8px 10px;
+  font-size: 0.84rem;
+}
+
+.panel-accessory-guidance-status summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.panel-accessory-guidance-status ul {
+  margin: 6px 0 0 18px;
+  padding: 0;
+}
+
+.panel-accessory-guidance-status li,
+.panel-accessory-guidance-status p {
+  margin: 4px 0;
+  line-height: 1.35;
+}
+
+/* v078 asynchronous simulation progress and stoppable runs */
+.simulation-progress {
+  margin: 8px 0 12px;
+  padding: 8px 10px;
+  border: 1px solid #d5e7ff;
+  border-radius: 8px;
+  background: #f8fbff;
+  font-size: 0.84rem;
+}
+
+.simulation-progress[data-running="true"] {
+  border-color: #9cc7ff;
+  background: #eef6ff;
+}
+
+.simulation-progress-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.simulation-progress progress {
+  display: block;
+  width: 100%;
+  height: 12px;
+}
+
+.status[data-running="true"] {
+  background: #eef6ff;
+  border-color: #9cc7ff;
+}
+
+/* v079 virtual OP-TIME guidance */
+.control-help {
+  display: block;
+  margin-top: 0.25rem;
+  color: #4b5563;
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+
+.control-help[data-extended="true"] {
+  font-weight: 600;
+}
+
+/* v099 analog-computer-era visual pass: bench instrument colors, square controls, CRT scope. */
+:root {
+  --bench-bg: #3c3a32;
+  --bench-bg-dark: #25241f;
+  --panel-metal: #d7d0bf;
+  --panel-metal-light: #eee8d8;
+  --panel-metal-shadow: #8d8677;
+  --ink-dark: #151411;
+  --ink-muted: #4e4b42;
+  --engraved: #f9f3df;
+  --amber: #e1a335;
+  --crt-green: #76ff7a;
+  --crt-dim: #18351f;
+  --red-lamp: #b64232;
+  --workbench-max-width: 1880px;
+  font-family: "Trebuchet MS", "Arial Narrow", Arial, sans-serif;
+  background: var(--bench-bg);
+  color: var(--ink-dark);
+}
+
+body {
+  background:
+    radial-gradient(circle at 18px 18px, rgba(255,255,255,0.04) 0 1px, transparent 1.5px),
+    linear-gradient(145deg, #4a483f 0%, #292821 46%, #1f1e1a 100%);
+  background-size: 36px 36px, auto;
+}
+
+main.device-app-shell {
+  border: 1px solid rgba(255, 246, 215, 0.18);
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.01)),
+    var(--bench-bg-dark);
+  box-shadow: 0 16px 50px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255,255,255,0.16);
+}
+
+.compact-header {
+  padding: 12px 14px;
+  border: 2px solid #11100e;
+  border-radius: 3px;
+  background:
+    linear-gradient(90deg, #14130f 0 22px, transparent 22px 32px) repeat-x,
+    linear-gradient(180deg, #2f2d27 0%, #191814 100%);
+  background-size: 64px 100%, auto;
+  color: var(--engraved);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -2px 0 rgba(0,0,0,0.55);
+}
+
+.compact-header h1 {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #f5edd6;
+  text-shadow: 0 1px 0 #000;
+}
+
+.compact-header p {
+  color: #d2c7ac;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+}
+
+.panel,
+.primary-editor-toolbar,
+.preset-summary-card,
+.simulation-progress,
+.workflow-hint,
+.panel-inspector-card,
+.output-port-pill,
+.panel-meter {
+  border-radius: 3px;
+  border-color: #3b372f;
+  background:
+    linear-gradient(180deg, var(--panel-metal-light) 0%, var(--panel-metal) 72%, #beb5a3 100%);
+  color: var(--ink-dark);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.68), inset 0 -1px 0 rgba(0,0,0,0.18), 0 2px 0 rgba(0,0,0,0.36);
+}
+
+.primary-patch-card,
+.device-side-panel {
+  border-width: 2px;
+}
+
+.panel h2,
+.panel h3,
+.control-row label,
+.panel-status-pill,
+.layout-switch span,
+.preset-summary-grid dt,
+.device-side-panel h2,
+.device-side-panel h3 {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #24221d;
+}
+
+.section-lede,
+.microcopy,
+.control-help,
+.example-description,
+.panel-inspector-hint,
+.workflow-hint span {
+  color: var(--ink-muted);
+}
+
+.patch-panel-svg {
+  border: 2px solid #1d1b17;
+  border-radius: 3px;
+  background: #c8c0ae;
+  box-shadow: inset 0 0 0 3px #a59c8b, inset 0 0 24px rgba(0,0,0,0.22);
+}
+
+.that-reference-panel.integrated-patch-wire-editor {
+  background: #e9e2d2;
+}
+
+button,
+.control-row input[type="number"],
+.control-row select,
+textarea {
+  border-radius: 2px;
+  border: 1px solid #2d2a24;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+button {
+  background: linear-gradient(180deg, #f0e8d6 0%, #c6bca8 100%);
+  color: #161510;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.75), inset 0 -2px 0 rgba(0,0,0,0.22), 0 1px 0 rgba(0,0,0,0.3);
+}
+
+button:hover,
+button:focus-visible {
+  background: linear-gradient(180deg, #fff3d6 0%, #d8bf7c 100%);
+}
+
+button:active {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 3px rgba(0,0,0,0.28);
+}
+
+.control-row input[type="number"],
+.control-row select,
+textarea {
+  background: #f4eedf;
+  color: #161510;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.18);
+}
+
+input[type="range"] {
+  accent-color: #222019;
+}
+
+.layout-switch {
+  border-radius: 2px;
+  border-color: #0f0e0c;
+  background: #ded5c4;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 1px 0 rgba(0,0,0,0.5);
+}
+
+.layout-switch button[aria-pressed="true"] {
+  background: linear-gradient(180deg, #2a2924 0%, #0d0d0b 100%);
+  border-color: #050504;
+  color: #f3e8c8;
+}
+
+.device-indicator-strip span {
+  border-radius: 2px;
+  border-color: #16140f;
+  background: #342f25;
+  color: #968c77;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.55), 0 1px 0 rgba(255,255,255,0.11);
+}
+
+.device-indicator-strip span[data-active="true"] {
+  color: #111;
+  background: radial-gradient(circle at 50% 38%, #fff5af 0 18%, var(--amber) 42%, #8f5c12 100%);
+  border-color: #f6cc6d;
+  box-shadow: 0 0 12px rgba(225, 163, 53, 0.75), inset 0 1px 2px rgba(255,255,255,0.7);
+}
+
+.device-indicator-strip span[data-device-indicator="OL"][data-active="true"] {
+  background: radial-gradient(circle at 50% 38%, #ffd2c2 0 18%, #d7553f 44%, #6d1d14 100%);
+  border-color: #ff9a80;
+  color: #160705;
+  box-shadow: 0 0 12px rgba(214, 69, 48, 0.75), inset 0 1px 2px rgba(255,255,255,0.55);
+}
+
+.scope-card canvas,
+.device-side-panel canvas,
+canvas {
+  border: 8px solid #171610;
+  border-radius: 4px;
+  background: #08150e;
+  box-shadow: inset 0 0 28px rgba(118,255,122,0.16), 0 2px 0 rgba(0,0,0,0.45);
+}
+
+.scope-card {
+  background:
+    linear-gradient(180deg, #2a2924 0%, #171610 100%);
+  color: #e8dfc8;
+  border-color: #0c0c09;
+}
+
+.scope-card h2,
+.scope-card label,
+.scope-card .microcopy {
+  color: #e8dfc8;
+}
+
+.scope-legend {
+  color: #d8ccb4;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.output-port-pill {
+  background: #27241d;
+  color: #b4a98f;
+  border-color: #11100d;
+}
+
+.output-port-pill[data-wired="true"] {
+  color: #111;
+  background: #caa15c;
+  border-color: #251f12;
+}
+
+.output-port-pill[data-selected-channel~="CH1"] {
+  box-shadow: inset 0 -3px 0 var(--crt-green);
+}
+
+.output-port-pill[data-selected-channel~="CH2"] {
+  box-shadow: inset 0 -3px 0 var(--amber);
+}
+
+.output-port-pill[data-selected-channel="CH1 CH2"] {
+  box-shadow: inset 0 -3px 0 var(--crt-green), inset 0 -6px 0 var(--amber);
+}
+
+.patch-validation {
+  border-radius: 3px;
+  border-color: #3b372f;
+  background: #e8dec9;
+}
+
+.patch-validation[data-valid="false"],
+.workflow-hint[data-level="warning"] {
+  background: #f3dfb9;
+  border-color: #8a5c19;
+}
+
+.workflow-hint[data-level="ok"] {
+  background: #dbe8c7;
+  border-left-color: #4b6d2a;
+}
+
+.workflow-hint[data-level="info"] {
+  background: #d8dfdc;
+  border-left-color: #2f5d61;
+}
+
+pre,
+#traceSummary {
+  background: #11100c;
+  color: #b7ffb3;
+  border: 1px solid #3c5f3d;
+  border-radius: 2px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.simulation-progress progress {
+  accent-color: var(--amber);
+}
+
+/* v101-v102 visible editing rings, stacked design save/load controls, and scope-panel theme alignment. */
+.integrated-connector-layer .connector-hit:hover,
+.integrated-connector-layer .connector-hit.is-near,
+.integrated-connector-layer .connector-hit.is-start,
+.that-reference-panel .connector-hit:hover,
+.that-reference-panel .connector-hit.is-near,
+.that-reference-panel .connector-hit.is-start {
+  fill: rgba(255, 255, 255, 0.12);
+  stroke: rgba(255, 255, 255, 0.55);
+}
+
+.integrated-connector-layer .connector-hit.is-inspected,
+.that-reference-panel .connector-hit.is-inspected {
+  fill: rgba(255, 255, 255, 0.38);
+  stroke: rgba(255, 255, 255, 0.72);
+  stroke-width: 3.2;
+}
+
+.panel-design-storage {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(190px, 0.9fr) minmax(260px, 1.4fr);
+  gap: 8px 10px;
+  align-items: end;
+  min-width: 0;
+  margin-top: 0;
+  border: 1px solid #3b372f;
+  border-radius: 3px;
+  padding: 8px;
+  background: linear-gradient(180deg, var(--panel-metal-light) 0%, var(--panel-metal) 72%, #beb5a3 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.68), inset 0 -1px 0 rgba(0,0,0,0.18);
+}
+
+.panel-design-storage .control-row,
+.design-file-row {
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.panel-design-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(92px, 1fr));
+  gap: 6px;
+}
+
+.panel-design-buttons button {
+  width: 100%;
+  margin-top: 0;
+  min-height: 32px;
+  padding: 4px 6px;
+}
+
+#designFileInput {
+  width: 100%;
+  min-height: 32px;
+  border: 1px solid #2d2a24;
+  border-radius: 2px;
+  background: #f4eedf;
+  padding: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.design-storage-status {
+  grid-column: 1 / -1;
+  min-height: 30px;
+  padding: 7px 9px;
+  border: 1px solid #3b372f;
+  border-radius: 3px;
+  background: #e8dec9;
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+  white-space: pre-wrap;
+}
+
+.design-storage-status[data-valid="false"] {
+  background: #f3dfb9;
+  border-color: #8a5c19;
+  color: #4b2f09;
+}
+
+.scope-card {
+  background: linear-gradient(180deg, var(--panel-metal-light) 0%, var(--panel-metal) 72%, #beb5a3 100%);
+  color: var(--ink-dark);
+  border-color: #3b372f;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.68), inset 0 -1px 0 rgba(0,0,0,0.18), 0 2px 0 rgba(0,0,0,0.36);
+}
+
+.scope-card h2,
+.scope-card label,
+.scope-card .microcopy,
+.scope-card .scope-legend {
+  color: #24221d;
+}
+
+.scope-card .control-row select,
+.scope-card .control-row input[type="number"] {
+  background: #f4eedf;
+  color: #161510;
+}
+
+.scope-card .output-port-pill {
+  background: #f4eedf;
+  color: #4e4b42;
+  border-color: #3b372f;
+}
+
+.scope-card .output-port-pill[data-wired="true"] {
+  color: #111;
+  background: #caa15c;
+  border-color: #251f12;
+}
+
+.scope-card canvas,
+.device-side-panel .scope-card canvas {
+  border: 8px solid #171610;
+  background: #08150e;
+  box-shadow: inset 0 0 28px rgba(118,255,122,0.16), 0 2px 0 rgba(0,0,0,0.45);
+}
+
+@media (max-width: 1240px) {
+  .panel-design-storage {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .panel-design-buttons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* v103 patch-editor audit: show the sockets used by the loaded patch, but do not label handles as IN/OUT. */
+.integrated-connector-layer .connector-hit.is-patch-endpoint,
+.that-reference-panel .connector-hit.is-patch-endpoint {
+  fill: rgba(255, 255, 255, 0.08);
+  stroke: rgba(255, 255, 255, 0.42);
+  stroke-width: 2.8;
+}
+
+.integrated-handle-layer .endpoint-handle-label,
+.that-reference-panel .endpoint-handle-label {
+  display: none;
+}

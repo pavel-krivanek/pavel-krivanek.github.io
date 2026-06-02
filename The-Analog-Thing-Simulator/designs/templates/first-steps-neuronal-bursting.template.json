@@ -1,0 +1,116 @@
+{
+  "schemaVersion": "analog-thing-design-template/v1",
+  "id": "first-steps-neuronal-bursting",
+  "title": "First Steps: Neuronal Bursting",
+  "category": "First Steps application",
+  "description": "Runnable Section 9.4 scaled Hindmarsh-Rose neuronal bursting walkthrough using x10-weighted inputs, XIR/SJ, and SLOW.",
+  "sourceDesignId": "first-steps-neuronal-bursting",
+  "defaultMode": "OP",
+  "runnable": true,
+  "tags": [
+    "first-steps",
+    "neuronal-bursting",
+    "slow-mode",
+    "xir-sj"
+  ],
+  "walkthrough": [
+    {
+      "title": "Initialize the neuronal states",
+      "text": "MINUS1 initializes I1.out to x=+1 through the inverting IC socket, ZERO initializes y, and PLUS1 initializes I3.out to -z=-1. P3 is now the 0.75*y scaling term used in the x equation.",
+      "socketFocus": [
+        "MINUS1.out",
+        "I1.ic",
+        "ZERO.out",
+        "I2.ic",
+        "PLUS1.out",
+        "I3.ic",
+        "P3.in",
+        "P3.out"
+      ],
+      "controlFocus": [
+        "P3"
+      ]
+    },
+    {
+      "title": "Generate x² and x³",
+      "text": "MUL1 squares x and MUL2 multiplies x² by x. P1 scales x² by b*10=0.6, P2 scales x³ by a*10=0.4, and the SUM1 x10 inputs produce the effective +6*x² and -4*x³ terms.",
+      "socketFocus": [
+        "I1.out",
+        "MUL1.x",
+        "MUL1.y",
+        "MUL1.out",
+        "MUL2.x",
+        "MUL2.y",
+        "MUL2.out",
+        "P1.out",
+        "P2.out",
+        "INV1.out"
+      ],
+      "controlFocus": [
+        "P1",
+        "P2"
+      ]
+    },
+    {
+      "title": "Build the x and y equations",
+      "text": "SUM1 combines -4*x³, +6*x², +7.5*y, -z, and Iext from XIR1 to drive the x integrator. SUM2 combines c, about -1.33*x², and -y to drive the y integrator.",
+      "socketFocus": [
+        "SUM1.in10_1",
+        "SUM1.in10_2",
+        "SUM1.in10_3",
+        "SUM1.in1",
+        "XIR1.out",
+        "SUM1.sj",
+        "SUM1.out",
+        "SUM2.in1",
+        "SUM2.in10_1",
+        "SUM2.in2",
+        "SUM2.out"
+      ],
+      "controlFocus": [
+        "P7",
+        "P8"
+      ]
+    },
+    {
+      "title": "Use SLOW for the z channel",
+      "text": "P5 scales x as 100rs, P6 supplies the 100rs*xr offset, and P4 scales -z as 100r. XIR2 joins the offset and damping terms, while I3.out patched to I3.slow applies the 0.01 speed factor.",
+      "socketFocus": [
+        "I1.out",
+        "P5.in",
+        "P5.out",
+        "I3.in1",
+        "PLUS1.out",
+        "P6.in",
+        "P6.out",
+        "I3.out",
+        "P4.in",
+        "P4.out",
+        "XIR2.out",
+        "I3.sj",
+        "I3.slow"
+      ],
+      "controlFocus": [
+        "P4",
+        "P5",
+        "P6"
+      ]
+    },
+    {
+      "title": "Display the burst channels",
+      "text": "OUT X carries the scaled membrane potential x as the burst train, OUT Y carries y, OUT Z carries -z, and OUT U carries positive z for diagnostics. The preset opens with X as the main time trace.",
+      "socketFocus": [
+        "OUT_X.in",
+        "OUT_Y.in",
+        "OUT_Z.in",
+        "OUT_U.in"
+      ],
+      "controlFocus": [
+        "X",
+        "Y",
+        "Z",
+        "U"
+      ]
+    }
+  ]
+}

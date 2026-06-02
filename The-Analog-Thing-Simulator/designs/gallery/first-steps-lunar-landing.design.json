@@ -1,0 +1,566 @@
+{
+  "schemaVersion": "analog-thing-design/v1",
+  "kind": "custom-design",
+  "inventory": "that-prototype-board/v006",
+  "metadata": {
+    "name": "First Steps: Lunar Landing",
+    "description": "Booklet Section 9.3 lunar landing patch. P1 uses the default booklet-shaped throttle profile, OUT X/Y expose altitude and vertical velocity, and OUT U exposes fuel level.",
+    "author": "",
+    "source": "THAT First Steps v2 Section 9.3 block-level template",
+    "tags": [
+      "first-steps",
+      "application",
+      "lunar-landing",
+      "dynamic-system",
+      "op-mode"
+    ],
+    "createdAt": "2026-05-28T00:00:00.000Z",
+    "modifiedAt": "2026-06-01T00:00:00.000Z",
+    "notes": ""
+  },
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "MINUS1"
+    },
+    {
+      "id": "ZERO"
+    },
+    {
+      "id": "I1",
+      "label": "Integrator / vertical velocity v"
+    },
+    {
+      "id": "I2",
+      "rate": 159.99999999999997,
+      "label": "Integrator / altitude h"
+    },
+    {
+      "id": "I3",
+      "label": "Integrator / fuel level F"
+    },
+    {
+      "id": "SUM1",
+      "label": "Summer / T - g, inverted by I1 to vdot = g - T"
+    },
+    {
+      "id": "INV1",
+      "label": "Inverter / -T thrust term"
+    },
+    {
+      "id": "INV2",
+      "label": "Inverter / -v for altitude integration"
+    },
+    {
+      "id": "CMP1",
+      "label": "Comparator / fuel-positive thrust gate"
+    },
+    {
+      "id": "CMP2",
+      "label": "Comparator / altitude-positive motion gate"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.5,
+      "timeProfile": {
+        "kind": "linear-points",
+        "scale": "multiplier",
+        "repeat": false,
+        "points": [
+          {
+            "t": 0,
+            "value": 1.44
+          },
+          {
+            "t": 5,
+            "value": 1.44
+          },
+          {
+            "t": 5.8,
+            "value": 0.04
+          },
+          {
+            "t": 7.2,
+            "value": 0.04
+          },
+          {
+            "t": 8,
+            "value": 1.0
+          },
+          {
+            "t": 10,
+            "value": 1.0
+          }
+        ]
+      },
+      "label": "P1 descent-engine throttle / booklet demonstration profile"
+    },
+    {
+      "id": "P2",
+      "coefficient": 0.1,
+      "label": "P2 thrust scale 0.1"
+    },
+    {
+      "id": "P3",
+      "coefficient": 0.05,
+      "label": "P3 lunar gravity stage 0.05"
+    },
+    {
+      "id": "P4",
+      "coefficient": 0.05,
+      "label": "P4 lunar gravity stage 0.05"
+    },
+    {
+      "id": "P5",
+      "coefficient": 0.5,
+      "label": "P5 fuel efficiency alpha"
+    },
+    {
+      "id": "P6",
+      "coefficient": 0.05,
+      "label": "P6 altitude path scale 0.05"
+    },
+    {
+      "id": "P7",
+      "coefficient": 0.05,
+      "label": "P7 altitude path scale 0.05"
+    },
+    {
+      "id": "OUT_X",
+      "label": "X / altitude h"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / vertical velocity v"
+    },
+    {
+      "id": "OUT_Z",
+      "label": "Z / available thrust T"
+    },
+    {
+      "id": "OUT_U",
+      "label": "U / fuel level F"
+    }
+  ],
+  "coefficients": {
+    "P1": 0.5,
+    "P2": 0.1,
+    "P3": 0.05,
+    "P4": 0.05,
+    "P5": 0.5,
+    "P6": 0.05,
+    "P7": 0.05,
+    "P8": 0.5
+  },
+  "cables": [
+    {
+      "id": "cable-1",
+      "from": {
+        "logicalSocketId": "PLUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P1.in",
+        "physicalSocketId": null
+      },
+      "label": "P1 is the pilot throttle coefficient; the preset uses a booklet-shaped demonstration profile",
+      "color": null
+    },
+    {
+      "id": "cable-2",
+      "from": {
+        "logicalSocketId": "P1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P2.in",
+        "physicalSocketId": null
+      },
+      "label": "scale throttle to the booklet T = 0.1 * P1 range",
+      "color": null
+    },
+    {
+      "id": "cable-3",
+      "from": {
+        "logicalSocketId": "PLUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P3.in",
+        "physicalSocketId": null
+      },
+      "label": "first 0.05 gravity stage",
+      "color": null
+    },
+    {
+      "id": "cable-4",
+      "from": {
+        "logicalSocketId": "P3.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P4.in",
+        "physicalSocketId": null
+      },
+      "label": "second 0.05 gravity stage",
+      "color": null
+    },
+    {
+      "id": "cable-5",
+      "from": {
+        "logicalSocketId": "MINUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I2.ic",
+        "physicalSocketId": null
+      },
+      "label": "initialize altitude h to +1 through THAT IC sign convention",
+      "color": null
+    },
+    {
+      "id": "cable-6",
+      "from": {
+        "logicalSocketId": "MINUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I3.ic",
+        "physicalSocketId": null
+      },
+      "label": "initialize fuel F to +1 through THAT IC sign convention",
+      "color": null
+    },
+    {
+      "id": "cable-7",
+      "from": {
+        "logicalSocketId": "I3.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "CMP1.a",
+        "physicalSocketId": null
+      },
+      "label": "fuel level tests whether thrust is still available",
+      "color": null
+    },
+    {
+      "id": "cable-8",
+      "from": {
+        "logicalSocketId": "ZERO.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "CMP1.b",
+        "physicalSocketId": null
+      },
+      "label": "fuel-positive threshold at zero",
+      "color": null
+    },
+    {
+      "id": "cable-9",
+      "from": {
+        "logicalSocketId": "P2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "CMP1.positive",
+        "physicalSocketId": null
+      },
+      "label": "thrust branch while fuel remains",
+      "color": null
+    },
+    {
+      "id": "cable-10",
+      "from": {
+        "logicalSocketId": "ZERO.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "CMP1.nonPositive",
+        "physicalSocketId": null
+      },
+      "label": "no thrust when fuel is depleted",
+      "color": null
+    },
+    {
+      "id": "cable-11",
+      "from": {
+        "logicalSocketId": "CMP1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "INV1.in",
+        "physicalSocketId": null
+      },
+      "label": "available thrust T",
+      "color": null
+    },
+    {
+      "id": "cable-12",
+      "from": {
+        "logicalSocketId": "P4.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in10_1",
+        "physicalSocketId": null
+      },
+      "label": "gravity stage through x10 input, first half",
+      "color": null
+    },
+    {
+      "id": "cable-13",
+      "from": {
+        "logicalSocketId": "P4.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in10_2",
+        "physicalSocketId": null
+      },
+      "label": "gravity stage through x10 input, second half",
+      "color": null
+    },
+    {
+      "id": "cable-14",
+      "from": {
+        "logicalSocketId": "INV1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in2",
+        "physicalSocketId": null
+      },
+      "label": "-T term so SUM1.out is T - g",
+      "color": null
+    },
+    {
+      "id": "cable-15",
+      "from": {
+        "logicalSocketId": "SUM1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I1.in1",
+        "physicalSocketId": null
+      },
+      "label": "I1 inversion yields vdot = g - T",
+      "color": null
+    },
+    {
+      "id": "cable-16",
+      "from": {
+        "logicalSocketId": "CMP1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P5.in",
+        "physicalSocketId": null
+      },
+      "label": "fuel burn is proportional to available thrust",
+      "color": null
+    },
+    {
+      "id": "cable-17",
+      "from": {
+        "logicalSocketId": "P5.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I3.in1",
+        "physicalSocketId": null
+      },
+      "label": "I3 inversion gives Fdot = -alpha*T",
+      "color": null
+    },
+    {
+      "id": "cable-18",
+      "from": {
+        "logicalSocketId": "I1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "INV2.in",
+        "physicalSocketId": null
+      },
+      "label": "invert v to feed an inverting altitude integrator",
+      "color": null
+    },
+    {
+      "id": "cable-19",
+      "from": {
+        "logicalSocketId": "I2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "CMP2.a",
+        "physicalSocketId": null
+      },
+      "label": "altitude-positive touchdown test",
+      "color": null
+    },
+    {
+      "id": "cable-20",
+      "from": {
+        "logicalSocketId": "ZERO.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "CMP2.b",
+        "physicalSocketId": null
+      },
+      "label": "ground threshold",
+      "color": null
+    },
+    {
+      "id": "cable-21",
+      "from": {
+        "logicalSocketId": "INV2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "CMP2.positive",
+        "physicalSocketId": null
+      },
+      "label": "while h > 0, feed -v so I2 derivative is scaled v",
+      "color": null
+    },
+    {
+      "id": "cable-22",
+      "from": {
+        "logicalSocketId": "ZERO.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "CMP2.nonPositive",
+        "physicalSocketId": null
+      },
+      "label": "after touchdown, hold altitude",
+      "color": null
+    },
+    {
+      "id": "cable-23",
+      "from": {
+        "logicalSocketId": "CMP2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P6.in",
+        "physicalSocketId": null
+      },
+      "label": "first 0.05 altitude scaling stage from the booklet patch",
+      "color": null
+    },
+    {
+      "id": "cable-24",
+      "from": {
+        "logicalSocketId": "P6.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P7.in",
+        "physicalSocketId": null
+      },
+      "label": "second 0.05 altitude scaling stage from the booklet patch",
+      "color": null
+    },
+    {
+      "id": "cable-25",
+      "from": {
+        "logicalSocketId": "P7.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I2.in1",
+        "physicalSocketId": null
+      },
+      "label": "scaled altitude integration path",
+      "color": null
+    },
+    {
+      "id": "cable-26",
+      "from": {
+        "logicalSocketId": "I2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "OUT_X.in",
+        "physicalSocketId": null
+      },
+      "label": "altitude h to OUT X",
+      "color": null
+    },
+    {
+      "id": "cable-27",
+      "from": {
+        "logicalSocketId": "I1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "OUT_Y.in",
+        "physicalSocketId": null
+      },
+      "label": "vertical velocity v to OUT Y",
+      "color": null
+    },
+    {
+      "id": "cable-28",
+      "from": {
+        "logicalSocketId": "CMP1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "OUT_Z.in",
+        "physicalSocketId": null
+      },
+      "label": "available thrust to OUT Z for diagnostics",
+      "color": null
+    },
+    {
+      "id": "cable-29",
+      "from": {
+        "logicalSocketId": "I3.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "OUT_U.in",
+        "physicalSocketId": null
+      },
+      "label": "fuel level F to OUT U / panel-meter equivalent",
+      "color": null
+    }
+  ],
+  "outputRouting": {
+    "channels": {
+      "X": "OUT_X.out",
+      "Y": "OUT_Y.out",
+      "Z": null,
+      "U": "OUT_U.out"
+    },
+    "aliases": {
+      "x": "OUT_X.out",
+      "y": "OUT_Y.out",
+      "u": "OUT_U.out",
+      "altitude": "OUT_X.out",
+      "velocity": "OUT_Y.out",
+      "thrust": "OUT_Z.out",
+      "fuel": "OUT_U.out",
+      "gravity": "P4.out",
+      "fuelBurn": "P5.out"
+    }
+  },
+  "operationDefaults": {
+    "mode": "OP",
+    "duration": 10,
+    "dt": 0.002,
+    "sampleEvery": 25,
+    "opTime": 8,
+    "cycles": 1,
+    "clip": false
+  },
+  "notes": "",
+  "sourcePatchSchemaVersion": "analog-thing-patch/v1"
+}

@@ -1,0 +1,151 @@
+{
+  "schemaVersion": "analog-thing-patch/v1",
+  "inventory": "that-prototype-board/v006",
+  "name": "First Steps Helper: Minimum of Two Values",
+  "description": "Section 10.2 helper. Two adjustable input stubs generate A and B, CMP1 tests A-B, and OUT Y receives min(A,B).",
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "MINUS1"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.625,
+      "label": "P1 input A knob"
+    },
+    {
+      "id": "P2",
+      "coefficient": 0.3,
+      "label": "P2 input B knob"
+    },
+    {
+      "id": "SUM1",
+      "label": "A source summer"
+    },
+    {
+      "id": "SUM2",
+      "label": "B source summer"
+    },
+    {
+      "id": "INV1",
+      "label": "A source output"
+    },
+    {
+      "id": "INV2",
+      "label": "B source output"
+    },
+    {
+      "id": "INV3",
+      "label": "-B for A-B comparison"
+    },
+    {
+      "id": "CMP1",
+      "label": "Comparator / choose smaller value"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / min(A,B)"
+    }
+  ],
+  "cables": [
+    {
+      "from": "PLUS1.out",
+      "to": "P1.in",
+      "label": "A: +1 into coefficient knob"
+    },
+    {
+      "from": "P1.out",
+      "to": "SUM1.in1",
+      "label": "A: first k contribution"
+    },
+    {
+      "from": "P1.out",
+      "to": "SUM1.in2",
+      "label": "A: second k contribution"
+    },
+    {
+      "from": "MINUS1.out",
+      "to": "SUM1.in3",
+      "label": "A: -1 offset for 2*k-1"
+    },
+    {
+      "from": "SUM1.out",
+      "to": "INV1.in",
+      "label": "A: invert summer output to recover full-range signal"
+    },
+    {
+      "from": "PLUS1.out",
+      "to": "P2.in",
+      "label": "B: +1 into coefficient knob"
+    },
+    {
+      "from": "P2.out",
+      "to": "SUM2.in1",
+      "label": "B: first k contribution"
+    },
+    {
+      "from": "P2.out",
+      "to": "SUM2.in2",
+      "label": "B: second k contribution"
+    },
+    {
+      "from": "MINUS1.out",
+      "to": "SUM2.in3",
+      "label": "B: -1 offset for 2*k-1"
+    },
+    {
+      "from": "SUM2.out",
+      "to": "INV2.in",
+      "label": "B: invert summer output to recover full-range signal"
+    },
+    {
+      "from": "INV2.out",
+      "to": "INV3.in",
+      "label": "form -B"
+    },
+    {
+      "from": "INV1.out",
+      "to": "CMP1.a",
+      "label": "A into comparator sign input"
+    },
+    {
+      "from": "INV3.out",
+      "to": "CMP1.b",
+      "label": "-B into comparator sign input, testing A-B"
+    },
+    {
+      "from": "INV2.out",
+      "to": "CMP1.positive",
+      "label": "if A>B choose B"
+    },
+    {
+      "from": "INV1.out",
+      "to": "CMP1.nonPositive",
+      "label": "otherwise choose A"
+    },
+    {
+      "from": "CMP1.out",
+      "to": "OUT_Y.in",
+      "label": "min(A,B) to OUT Y"
+    }
+  ],
+  "outputs": {
+    "y": "OUT_Y.out",
+    "min": "OUT_Y.out",
+    "a": "INV1.out",
+    "b": "INV2.out",
+    "compare": "CMP1.out"
+  },
+  "parameters": {
+    "firstStepsExampleId": "first-steps-helper-min",
+    "page": 24,
+    "equation": "out = min(A, B)",
+    "aCoefficient": 0.625,
+    "bCoefficient": 0.3,
+    "a": 0.25,
+    "b": -0.4,
+    "expectedValue": -0.4
+  }
+}

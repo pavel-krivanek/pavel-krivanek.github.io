@@ -1,0 +1,147 @@
+{
+  "schemaVersion": "analog-thing-design-template/v1",
+  "id": "slow-integrator-ramp",
+  "title": "Slow integrator ramp",
+  "category": "dynamic system",
+  "description": "Slow-mode integrator ramp with IC reset behavior.",
+  "sourceDesignId": "slow-integrator-ramp",
+  "defaultMode": "OP",
+  "runnable": true,
+  "tags": [
+    "gallery-design",
+    "dynamic system",
+    "slow-integrator-ramp",
+    "design-template"
+  ],
+  "walkthrough": [
+    {
+      "title": "Set the initial condition",
+      "text": "The IC input is left open, which resets the integrator state to zero before operation in the block model.",
+      "socketFocus": [],
+      "controlFocus": []
+    },
+    {
+      "title": "Enable slow mode",
+      "text": "PLUS1.out drives the slow socket so the integrator advances about 100 times more slowly than the ordinary input path.",
+      "socketFocus": [],
+      "controlFocus": []
+    },
+    {
+      "title": "Observe the ramp",
+      "text": "A -1 input produces a positive slow ramp in OP mode, routed to Y.",
+      "socketFocus": [],
+      "controlFocus": []
+    }
+  ],
+  "runOptions": {
+    "mode": "OP"
+  },
+  "design": {
+    "schemaVersion": "analog-thing-design/v1",
+    "kind": "custom-design",
+    "inventory": "that-prototype-board/v006",
+    "metadata": {
+      "name": "Slow integrator ramp",
+      "description": "A single integrator demonstrates the slow-mode approximation and IC reset behavior.",
+      "author": "",
+      "source": "static custom-design gallery",
+      "tags": [
+        "gallery-design",
+        "dynamic system",
+        "slow-integrator-ramp"
+      ],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "modifiedAt": "2026-05-26T00:00:00.000Z",
+      "notes": ""
+    },
+    "components": [
+      {
+        "id": "MINUS1"
+      },
+      {
+        "id": "PLUS1"
+      },
+      {
+        "id": "I1"
+      },
+      {
+        "id": "OUT_Y",
+        "label": "Y / slow ramp"
+      }
+    ],
+    "coefficients": {
+      "P1": 0.5,
+      "P2": 0.5,
+      "P3": 0.5,
+      "P4": 0.5,
+      "P5": 0.5,
+      "P6": 0.5,
+      "P7": 0.5,
+      "P8": 0.5
+    },
+    "cables": [
+      {
+        "id": "cable-2",
+        "from": {
+          "logicalSocketId": "MINUS1.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "I1.in1",
+          "physicalSocketId": null
+        },
+        "label": "negative input produces positive ramp",
+        "color": null
+      },
+      {
+        "id": "cable-3",
+        "from": {
+          "logicalSocketId": "PLUS1.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "I1.slow",
+          "physicalSocketId": null
+        },
+        "label": "activate slow-mode approximation",
+        "color": null
+      },
+      {
+        "id": "cable-4",
+        "from": {
+          "logicalSocketId": "I1.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "OUT_Y.in",
+          "physicalSocketId": null
+        },
+        "label": "integrator state to Y output",
+        "color": null
+      }
+    ],
+    "outputRouting": {
+      "channels": {
+        "X": null,
+        "Y": "OUT_Y.out",
+        "Z": null,
+        "U": null
+      },
+      "aliases": {
+        "y": "OUT_Y.out",
+        "ramp": "I1.out"
+      }
+    },
+    "operationDefaults": {
+      "mode": "OP",
+      "duration": 10,
+      "dt": 0.01,
+      "sampleEvery": 100,
+      "opTime": 8,
+      "cycles": 3,
+      "clip": false
+    },
+    "notes": "",
+    "sourcePatchSchemaVersion": "analog-thing-patch/v1"
+  }
+}

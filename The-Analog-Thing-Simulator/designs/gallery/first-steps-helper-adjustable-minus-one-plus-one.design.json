@@ -1,0 +1,160 @@
+{
+  "schemaVersion": "analog-thing-design/v1",
+  "kind": "custom-design",
+  "inventory": "that-prototype-board/v006",
+  "metadata": {
+    "name": "First Steps Helper: Adjustable Value -1 to +1",
+    "description": "Booklet Section 10.4 helper mapping one coefficient knob over the full -1..+1 machine-unit range.",
+    "author": "",
+    "source": "THAT First Steps v2 Section 10 helper template",
+    "tags": [
+      "first-steps",
+      "helper",
+      "adjustable-minus-one-plus-one",
+      "comparator-helper"
+    ],
+    "createdAt": "2026-05-28T00:00:00.000Z",
+    "modifiedAt": "2026-05-28T00:00:00.000Z",
+    "notes": ""
+  },
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "MINUS1"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.5,
+      "label": "P1 adjustable knob k"
+    },
+    {
+      "id": "SUM1",
+      "label": "Summer / -(2*k - 1)"
+    },
+    {
+      "id": "INV1",
+      "label": "Inverter / 2*k - 1"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / adjustable -1..+1 value"
+    }
+  ],
+  "coefficients": {
+    "P1": 0.5,
+    "P2": 0.5,
+    "P3": 0.5,
+    "P4": 0.5,
+    "P5": 0.5,
+    "P6": 0.5,
+    "P7": 0.5,
+    "P8": 0.5
+  },
+  "cables": [
+    {
+      "id": "cable-1",
+      "from": {
+        "logicalSocketId": "PLUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P1.in",
+        "physicalSocketId": null
+      },
+      "label": "+1 into P1 gives knob value k in 0..1",
+      "color": null
+    },
+    {
+      "id": "cable-2",
+      "from": {
+        "logicalSocketId": "P1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in1",
+        "physicalSocketId": null
+      },
+      "label": "first k contribution",
+      "color": null
+    },
+    {
+      "id": "cable-3",
+      "from": {
+        "logicalSocketId": "P1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in2",
+        "physicalSocketId": null
+      },
+      "label": "second k contribution, giving 2*k",
+      "color": null
+    },
+    {
+      "id": "cable-4",
+      "from": {
+        "logicalSocketId": "MINUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in3",
+        "physicalSocketId": null
+      },
+      "label": "-1 offset contribution",
+      "color": null
+    },
+    {
+      "id": "cable-5",
+      "from": {
+        "logicalSocketId": "SUM1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "INV1.in",
+        "physicalSocketId": null
+      },
+      "label": "recover non-inverted 2*k - 1",
+      "color": null
+    },
+    {
+      "id": "cable-6",
+      "from": {
+        "logicalSocketId": "INV1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "OUT_Y.in",
+        "physicalSocketId": null
+      },
+      "label": "full machine-unit adjustable value to OUT Y",
+      "color": null
+    }
+  ],
+  "outputRouting": {
+    "channels": {
+      "X": null,
+      "Y": "OUT_Y.out",
+      "Z": null,
+      "U": null
+    },
+    "aliases": {
+      "y": "OUT_Y.out",
+      "adjustable": "OUT_Y.out",
+      "rawSummer": "SUM1.out",
+      "knob": "P1.out"
+    }
+  },
+  "operationDefaults": {
+    "mode": "OP",
+    "duration": 0,
+    "dt": 0.01,
+    "sampleEvery": 1,
+    "opTime": 8,
+    "cycles": 1,
+    "clip": false
+  },
+  "notes": "",
+  "sourcePatchSchemaVersion": "analog-thing-patch/v1"
+}

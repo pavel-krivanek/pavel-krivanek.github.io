@@ -1,0 +1,447 @@
+{
+  "schemaVersion": "analog-thing-design/v1",
+  "kind": "custom-design",
+  "inventory": "that-prototype-board/v006",
+  "metadata": {
+    "name": "First Steps: Euler Spiral",
+    "description": "Booklet Section 9.5 Euler spiral patch. The v081 preset uses a normalized tau sweep and OP-TIME-aware phase/coordinate centering so extended runs draw both point-symmetric arms.",
+    "author": "",
+    "source": "THAT First Steps v2 Section 9.5 block-level template",
+    "tags": [
+      "first-steps",
+      "application",
+      "euler-spiral",
+      "xy-display",
+      "dynamic-system"
+    ],
+    "createdAt": "2026-05-28T00:00:00.000Z",
+    "modifiedAt": "2026-06-01T00:00:00.000Z",
+    "notes": ""
+  },
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "MINUS1"
+    },
+    {
+      "id": "ZERO"
+    },
+    {
+      "id": "I1",
+      "initialState": -1,
+      "label": "Integrator / normalized tau ramp"
+    },
+    {
+      "id": "I2",
+      "rate": 0.6,
+      "initialState": 0.6603167082440802,
+      "label": "Integrator / cos(tau^2/2) approximation"
+    },
+    {
+      "id": "I3",
+      "rate": 0.6,
+      "initialState": 0.7509872467716762,
+      "label": "Integrator / -sin(tau^2/2) approximation"
+    },
+    {
+      "id": "I4",
+      "rate": 0.05,
+      "initialState": -0.227496485419856,
+      "label": "Integrator / x spiral coordinate, centered initial value"
+    },
+    {
+      "id": "I5",
+      "rate": 0.05,
+      "initialState": -0.2339582398432739,
+      "label": "Integrator / y spiral coordinate, centered initial value"
+    },
+    {
+      "id": "INV1",
+      "label": "Inverter / sin(tau^2/2)"
+    },
+    {
+      "id": "INV2",
+      "label": "Inverter / -scaled cos for x integrator"
+    },
+    {
+      "id": "MUL1",
+      "label": "Multiplier / tau*sin"
+    },
+    {
+      "id": "MUL2",
+      "label": "Multiplier / tau*cos"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.016666666666666666,
+      "label": "P1 normalized tau ramp rate"
+    },
+    {
+      "id": "P2",
+      "coefficient": 0.6,
+      "label": "P2 x scale"
+    },
+    {
+      "id": "P3",
+      "coefficient": 0.6603167082440802,
+      "label": "P3 displayed cos initial magnitude"
+    },
+    {
+      "id": "P4",
+      "coefficient": 0.7509872467716762,
+      "label": "P4 displayed -sin initial magnitude"
+    },
+    {
+      "id": "P5",
+      "coefficient": 0.6,
+      "label": "P5 y scale"
+    },
+    {
+      "id": "OUT_X",
+      "label": "X / Euler spiral x"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / Euler spiral y"
+    }
+  ],
+  "coefficients": {
+    "P1": 0.1,
+    "P2": 0.6,
+    "P3": 0.87,
+    "P4": 0.75,
+    "P5": 0.6,
+    "P6": 0.5,
+    "P7": 0.5,
+    "P8": 0.5
+  },
+  "cables": [
+    {
+      "id": "cable-1",
+      "from": {
+        "logicalSocketId": "MINUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P1.in",
+        "physicalSocketId": null
+      },
+      "label": "-1 through P1 makes normalized tau ramp upward",
+      "color": null
+    },
+    {
+      "id": "cable-2",
+      "from": {
+        "logicalSocketId": "P1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I1.in1",
+        "physicalSocketId": null
+      },
+      "label": "normalized tau derivative is +P1",
+      "color": null
+    },
+    {
+      "id": "cable-3",
+      "from": {
+        "logicalSocketId": "PLUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P3.in",
+        "physicalSocketId": null
+      },
+      "label": "feed displayed cosine IC magnitude control",
+      "color": null
+    },
+    {
+      "id": "cable-4",
+      "from": {
+        "logicalSocketId": "PLUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P4.in",
+        "physicalSocketId": null
+      },
+      "label": "feed displayed sine IC magnitude control",
+      "color": null
+    },
+    {
+      "id": "cable-5",
+      "from": {
+        "logicalSocketId": "I3.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "INV1.in",
+        "physicalSocketId": null
+      },
+      "label": "recover sin-like signal from I3.out = -sin",
+      "color": null
+    },
+    {
+      "id": "cable-6",
+      "from": {
+        "logicalSocketId": "I1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "MUL1.x",
+        "physicalSocketId": null
+      },
+      "label": "normalized tau into first multiplier",
+      "color": null
+    },
+    {
+      "id": "cable-7",
+      "from": {
+        "logicalSocketId": "INV1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "MUL1.y",
+        "physicalSocketId": null
+      },
+      "label": "sin-like signal into first multiplier",
+      "color": null
+    },
+    {
+      "id": "cable-8",
+      "from": {
+        "logicalSocketId": "MUL1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I2.in1",
+        "physicalSocketId": null
+      },
+      "label": "tau*sin drives cos derivative through the inverting integrator",
+      "color": null
+    },
+    {
+      "id": "cable-9",
+      "from": {
+        "logicalSocketId": "I1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "MUL2.x",
+        "physicalSocketId": null
+      },
+      "label": "normalized tau into second multiplier",
+      "color": null
+    },
+    {
+      "id": "cable-10",
+      "from": {
+        "logicalSocketId": "I2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "MUL2.y",
+        "physicalSocketId": null
+      },
+      "label": "cos-like signal into second multiplier",
+      "color": null
+    },
+    {
+      "id": "cable-11",
+      "from": {
+        "logicalSocketId": "MUL2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I3.in1",
+        "physicalSocketId": null
+      },
+      "label": "tau*cos drives -sin derivative through the inverting integrator",
+      "color": null
+    },
+    {
+      "id": "cable-12",
+      "from": {
+        "logicalSocketId": "I2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P2.in",
+        "physicalSocketId": null
+      },
+      "label": "scale cos-like signal for x integration",
+      "color": null
+    },
+    {
+      "id": "cable-13",
+      "from": {
+        "logicalSocketId": "P2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "INV2.in",
+        "physicalSocketId": null
+      },
+      "label": "invert scaled cos so the inverting x integrator advances positively",
+      "color": null
+    },
+    {
+      "id": "cable-14",
+      "from": {
+        "logicalSocketId": "INV2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I4.in1",
+        "physicalSocketId": null
+      },
+      "label": "x integrates scaled cos",
+      "color": null
+    },
+    {
+      "id": "cable-15",
+      "from": {
+        "logicalSocketId": "I3.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P5.in",
+        "physicalSocketId": null
+      },
+      "label": "scale -sin-like signal for y integration",
+      "color": null
+    },
+    {
+      "id": "cable-16",
+      "from": {
+        "logicalSocketId": "P5.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I5.in1",
+        "physicalSocketId": null
+      },
+      "label": "y integrates scaled sin because I5 is inverting",
+      "color": null
+    },
+    {
+      "id": "cable-17",
+      "from": {
+        "logicalSocketId": "I4.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "OUT_X.in",
+        "physicalSocketId": null
+      },
+      "label": "spiral x coordinate to OUT X",
+      "color": null
+    },
+    {
+      "id": "cable-18",
+      "from": {
+        "logicalSocketId": "I5.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "OUT_Y.in",
+        "physicalSocketId": null
+      },
+      "label": "spiral y coordinate to OUT Y",
+      "color": null
+    }
+  ],
+  "outputRouting": {
+    "channels": {
+      "X": "OUT_X.out",
+      "Y": "OUT_Y.out",
+      "Z": null,
+      "U": null
+    },
+    "aliases": {
+      "x": "OUT_X.out",
+      "y": "OUT_Y.out",
+      "tau": "I1.out",
+      "cos": "I2.out",
+      "minusSin": "I3.out",
+      "sin": "INV1.out"
+    }
+  },
+  "operationDefaults": {
+    "mode": "REPF",
+    "duration": 40,
+    "dt": 0.005,
+    "sampleEvery": 20,
+    "opTime": 120,
+    "cycles": 1,
+    "clip": false
+  },
+  "notes": "",
+  "sourcePatchSchemaVersion": "analog-thing-patch/v1",
+  "parameters": {
+    "firstStepsExampleId": "first-steps-euler-spiral",
+    "page": 19,
+    "equation": "x(t)=integral cos(tau^2/2) dtau, y(t)=integral sin(tau^2/2) dtau",
+    "scopePreset": "xy",
+    "tauRate": 0.1,
+    "tauSpan": 6,
+    "normalizedTauSweep": true,
+    "eulerSpiralAutoCenterForRun": true,
+    "rampRate": 0.016666666666666666,
+    "oscillatorRate": 0.6,
+    "xScale": 0.6,
+    "cos0": 0.6603167082440802,
+    "minusSin0": 0.7509872467716762,
+    "minusSinMagnitude0": 0.7509872467716762,
+    "yScale": 0.6,
+    "coordinateRate": 0.05,
+    "opTimeSeconds": 120,
+    "coefficients": {
+      "P1": 0.016666666666666666,
+      "P2": 0.6,
+      "P3": 0.6603167082440802,
+      "P4": 0.7509872467716762,
+      "P5": 0.6
+    },
+    "centeredInitial": {
+      "x0": -0.227496485419856,
+      "y0": -0.2339582398432739,
+      "expectedCenteredFinalX": 0.227496485419856,
+      "expectedCenteredFinalY": 0.2339582398432739
+    },
+    "centeredSweep": {
+      "opTimeSeconds": 120,
+      "tauRate": 0.1,
+      "tauSpan": 6,
+      "normalizedTauStart": -1,
+      "normalizedTauEnd": 1,
+      "rampRate": 0.016666666666666666,
+      "oscillatorRate": 0.6,
+      "coordinateRate": 0.05,
+      "xScale": 0.6,
+      "yScale": 0.6,
+      "cos0": 0.6603167082440802,
+      "minusSin0": 0.7509872467716762,
+      "x0": -0.227496485419856,
+      "y0": -0.2339582398432739,
+      "expectedCenteredFinalX": 0.227496485419856,
+      "expectedCenteredFinalY": 0.2339582398432739
+    },
+    "expectedFinalAtDefaultOpTime": {
+      "tau": 0.9999999999997894,
+      "cos": 0.6603167082383918,
+      "minusSin": 0.7509872467766892,
+      "x": 0.2274964854212502,
+      "y": 0.23395823984297467
+    },
+    "expectedFinalAt20s": {
+      "tau": 0.9999999999997894,
+      "cos": 0.6603167082383918,
+      "minusSin": 0.7509872467766892,
+      "x": 0.2274964854212502,
+      "y": 0.23395823984297467
+    }
+  }
+}

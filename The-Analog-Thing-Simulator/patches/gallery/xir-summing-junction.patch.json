@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "analog-thing-patch/v1",
+  "inventory": "that-prototype-board/v006",
+  "name": "XIR summing-junction extension demo",
+  "description": "Adds one ordinary summer input and one x10 XIR contribution through the summer summing junction.",
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.2,
+      "label": "ordinary summer term"
+    },
+    {
+      "id": "P2",
+      "coefficient": 0.03,
+      "label": "XIR x10 term source"
+    },
+    {
+      "id": "XIR1"
+    },
+    {
+      "id": "SUM1"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / summer plus XIR"
+    }
+  ],
+  "cables": [
+    {
+      "from": "PLUS1.out",
+      "to": "P1.in",
+      "label": "ordinary +0.20 input"
+    },
+    {
+      "from": "PLUS1.out",
+      "to": "P2.in",
+      "label": "source for x10 XIR input"
+    },
+    {
+      "from": "P1.out",
+      "to": "SUM1.in1",
+      "label": "ordinary summer contribution"
+    },
+    {
+      "from": "P2.out",
+      "to": "XIR1.in10_1",
+      "label": "0.03 through x10 input gives 0.30"
+    },
+    {
+      "from": "XIR1.out",
+      "to": "SUM1.sj",
+      "label": "XIR output into summing junction"
+    },
+    {
+      "from": "SUM1.out",
+      "to": "OUT_Y.in",
+      "label": "negated total to Y output"
+    }
+  ],
+  "outputs": {
+    "y": "OUT_Y.out",
+    "xirContribution": "XIR1.out",
+    "summer": "SUM1.out"
+  },
+  "parameters": {
+    "expectedY": -0.5
+  }
+}

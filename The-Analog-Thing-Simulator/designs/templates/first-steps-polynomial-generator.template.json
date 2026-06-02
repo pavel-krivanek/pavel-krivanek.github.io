@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "analog-thing-design-template/v1",
+  "id": "first-steps-polynomial-generator",
+  "title": "First Steps: Polynomial Generator",
+  "category": "First Steps application",
+  "description": "Runnable Section 9.9 polynomial generator walkthrough for X/Y display.",
+  "sourceDesignId": "first-steps-polynomial-generator",
+  "defaultMode": "REPF",
+  "runnable": true,
+  "tags": [
+    "first-steps",
+    "polynomial-generator",
+    "xy-display"
+  ],
+  "walkthrough": [
+    {
+      "title": "Generate the x ramp",
+      "text": "P1 scales -1 into the first inverting integrator. With IC driven by +1, I1.out starts at x=-1 and ramps to +1 across the default 2 s REPF run.",
+      "socketFocus": [
+        "PLUS1.out",
+        "I1.ic",
+        "MINUS1.out",
+        "P1.in",
+        "P1.out",
+        "I1.in1",
+        "I1.out"
+      ],
+      "controlFocus": [
+        "P1"
+      ]
+    },
+    {
+      "title": "Generate powers of x",
+      "text": "I2 starts at -1 and receives two x contributions, one directly and one through XIR1, so it follows -x^2. I3 starts at -1 and receives three -x^2 contributions, one direct and two through XIR2, so it follows x^3.",
+      "socketFocus": [
+        "I1.out",
+        "I2.in1",
+        "XIR1.in1",
+        "XIR1.out",
+        "I2.sj",
+        "I2.out",
+        "I3.in1",
+        "XIR2.in1",
+        "XIR2.in2",
+        "XIR2.out",
+        "I3.sj",
+        "I3.out"
+      ]
+    },
+    {
+      "title": "Scale polynomial terms",
+      "text": "P2 produces d, P3 produces c*x, P4 receives x^2 and produces b*x^2, and P5 receives -x^3 to implement the default negative cubic term a*x^3.",
+      "socketFocus": [
+        "P2.out",
+        "P3.out",
+        "P4.out",
+        "P5.out"
+      ],
+      "controlFocus": [
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ]
+    },
+    {
+      "title": "Display p(x)",
+      "text": "SUM1 combines the four terms as a negating summer and INV3 recovers p(x). OUT X carries x and OUT Y carries p(x), making the preset ready for X/Y display.",
+      "socketFocus": [
+        "SUM1.out",
+        "INV3.in",
+        "INV3.out",
+        "OUT_X.in",
+        "OUT_Y.in"
+      ],
+      "controlFocus": [
+        "X",
+        "Y"
+      ]
+    }
+  ]
+}

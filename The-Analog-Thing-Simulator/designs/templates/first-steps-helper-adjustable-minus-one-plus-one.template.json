@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "analog-thing-design-template/v1",
+  "id": "first-steps-helper-adjustable-minus-one-plus-one",
+  "title": "First Steps Helper: Adjustable Value -1 to +1",
+  "category": "First Steps helper",
+  "description": "Booklet Section 10.4 helper mapping one coefficient knob over the full -1..+1 machine-unit range.",
+  "sourceDesignId": "first-steps-helper-adjustable-minus-one-plus-one",
+  "defaultMode": "OP",
+  "runnable": true,
+  "tags": [
+    "first-steps",
+    "helper",
+    "adjustable-minus-one-plus-one",
+    "comparator-helper"
+  ],
+  "walkthrough": [
+    {
+      "title": "Create knob value k",
+      "text": "PLUS1 drives P1, so P1.out is an adjustable value k in 0..1.",
+      "socketFocus": [
+        "PLUS1.out",
+        "P1.in",
+        "P1.out"
+      ],
+      "controlFocus": [
+        "P1"
+      ]
+    },
+    {
+      "title": "Map to full machine unit",
+      "text": "P1.out is patched into two summer inputs and -1 is patched into a third, giving 2*k-1 before the final sign recovery.",
+      "socketFocus": [
+        "P1.out",
+        "SUM1.in1",
+        "SUM1.in2",
+        "MINUS1.out",
+        "SUM1.in3"
+      ]
+    },
+    {
+      "title": "Display the result",
+      "text": "INV1 recovers 2*k-1 and OUT Y carries the adjustable -1..+1 signal.",
+      "socketFocus": [
+        "SUM1.out",
+        "INV1.in",
+        "INV1.out",
+        "OUT_Y.in"
+      ],
+      "controlFocus": [
+        "Y"
+      ]
+    }
+  ]
+}

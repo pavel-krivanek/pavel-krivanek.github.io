@@ -1,0 +1,526 @@
+{
+  "schemaVersion": "analog-thing-design/v1",
+  "kind": "custom-design",
+  "inventory": "that-prototype-board/v006",
+  "metadata": {
+    "name": "First Steps: Lorenz Attractor",
+    "description": "Booklet Section 9.7 Lorenz chaotic attractor patch. P1-P6 set the booklet coefficients, P7 sets the small nonzero x initial condition, and OUT X/Y/Z expose x, y, z for projection display.",
+    "author": "",
+    "source": "THAT First Steps v2 Section 9.7 block-level template",
+    "tags": [
+      "first-steps",
+      "application",
+      "lorenz",
+      "chaotic-attractor",
+      "xy-display",
+      "dynamic-system"
+    ],
+    "createdAt": "2026-05-28T00:00:00.000Z",
+    "modifiedAt": "2026-05-28T00:00:00.000Z",
+    "notes": ""
+  },
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "ZERO"
+    },
+    {
+      "id": "I1",
+      "label": "Integrator / -x"
+    },
+    {
+      "id": "I2",
+      "label": "Integrator / -y"
+    },
+    {
+      "id": "I3",
+      "label": "Integrator / -z"
+    },
+    {
+      "id": "INV1",
+      "label": "Inverter / x display"
+    },
+    {
+      "id": "INV2",
+      "label": "Inverter / y display and x-equation drive"
+    },
+    {
+      "id": "INV3",
+      "label": "Inverter / z display"
+    },
+    {
+      "id": "MUL1",
+      "label": "Multiplier / x*y"
+    },
+    {
+      "id": "SUM1",
+      "label": "Summer / s = -(1 - 2.68z)"
+    },
+    {
+      "id": "MUL2",
+      "label": "Multiplier / r = -x*s"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.18,
+      "label": "P1 y-to-x coefficient 0.18, used through x10 as 1.8"
+    },
+    {
+      "id": "P2",
+      "coefficient": 0.15,
+      "label": "P2 xy coefficient 0.15, used through x10 as 1.5"
+    },
+    {
+      "id": "P3",
+      "coefficient": 0.2667,
+      "label": "P3 z damping coefficient 0.2667"
+    },
+    {
+      "id": "P4",
+      "coefficient": 0.268,
+      "label": "P4 z shape coefficient 0.268, used through x10 as 2.68"
+    },
+    {
+      "id": "P5",
+      "coefficient": 0.1536,
+      "label": "P5 r coefficient 0.1536, used through x10 as 1.536"
+    },
+    {
+      "id": "P6",
+      "coefficient": 0.1,
+      "label": "P6 y damping coefficient 0.1"
+    },
+    {
+      "id": "P7",
+      "coefficient": 0.18,
+      "label": "P7 simulator IC helper for initial x"
+    },
+    {
+      "id": "OUT_X",
+      "label": "X / Lorenz x"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / Lorenz y"
+    },
+    {
+      "id": "OUT_Z",
+      "label": "Z / Lorenz z"
+    }
+  ],
+  "coefficients": {
+    "P1": 0.18,
+    "P2": 0.15,
+    "P3": 0.2667,
+    "P4": 0.268,
+    "P5": 0.1536,
+    "P6": 0.1,
+    "P7": 0.18,
+    "P8": 0.5
+  },
+  "cables": [
+    {
+      "id": "cable-1",
+      "from": {
+        "logicalSocketId": "PLUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P7.in",
+        "physicalSocketId": null
+      },
+      "label": "P7 sets the nonzero x initial condition used to start the attractor",
+      "color": null
+    },
+    {
+      "id": "cable-2",
+      "from": {
+        "logicalSocketId": "P7.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I1.ic",
+        "physicalSocketId": null
+      },
+      "label": "initialize I1.out to -x0 through the inverting IC convention",
+      "color": null
+    },
+    {
+      "id": "cable-3",
+      "from": {
+        "logicalSocketId": "ZERO.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I2.ic",
+        "physicalSocketId": null
+      },
+      "label": "initialize y to zero",
+      "color": null
+    },
+    {
+      "id": "cable-4",
+      "from": {
+        "logicalSocketId": "ZERO.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I3.ic",
+        "physicalSocketId": null
+      },
+      "label": "initialize z to zero",
+      "color": null
+    },
+    {
+      "id": "cable-5",
+      "from": {
+        "logicalSocketId": "I1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "INV1.in",
+        "physicalSocketId": null
+      },
+      "label": "recover x from I1.out = -x",
+      "color": null
+    },
+    {
+      "id": "cable-6",
+      "from": {
+        "logicalSocketId": "I2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "INV2.in",
+        "physicalSocketId": null
+      },
+      "label": "recover y from I2.out = -y",
+      "color": null
+    },
+    {
+      "id": "cable-7",
+      "from": {
+        "logicalSocketId": "I3.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "INV3.in",
+        "physicalSocketId": null
+      },
+      "label": "recover z from I3.out = -z",
+      "color": null
+    },
+    {
+      "id": "cable-8",
+      "from": {
+        "logicalSocketId": "I1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I1.in1",
+        "physicalSocketId": null
+      },
+      "label": "-x state supplies the +x term inside d(-x)/dt",
+      "color": null
+    },
+    {
+      "id": "cable-9",
+      "from": {
+        "logicalSocketId": "INV2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P1.in",
+        "physicalSocketId": null
+      },
+      "label": "scale y by 0.18 before x10 weighting",
+      "color": null
+    },
+    {
+      "id": "cable-10",
+      "from": {
+        "logicalSocketId": "P1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I1.in10",
+        "physicalSocketId": null
+      },
+      "label": "x10 input implements 1.8*y in the -x equation",
+      "color": null
+    },
+    {
+      "id": "cable-11",
+      "from": {
+        "logicalSocketId": "I1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "MUL1.x",
+        "physicalSocketId": null
+      },
+      "label": "-x into xy multiplier",
+      "color": null
+    },
+    {
+      "id": "cable-12",
+      "from": {
+        "logicalSocketId": "I2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "MUL1.y",
+        "physicalSocketId": null
+      },
+      "label": "-y into xy multiplier, product is x*y",
+      "color": null
+    },
+    {
+      "id": "cable-13",
+      "from": {
+        "logicalSocketId": "MUL1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P2.in",
+        "physicalSocketId": null
+      },
+      "label": "scale x*y by 0.15 before x10 weighting",
+      "color": null
+    },
+    {
+      "id": "cable-14",
+      "from": {
+        "logicalSocketId": "P2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I3.in10",
+        "physicalSocketId": null
+      },
+      "label": "x10 input implements 1.5*x*y in the -z equation",
+      "color": null
+    },
+    {
+      "id": "cable-15",
+      "from": {
+        "logicalSocketId": "I3.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P3.in",
+        "physicalSocketId": null
+      },
+      "label": "scale -z by beta=0.2667 for the -z equation",
+      "color": null
+    },
+    {
+      "id": "cable-16",
+      "from": {
+        "logicalSocketId": "P3.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I3.in1",
+        "physicalSocketId": null
+      },
+      "label": "adds -0.2667*z so I3 derivative becomes -1.5xy + 0.2667z",
+      "color": null
+    },
+    {
+      "id": "cable-17",
+      "from": {
+        "logicalSocketId": "I3.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P4.in",
+        "physicalSocketId": null
+      },
+      "label": "scale -z by 0.268 for the s expression",
+      "color": null
+    },
+    {
+      "id": "cable-18",
+      "from": {
+        "logicalSocketId": "PLUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in1",
+        "physicalSocketId": null
+      },
+      "label": "+1 term for s = -(1 - 2.68z)",
+      "color": null
+    },
+    {
+      "id": "cable-19",
+      "from": {
+        "logicalSocketId": "P4.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in10_1",
+        "physicalSocketId": null
+      },
+      "label": "x10 contribution gives -2.68z before the negating summer",
+      "color": null
+    },
+    {
+      "id": "cable-20",
+      "from": {
+        "logicalSocketId": "I1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "MUL2.x",
+        "physicalSocketId": null
+      },
+      "label": "-x into r multiplier",
+      "color": null
+    },
+    {
+      "id": "cable-21",
+      "from": {
+        "logicalSocketId": "SUM1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "MUL2.y",
+        "physicalSocketId": null
+      },
+      "label": "s into r multiplier so output is r = -x*s",
+      "color": null
+    },
+    {
+      "id": "cable-22",
+      "from": {
+        "logicalSocketId": "MUL2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P5.in",
+        "physicalSocketId": null
+      },
+      "label": "scale r by 0.1536 before x10 weighting",
+      "color": null
+    },
+    {
+      "id": "cable-23",
+      "from": {
+        "logicalSocketId": "P5.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I2.in10",
+        "physicalSocketId": null
+      },
+      "label": "x10 input implements 1.536*r in the -y equation",
+      "color": null
+    },
+    {
+      "id": "cable-24",
+      "from": {
+        "logicalSocketId": "I2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P6.in",
+        "physicalSocketId": null
+      },
+      "label": "scale -y by 0.1 for the -y equation",
+      "color": null
+    },
+    {
+      "id": "cable-25",
+      "from": {
+        "logicalSocketId": "P6.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I2.in1",
+        "physicalSocketId": null
+      },
+      "label": "adds -0.1*y before the inverting integrator",
+      "color": null
+    },
+    {
+      "id": "cable-26",
+      "from": {
+        "logicalSocketId": "INV1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "OUT_X.in",
+        "physicalSocketId": null
+      },
+      "label": "Lorenz x to OUT X",
+      "color": null
+    },
+    {
+      "id": "cable-27",
+      "from": {
+        "logicalSocketId": "INV2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "OUT_Y.in",
+        "physicalSocketId": null
+      },
+      "label": "Lorenz y to OUT Y",
+      "color": null
+    },
+    {
+      "id": "cable-28",
+      "from": {
+        "logicalSocketId": "INV3.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "OUT_Z.in",
+        "physicalSocketId": null
+      },
+      "label": "Lorenz z to OUT Z",
+      "color": null
+    }
+  ],
+  "outputRouting": {
+    "channels": {
+      "X": "OUT_X.out",
+      "Y": "OUT_Y.out",
+      "Z": "OUT_Z.out",
+      "U": null
+    },
+    "aliases": {
+      "x": "OUT_X.out",
+      "y": "OUT_Y.out",
+      "z": "OUT_Z.out",
+      "minusX": "I1.out",
+      "minusY": "I2.out",
+      "minusZ": "I3.out",
+      "xy": "MUL1.out",
+      "s": "SUM1.out",
+      "r": "MUL2.out"
+    }
+  },
+  "operationDefaults": {
+    "mode": "OP",
+    "duration": 300,
+    "dt": 0.01,
+    "sampleEvery": 5,
+    "opTime": 8,
+    "cycles": 1,
+    "clip": false
+  },
+  "notes": "",
+  "sourcePatchSchemaVersion": "analog-thing-patch/v1",
+  "recommendedRun": {
+    "mode": "OP",
+    "duration": 300,
+    "dt": 0.01,
+    "sampleEvery": 5,
+    "scopePreset": "xy"
+  }
+}

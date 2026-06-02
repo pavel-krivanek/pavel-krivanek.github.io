@@ -1,0 +1,170 @@
+{
+  "schemaVersion": "analog-thing-design-gallery/v1",
+  "designs": [
+    {
+      "id": "quickstart-damped-oscillation",
+      "title": "Quickstart damped oscillation",
+      "category": "dynamic system",
+      "description": "The main prototype target, using two integrators, one inverter, three coefficients, and a negating summer.",
+      "defaultMode": "REPF",
+      "file": "quickstart-damped-oscillation.design.json"
+    },
+    {
+      "id": "static-inverter",
+      "title": "Static inverter and coefficient",
+      "category": "linear block",
+      "description": "A minimal patch showing coefficient scaling followed by sign inversion.",
+      "defaultMode": "OP",
+      "file": "static-inverter.design.json"
+    },
+    {
+      "id": "summer-scaling",
+      "title": "Summer scaling and sign",
+      "category": "linear block",
+      "description": "A negating summer combines a positive and a negative term.",
+      "defaultMode": "OP",
+      "file": "summer-scaling.design.json"
+    },
+    {
+      "id": "multiplier-product",
+      "title": "Multiplier product",
+      "category": "nonlinear block",
+      "description": "The multiplier computes a normalized four-quadrant product from two coefficient-scaled constants.",
+      "defaultMode": "OP",
+      "file": "multiplier-product.design.json"
+    },
+    {
+      "id": "comparator-switch",
+      "title": "Comparator switch",
+      "category": "hybrid-style block",
+      "description": "The comparator selects one of two analog branches based on the sign of a + b.",
+      "defaultMode": "OP",
+      "file": "comparator-switch.design.json"
+    },
+    {
+      "id": "xir-summing-junction",
+      "title": "XIR summing-junction extension",
+      "category": "patch expansion",
+      "description": "An XIR resistor network contributes an extra weighted term through a summer summing junction.",
+      "defaultMode": "OP",
+      "file": "xir-summing-junction.design.json"
+    },
+    {
+      "id": "slow-integrator-ramp",
+      "title": "Slow integrator ramp",
+      "category": "dynamic system",
+      "description": "A single integrator demonstrates the slow-mode approximation and IC reset behavior.",
+      "defaultMode": "OP",
+      "file": "slow-integrator-ramp.design.json"
+    },
+    {
+      "id": "first-steps-radioactive-decay",
+      "title": "First Steps: Radioactive Decay",
+      "category": "First Steps application",
+      "description": "Booklet Section 9.1 exponential decay patch with P1=N0, P2=lambda, and OUT X=N.",
+      "defaultMode": "REPF",
+      "file": "first-steps-radioactive-decay.design.json"
+    },
+    {
+      "id": "first-steps-mass-spring-damper",
+      "title": "First Steps: Mass-Spring-Damper System",
+      "category": "First Steps application",
+      "description": "Booklet Section 9.2 underdamped suspension patch with P1=y0, P2=s, P3=D, P4=1/m, and OUT X=y.",
+      "defaultMode": "REPF",
+      "file": "first-steps-mass-spring-damper.design.json"
+    },
+    {
+      "id": "first-steps-lunar-landing",
+      "title": "First Steps: Lunar Landing",
+      "category": "First Steps application",
+      "file": "first-steps-lunar-landing.design.json"
+    },
+    {
+      "id": "first-steps-neuronal-bursting",
+      "title": "First Steps: Neuronal Bursting",
+      "category": "First Steps application",
+      "file": "first-steps-neuronal-bursting.design.json",
+      "description": "Runnable Section 9.4 scaled Hindmarsh-Rose neuronal bursting walkthrough using x10-weighted inputs, XIR/SJ, and SLOW."
+    },
+    {
+      "id": "first-steps-euler-spiral",
+      "title": "First Steps: Euler Spiral",
+      "category": "First Steps application",
+      "description": "Booklet Section 9.5 Euler spiral patch with P1 tau ramp, P2/P5 scaling, and OUT X/Y x/y display.",
+      "defaultMode": "REPF",
+      "file": "first-steps-euler-spiral.design.json"
+    },
+    {
+      "id": "first-steps-hunter-prey",
+      "title": "First Steps: Hunter/Prey Population Dynamics",
+      "category": "First Steps application",
+      "description": "Booklet Section 9.6 Lotka-Volterra population patch with P1/P2 initial populations, P3-P6 alpha/beta/gamma/delta, and OUT X/Y phase display.",
+      "defaultMode": "OP",
+      "file": "first-steps-hunter-prey.design.json"
+    },
+    {
+      "id": "first-steps-lorenz-attractor",
+      "title": "First Steps: Lorenz Attractor",
+      "category": "First Steps application",
+      "description": "Booklet Section 9.7 Lorenz chaotic attractor patch with P1-P6 coefficients, P7 initial x helper, and OUT X/Y/Z projection display.",
+      "defaultMode": "OP",
+      "file": "first-steps-lorenz-attractor.design.json"
+    },
+    {
+      "id": "first-steps-bouncing-ball",
+      "title": "First Steps: Bouncing Ball",
+      "category": "First Steps application",
+      "description": "First Steps Section 9.8 bouncing ball with OUT Y display inverted so rebounds appear at the lower edge.",
+      "defaultMode": "REPF",
+      "file": "first-steps-bouncing-ball.design.json"
+    },
+    {
+      "id": "first-steps-polynomial-generator",
+      "title": "First Steps: Polynomial Generator",
+      "category": "First Steps application",
+      "description": "Booklet Section 9.9 polynomial generator patch with x on OUT X, p(x) on OUT Y, and X/Y display routing.",
+      "defaultMode": "REPF",
+      "file": "first-steps-polynomial-generator.design.json"
+    },
+    {
+      "id": "first-steps-helper-adjustable-minus-one-plus-one",
+      "title": "First Steps Helper: Adjustable Value -1 to +1",
+      "category": "First Steps helper",
+      "description": "Booklet Section 10.4 helper mapping one coefficient knob over the full -1..+1 machine-unit range.",
+      "defaultMode": "OP",
+      "file": "first-steps-helper-adjustable-minus-one-plus-one.design.json"
+    },
+    {
+      "id": "first-steps-helper-max",
+      "title": "First Steps Helper: Maximum of Two Values",
+      "category": "First Steps helper",
+      "description": "Booklet Section 10.1 helper selecting the maximum of two adjustable values A and B.",
+      "defaultMode": "OP",
+      "file": "first-steps-helper-max.design.json"
+    },
+    {
+      "id": "first-steps-helper-min",
+      "title": "First Steps Helper: Minimum of Two Values",
+      "category": "First Steps helper",
+      "description": "Booklet Section 10.2 helper selecting the minimum of two adjustable values A and B.",
+      "defaultMode": "OP",
+      "file": "first-steps-helper-min.design.json"
+    },
+    {
+      "id": "first-steps-helper-abs",
+      "title": "First Steps Helper: Absolute Value",
+      "category": "First Steps helper",
+      "description": "Booklet Section 10.3 helper selecting the absolute value of adjustable input A.",
+      "defaultMode": "OP",
+      "file": "first-steps-helper-abs.design.json"
+    },
+    {
+      "id": "first-steps-helper-non-negative-only",
+      "title": "First Steps Helper: Non-Negative Values Only",
+      "category": "First Steps helper",
+      "description": "Booklet Section 10.5 helper passing A when positive and zero otherwise.",
+      "defaultMode": "OP",
+      "file": "first-steps-helper-non-negative-only.design.json"
+    }
+  ]
+}

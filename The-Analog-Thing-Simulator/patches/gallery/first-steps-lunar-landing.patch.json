@@ -1,0 +1,357 @@
+{
+  "schemaVersion": "analog-thing-patch/v1",
+  "inventory": "that-prototype-board/v006",
+  "name": "First Steps: Lunar Landing",
+  "description": "Booklet-style active-block translation of First Steps Section 9.3. P1 is the descent-engine throttle, CMP1 disables thrust when fuel is empty, CMP2 prevents below-ground altitude integration, OUT X carries altitude h, OUT Y vertical velocity v, and OUT U fuel F.",
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "MINUS1"
+    },
+    {
+      "id": "ZERO"
+    },
+    {
+      "id": "I1",
+      "label": "Integrator / vertical velocity v"
+    },
+    {
+      "id": "I2",
+      "rate": 159.99999999999997,
+      "label": "Integrator / altitude h"
+    },
+    {
+      "id": "I3",
+      "label": "Integrator / fuel level F"
+    },
+    {
+      "id": "SUM1",
+      "label": "Summer / T - g, inverted by I1 to vdot = g - T"
+    },
+    {
+      "id": "INV1",
+      "label": "Inverter / -T thrust term"
+    },
+    {
+      "id": "INV2",
+      "label": "Inverter / -v for altitude integration"
+    },
+    {
+      "id": "CMP1",
+      "label": "Comparator / fuel-positive thrust gate"
+    },
+    {
+      "id": "CMP2",
+      "label": "Comparator / altitude-positive motion gate"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.5,
+      "timeProfile": {
+        "kind": "linear-points",
+        "scale": "multiplier",
+        "repeat": false,
+        "points": [
+          {
+            "t": 0,
+            "value": 1.44
+          },
+          {
+            "t": 5,
+            "value": 1.44
+          },
+          {
+            "t": 5.8,
+            "value": 0.04
+          },
+          {
+            "t": 7.2,
+            "value": 0.04
+          },
+          {
+            "t": 8,
+            "value": 1.0
+          },
+          {
+            "t": 10,
+            "value": 1.0
+          }
+        ]
+      },
+      "label": "P1 descent-engine throttle / booklet demonstration profile"
+    },
+    {
+      "id": "P2",
+      "coefficient": 0.1,
+      "label": "P2 thrust scale 0.1"
+    },
+    {
+      "id": "P3",
+      "coefficient": 0.05,
+      "label": "P3 lunar gravity stage 0.05"
+    },
+    {
+      "id": "P4",
+      "coefficient": 0.05,
+      "label": "P4 lunar gravity stage 0.05"
+    },
+    {
+      "id": "P5",
+      "coefficient": 0.5,
+      "label": "P5 fuel efficiency alpha"
+    },
+    {
+      "id": "P6",
+      "coefficient": 0.05,
+      "label": "P6 altitude path scale 0.05"
+    },
+    {
+      "id": "P7",
+      "coefficient": 0.05,
+      "label": "P7 altitude path scale 0.05"
+    },
+    {
+      "id": "OUT_X",
+      "label": "X / altitude h"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / vertical velocity v"
+    },
+    {
+      "id": "OUT_Z",
+      "label": "Z / available thrust T"
+    },
+    {
+      "id": "OUT_U",
+      "label": "U / fuel level F"
+    }
+  ],
+  "cables": [
+    {
+      "from": "PLUS1.out",
+      "to": "P1.in",
+      "label": "P1 is the pilot throttle coefficient; the preset uses a booklet-shaped demonstration profile"
+    },
+    {
+      "from": "P1.out",
+      "to": "P2.in",
+      "label": "scale throttle to the booklet T = 0.1 * P1 range"
+    },
+    {
+      "from": "PLUS1.out",
+      "to": "P3.in",
+      "label": "first 0.05 gravity stage"
+    },
+    {
+      "from": "P3.out",
+      "to": "P4.in",
+      "label": "second 0.05 gravity stage"
+    },
+    {
+      "from": "MINUS1.out",
+      "to": "I2.ic",
+      "label": "initialize altitude h to +1 through THAT IC sign convention"
+    },
+    {
+      "from": "MINUS1.out",
+      "to": "I3.ic",
+      "label": "initialize fuel F to +1 through THAT IC sign convention"
+    },
+    {
+      "from": "I3.out",
+      "to": "CMP1.a",
+      "label": "fuel level tests whether thrust is still available"
+    },
+    {
+      "from": "ZERO.out",
+      "to": "CMP1.b",
+      "label": "fuel-positive threshold at zero"
+    },
+    {
+      "from": "P2.out",
+      "to": "CMP1.positive",
+      "label": "thrust branch while fuel remains"
+    },
+    {
+      "from": "ZERO.out",
+      "to": "CMP1.nonPositive",
+      "label": "no thrust when fuel is depleted"
+    },
+    {
+      "from": "CMP1.out",
+      "to": "INV1.in",
+      "label": "available thrust T"
+    },
+    {
+      "from": "P4.out",
+      "to": "SUM1.in10_1",
+      "label": "gravity stage through x10 input, first half"
+    },
+    {
+      "from": "P4.out",
+      "to": "SUM1.in10_2",
+      "label": "gravity stage through x10 input, second half"
+    },
+    {
+      "from": "INV1.out",
+      "to": "SUM1.in2",
+      "label": "-T term so SUM1.out is T - g"
+    },
+    {
+      "from": "SUM1.out",
+      "to": "I1.in1",
+      "label": "I1 inversion yields vdot = g - T"
+    },
+    {
+      "from": "CMP1.out",
+      "to": "P5.in",
+      "label": "fuel burn is proportional to available thrust"
+    },
+    {
+      "from": "P5.out",
+      "to": "I3.in1",
+      "label": "I3 inversion gives Fdot = -alpha*T"
+    },
+    {
+      "from": "I1.out",
+      "to": "INV2.in",
+      "label": "invert v to feed an inverting altitude integrator"
+    },
+    {
+      "from": "I2.out",
+      "to": "CMP2.a",
+      "label": "altitude-positive touchdown test"
+    },
+    {
+      "from": "ZERO.out",
+      "to": "CMP2.b",
+      "label": "ground threshold"
+    },
+    {
+      "from": "INV2.out",
+      "to": "CMP2.positive",
+      "label": "while h > 0, feed -v so I2 derivative is scaled v"
+    },
+    {
+      "from": "ZERO.out",
+      "to": "CMP2.nonPositive",
+      "label": "after touchdown, hold altitude"
+    },
+    {
+      "from": "CMP2.out",
+      "to": "P6.in",
+      "label": "first 0.05 altitude scaling stage from the booklet patch"
+    },
+    {
+      "from": "P6.out",
+      "to": "P7.in",
+      "label": "second 0.05 altitude scaling stage from the booklet patch"
+    },
+    {
+      "from": "P7.out",
+      "to": "I2.in1",
+      "label": "scaled altitude integration path"
+    },
+    {
+      "from": "I2.out",
+      "to": "OUT_X.in",
+      "label": "altitude h to OUT X"
+    },
+    {
+      "from": "I1.out",
+      "to": "OUT_Y.in",
+      "label": "vertical velocity v to OUT Y"
+    },
+    {
+      "from": "CMP1.out",
+      "to": "OUT_Z.in",
+      "label": "available thrust to OUT Z for diagnostics"
+    },
+    {
+      "from": "I3.out",
+      "to": "OUT_U.in",
+      "label": "fuel level F to OUT U / panel-meter equivalent"
+    }
+  ],
+  "outputs": {
+    "x": "OUT_X.out",
+    "y": "OUT_Y.out",
+    "u": "OUT_U.out",
+    "altitude": "OUT_X.out",
+    "velocity": "OUT_Y.out",
+    "thrust": "OUT_Z.out",
+    "fuel": "OUT_U.out",
+    "gravity": "P4.out",
+    "fuelBurn": "P5.out"
+  },
+  "parameters": {
+    "firstStepsExampleId": "first-steps-lunar-landing",
+    "page": 17,
+    "equation": "vdot = g - T; hdot = v; Fdot = -alpha*T, with comparator gates for fuel and touchdown",
+    "scopePreset": "roll",
+    "throttle": 0.5,
+    "throttleProfile": {
+      "kind": "linear-points",
+      "scale": "multiplier",
+      "repeat": false,
+      "points": [
+        {
+          "t": 0,
+          "value": 1.44
+        },
+        {
+          "t": 5,
+          "value": 1.44
+        },
+        {
+          "t": 5.8,
+          "value": 0.04
+        },
+        {
+          "t": 7.2,
+          "value": 0.04
+        },
+        {
+          "t": 8,
+          "value": 1.0
+        },
+        {
+          "t": 10,
+          "value": 1.0
+        }
+      ]
+    },
+    "thrustScale": 0.1,
+    "gravity": 0.05,
+    "gravityStage": 0.05,
+    "initialVelocity": 0,
+    "initialAltitude": 1,
+    "initialFuel": 1,
+    "altitudeCoefficientA": 0.05,
+    "altitudeCoefficientB": 0.05,
+    "altitudeScale": 0.4,
+    "altitudeIntegratorRate": 159.99999999999997,
+    "fuelEfficiency": 0.5,
+    "duration": 10,
+    "coefficients": {
+      "P1": 0.5,
+      "P2": 0.1,
+      "P3": 0.05,
+      "P4": 0.05,
+      "P5": 0.5,
+      "P6": 0.05,
+      "P7": 0.05
+    },
+    "expectedFinalAt10s": {
+      "velocity": 0.0879999999999944,
+      "altitude": 0.8327199999999896,
+      "fuel": 0.7940000000001993,
+      "thrust": 0.002,
+      "touchdownTime": null,
+      "fuelEmptyTime": null
+    }
+  }
+}

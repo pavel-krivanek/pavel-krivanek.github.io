@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>THAT device workbench simulator</title>
+  <link rel="stylesheet" href="../src/browser/styles.css">
+</head>
+<body>
+  <main class="device-app-shell">
+    <header class="app-header compact-header">
+      <div>
+        <h1>The Analog Thing simulator</h1>
+        <p>analog computer simulator</p>
+      </div>
+      <div class="layout-switch" role="group" aria-label="workbench layout">
+        <span>large area</span>
+        <button id="layoutPatchFocus" type="button" data-workbench-layout-button="patch-focus" aria-pressed="true">Patch panel</button>
+        <button id="layoutScopeFocus" type="button" data-workbench-layout-button="scope-focus" aria-pressed="false">Oscilloscope</button>
+      </div>
+      <div class="device-indicator-strip" aria-label="device indicators">
+        <span data-device-indicator="IC">IC</span>
+        <span data-device-indicator="OP">OP</span>
+        <span data-device-indicator="HALT">HALT</span>
+        <span data-device-indicator="OL">OL</span>
+      </div>
+    </header>
+
+    <div class="app-workbench" hidden></div>
+    <div class="device-workbench" data-workbench-layout="patch-focus" aria-label="THAT simulator workbench">
+      <section class="panel patch-panel-section primary-patch-card" aria-labelledby="patchPanelTitle">
+        <div id="patchPanelSvg" class="patch-panel-svg" aria-live="polite"></div>
+        <div class="panel-title-row" hidden></div>
+        <div class="panel-title-row device-panel-title-row">
+          <div>
+            <h2 id="patchPanelTitle">Editable patch panel</h2>
+            <p class="section-lede">Drag from an output jack to an input jack. Select a cable to move an endpoint or delete it.</p>
+          </div>
+          <div class="panel-status-pill">Primary editable design surface</div>
+        </div>
+        <div class="main-load-grid" hidden></div>
+        <div class="panel-editor-toolbar primary-editor-toolbar" aria-label="panel editor controls">
+          <div class="control-row mode-control">
+            <label for="cableEditorMode">patch tool</label>
+            <select id="cableEditorMode" name="cableEditorMode">
+              <option value="cable">Wire</option>
+              <option value="select">Inspect socket</option>
+              <option value="delete">Delete wire</option>
+              <option value="inspect">Inspect only</option>
+              <option value="pan-zoom">Move panel</option>
+            </select>
+          </div>
+          <div class="button-row panel-editor-buttons">
+            <button id="undoCableEdit" type="button">Undo</button>
+            <button id="redoCableEdit" type="button">Redo</button>
+            <button id="deleteSelectedCable" type="button">Delete selected</button>
+            <button id="markPanelSaved" type="button">Mark saved</button>
+          </div>
+          <div class="panel-viewport-toolbar" aria-label="panel viewport controls">
+            <div class="control-row panel-zoom-control">
+              <label for="panelZoomPreset">zoom</label>
+              <select id="panelZoomPreset" name="panelZoomPreset">
+                <option value="fit-panel">Fit panel</option>
+                <option value="fit-width">Fit width</option>
+                <option value="100">100%</option>
+              </select>
+            </div>
+            <div class="button-row panel-viewport-buttons compact-button-row">
+              <button id="panelFitPanel" type="button">Fit</button>
+              <button id="panelFitWidth" type="button">Width</button>
+              <button id="panelOneToOne" type="button">100%</button>
+              <button id="panelZoomIn" type="button">+</button>
+              <button id="panelZoomOut" type="button">−</button>
+              <button id="panelPanLeft" type="button">←</button>
+              <button id="panelPanRight" type="button">→</button>
+              <button id="panelPanUp" type="button">↑</button>
+              <button id="panelPanDown" type="button">↓</button>
+            </div>
+          </div>
+          <div class="panel-design-storage" aria-label="design save and load controls">
+            <div class="control-row design-file-row">
+              <label for="designFileInput">design file</label>
+              <input id="designFileInput" name="designFileInput" type="file" accept=".json,application/json">
+            </div>
+            <div class="button-row panel-design-buttons">
+              <button id="saveDesignJson" type="button">Save design</button>
+              <button id="loadDesignJson" type="button">Load file</button>
+              <button id="saveDesignDraft" type="button">Store draft</button>
+              <button id="loadDesignDraft" type="button">Load draft</button>
+            </div>
+            <div id="designStorageStatus" class="design-storage-status" data-valid="true" aria-live="polite">No design has been saved or loaded in this session.</div>
+          </div>
+        </div>
+        <div id="cableInteractionStatus" class="patch-validation cable-interaction-status" data-valid="true" data-dirty="false">Cable editor has not been initialized yet.</div>
+        <div id="patchValidation" class="patch-validation" data-valid="true">Patch has not been validated yet.</div>
+      </section>
+
+      <aside class="panel device-side-panel" aria-labelledby="deviceControlsTitle">
+        <form id="controls" class="device-controls">
+          <section class="scope-card" aria-labelledby="oscilloscopeTitle">
+            <h2 id="oscilloscopeTitle">Oscilloscope</h2>
+            <canvas id="traceCanvas" width="860" height="430" aria-label="virtual oscilloscope trace"></canvas>
+            <div id="scopeLegend" class="scope-legend" aria-label="displayed scope channels"></div>
+            <div id="outputPortStatus" class="output-port-status" aria-label="X Y Z U output jack status"></div>
+            <div class="control-grid two-col">
+              <div class="control-row">
+                <label for="scopeA">CH1</label>
+                <select id="scopeA" name="scopeA">
+                  <option value="X" selected>X</option>
+                  <option value="Y">Y</option>
+                  <option value="Z">Z</option>
+                  <option value="U">U</option>
+                </select>
+              </div>
+              <div class="control-row">
+                <label for="scopeB">CH2</label>
+                <select id="scopeB" name="scopeB">
+                  <option value="none">none</option>
+                  <option value="X">X</option>
+                  <option value="Y" selected>Y</option>
+                  <option value="Z">Z</option>
+                  <option value="U">U</option>
+                </select>
+              </div>
+              <div class="control-row">
+                <label for="scopeMode">display</label>
+                <select id="scopeMode" name="scopeMode">
+                  <option value="time" selected>time trace</option>
+                  <option value="xy">X/Y plot</option>
+                </select>
+              </div>
+              <div class="control-row">
+                <label for="clip">clip ±1</label>
+                <input id="clip" name="clip" type="checkbox">
+              </div>
+            </div>
+          </section>
+
+          <section aria-labelledby="deviceControlsTitle">
+            <h2 id="deviceControlsTitle">Device controls</h2>
+            <div class="control-row">
+              <label for="mode">mode selector</label>
+              <select id="mode" name="mode">
+                <option value="OFF">OFF</option>
+                <option value="COEFF">COEFF</option>
+                <option value="IC">IC</option>
+                <option value="OP">OP</option>
+                <option value="HALT">HALT</option>
+                <option value="REP">REP</option>
+                <option value="REPF" selected>REPF</option>
+                <option value="MINION">MINION</option>
+              </select>
+            </div>
+            <div class="control-row">
+              <label for="opTimeMs">OP-TIME <span class="unit">ms</span></label>
+              <input id="opTimeMs" name="opTimeMs" type="number" min="0" step="any" value="8" aria-describedby="opTimeLimitHint">
+              <small id="opTimeLimitHint" class="control-help">Physical THAT REPF OP-TIME range: 0–100 ms. Larger values run as virtual extended simulation.</small>
+            </div>
+            <div class="control-row">
+              <label for="simulationPrecision">precision</label>
+              <select id="simulationPrecision" name="simulationPrecision">
+                <option value="quick">Quick</option>
+                <option value="balanced" selected>Balanced</option>
+                <option value="fine">Fine</option>
+                <option value="ultra">Ultra</option>
+              </select>
+            </div>
+            <div class="button-row run-button-row">
+              <button id="runDevice" type="button">Run</button>
+              <button id="stopDevice" type="button">Halt</button>
+              <button id="resetDevice" type="button">IC</button>
+              <button id="exportJson" type="button">Export trace</button>
+            </div>
+            <div id="simulationProgressPanel" class="simulation-progress" data-running="false" data-phase="idle" aria-live="polite">
+              <div class="simulation-progress-row">
+                <span id="simulationProgressText">No simulation is running.</span>
+                <strong id="simulationProgressPercent">0%</strong>
+              </div>
+              <progress id="simulationProgress" max="100" value="0" aria-label="simulation progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></progress>
+            </div>
+            <div class="control-row auto-run-control">
+              <label for="autoRunChanges">auto-run on edits</label>
+              <input id="autoRunChanges" name="autoRunChanges" type="checkbox">
+            </div>
+            <p class="microcopy">Off by default: use Run after wiring, coefficient, or mode changes.</p>
+          </section>
+
+          <section aria-labelledby="coefficientTitle" class="coefficient-section">
+            <div class="section-title-row">
+              <h2 id="coefficientTitle">Coefficient potentiometers</h2>
+            </div>
+            <div id="coefficientControls" class="coefficient-grid"></div>
+          </section>
+
+          <section aria-labelledby="patchLoadTitle" class="load-patch-section">
+            <h2 id="patchLoadTitle">Physical setup preset</h2>
+            <p class="microcopy">Choose a predefined wiring/control setup, preview what it will place on the panel, then load it explicitly.</p>
+            <div class="control-row">
+              <label for="patchTemplateSelect">preset</label>
+              <select id="patchTemplateSelect" name="patchTemplateSelect"></select>
+            </div>
+            <button id="loadPatchTemplate" type="button">Load setup preset</button>
+            <p id="patchTemplateDescription" class="example-description"></p>
+            <div id="devicePresetSummary" class="device-preset-summary" aria-live="polite"></div>
+            <div id="templateParameterControls" class="template-parameters compact-template-parameters" hidden></div>
+            <select id="customDesignGallerySelect" hidden></select>
+            <input id="opTime" name="opTime" type="number" min="0" step="any" value="8" hidden>
+            <input id="dt" name="dt" type="number" min="0" step="any" value="0.01" hidden>
+          </section>
+
+          <details class="advanced-device-settings">
+            <summary>Advanced runtime settings</summary>
+            <div class="control-grid two-col">
+              <div class="control-row">
+                <label for="opDurationMs">OP duration <span class="unit">ms</span></label>
+                <input id="opDurationMs" name="opDurationMs" type="number" min="0" step="any" value="40">
+              </div>
+              <div class="control-row">
+                <label for="repCycles">REP/REPF cycles</label>
+                <input id="repCycles" name="repCycles" type="number" min="1" step="1" value="3">
+              </div>
+              <div class="control-row">
+                <label for="solverDtMs">base solver dt <span class="unit">ms</span></label>
+                <input id="solverDtMs" name="solverDtMs" type="number" min="0" step="any" value="0.01">
+              </div>
+              <div class="control-row">
+                <label for="sampleEvery">base sample every</label>
+                <input id="sampleEvery" name="sampleEvery" type="number" min="1" step="1" value="10">
+              </div>
+            </div>
+          </details>
+        </form>
+        <div id="deviceWarnings" class="patch-validation device-warning-box" data-valid="false" hidden></div>
+        <div id="workflowHints" class="workflow-hints" aria-live="polite"></div>
+        <p id="statusText" class="status">No simulation has run yet.</p>
+        <h3>Trace summary</h3>
+        <pre id="traceSummary">{}</pre>
+      </aside>
+    </div>
+
+  </main>
+
+  <script src="../src/browser/oscilloscopeApp.js"></script>
+  <script src="../src/core/physicalSockets.js"></script>
+  <script src="../src/core/adoptedPatchPanelConnectors.js"></script>
+  <script src="../src/core/adoptedPatchPanelEditor.js"></script>
+  <script src="../src/core/designControls.js"></script>
+  <script src="../src/core/designAccessories.js"></script>
+  <script src="../src/core/designUsability.js"></script>
+  <script src="../src/core/designPanelPolish.js"></script>
+  <script src="../src/core/designDiagnostics.js"></script>
+  <script src="../src/core/designRepairs.js"></script>
+  <script src="../src/core/designHistory.js"></script>
+  <script src="../src/core/designStorage.js"></script>
+  <script src="../src/core/designTemplates.js"></script>
+  <script src="../src/browser/patchPanelApp.js"></script>
+  <script src="../src/browser/patchTemplatesApp.js"></script>
+  <script src="../src/browser/cableInteractionApp.js"></script>
+  <script src="../src/browser/patchEditorApp.js"></script>
+  <script src="../src/browser/browserPatchRuntime.js"></script>
+  <script src="../src/browser/serializedGalleryApp.js"></script>
+  <script src="../src/browser/educationApp.js"></script>
+  <script src="../src/browser/packagingApp.js"></script>
+  <script src="../src/browser/customDesignApp.js"></script>
+  <script src="../src/browser/deviceWorkbenchApp.js"></script>
+  <script>
+    const patchPanel = window.AnalogThingPatchPanelApp.initPatchPanelApp(document, {});
+    const patchEditor = window.AnalogThingPatchEditorApp.initPatchEditorApp(document, {
+      patchPanel: window.AnalogThingPatchPanelApp,
+      patchTemplates: window.AnalogThingPatchTemplatesApp,
+      cableInteraction: window.AnalogThingCableInteractionApp
+    });
+    window.AnalogThingPatchEditorInstance = patchEditor;
+    const deviceWorkbench = window.AnalogThingDeviceWorkbenchApp.initDeviceWorkbenchApp(document, {
+      patchEditor,
+      runtime: window.AnalogThingBrowserPatchRuntime
+    });
+    window.AnalogThingDeviceWorkbenchInstance = deviceWorkbench;
+  </script>
+</body>
+</html>

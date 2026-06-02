@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "analog-thing-design-template/v1",
+  "id": "first-steps-hunter-prey",
+  "title": "First Steps: Hunter/Prey Population Dynamics",
+  "category": "First Steps application",
+  "description": "Section 9.6 Lotka-Volterra population patch with hare on OUT X and lynx on OUT Y, defaulting to the booklet roll-mode time trace.",
+  "sourceDesignId": "first-steps-hunter-prey",
+  "defaultMode": "OP",
+  "runnable": true,
+  "tags": [
+    "first-steps",
+    "hunter-prey",
+    "lotka-volterra",
+    "xy-display",
+    "design-template"
+  ],
+  "walkthrough": [
+    {
+      "title": "Initialize the populations",
+      "text": "P1 and P2 receive -1 so their outputs provide the inverted IC values needed to start I1 at h0 and I2 at l0.",
+      "socketFocus": [
+        "MINUS1.out",
+        "P1.in",
+        "P1.out",
+        "I1.ic",
+        "P2.in",
+        "P2.out",
+        "I2.ic"
+      ],
+      "controlFocus": [
+        "P1",
+        "P2"
+      ]
+    },
+    {
+      "title": "Create the interaction term",
+      "text": "I1.out and I2.out feed MUL1, which computes the h*l encounter term shared by both Lotka-Volterra equations.",
+      "socketFocus": [
+        "I1.out",
+        "MUL1.x",
+        "I2.out",
+        "MUL1.y",
+        "MUL1.out"
+      ],
+      "controlFocus": [
+        "X",
+        "Y"
+      ]
+    },
+    {
+      "title": "Patch the hare equation",
+      "text": "P3 scales alpha*h. P4 scales beta*h*l and INV1 changes its sign. SUM1 supplies the sign required by the inverting I1 integrator.",
+      "socketFocus": [
+        "I1.out",
+        "P3.in",
+        "P3.out",
+        "MUL1.out",
+        "P4.in",
+        "P4.out",
+        "INV1.in",
+        "INV1.out",
+        "SUM1.in1",
+        "SUM1.in2",
+        "SUM1.out",
+        "I1.in1"
+      ],
+      "controlFocus": [
+        "P3",
+        "P4"
+      ]
+    },
+    {
+      "title": "Patch the lynx equation and display phase space",
+      "text": "P6 scales delta*h*l. P5 and INV2 form -gamma*l. SUM2 feeds I2, while OUT X/Y expose h and l for either roll traces or X/Y phase plots.",
+      "socketFocus": [
+        "MUL1.out",
+        "P6.in",
+        "P6.out",
+        "I2.out",
+        "P5.in",
+        "P5.out",
+        "INV2.in",
+        "INV2.out",
+        "SUM2.in1",
+        "SUM2.in2",
+        "SUM2.out",
+        "I2.in1",
+        "OUT_X.in",
+        "OUT_Y.in"
+      ],
+      "controlFocus": [
+        "P5",
+        "P6",
+        "X",
+        "Y"
+      ]
+    }
+  ],
+  "recommendedRun": {
+    "mode": "OP",
+    "duration": 100,
+    "dt": 0.01,
+    "sampleEvery": 5,
+    "scopePreset": "time"
+  }
+}

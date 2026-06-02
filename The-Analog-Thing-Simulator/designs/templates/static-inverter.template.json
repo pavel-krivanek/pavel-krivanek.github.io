@@ -1,0 +1,144 @@
+{
+  "schemaVersion": "analog-thing-design-template/v1",
+  "id": "static-inverter",
+  "title": "Static inverter and coefficient",
+  "category": "linear block",
+  "description": "Coefficient scaling followed by sign inversion.",
+  "sourceDesignId": "static-inverter",
+  "defaultMode": "OP",
+  "runnable": true,
+  "tags": [
+    "gallery-design",
+    "linear block",
+    "static-inverter",
+    "design-template"
+  ],
+  "walkthrough": [
+    {
+      "title": "Scale +1",
+      "text": "P1 converts the +1 machine-unit source into a coefficient-controlled constant.",
+      "socketFocus": [],
+      "controlFocus": []
+    },
+    {
+      "title": "Invert the sign",
+      "text": "INV1 negates the scaled value and routes it to Y, which is useful for checking coefficient and sign conventions.",
+      "socketFocus": [],
+      "controlFocus": []
+    }
+  ],
+  "runOptions": {
+    "mode": "OP"
+  },
+  "design": {
+    "schemaVersion": "analog-thing-design/v1",
+    "kind": "custom-design",
+    "inventory": "that-prototype-board/v006",
+    "metadata": {
+      "name": "Static inverter and coefficient",
+      "description": "A minimal patch showing coefficient scaling followed by sign inversion.",
+      "author": "",
+      "source": "static custom-design gallery",
+      "tags": [
+        "gallery-design",
+        "linear block",
+        "static-inverter"
+      ],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "modifiedAt": "2026-05-26T00:00:00.000Z",
+      "notes": ""
+    },
+    "components": [
+      {
+        "id": "PLUS1"
+      },
+      {
+        "id": "P1",
+        "coefficient": 0.6,
+        "label": "P1 coefficient"
+      },
+      {
+        "id": "INV1"
+      },
+      {
+        "id": "OUT_Y",
+        "label": "Y / inverted scaled signal"
+      }
+    ],
+    "coefficients": {
+      "P1": 0.6,
+      "P2": 0.5,
+      "P3": 0.5,
+      "P4": 0.5,
+      "P5": 0.5,
+      "P6": 0.5,
+      "P7": 0.5,
+      "P8": 0.5
+    },
+    "cables": [
+      {
+        "id": "cable-1",
+        "from": {
+          "logicalSocketId": "PLUS1.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "P1.in",
+          "physicalSocketId": null
+        },
+        "label": "+1 machine unit into coefficient",
+        "color": null
+      },
+      {
+        "id": "cable-2",
+        "from": {
+          "logicalSocketId": "P1.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "INV1.in",
+          "physicalSocketId": null
+        },
+        "label": "scaled signal into inverter",
+        "color": null
+      },
+      {
+        "id": "cable-3",
+        "from": {
+          "logicalSocketId": "INV1.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "OUT_Y.in",
+          "physicalSocketId": null
+        },
+        "label": "negative scaled signal to Y output",
+        "color": null
+      }
+    ],
+    "outputRouting": {
+      "channels": {
+        "X": null,
+        "Y": "OUT_Y.out",
+        "Z": null,
+        "U": null
+      },
+      "aliases": {
+        "y": "OUT_Y.out",
+        "scaled": "P1.out",
+        "inverted": "INV1.out"
+      }
+    },
+    "operationDefaults": {
+      "mode": "OP",
+      "duration": 0,
+      "dt": 0.01,
+      "sampleEvery": 1,
+      "opTime": 8,
+      "cycles": 3,
+      "clip": false
+    },
+    "notes": "",
+    "sourcePatchSchemaVersion": "analog-thing-patch/v1"
+  }
+}

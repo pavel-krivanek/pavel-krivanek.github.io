@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "analog-thing-patch/v1",
+  "inventory": "that-prototype-board/v006",
+  "name": "Slow integrator ramp demo",
+  "description": "Feeds -1 into an integrator with the slow socket active, producing a slow positive ramp in normalized machine units.",
+  "components": [
+    {
+      "id": "MINUS1"
+    },
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "I1"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / slow ramp"
+    }
+  ],
+  "cables": [
+    {
+      "from": "MINUS1.out",
+      "to": "I1.in1",
+      "label": "negative input produces positive ramp"
+    },
+    {
+      "from": "PLUS1.out",
+      "to": "I1.slow",
+      "label": "activate slow-mode approximation"
+    },
+    {
+      "from": "I1.out",
+      "to": "OUT_Y.in",
+      "label": "integrator state to Y output"
+    }
+  ],
+  "outputs": {
+    "y": "OUT_Y.out",
+    "ramp": "I1.out"
+  },
+  "parameters": {
+    "expectedFinalYAt10": 0.1
+  }
+}

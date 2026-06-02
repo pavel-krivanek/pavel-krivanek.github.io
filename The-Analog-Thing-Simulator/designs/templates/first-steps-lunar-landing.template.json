@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "analog-thing-design-template/v1",
+  "id": "first-steps-lunar-landing",
+  "title": "First Steps: Lunar Landing",
+  "category": "First Steps application",
+  "description": "Runnable Section 9.3 lunar landing walkthrough with booklet-shaped throttle, fuel gating, and touchdown gating.",
+  "sourceDesignId": "first-steps-lunar-landing",
+  "defaultMode": "OP",
+  "runnable": true,
+  "tags": [
+    "first-steps",
+    "lunar-landing",
+    "op-mode",
+    "fuel-monitor"
+  ],
+  "walkthrough": [
+    {
+      "title": "Initialize altitude and fuel",
+      "text": "The altitude and fuel integrators start from +1 through the THAT inverted IC convention. The vertical velocity integrator starts at zero, matching the booklet roll-mode trace before the throttle-induced descent begins.",
+      "socketFocus": [
+        "MINUS1.out",
+        "I2.ic",
+        "I3.ic",
+        "I1.out"
+      ],
+      "controlFocus": [
+        "P6",
+        "P7"
+      ]
+    },
+    {
+      "title": "Control thrust with P1",
+      "text": "P1 is the pilot throttle and the preset uses a built-in demonstration profile so the default trace reproduces the booklet-style dip and recovery. P2 scales throttle to the T term, CMP1 passes thrust only while fuel F remains positive, and SUM1 combines the two gravity-stage inputs with thrust into the velocity derivative.",
+      "socketFocus": [
+        "P1.out",
+        "P2.in",
+        "P2.out",
+        "CMP1.a",
+        "CMP1.positive",
+        "CMP1.out",
+        "P4.out",
+        "SUM1.in10_1",
+        "SUM1.in10_2",
+        "SUM1.in2",
+        "I1.in1"
+      ],
+      "controlFocus": [
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ]
+    },
+    {
+      "title": "Burn fuel and scale altitude",
+      "text": "P5 converts available thrust into fuel burn for I3. CMP2 watches altitude and sends -v through the P6/P7 altitude-scaling path only while h is above zero, holding altitude after touchdown.",
+      "socketFocus": [
+        "CMP1.out",
+        "P5.in",
+        "P5.out",
+        "I3.in1",
+        "I2.out",
+        "CMP2.a",
+        "INV2.out",
+        "CMP2.positive",
+        "CMP2.out",
+        "P6.in",
+        "P7.in",
+        "I2.in1"
+      ],
+      "controlFocus": [
+        "P5",
+        "P6",
+        "P7"
+      ]
+    },
+    {
+      "title": "Display the landing",
+      "text": "OUT X carries altitude h, OUT Y carries vertical velocity v, OUT Z carries available thrust, and OUT U carries fuel level for the panel-meter equivalent.",
+      "socketFocus": [
+        "OUT_X.in",
+        "OUT_Y.in",
+        "OUT_Z.in",
+        "OUT_U.in"
+      ],
+      "controlFocus": [
+        "X",
+        "Y",
+        "U"
+      ]
+    }
+  ]
+}

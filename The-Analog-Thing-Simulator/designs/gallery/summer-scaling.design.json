@@ -1,0 +1,146 @@
+{
+  "schemaVersion": "analog-thing-design/v1",
+  "kind": "custom-design",
+  "inventory": "that-prototype-board/v006",
+  "metadata": {
+    "name": "Summer scaling and sign",
+    "description": "A negating summer combines a positive and a negative term.",
+    "author": "",
+    "source": "static custom-design gallery",
+    "tags": [
+      "gallery-design",
+      "linear block",
+      "summer-scaling"
+    ],
+    "createdAt": "2026-05-26T00:00:00.000Z",
+    "modifiedAt": "2026-05-26T00:00:00.000Z",
+    "notes": ""
+  },
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "MINUS1"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.35,
+      "label": "positive term"
+    },
+    {
+      "id": "P2",
+      "coefficient": 0.2,
+      "label": "negative term"
+    },
+    {
+      "id": "SUM1"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / negated sum"
+    }
+  ],
+  "coefficients": {
+    "P1": 0.35,
+    "P2": 0.2,
+    "P3": 0.5,
+    "P4": 0.5,
+    "P5": 0.5,
+    "P6": 0.5,
+    "P7": 0.5,
+    "P8": 0.5
+  },
+  "cables": [
+    {
+      "id": "cable-1",
+      "from": {
+        "logicalSocketId": "PLUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P1.in",
+        "physicalSocketId": null
+      },
+      "label": "+0.35 term",
+      "color": null
+    },
+    {
+      "id": "cable-2",
+      "from": {
+        "logicalSocketId": "MINUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P2.in",
+        "physicalSocketId": null
+      },
+      "label": "-0.20 term",
+      "color": null
+    },
+    {
+      "id": "cable-3",
+      "from": {
+        "logicalSocketId": "P1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in1",
+        "physicalSocketId": null
+      },
+      "label": "first summer input",
+      "color": null
+    },
+    {
+      "id": "cable-4",
+      "from": {
+        "logicalSocketId": "P2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in2",
+        "physicalSocketId": null
+      },
+      "label": "second summer input",
+      "color": null
+    },
+    {
+      "id": "cable-5",
+      "from": {
+        "logicalSocketId": "SUM1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "OUT_Y.in",
+        "physicalSocketId": null
+      },
+      "label": "summer output to Y",
+      "color": null
+    }
+  ],
+  "outputRouting": {
+    "channels": {
+      "X": null,
+      "Y": "OUT_Y.out",
+      "Z": null,
+      "U": null
+    },
+    "aliases": {
+      "y": "OUT_Y.out",
+      "positiveTerm": "P1.out",
+      "negativeTerm": "P2.out",
+      "summer": "SUM1.out"
+    }
+  },
+  "operationDefaults": {
+    "mode": "OP",
+    "duration": 0,
+    "dt": 0.01,
+    "sampleEvery": 1,
+    "opTime": 8,
+    "cycles": 3,
+    "clip": false
+  },
+  "notes": "",
+  "sourcePatchSchemaVersion": "analog-thing-patch/v1"
+}

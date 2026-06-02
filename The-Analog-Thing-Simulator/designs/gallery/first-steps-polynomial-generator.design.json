@@ -1,0 +1,466 @@
+{
+  "schemaVersion": "analog-thing-design/v1",
+  "kind": "custom-design",
+  "inventory": "that-prototype-board/v006",
+  "metadata": {
+    "name": "First Steps: Polynomial Generator",
+    "description": "Booklet Section 9.9 polynomial generator patch. I1 ramps x, I2/I3 generate -x^2 and x^3, P2-P5 set d/c/b/a terms, and OUT X/Y expose x and p(x).",
+    "author": "",
+    "source": "THAT First Steps v2 Section 9.9 block-level template",
+    "tags": [
+      "first-steps",
+      "application",
+      "polynomial-generator",
+      "xy-display",
+      "dynamic-system"
+    ],
+    "createdAt": "2026-05-28T00:00:00.000Z",
+    "modifiedAt": "2026-05-28T00:00:00.000Z",
+    "notes": ""
+  },
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "MINUS1"
+    },
+    {
+      "id": "I1",
+      "label": "Integrator / x ramp"
+    },
+    {
+      "id": "I2",
+      "label": "Integrator / -x^2"
+    },
+    {
+      "id": "I3",
+      "label": "Integrator / x^3"
+    },
+    {
+      "id": "XIR1",
+      "label": "XIR helper / second x input for -x^2"
+    },
+    {
+      "id": "XIR2",
+      "label": "XIR helper / second and third -x^2 inputs for x^3"
+    },
+    {
+      "id": "INV1",
+      "label": "Inverter / x^2"
+    },
+    {
+      "id": "INV2",
+      "label": "Inverter / -x^3 for negative a default"
+    },
+    {
+      "id": "INV3",
+      "label": "Inverter / final p(x)"
+    },
+    {
+      "id": "SUM1",
+      "label": "Summer / -(a*x^3 + b*x^2 + c*x + d)"
+    },
+    {
+      "id": "P1",
+      "coefficient": 1,
+      "label": "P1 tau ramp speed"
+    },
+    {
+      "id": "P2",
+      "coefficient": 0.1,
+      "label": "P2 constant term d"
+    },
+    {
+      "id": "P3",
+      "coefficient": 0.7,
+      "label": "P3 linear coefficient c"
+    },
+    {
+      "id": "P4",
+      "coefficient": 0.4,
+      "label": "P4 quadratic coefficient b"
+    },
+    {
+      "id": "P5",
+      "coefficient": 0.3,
+      "label": "P5 cubic coefficient |a|, fed from -x^3 for the default negative a"
+    },
+    {
+      "id": "OUT_X",
+      "label": "X / polynomial input x"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / polynomial output p(x)"
+    }
+  ],
+  "coefficients": {
+    "P1": 1,
+    "P2": 0.1,
+    "P3": 0.7,
+    "P4": 0.4,
+    "P5": 0.3,
+    "P6": 0.5,
+    "P7": 0.5,
+    "P8": 0.5
+  },
+  "cables": [
+    {
+      "id": "cable-1",
+      "from": {
+        "logicalSocketId": "PLUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I1.ic",
+        "physicalSocketId": null
+      },
+      "label": "+1 on IC makes I1.out start at x=-1",
+      "color": null
+    },
+    {
+      "id": "cable-2",
+      "from": {
+        "logicalSocketId": "MINUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P1.in",
+        "physicalSocketId": null
+      },
+      "label": "-1 through P1 sets the positive ramp derivative dx/dt",
+      "color": null
+    },
+    {
+      "id": "cable-3",
+      "from": {
+        "logicalSocketId": "P1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I1.in1",
+        "physicalSocketId": null
+      },
+      "label": "inverting integrator turns -tau into a positive x ramp",
+      "color": null
+    },
+    {
+      "id": "cable-4",
+      "from": {
+        "logicalSocketId": "PLUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I2.ic",
+        "physicalSocketId": null
+      },
+      "label": "+1 on IC makes I2.out start at -x^2=-1",
+      "color": null
+    },
+    {
+      "id": "cable-5",
+      "from": {
+        "logicalSocketId": "I1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I2.in1",
+        "physicalSocketId": null
+      },
+      "label": "first x contribution for d(-x^2)/dt=-2x",
+      "color": null
+    },
+    {
+      "id": "cable-6",
+      "from": {
+        "logicalSocketId": "I1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "XIR1.in1",
+        "physicalSocketId": null
+      },
+      "label": "second x contribution through XIR1",
+      "color": null
+    },
+    {
+      "id": "cable-7",
+      "from": {
+        "logicalSocketId": "XIR1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I2.sj",
+        "physicalSocketId": null
+      },
+      "label": "XIR1 adds the second x input at the summing junction",
+      "color": null
+    },
+    {
+      "id": "cable-8",
+      "from": {
+        "logicalSocketId": "PLUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I3.ic",
+        "physicalSocketId": null
+      },
+      "label": "+1 on IC makes I3.out start at x^3=-1",
+      "color": null
+    },
+    {
+      "id": "cable-9",
+      "from": {
+        "logicalSocketId": "I2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I3.in1",
+        "physicalSocketId": null
+      },
+      "label": "first -x^2 contribution for d(x^3)/dt=3x^2",
+      "color": null
+    },
+    {
+      "id": "cable-10",
+      "from": {
+        "logicalSocketId": "I2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "XIR2.in1",
+        "physicalSocketId": null
+      },
+      "label": "second -x^2 contribution through XIR2",
+      "color": null
+    },
+    {
+      "id": "cable-11",
+      "from": {
+        "logicalSocketId": "I2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "XIR2.in2",
+        "physicalSocketId": null
+      },
+      "label": "third -x^2 contribution through XIR2",
+      "color": null
+    },
+    {
+      "id": "cable-12",
+      "from": {
+        "logicalSocketId": "XIR2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I3.sj",
+        "physicalSocketId": null
+      },
+      "label": "XIR2 adds two more -x^2 inputs at the summing junction",
+      "color": null
+    },
+    {
+      "id": "cable-13",
+      "from": {
+        "logicalSocketId": "I2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "INV1.in",
+        "physicalSocketId": null
+      },
+      "label": "recover positive x^2 from -x^2",
+      "color": null
+    },
+    {
+      "id": "cable-14",
+      "from": {
+        "logicalSocketId": "I3.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "INV2.in",
+        "physicalSocketId": null
+      },
+      "label": "recover -x^3 so P5 can implement the default a=-0.3",
+      "color": null
+    },
+    {
+      "id": "cable-15",
+      "from": {
+        "logicalSocketId": "PLUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P2.in",
+        "physicalSocketId": null
+      },
+      "label": "constant term d",
+      "color": null
+    },
+    {
+      "id": "cable-16",
+      "from": {
+        "logicalSocketId": "I1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P3.in",
+        "physicalSocketId": null
+      },
+      "label": "linear term c*x",
+      "color": null
+    },
+    {
+      "id": "cable-17",
+      "from": {
+        "logicalSocketId": "INV1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P4.in",
+        "physicalSocketId": null
+      },
+      "label": "quadratic term b*x^2",
+      "color": null
+    },
+    {
+      "id": "cable-18",
+      "from": {
+        "logicalSocketId": "INV2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P5.in",
+        "physicalSocketId": null
+      },
+      "label": "cubic term a*x^3 with default negative sign",
+      "color": null
+    },
+    {
+      "id": "cable-19",
+      "from": {
+        "logicalSocketId": "P2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in1",
+        "physicalSocketId": null
+      },
+      "label": "d into final polynomial summer",
+      "color": null
+    },
+    {
+      "id": "cable-20",
+      "from": {
+        "logicalSocketId": "P3.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in2",
+        "physicalSocketId": null
+      },
+      "label": "c*x into final polynomial summer",
+      "color": null
+    },
+    {
+      "id": "cable-21",
+      "from": {
+        "logicalSocketId": "P4.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in3",
+        "physicalSocketId": null
+      },
+      "label": "b*x^2 into final polynomial summer",
+      "color": null
+    },
+    {
+      "id": "cable-22",
+      "from": {
+        "logicalSocketId": "P5.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in4",
+        "physicalSocketId": null
+      },
+      "label": "a*x^3 into final polynomial summer",
+      "color": null
+    },
+    {
+      "id": "cable-23",
+      "from": {
+        "logicalSocketId": "SUM1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "INV3.in",
+        "physicalSocketId": null
+      },
+      "label": "invert negating-summer output to get p(x)",
+      "color": null
+    },
+    {
+      "id": "cable-24",
+      "from": {
+        "logicalSocketId": "I1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "OUT_X.in",
+        "physicalSocketId": null
+      },
+      "label": "x ramp to OUT X for X/Y display",
+      "color": null
+    },
+    {
+      "id": "cable-25",
+      "from": {
+        "logicalSocketId": "INV3.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "OUT_Y.in",
+        "physicalSocketId": null
+      },
+      "label": "polynomial p(x) to OUT Y",
+      "color": null
+    }
+  ],
+  "outputRouting": {
+    "channels": {
+      "X": "OUT_X.out",
+      "Y": "OUT_Y.out",
+      "Z": null,
+      "U": null
+    },
+    "aliases": {
+      "x": "OUT_X.out",
+      "y": "OUT_Y.out",
+      "polynomial": "OUT_Y.out",
+      "minusX2": "I2.out",
+      "x2": "INV1.out",
+      "x3": "I3.out",
+      "aTerm": "P5.out",
+      "bTerm": "P4.out",
+      "cTerm": "P3.out",
+      "dTerm": "P2.out"
+    }
+  },
+  "operationDefaults": {
+    "mode": "REPF",
+    "duration": 0,
+    "dt": 0.001,
+    "sampleEvery": 20,
+    "opTime": 2,
+    "cycles": 2,
+    "clip": false
+  },
+  "notes": "",
+  "sourcePatchSchemaVersion": "analog-thing-patch/v1"
+}

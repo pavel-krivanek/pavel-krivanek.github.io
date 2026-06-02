@@ -1,0 +1,225 @@
+{
+  "schemaVersion": "analog-thing-design-template/v1",
+  "id": "first-steps-radioactive-decay",
+  "title": "First Steps: Radioactive Decay",
+  "category": "First Steps application",
+  "description": "Section 9.1 exponential decay patch with one integrator, one inverter, and two coefficient potentiometers.",
+  "sourceDesignId": "first-steps-radioactive-decay",
+  "defaultMode": "REPF",
+  "runnable": true,
+  "tags": [
+    "first-steps",
+    "radioactive-decay",
+    "design-template"
+  ],
+  "walkthrough": [
+    {
+      "title": "Set the initial amount",
+      "text": "PLUS1 feeds P1, so P1 directly sets N0 in the machine-unit range. The P1 output goes to I1.ic, which initializes the integrator output to -N0.",
+      "socketFocus": [
+        "PLUS1.out",
+        "P1.in",
+        "P1.out",
+        "I1.ic"
+      ],
+      "controlFocus": [
+        "P1"
+      ]
+    },
+    {
+      "title": "Close the decay feedback loop",
+      "text": "I1.out carries -N and is fed through P2. Because the integrator inverts its input, this loop implements Ndot = -lambda*N.",
+      "socketFocus": [
+        "I1.out",
+        "P2.in",
+        "P2.out",
+        "I1.in1"
+      ],
+      "controlFocus": [
+        "P2"
+      ]
+    },
+    {
+      "title": "Display positive N",
+      "text": "INV1 changes -N back to N and routes the decay curve to OUT X for repeated-sweep display in REPF mode.",
+      "socketFocus": [
+        "I1.out",
+        "INV1.in",
+        "INV1.out",
+        "OUT_X.in"
+      ],
+      "controlFocus": [
+        "X"
+      ]
+    }
+  ],
+  "runOptions": {
+    "mode": "REPF",
+    "opTime": 8,
+    "cycles": 3,
+    "dt": 0.01,
+    "sampleEvery": 50
+  },
+  "design": {
+    "schemaVersion": "analog-thing-design/v1",
+    "kind": "custom-design",
+    "inventory": "that-prototype-board/v006",
+    "metadata": {
+      "name": "First Steps: Radioactive Decay",
+      "description": "Booklet Section 9.1 exponential decay patch. P1 sets N0, P2 sets lambda, I1 carries -N, and OUT X shows N.",
+      "author": "",
+      "source": "THAT First Steps v2 Section 9.1 block-level template",
+      "tags": [
+        "first-steps",
+        "application",
+        "radioactive-decay",
+        "dynamic-system"
+      ],
+      "createdAt": "2026-05-28T00:00:00.000Z",
+      "modifiedAt": "2026-05-28T00:00:00.000Z",
+      "notes": ""
+    },
+    "components": [
+      {
+        "id": "PLUS1"
+      },
+      {
+        "id": "I1",
+        "label": "Integrator / -N"
+      },
+      {
+        "id": "INV1",
+        "label": "Inverter / N"
+      },
+      {
+        "id": "P1",
+        "coefficient": 0.5,
+        "label": "P1 initial sample N0"
+      },
+      {
+        "id": "P2",
+        "coefficient": 0.5,
+        "label": "P2 decay coefficient lambda"
+      },
+      {
+        "id": "OUT_X",
+        "label": "X / decay curve N"
+      }
+    ],
+    "coefficients": {
+      "P1": 0.5,
+      "P2": 0.5,
+      "P3": 0.5,
+      "P4": 0.5,
+      "P5": 0.5,
+      "P6": 0.5,
+      "P7": 0.5,
+      "P8": 0.5
+    },
+    "cables": [
+      {
+        "id": "cable-1",
+        "from": {
+          "logicalSocketId": "PLUS1.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "P1.in",
+          "physicalSocketId": null
+        },
+        "label": "+1 into P1 so the coefficient knob sets N0",
+        "color": null
+      },
+      {
+        "id": "cable-2",
+        "from": {
+          "logicalSocketId": "P1.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "I1.ic",
+          "physicalSocketId": null
+        },
+        "label": "IC input sets I1.out to -N0 at the start of each run",
+        "color": null
+      },
+      {
+        "id": "cable-3",
+        "from": {
+          "logicalSocketId": "I1.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "P2.in",
+          "physicalSocketId": null
+        },
+        "label": "feedback of -N through lambda coefficient",
+        "color": null
+      },
+      {
+        "id": "cable-4",
+        "from": {
+          "logicalSocketId": "P2.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "I1.in1",
+          "physicalSocketId": null
+        },
+        "label": "lambda*(-N) into the inverting integrator gives decay",
+        "color": null
+      },
+      {
+        "id": "cable-5",
+        "from": {
+          "logicalSocketId": "I1.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "INV1.in",
+          "physicalSocketId": null
+        },
+        "label": "recover positive N for display",
+        "color": null
+      },
+      {
+        "id": "cable-6",
+        "from": {
+          "logicalSocketId": "INV1.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "OUT_X.in",
+          "physicalSocketId": null
+        },
+        "label": "decay curve to OUT X",
+        "color": null
+      }
+    ],
+    "outputRouting": {
+      "channels": {
+        "X": "OUT_X.out",
+        "Y": null,
+        "Z": null,
+        "U": null
+      },
+      "aliases": {
+        "x": "OUT_X.out",
+        "n": "OUT_X.out",
+        "minusN": "I1.out",
+        "lambdaInput": "P2.out"
+      }
+    },
+    "operationDefaults": {
+      "mode": "REPF",
+      "duration": 40,
+      "dt": 0.01,
+      "sampleEvery": 50,
+      "opTime": 8,
+      "cycles": 3,
+      "clip": false
+    },
+    "notes": "",
+    "sourcePatchSchemaVersion": "analog-thing-patch/v1"
+  }
+}

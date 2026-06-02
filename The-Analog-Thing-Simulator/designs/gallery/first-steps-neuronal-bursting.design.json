@@ -1,0 +1,692 @@
+{
+  "schemaVersion": "analog-thing-design/v1",
+  "kind": "custom-design",
+  "inventory": "that-prototype-board/v006",
+  "metadata": {
+    "name": "First Steps: Neuronal Bursting",
+    "description": "Booklet-style active-block translation of First Steps Section 9.4 using the scaled Hindmarsh-Rose equations. I1 carries scaled membrane output x, I2 carries y, I3 carries -z in SLOW mode, MUL1/MUL2 generate x^2/x^3, and OUT X/Y/Z expose x, y, and -z.",
+    "author": "",
+    "source": "First Steps Section 9.4 generated from v086 scaled Hindmarsh-Rose patch",
+    "tags": [
+      "first-steps",
+      "neuronal-bursting",
+      "slow-mode",
+      "xir-sj"
+    ],
+    "createdAt": "2026-06-01T18:27:40.211Z",
+    "modifiedAt": "2026-06-01T18:27:40.211Z",
+    "notes": ""
+  },
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "MINUS1"
+    },
+    {
+      "id": "ZERO"
+    },
+    {
+      "id": "I1",
+      "rate": 50,
+      "label": "Integrator / scaled x membrane output"
+    },
+    {
+      "id": "I2",
+      "rate": 50,
+      "label": "Integrator / scaled y fast-ion channel state"
+    },
+    {
+      "id": "I3",
+      "rate": 50,
+      "slowFactor": 100,
+      "label": "SLOW integrator / -z slow-channel state"
+    },
+    {
+      "id": "MUL1",
+      "label": "Multiplier / x^2"
+    },
+    {
+      "id": "MUL2",
+      "label": "Multiplier / x^3"
+    },
+    {
+      "id": "SUM1",
+      "label": "Summer / scaled -xdot drive"
+    },
+    {
+      "id": "SUM2",
+      "label": "Summer / scaled -ydot drive"
+    },
+    {
+      "id": "XIR1",
+      "label": "XIR helper / Iext summing-junction input"
+    },
+    {
+      "id": "XIR2",
+      "label": "XIR helper / slow z summing-junction inputs"
+    },
+    {
+      "id": "INV1",
+      "label": "Inverter / -a*10*x^3 preweighted term"
+    },
+    {
+      "id": "INV2",
+      "label": "Inverter / -d*10*x^2 preweighted term"
+    },
+    {
+      "id": "INV3",
+      "label": "Inverter / -y"
+    },
+    {
+      "id": "INV4",
+      "label": "Inverter / z display"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.6,
+      "label": "P1 b*10 coefficient shown as 0.6"
+    },
+    {
+      "id": "P2",
+      "coefficient": 0.4,
+      "label": "P2 a*10 coefficient shown as 0.4"
+    },
+    {
+      "id": "P3",
+      "coefficient": 0.75,
+      "label": "P3 0.75*y term into x equation"
+    },
+    {
+      "id": "P4",
+      "coefficient": 0.1,
+      "label": "P4 100r coefficient"
+    },
+    {
+      "id": "P5",
+      "coefficient": 0.4,
+      "label": "P5 100rs coefficient"
+    },
+    {
+      "id": "P6",
+      "coefficient": 0.32,
+      "label": "P6 100rs*xr offset magnitude"
+    },
+    {
+      "id": "P7",
+      "coefficient": 0.066,
+      "label": "P7 c coefficient"
+    },
+    {
+      "id": "P8",
+      "coefficient": 0.133,
+      "label": "P8 d*10 coefficient shown as 0.133"
+    },
+    {
+      "id": "OUT_X",
+      "label": "X / neuronal burst output x"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / y channel state"
+    },
+    {
+      "id": "OUT_Z",
+      "label": "Z / -z slow channel"
+    },
+    {
+      "id": "OUT_U",
+      "label": "U / z display"
+    }
+  ],
+  "coefficients": {
+    "P1": 0.6,
+    "P2": 0.4,
+    "P3": 0.75,
+    "P4": 0.1,
+    "P5": 0.4,
+    "P6": 0.32,
+    "P7": 0.066,
+    "P8": 0.133
+  },
+  "cables": [
+    {
+      "id": "cable-1",
+      "from": {
+        "logicalSocketId": "MINUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I1.ic",
+        "physicalSocketId": null
+      },
+      "label": "-1 on IC initializes I1.out to x = +1",
+      "color": null
+    },
+    {
+      "id": "cable-2",
+      "from": {
+        "logicalSocketId": "ZERO.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I2.ic",
+        "physicalSocketId": null
+      },
+      "label": "initialize y to zero",
+      "color": null
+    },
+    {
+      "id": "cable-3",
+      "from": {
+        "logicalSocketId": "PLUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I3.ic",
+        "physicalSocketId": null
+      },
+      "label": "+1 on IC initializes I3.out to -z = -1",
+      "color": null
+    },
+    {
+      "id": "cable-4",
+      "from": {
+        "logicalSocketId": "I1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "MUL1.x",
+        "physicalSocketId": null
+      },
+      "label": "x into x^2 multiplier",
+      "color": null
+    },
+    {
+      "id": "cable-5",
+      "from": {
+        "logicalSocketId": "I1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "MUL1.y",
+        "physicalSocketId": null
+      },
+      "label": "x into x^2 multiplier",
+      "color": null
+    },
+    {
+      "id": "cable-6",
+      "from": {
+        "logicalSocketId": "MUL1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "MUL2.x",
+        "physicalSocketId": null
+      },
+      "label": "x^2 into x^3 multiplier",
+      "color": null
+    },
+    {
+      "id": "cable-7",
+      "from": {
+        "logicalSocketId": "I1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "MUL2.y",
+        "physicalSocketId": null
+      },
+      "label": "x into x^3 multiplier",
+      "color": null
+    },
+    {
+      "id": "cable-8",
+      "from": {
+        "logicalSocketId": "MUL1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P1.in",
+        "physicalSocketId": null
+      },
+      "label": "x^2 scaled by b*10=0.6 before x10 input gives 6*x^2",
+      "color": null
+    },
+    {
+      "id": "cable-9",
+      "from": {
+        "logicalSocketId": "MUL2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P2.in",
+        "physicalSocketId": null
+      },
+      "label": "x^3 scaled by a*10=0.4 before x10 input gives 4*x^3",
+      "color": null
+    },
+    {
+      "id": "cable-10",
+      "from": {
+        "logicalSocketId": "P2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "INV1.in",
+        "physicalSocketId": null
+      },
+      "label": "invert a*10*x^3 to form the negative cubic term",
+      "color": null
+    },
+    {
+      "id": "cable-11",
+      "from": {
+        "logicalSocketId": "INV1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in10_1",
+        "physicalSocketId": null
+      },
+      "label": "x10 input implements -4*x^3",
+      "color": null
+    },
+    {
+      "id": "cable-12",
+      "from": {
+        "logicalSocketId": "P1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in10_2",
+        "physicalSocketId": null
+      },
+      "label": "x10 input implements +6*x^2",
+      "color": null
+    },
+    {
+      "id": "cable-13",
+      "from": {
+        "logicalSocketId": "I2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P3.in",
+        "physicalSocketId": null
+      },
+      "label": "scale y by 0.75 before x10 input",
+      "color": null
+    },
+    {
+      "id": "cable-14",
+      "from": {
+        "logicalSocketId": "P3.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in10_3",
+        "physicalSocketId": null
+      },
+      "label": "x10 input implements +7.5*y",
+      "color": null
+    },
+    {
+      "id": "cable-15",
+      "from": {
+        "logicalSocketId": "I3.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in1",
+        "physicalSocketId": null
+      },
+      "label": "-z term, represented by I3.out",
+      "color": null
+    },
+    {
+      "id": "cable-16",
+      "from": {
+        "logicalSocketId": "PLUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "XIR1.in1",
+        "physicalSocketId": null
+      },
+      "label": "Iext = +1 input can be disconnected in the physical exercise",
+      "color": null
+    },
+    {
+      "id": "cable-17",
+      "from": {
+        "logicalSocketId": "XIR1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.sj",
+        "physicalSocketId": null
+      },
+      "label": "add Iext through the summing-junction helper",
+      "color": null
+    },
+    {
+      "id": "cable-18",
+      "from": {
+        "logicalSocketId": "SUM1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I1.in1",
+        "physicalSocketId": null
+      },
+      "label": "SUM1 emits -xdot for the inverting x integrator",
+      "color": null
+    },
+    {
+      "id": "cable-19",
+      "from": {
+        "logicalSocketId": "PLUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P7.in",
+        "physicalSocketId": null
+      },
+      "label": "constant c",
+      "color": null
+    },
+    {
+      "id": "cable-20",
+      "from": {
+        "logicalSocketId": "MUL1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P8.in",
+        "physicalSocketId": null
+      },
+      "label": "x^2 scaled by d*10=0.133 before x10 input gives about 1.33*x^2",
+      "color": null
+    },
+    {
+      "id": "cable-21",
+      "from": {
+        "logicalSocketId": "P8.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "INV2.in",
+        "physicalSocketId": null
+      },
+      "label": "invert d*10*x^2 to form the negative y-equation term",
+      "color": null
+    },
+    {
+      "id": "cable-22",
+      "from": {
+        "logicalSocketId": "I2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "INV3.in",
+        "physicalSocketId": null
+      },
+      "label": "invert y to form -y",
+      "color": null
+    },
+    {
+      "id": "cable-23",
+      "from": {
+        "logicalSocketId": "P7.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM2.in1",
+        "physicalSocketId": null
+      },
+      "label": "c term",
+      "color": null
+    },
+    {
+      "id": "cable-24",
+      "from": {
+        "logicalSocketId": "INV2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM2.in10_1",
+        "physicalSocketId": null
+      },
+      "label": "x10 input implements -1.33*x^2",
+      "color": null
+    },
+    {
+      "id": "cable-25",
+      "from": {
+        "logicalSocketId": "INV3.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM2.in2",
+        "physicalSocketId": null
+      },
+      "label": "-y term",
+      "color": null
+    },
+    {
+      "id": "cable-26",
+      "from": {
+        "logicalSocketId": "SUM2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I2.in1",
+        "physicalSocketId": null
+      },
+      "label": "SUM2 emits -ydot for the inverting y integrator",
+      "color": null
+    },
+    {
+      "id": "cable-27",
+      "from": {
+        "logicalSocketId": "I1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P5.in",
+        "physicalSocketId": null
+      },
+      "label": "x scaled by 100rs before SLOW division",
+      "color": null
+    },
+    {
+      "id": "cable-28",
+      "from": {
+        "logicalSocketId": "P5.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I3.in1",
+        "physicalSocketId": null
+      },
+      "label": "100rs*x contribution to the -z slow integrator input",
+      "color": null
+    },
+    {
+      "id": "cable-29",
+      "from": {
+        "logicalSocketId": "PLUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P6.in",
+        "physicalSocketId": null
+      },
+      "label": "100rs*xr offset magnitude",
+      "color": null
+    },
+    {
+      "id": "cable-30",
+      "from": {
+        "logicalSocketId": "I3.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P4.in",
+        "physicalSocketId": null
+      },
+      "label": "-z scaled by 100r before SLOW division",
+      "color": null
+    },
+    {
+      "id": "cable-31",
+      "from": {
+        "logicalSocketId": "P6.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "XIR2.in1",
+        "physicalSocketId": null
+      },
+      "label": "offset contribution for the slow z equation",
+      "color": null
+    },
+    {
+      "id": "cable-32",
+      "from": {
+        "logicalSocketId": "P4.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "XIR2.in2",
+        "physicalSocketId": null
+      },
+      "label": "100r*(-z) damping contribution",
+      "color": null
+    },
+    {
+      "id": "cable-33",
+      "from": {
+        "logicalSocketId": "XIR2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I3.sj",
+        "physicalSocketId": null
+      },
+      "label": "combine slow z offset and damping through summing junction",
+      "color": null
+    },
+    {
+      "id": "cable-34",
+      "from": {
+        "logicalSocketId": "I3.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I3.slow",
+        "physicalSocketId": null
+      },
+      "label": "output-to-SLOW feedback activates the 0.01 speed scale",
+      "color": null
+    },
+    {
+      "id": "cable-35",
+      "from": {
+        "logicalSocketId": "I3.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "INV4.in",
+        "physicalSocketId": null
+      },
+      "label": "recover positive z for diagnostics",
+      "color": null
+    },
+    {
+      "id": "cable-36",
+      "from": {
+        "logicalSocketId": "I1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "OUT_X.in",
+        "physicalSocketId": null
+      },
+      "label": "neuronal burst output x to OUT X",
+      "color": null
+    },
+    {
+      "id": "cable-37",
+      "from": {
+        "logicalSocketId": "I2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "OUT_Y.in",
+        "physicalSocketId": null
+      },
+      "label": "y state to OUT Y",
+      "color": null
+    },
+    {
+      "id": "cable-38",
+      "from": {
+        "logicalSocketId": "I3.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "OUT_Z.in",
+        "physicalSocketId": null
+      },
+      "label": "-z state to OUT Z",
+      "color": null
+    },
+    {
+      "id": "cable-39",
+      "from": {
+        "logicalSocketId": "INV4.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "OUT_U.in",
+        "physicalSocketId": null
+      },
+      "label": "positive z to OUT U",
+      "color": null
+    }
+  ],
+  "outputRouting": {
+    "channels": {
+      "X": "OUT_X.out",
+      "Y": "OUT_Y.out",
+      "Z": "OUT_U.out",
+      "U": null
+    },
+    "aliases": {
+      "x": "OUT_X.out",
+      "y": "OUT_Y.out",
+      "minusZ": "OUT_Z.out",
+      "z": "OUT_U.out",
+      "x2": "MUL1.out",
+      "x3": "MUL2.out",
+      "xCubicTerm": "INV1.out",
+      "yEquationDrive": "SUM2.out",
+      "iExt": "XIR1.out"
+    }
+  },
+  "operationDefaults": {
+    "mode": "OP",
+    "duration": 40,
+    "dt": 0.002,
+    "sampleEvery": 25,
+    "opTime": 8,
+    "cycles": 3,
+    "clip": false
+  },
+  "notes": "",
+  "sourcePatchSchemaVersion": "analog-thing-patch/v1"
+}

@@ -1,0 +1,104 @@
+{
+  "schemaVersion": "analog-thing-patch/v1",
+  "inventory": "that-prototype-board/v006",
+  "name": "First Steps Helper: Non-Negative Values Only",
+  "description": "Section 10.5 helper. An adjustable input stub generates A, CMP1 tests A>0, and OUT Y receives A or zero.",
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "MINUS1"
+    },
+    {
+      "id": "ZERO"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.3,
+      "label": "P1 input A knob"
+    },
+    {
+      "id": "SUM1",
+      "label": "A source summer"
+    },
+    {
+      "id": "INV1",
+      "label": "A source output"
+    },
+    {
+      "id": "CMP1",
+      "label": "Comparator / positive clamp"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / max(A,0)"
+    }
+  ],
+  "cables": [
+    {
+      "from": "PLUS1.out",
+      "to": "P1.in",
+      "label": "A: +1 into coefficient knob"
+    },
+    {
+      "from": "P1.out",
+      "to": "SUM1.in1",
+      "label": "A: first k contribution"
+    },
+    {
+      "from": "P1.out",
+      "to": "SUM1.in2",
+      "label": "A: second k contribution"
+    },
+    {
+      "from": "MINUS1.out",
+      "to": "SUM1.in3",
+      "label": "A: -1 offset for 2*k-1"
+    },
+    {
+      "from": "SUM1.out",
+      "to": "INV1.in",
+      "label": "A: invert summer output to recover full-range signal"
+    },
+    {
+      "from": "INV1.out",
+      "to": "CMP1.a",
+      "label": "test A"
+    },
+    {
+      "from": "ZERO.out",
+      "to": "CMP1.b",
+      "label": "compare against zero"
+    },
+    {
+      "from": "INV1.out",
+      "to": "CMP1.positive",
+      "label": "if A>0 choose A"
+    },
+    {
+      "from": "ZERO.out",
+      "to": "CMP1.nonPositive",
+      "label": "otherwise choose 0"
+    },
+    {
+      "from": "CMP1.out",
+      "to": "OUT_Y.in",
+      "label": "non-negative value to OUT Y"
+    }
+  ],
+  "outputs": {
+    "y": "OUT_Y.out",
+    "nonNegative": "OUT_Y.out",
+    "a": "INV1.out",
+    "compare": "CMP1.out"
+  },
+  "parameters": {
+    "firstStepsExampleId": "first-steps-helper-non-negative-only",
+    "page": 24,
+    "equation": "out = A if A > 0; otherwise 0",
+    "aCoefficient": 0.3,
+    "a": -0.4,
+    "expectedValue": 0
+  }
+}

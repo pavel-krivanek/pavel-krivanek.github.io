@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "analog-thing-design-template/v1",
+  "id": "first-steps-helper-max",
+  "title": "First Steps Helper: Maximum of Two Values",
+  "category": "First Steps helper",
+  "description": "Booklet Section 10.1 helper selecting the maximum of two adjustable values A and B.",
+  "sourceDesignId": "first-steps-helper-max",
+  "defaultMode": "OP",
+  "runnable": true,
+  "tags": [
+    "first-steps",
+    "helper",
+    "max",
+    "comparator-helper"
+  ],
+  "walkthrough": [
+    {
+      "title": "Generate A and B",
+      "text": "P1 and P2 are each mapped through a 2*k-1 helper to create adjustable source stubs A and B.",
+      "socketFocus": [
+        "P1.out",
+        "SUM1.out",
+        "INV1.out",
+        "P2.out",
+        "SUM2.out",
+        "INV2.out"
+      ],
+      "controlFocus": [
+        "P1",
+        "P2"
+      ]
+    },
+    {
+      "title": "Test A-B",
+      "text": "INV3 forms -B. CMP1 receives A and -B, so its sign test is A-B.",
+      "socketFocus": [
+        "INV1.out",
+        "INV2.out",
+        "INV3.in",
+        "INV3.out",
+        "CMP1.a",
+        "CMP1.b"
+      ]
+    },
+    {
+      "title": "Route the greater value",
+      "text": "The comparator positive branch is A and the non-positive branch is B, so OUT Y shows max(A,B).",
+      "socketFocus": [
+        "CMP1.positive",
+        "CMP1.nonPositive",
+        "CMP1.out",
+        "OUT_Y.in"
+      ],
+      "controlFocus": [
+        "Y"
+      ]
+    }
+  ]
+}

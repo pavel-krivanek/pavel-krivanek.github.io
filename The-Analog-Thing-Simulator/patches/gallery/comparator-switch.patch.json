@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "analog-thing-patch/v1",
+  "inventory": "that-prototype-board/v006",
+  "name": "Comparator switch demo",
+  "description": "Routes +1 or -1 according to the sign of a + b; the default coefficients make the positive branch active.",
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "MINUS1"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.3,
+      "label": "positive compare term"
+    },
+    {
+      "id": "P2",
+      "coefficient": 0.2,
+      "label": "negative compare term"
+    },
+    {
+      "id": "CMP1"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / selected branch"
+    }
+  ],
+  "cables": [
+    {
+      "from": "PLUS1.out",
+      "to": "P1.in",
+      "label": "a = +0.3"
+    },
+    {
+      "from": "MINUS1.out",
+      "to": "P2.in",
+      "label": "b = -0.2"
+    },
+    {
+      "from": "P1.out",
+      "to": "CMP1.a",
+      "label": "first sign-test input"
+    },
+    {
+      "from": "P2.out",
+      "to": "CMP1.b",
+      "label": "second sign-test input"
+    },
+    {
+      "from": "PLUS1.out",
+      "to": "CMP1.positive",
+      "label": "selected when a + b > 0"
+    },
+    {
+      "from": "MINUS1.out",
+      "to": "CMP1.nonPositive",
+      "label": "selected when a + b <= 0"
+    },
+    {
+      "from": "CMP1.out",
+      "to": "OUT_Y.in",
+      "label": "selected signal to Y output"
+    }
+  ],
+  "outputs": {
+    "y": "OUT_Y.out",
+    "compareA": "P1.out",
+    "compareB": "P2.out",
+    "selected": "CMP1.out"
+  },
+  "parameters": {
+    "expectedY": 1
+  }
+}

@@ -1,0 +1,226 @@
+{
+  "schemaVersion": "analog-thing-design-template/v1",
+  "generatedFrom": "custom design gallery plus blank starter template",
+  "templates": [
+    {
+      "id": "blank-design",
+      "title": "Blank zero-output design",
+      "category": "starter",
+      "description": "A validation-clean starter design with a zero output placeholder.",
+      "sourceDesignId": null,
+      "defaultMode": "OP",
+      "runnable": true,
+      "file": "blank-design.template.json"
+    },
+    {
+      "id": "quickstart-damped-oscillation",
+      "title": "Oscillator: damped motion",
+      "category": "dynamic system",
+      "description": "Two-integrator damped oscillator with IC and REPF walkthrough.",
+      "sourceDesignId": "quickstart-damped-oscillation",
+      "defaultMode": "REPF",
+      "runnable": true,
+      "file": "quickstart-damped-oscillation.template.json"
+    },
+    {
+      "id": "static-inverter",
+      "title": "Static inverter and coefficient",
+      "category": "linear block",
+      "description": "Coefficient scaling followed by sign inversion.",
+      "sourceDesignId": "static-inverter",
+      "defaultMode": "OP",
+      "runnable": true,
+      "file": "static-inverter.template.json"
+    },
+    {
+      "id": "summer-scaling",
+      "title": "Summer scaling and sign",
+      "category": "linear block",
+      "description": "Positive and negative weighted terms through a negating summer.",
+      "sourceDesignId": "summer-scaling",
+      "defaultMode": "OP",
+      "runnable": true,
+      "file": "summer-scaling.template.json"
+    },
+    {
+      "id": "multiplier-product",
+      "title": "Multiplier product",
+      "category": "nonlinear block",
+      "description": "Normalized four-quadrant multiplication from two coefficient-scaled constants.",
+      "sourceDesignId": "multiplier-product",
+      "defaultMode": "OP",
+      "runnable": true,
+      "file": "multiplier-product.template.json"
+    },
+    {
+      "id": "comparator-switch",
+      "title": "Comparator switch",
+      "category": "hybrid-style block",
+      "description": "Comparator branch selection using A, B, >0, <0, and OUT sockets.",
+      "sourceDesignId": "comparator-switch",
+      "defaultMode": "OP",
+      "runnable": true,
+      "file": "comparator-switch.template.json"
+    },
+    {
+      "id": "xir-summing-junction",
+      "title": "XIR summing-junction extension",
+      "category": "patch expansion",
+      "description": "XIR weighted contribution into a summer summing junction.",
+      "sourceDesignId": "xir-summing-junction",
+      "defaultMode": "OP",
+      "runnable": true,
+      "file": "xir-summing-junction.template.json"
+    },
+    {
+      "id": "slow-integrator-ramp",
+      "title": "Slow integrator ramp",
+      "category": "dynamic system",
+      "description": "Slow-mode integrator ramp with IC reset behavior.",
+      "sourceDesignId": "slow-integrator-ramp",
+      "defaultMode": "OP",
+      "runnable": true,
+      "file": "slow-integrator-ramp.template.json"
+    },
+    {
+      "id": "first-steps-radioactive-decay",
+      "title": "First Steps: Radioactive Decay",
+      "category": "First Steps application",
+      "description": "Runnable Section 9.1 exponential decay walkthrough.",
+      "sourceDesignId": "first-steps-radioactive-decay",
+      "defaultMode": "REPF",
+      "runnable": true,
+      "file": "first-steps-radioactive-decay.template.json"
+    },
+    {
+      "id": "first-steps-mass-spring-damper",
+      "title": "First Steps: Mass-Spring-Damper System",
+      "category": "First Steps application",
+      "description": "Runnable Section 9.2 underdamped suspension walkthrough.",
+      "sourceDesignId": "first-steps-mass-spring-damper",
+      "defaultMode": "REPF",
+      "runnable": true,
+      "file": "first-steps-mass-spring-damper.template.json"
+    },
+    {
+      "id": "first-steps-lunar-landing",
+      "title": "First Steps: Lunar Landing",
+      "category": "First Steps application",
+      "description": "Runnable Section 9.3 lunar landing walkthrough with live throttle and fuel monitor.",
+      "sourceDesignId": "first-steps-lunar-landing",
+      "defaultMode": "OP",
+      "runnable": true,
+      "file": "first-steps-lunar-landing.template.json"
+    },
+    {
+      "id": "first-steps-neuronal-bursting",
+      "title": "First Steps: Neuronal Bursting",
+      "category": "First Steps application",
+      "description": "Runnable Section 9.4 scaled Hindmarsh-Rose neuronal bursting walkthrough using x10-weighted inputs, XIR/SJ, and SLOW.",
+      "sourceDesignId": "first-steps-neuronal-bursting",
+      "defaultMode": "OP",
+      "runnable": true,
+      "file": "first-steps-neuronal-bursting.template.json"
+    },
+    {
+      "id": "first-steps-euler-spiral",
+      "title": "First Steps: Euler Spiral",
+      "category": "First Steps application",
+      "description": "Runnable Section 9.5 Euler spiral walkthrough for X/Y display.",
+      "sourceDesignId": "first-steps-euler-spiral",
+      "defaultMode": "REPF",
+      "runnable": true,
+      "file": "first-steps-euler-spiral.template.json"
+    },
+    {
+      "id": "first-steps-hunter-prey",
+      "title": "First Steps: Hunter/Prey Population Dynamics",
+      "category": "First Steps application",
+      "description": "Runnable Section 9.6 Lotka-Volterra hunter/prey walkthrough for X/Y display.",
+      "sourceDesignId": "first-steps-hunter-prey",
+      "defaultMode": "OP",
+      "runnable": true,
+      "file": "first-steps-hunter-prey.template.json"
+    },
+    {
+      "id": "first-steps-lorenz-attractor",
+      "title": "First Steps: Lorenz Attractor",
+      "category": "First Steps application",
+      "description": "Runnable Section 9.7 Lorenz chaotic attractor walkthrough with X/Y/Z projection presets.",
+      "sourceDesignId": "first-steps-lorenz-attractor",
+      "defaultMode": "OP",
+      "runnable": true,
+      "file": "first-steps-lorenz-attractor.template.json"
+    },
+    {
+      "id": "first-steps-bouncing-ball",
+      "title": "First Steps: Bouncing Ball",
+      "category": "First Steps application",
+      "description": "First Steps Section 9.8 bouncing ball with OUT Y display inverted so rebounds appear at the lower edge.",
+      "sourceDesignId": "first-steps-bouncing-ball",
+      "defaultMode": "REPF",
+      "runnable": true,
+      "file": "first-steps-bouncing-ball.template.json"
+    },
+    {
+      "id": "first-steps-polynomial-generator",
+      "title": "First Steps: Polynomial Generator",
+      "category": "First Steps application",
+      "description": "Runnable Section 9.9 polynomial generator walkthrough for X/Y display.",
+      "sourceDesignId": "first-steps-polynomial-generator",
+      "defaultMode": "REPF",
+      "runnable": true,
+      "file": "first-steps-polynomial-generator.template.json"
+    },
+    {
+      "id": "first-steps-helper-adjustable-minus-one-plus-one",
+      "title": "First Steps Helper: Adjustable Value -1 to +1",
+      "category": "First Steps helper",
+      "description": "Booklet Section 10.4 helper mapping one coefficient knob over the full -1..+1 machine-unit range.",
+      "file": "first-steps-helper-adjustable-minus-one-plus-one.template.json",
+      "sourceDesignId": "first-steps-helper-adjustable-minus-one-plus-one",
+      "defaultMode": "OP",
+      "runnable": true
+    },
+    {
+      "id": "first-steps-helper-max",
+      "title": "First Steps Helper: Maximum of Two Values",
+      "category": "First Steps helper",
+      "description": "Booklet Section 10.1 helper selecting the maximum of two adjustable values A and B.",
+      "file": "first-steps-helper-max.template.json",
+      "sourceDesignId": "first-steps-helper-max",
+      "defaultMode": "OP",
+      "runnable": true
+    },
+    {
+      "id": "first-steps-helper-min",
+      "title": "First Steps Helper: Minimum of Two Values",
+      "category": "First Steps helper",
+      "description": "Booklet Section 10.2 helper selecting the minimum of two adjustable values A and B.",
+      "file": "first-steps-helper-min.template.json",
+      "sourceDesignId": "first-steps-helper-min",
+      "defaultMode": "OP",
+      "runnable": true
+    },
+    {
+      "id": "first-steps-helper-abs",
+      "title": "First Steps Helper: Absolute Value",
+      "category": "First Steps helper",
+      "description": "Booklet Section 10.3 helper selecting the absolute value of adjustable input A.",
+      "file": "first-steps-helper-abs.template.json",
+      "sourceDesignId": "first-steps-helper-abs",
+      "defaultMode": "OP",
+      "runnable": true
+    },
+    {
+      "id": "first-steps-helper-non-negative-only",
+      "title": "First Steps Helper: Non-Negative Values Only",
+      "category": "First Steps helper",
+      "description": "Booklet Section 10.5 helper passing A when positive and zero otherwise.",
+      "file": "first-steps-helper-non-negative-only.template.json",
+      "sourceDesignId": "first-steps-helper-non-negative-only",
+      "defaultMode": "OP",
+      "runnable": true
+    }
+  ]
+}

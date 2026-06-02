@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "analog-thing-design-template/v1",
+  "id": "first-steps-lorenz-attractor",
+  "title": "First Steps: Lorenz Attractor",
+  "category": "First Steps application",
+  "description": "Section 9.7 Lorenz chaotic attractor patch with x/y/z output channels and projection-ready display.",
+  "sourceDesignId": "first-steps-lorenz-attractor",
+  "defaultMode": "OP",
+  "runnable": true,
+  "tags": [
+    "first-steps",
+    "lorenz",
+    "chaotic-attractor",
+    "xy-display",
+    "design-template"
+  ],
+  "walkthrough": [
+    {
+      "title": "Initialize the chaotic state",
+      "text": "P7 sets the small nonzero x initial condition while y and z start at zero. The three integrators carry -x, -y, and -z to match the booklet equations.",
+      "socketFocus": [
+        "P7.out",
+        "I1.ic",
+        "ZERO.out",
+        "I2.ic",
+        "I3.ic"
+      ],
+      "controlFocus": [
+        "P7"
+      ]
+    },
+    {
+      "title": "Patch the x and z equations",
+      "text": "P1 through a x10 input implements 1.8y in the x equation. MUL1 forms x*y from the two negative state variables; P2 and P3 then drive the -z integrator.",
+      "socketFocus": [
+        "INV2.out",
+        "P1.in",
+        "P1.out",
+        "I1.in10",
+        "I1.out",
+        "MUL1.x",
+        "I2.out",
+        "MUL1.y",
+        "MUL1.out",
+        "P2.in",
+        "P2.out",
+        "I3.in10",
+        "P3.out",
+        "I3.in1"
+      ],
+      "controlFocus": [
+        "P1",
+        "P2",
+        "P3"
+      ]
+    },
+    {
+      "title": "Patch s and r for the y equation",
+      "text": "P4 and SUM1 form s = -(1 - 2.68z). MUL2 computes r = -x*s. P5 and P6 then provide the weighted terms for the -y integrator.",
+      "socketFocus": [
+        "I3.out",
+        "P4.in",
+        "P4.out",
+        "SUM1.in10_1",
+        "SUM1.out",
+        "MUL2.y",
+        "MUL2.out",
+        "P5.in",
+        "P5.out",
+        "I2.in10",
+        "P6.out",
+        "I2.in1"
+      ],
+      "controlFocus": [
+        "P4",
+        "P5",
+        "P6"
+      ]
+    },
+    {
+      "title": "Display projections",
+      "text": "OUT X, OUT Y, and OUT Z expose x, y, and z. Use X/Y for the top view, Z/X for the front view, or Z/Y for the side view.",
+      "socketFocus": [
+        "INV1.out",
+        "OUT_X.in",
+        "INV2.out",
+        "OUT_Y.in",
+        "INV3.out",
+        "OUT_Z.in"
+      ],
+      "controlFocus": [
+        "X",
+        "Y",
+        "Z"
+      ]
+    }
+  ],
+  "recommendedRun": {
+    "mode": "OP",
+    "duration": 300,
+    "dt": 0.01,
+    "sampleEvery": 5,
+    "scopePreset": "xy"
+  }
+}

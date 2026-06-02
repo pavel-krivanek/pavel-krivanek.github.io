@@ -1,0 +1,381 @@
+{
+  "schemaVersion": "analog-thing-patch/v1",
+  "inventory": "that-prototype-board/v006",
+  "name": "First Steps: Neuronal Bursting",
+  "description": "Booklet-style active-block translation of First Steps Section 9.4 using the scaled Hindmarsh-Rose equations. I1 carries scaled membrane output x, I2 carries y, I3 carries -z in SLOW mode, MUL1/MUL2 generate x^2/x^3, and OUT X/Y/Z expose x, y, and -z.",
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "MINUS1"
+    },
+    {
+      "id": "ZERO"
+    },
+    {
+      "id": "I1",
+      "rate": 50,
+      "label": "Integrator / scaled x membrane output"
+    },
+    {
+      "id": "I2",
+      "rate": 50,
+      "label": "Integrator / scaled y fast-ion channel state"
+    },
+    {
+      "id": "I3",
+      "rate": 50,
+      "slowFactor": 100,
+      "label": "SLOW integrator / -z slow-channel state"
+    },
+    {
+      "id": "MUL1",
+      "label": "Multiplier / x^2"
+    },
+    {
+      "id": "MUL2",
+      "label": "Multiplier / x^3"
+    },
+    {
+      "id": "SUM1",
+      "label": "Summer / scaled -xdot drive"
+    },
+    {
+      "id": "SUM2",
+      "label": "Summer / scaled -ydot drive"
+    },
+    {
+      "id": "XIR1",
+      "label": "XIR helper / Iext summing-junction input"
+    },
+    {
+      "id": "XIR2",
+      "label": "XIR helper / slow z summing-junction inputs"
+    },
+    {
+      "id": "INV1",
+      "label": "Inverter / -a*10*x^3 preweighted term"
+    },
+    {
+      "id": "INV2",
+      "label": "Inverter / -d*10*x^2 preweighted term"
+    },
+    {
+      "id": "INV3",
+      "label": "Inverter / -y"
+    },
+    {
+      "id": "INV4",
+      "label": "Inverter / z display"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.6,
+      "label": "P1 b*10 coefficient shown as 0.6"
+    },
+    {
+      "id": "P2",
+      "coefficient": 0.4,
+      "label": "P2 a*10 coefficient shown as 0.4"
+    },
+    {
+      "id": "P3",
+      "coefficient": 0.75,
+      "label": "P3 0.75*y term into x equation"
+    },
+    {
+      "id": "P4",
+      "coefficient": 0.1,
+      "label": "P4 100r coefficient"
+    },
+    {
+      "id": "P5",
+      "coefficient": 0.4,
+      "label": "P5 100rs coefficient"
+    },
+    {
+      "id": "P6",
+      "coefficient": 0.32,
+      "label": "P6 100rs*xr offset magnitude"
+    },
+    {
+      "id": "P7",
+      "coefficient": 0.066,
+      "label": "P7 c coefficient"
+    },
+    {
+      "id": "P8",
+      "coefficient": 0.133,
+      "label": "P8 d*10 coefficient shown as 0.133"
+    },
+    {
+      "id": "OUT_X",
+      "label": "X / neuronal burst output x"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / y channel state"
+    },
+    {
+      "id": "OUT_Z",
+      "label": "Z / -z slow channel"
+    },
+    {
+      "id": "OUT_U",
+      "label": "U / z display"
+    }
+  ],
+  "cables": [
+    {
+      "from": "MINUS1.out",
+      "to": "I1.ic",
+      "label": "-1 on IC initializes I1.out to x = +1"
+    },
+    {
+      "from": "ZERO.out",
+      "to": "I2.ic",
+      "label": "initialize y to zero"
+    },
+    {
+      "from": "PLUS1.out",
+      "to": "I3.ic",
+      "label": "+1 on IC initializes I3.out to -z = -1"
+    },
+    {
+      "from": "I1.out",
+      "to": "MUL1.x",
+      "label": "x into x^2 multiplier"
+    },
+    {
+      "from": "I1.out",
+      "to": "MUL1.y",
+      "label": "x into x^2 multiplier"
+    },
+    {
+      "from": "MUL1.out",
+      "to": "MUL2.x",
+      "label": "x^2 into x^3 multiplier"
+    },
+    {
+      "from": "I1.out",
+      "to": "MUL2.y",
+      "label": "x into x^3 multiplier"
+    },
+    {
+      "from": "MUL1.out",
+      "to": "P1.in",
+      "label": "x^2 scaled by b*10=0.6 before x10 input gives 6*x^2"
+    },
+    {
+      "from": "MUL2.out",
+      "to": "P2.in",
+      "label": "x^3 scaled by a*10=0.4 before x10 input gives 4*x^3"
+    },
+    {
+      "from": "P2.out",
+      "to": "INV1.in",
+      "label": "invert a*10*x^3 to form the negative cubic term"
+    },
+    {
+      "from": "INV1.out",
+      "to": "SUM1.in10_1",
+      "label": "x10 input implements -4*x^3"
+    },
+    {
+      "from": "P1.out",
+      "to": "SUM1.in10_2",
+      "label": "x10 input implements +6*x^2"
+    },
+    {
+      "from": "I2.out",
+      "to": "P3.in",
+      "label": "scale y by 0.75 before x10 input"
+    },
+    {
+      "from": "P3.out",
+      "to": "SUM1.in10_3",
+      "label": "x10 input implements +7.5*y"
+    },
+    {
+      "from": "I3.out",
+      "to": "SUM1.in1",
+      "label": "-z term, represented by I3.out"
+    },
+    {
+      "from": "PLUS1.out",
+      "to": "XIR1.in1",
+      "label": "Iext = +1 input can be disconnected in the physical exercise"
+    },
+    {
+      "from": "XIR1.out",
+      "to": "SUM1.sj",
+      "label": "add Iext through the summing-junction helper"
+    },
+    {
+      "from": "SUM1.out",
+      "to": "I1.in1",
+      "label": "SUM1 emits -xdot for the inverting x integrator"
+    },
+    {
+      "from": "PLUS1.out",
+      "to": "P7.in",
+      "label": "constant c"
+    },
+    {
+      "from": "MUL1.out",
+      "to": "P8.in",
+      "label": "x^2 scaled by d*10=0.133 before x10 input gives about 1.33*x^2"
+    },
+    {
+      "from": "P8.out",
+      "to": "INV2.in",
+      "label": "invert d*10*x^2 to form the negative y-equation term"
+    },
+    {
+      "from": "I2.out",
+      "to": "INV3.in",
+      "label": "invert y to form -y"
+    },
+    {
+      "from": "P7.out",
+      "to": "SUM2.in1",
+      "label": "c term"
+    },
+    {
+      "from": "INV2.out",
+      "to": "SUM2.in10_1",
+      "label": "x10 input implements -1.33*x^2"
+    },
+    {
+      "from": "INV3.out",
+      "to": "SUM2.in2",
+      "label": "-y term"
+    },
+    {
+      "from": "SUM2.out",
+      "to": "I2.in1",
+      "label": "SUM2 emits -ydot for the inverting y integrator"
+    },
+    {
+      "from": "I1.out",
+      "to": "P5.in",
+      "label": "x scaled by 100rs before SLOW division"
+    },
+    {
+      "from": "P5.out",
+      "to": "I3.in1",
+      "label": "100rs*x contribution to the -z slow integrator input"
+    },
+    {
+      "from": "PLUS1.out",
+      "to": "P6.in",
+      "label": "100rs*xr offset magnitude"
+    },
+    {
+      "from": "I3.out",
+      "to": "P4.in",
+      "label": "-z scaled by 100r before SLOW division"
+    },
+    {
+      "from": "P6.out",
+      "to": "XIR2.in1",
+      "label": "offset contribution for the slow z equation"
+    },
+    {
+      "from": "P4.out",
+      "to": "XIR2.in2",
+      "label": "100r*(-z) damping contribution"
+    },
+    {
+      "from": "XIR2.out",
+      "to": "I3.sj",
+      "label": "combine slow z offset and damping through summing junction"
+    },
+    {
+      "from": "I3.out",
+      "to": "I3.slow",
+      "label": "output-to-SLOW feedback activates the 0.01 speed scale"
+    },
+    {
+      "from": "I3.out",
+      "to": "INV4.in",
+      "label": "recover positive z for diagnostics"
+    },
+    {
+      "from": "I1.out",
+      "to": "OUT_X.in",
+      "label": "neuronal burst output x to OUT X"
+    },
+    {
+      "from": "I2.out",
+      "to": "OUT_Y.in",
+      "label": "y state to OUT Y"
+    },
+    {
+      "from": "I3.out",
+      "to": "OUT_Z.in",
+      "label": "-z state to OUT Z"
+    },
+    {
+      "from": "INV4.out",
+      "to": "OUT_U.in",
+      "label": "positive z to OUT U"
+    }
+  ],
+  "outputs": {
+    "x": "OUT_X.out",
+    "y": "OUT_Y.out",
+    "minusZ": "OUT_Z.out",
+    "z": "OUT_U.out",
+    "x2": "MUL1.out",
+    "x3": "MUL2.out",
+    "xCubicTerm": "INV1.out",
+    "yEquationDrive": "SUM2.out",
+    "iExt": "XIR1.out"
+  },
+  "parameters": {
+    "firstStepsExampleId": "first-steps-neuronal-bursting",
+    "page": 18,
+    "equation": "xdot = -4*x^3 + 6*x^2 + 7.5*y - z + Iext; ydot = -1.33*x^2 + c - y; zdot = 0.004*x + 0.0032 - z/1000",
+    "scopePreset": "time-x",
+    "x0": 1,
+    "y0": 0,
+    "z0": 1,
+    "minusZ0": -1,
+    "bStar10": 0.6,
+    "aStar10": 0.4,
+    "yToX10": 0.75,
+    "c": 0.066,
+    "dStar10": 0.133,
+    "hundredR": 0.1,
+    "hundredRs": 0.4,
+    "hundredRsXr": 0.32,
+    "iExt": 1,
+    "slowFactor": 100,
+    "timeScale": 50,
+    "duration": 40,
+    "coefficients": {
+      "P1": 0.6,
+      "P2": 0.4,
+      "P3": 0.75,
+      "P4": 0.1,
+      "P5": 0.4,
+      "P6": 0.32,
+      "P7": 0.066,
+      "P8": 0.133
+    },
+    "expectedFinalAt40s": {
+      "x": -0.23798707930618868,
+      "y": -0.2969329545427756,
+      "minusZ": -0.9022592524298505,
+      "z": 0.9022592524298505,
+      "maxAbs": {
+        "x": 1.1668120240929403,
+        "y": 0.8170538343071003,
+        "minusZ": 1.0620368419387158
+      },
+      "peakCount": 38
+    }
+  }
+}

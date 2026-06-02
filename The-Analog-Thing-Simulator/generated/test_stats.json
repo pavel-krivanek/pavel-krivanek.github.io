@@ -1,0 +1,452 @@
+{
+  "bundle": "analog-thing-simulator-v104",
+  "generatedAt": "2026-06-02T16:25:33.034Z",
+  "counts": {
+    "checks": 87,
+    "passed": 87,
+    "failed": 0,
+    "targetedTests": 27,
+    "targetedTestsPassed": 27,
+    "jsLinesInSrc": 27877,
+    "physicalSockets": 197,
+    "activePhysicalSockets": 175,
+    "adoptedPatchEditorConnectors": 196
+  },
+  "checks": [
+    {
+      "name": "required file exists: VERSION",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "required file exists: README.md",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "required file exists: public/index.html",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "required file exists: public/THAT_panel.svg",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "required file exists: src/browser/cableInteractionApp.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "required file exists: src/browser/patchEditorApp.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "required file exists: src/browser/deviceWorkbenchApp.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "required file exists: src/browser/styles.css",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "required file exists: src/core/physicalSockets.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "required file exists: src/core/adoptedPatchPanelConnectors.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "required file exists: src/core/designAccessories.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "required file exists: docs/browser_user_guide.md",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "required file exists: docs/browser_smoke_checklist.md",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "required file exists: docs/custom_design_architecture.md",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "required file exists: docs/example_walkthroughs.md",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "required file exists: docs/research_basis.md",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "required file exists: docs/troubleshooting.md",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "required file exists: tests/run_tests.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "version is v104",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "obsolete document removed: docs/development_plan.md",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "obsolete document removed: docs/custom_design_editor_plan.md",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "obsolete document removed: docs/that_first_steps_development_plan.md",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "obsolete document removed: docs/damped_oscillation_prototype.md",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "obsolete document removed: docs/source_index.md",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "generated directory has no stale trace or summary artifacts before verification",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "generated-bundles directory is absent",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "README and docs do not carry older-version references",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "README documents clean final handoff and no-npm policy",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "README documents current verification flow",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "packaging app references only current docs",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "endpoint reconnect fallback helper is present",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "endpoint handles do not render OUT/IN text labels",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "loaded patch endpoint rings are styled as translucent white",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "endpoint-handle-label is hidden",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/browser/browserPatchRuntime.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/browser/cableInteractionApp.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/browser/customDesignApp.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/browser/deviceWorkbenchApp.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/browser/educationApp.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/browser/oscilloscopeApp.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/browser/packagingApp.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/browser/patchEditorApp.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/browser/patchPanelApp.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/browser/patchTemplatesApp.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/browser/serializedGalleryApp.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/cli/runDampedOscillation.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/cli/runGalleryExample.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/cli/runImperfectionDemo.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/cli/runMultiBoardDemo.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/cli/runPatch.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/adoptedPatchPanelConnectors.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/adoptedPatchPanelEditor.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/components.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/design.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/designAccessories.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/designControls.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/designDiagnostics.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/designHistory.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/designPanelPolish.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/designRepairs.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/designRuntime.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/designStorage.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/designTemplates.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/designUsability.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/hybrid.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/imperfections.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/inventory.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/modes.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/multiboard.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/patch.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/physicalSockets.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/serialization.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/solver.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/core/value.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/examples/dampedOscillation.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/examples/firstSteps.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/examples/imperfectionDemo.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/examples/multiBoardDemo.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/examples/scopeExpectations.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/examples/serializedGallery.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "syntax ok: src/index.js",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "targeted tests pass: 55:63",
+      "pass": true,
+      "details": "PASS cable interaction selection state and cable removal are deterministic\nPASS panel editor modes inspect physical sockets and expose logical mapping\nPASS panel editor supports physical cable endpoints undo redo dirty state and delete selection\nPASS panel editor history can track coefficient and output routing patch edits\nPASS panel editor keyboard helpers support socket creation and delete/backspace removal"
+    },
+    {
+      "name": "targeted tests pass: 160:166",
+      "pass": true,
+      "details": "PASS browser custom design helper imports design JSON patch JSON drafts and gallery designs\nPASS browser custom design helper runs and exports a custom design trace\nPASS custom design templates expose blank plus First Steps booklet walkthrough templates\nPASS custom design templates instantiate validate and run every template\nPASS custom design accessories catalog capacitors diodes z-diodes feedback and ground ties"
+    },
+    {
+      "name": "targeted tests pass: 194:205",
+      "pass": true,
+      "details": "PASS v039 integrated panel CSS overrides old min-width rules so the full SVG can fit\nPASS v039 browser number inputs accept exact REPF and solver defaults\nPASS adopted patch-panel wiring JSON converts mapped wires into custom design cables\nPASS design storage imports adopted patch-panel wiring JSON\nPASS integrated wire editor exports wiring JSON and creates styled simulator cables"
+    },
+    {
+      "name": "targeted tests pass: 213:215",
+      "pass": true,
+      "details": "PASS v103 integrated panel editor can move endpoints on gallery demo wires without stored connector ids\nPASS v103 integrated panel editor does not render OUT/IN endpoint text labels"
+    },
+    {
+      "name": "all gallery wires resolve to visible panel endpoints",
+      "pass": true,
+      "details": ""
+    },
+    {
+      "name": "prebuilt demo endpoint can be moved without stored connector ids",
+      "pass": true,
+      "details": ""
+    }
+  ]
+}

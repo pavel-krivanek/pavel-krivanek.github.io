@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "analog-thing-design-template/v1",
+  "id": "first-steps-helper-min",
+  "title": "First Steps Helper: Minimum of Two Values",
+  "category": "First Steps helper",
+  "description": "Booklet Section 10.2 helper selecting the minimum of two adjustable values A and B.",
+  "sourceDesignId": "first-steps-helper-min",
+  "defaultMode": "OP",
+  "runnable": true,
+  "tags": [
+    "first-steps",
+    "helper",
+    "min",
+    "comparator-helper"
+  ],
+  "walkthrough": [
+    {
+      "title": "Generate A and B",
+      "text": "P1 and P2 are mapped to full-range adjustable source stubs A and B.",
+      "socketFocus": [
+        "P1.out",
+        "SUM1.out",
+        "INV1.out",
+        "P2.out",
+        "SUM2.out",
+        "INV2.out"
+      ],
+      "controlFocus": [
+        "P1",
+        "P2"
+      ]
+    },
+    {
+      "title": "Test A-B",
+      "text": "INV3 forms -B. CMP1 receives A and -B, so its sign test is A-B.",
+      "socketFocus": [
+        "INV1.out",
+        "INV2.out",
+        "INV3.in",
+        "INV3.out",
+        "CMP1.a",
+        "CMP1.b"
+      ]
+    },
+    {
+      "title": "Route the smaller value",
+      "text": "The comparator positive branch is B and the non-positive branch is A, so OUT Y shows min(A,B).",
+      "socketFocus": [
+        "CMP1.positive",
+        "CMP1.nonPositive",
+        "CMP1.out",
+        "OUT_Y.in"
+      ],
+      "controlFocus": [
+        "Y"
+      ]
+    }
+  ]
+}

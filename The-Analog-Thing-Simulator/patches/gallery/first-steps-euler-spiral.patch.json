@@ -1,0 +1,259 @@
+{
+  "schemaVersion": "analog-thing-patch/v1",
+  "inventory": "that-prototype-board/v006",
+  "name": "First Steps: Euler Spiral",
+  "description": "Booklet-style active-block translation of First Steps Section 9.5. I1 generates a normalized tau sweep, I2/I3 form a variable-frequency quadrature oscillator, and I4/I5 integrate the quadrature pair to OUT X/Y. The preset auto-centers the phase and coordinate initial states for the selected OP-TIME so the X/Y display shows both point-symmetric Euler spiral arms.",
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "MINUS1"
+    },
+    {
+      "id": "ZERO"
+    },
+    {
+      "id": "I1",
+      "initialState": -1,
+      "label": "Integrator / normalized tau ramp"
+    },
+    {
+      "id": "I2",
+      "rate": 0.6,
+      "initialState": 0.6603167082440802,
+      "label": "Integrator / cos(tau^2/2) approximation"
+    },
+    {
+      "id": "I3",
+      "rate": 0.6,
+      "initialState": 0.7509872467716762,
+      "label": "Integrator / -sin(tau^2/2) approximation"
+    },
+    {
+      "id": "I4",
+      "rate": 0.05,
+      "initialState": -0.227496485419856,
+      "label": "Integrator / x spiral coordinate, centered initial value"
+    },
+    {
+      "id": "I5",
+      "rate": 0.05,
+      "initialState": -0.2339582398432739,
+      "label": "Integrator / y spiral coordinate, centered initial value"
+    },
+    {
+      "id": "INV1",
+      "label": "Inverter / sin(tau^2/2)"
+    },
+    {
+      "id": "INV2",
+      "label": "Inverter / -scaled cos for x integrator"
+    },
+    {
+      "id": "MUL1",
+      "label": "Multiplier / tau*sin"
+    },
+    {
+      "id": "MUL2",
+      "label": "Multiplier / tau*cos"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.016666666666666666,
+      "label": "P1 normalized tau ramp rate"
+    },
+    {
+      "id": "P2",
+      "coefficient": 0.6,
+      "label": "P2 x scale"
+    },
+    {
+      "id": "P3",
+      "coefficient": 0.6603167082440802,
+      "label": "P3 displayed cos initial magnitude"
+    },
+    {
+      "id": "P4",
+      "coefficient": 0.7509872467716762,
+      "label": "P4 displayed -sin initial magnitude"
+    },
+    {
+      "id": "P5",
+      "coefficient": 0.6,
+      "label": "P5 y scale"
+    },
+    {
+      "id": "OUT_X",
+      "label": "X / Euler spiral x"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / Euler spiral y"
+    }
+  ],
+  "cables": [
+    {
+      "from": "MINUS1.out",
+      "to": "P1.in",
+      "label": "-1 through P1 makes normalized tau ramp upward"
+    },
+    {
+      "from": "P1.out",
+      "to": "I1.in1",
+      "label": "normalized tau derivative is +P1"
+    },
+    {
+      "from": "PLUS1.out",
+      "to": "P3.in",
+      "label": "feed displayed cosine IC magnitude control"
+    },
+    {
+      "from": "PLUS1.out",
+      "to": "P4.in",
+      "label": "feed displayed sine IC magnitude control"
+    },
+    {
+      "from": "I3.out",
+      "to": "INV1.in",
+      "label": "recover sin-like signal from I3.out = -sin"
+    },
+    {
+      "from": "I1.out",
+      "to": "MUL1.x",
+      "label": "normalized tau into first multiplier"
+    },
+    {
+      "from": "INV1.out",
+      "to": "MUL1.y",
+      "label": "sin-like signal into first multiplier"
+    },
+    {
+      "from": "MUL1.out",
+      "to": "I2.in1",
+      "label": "tau*sin drives cos derivative through the inverting integrator"
+    },
+    {
+      "from": "I1.out",
+      "to": "MUL2.x",
+      "label": "normalized tau into second multiplier"
+    },
+    {
+      "from": "I2.out",
+      "to": "MUL2.y",
+      "label": "cos-like signal into second multiplier"
+    },
+    {
+      "from": "MUL2.out",
+      "to": "I3.in1",
+      "label": "tau*cos drives -sin derivative through the inverting integrator"
+    },
+    {
+      "from": "I2.out",
+      "to": "P2.in",
+      "label": "scale cos-like signal for x integration"
+    },
+    {
+      "from": "P2.out",
+      "to": "INV2.in",
+      "label": "invert scaled cos so the inverting x integrator advances positively"
+    },
+    {
+      "from": "INV2.out",
+      "to": "I4.in1",
+      "label": "x integrates scaled cos"
+    },
+    {
+      "from": "I3.out",
+      "to": "P5.in",
+      "label": "scale -sin-like signal for y integration"
+    },
+    {
+      "from": "P5.out",
+      "to": "I5.in1",
+      "label": "y integrates scaled sin because I5 is inverting"
+    },
+    {
+      "from": "I4.out",
+      "to": "OUT_X.in",
+      "label": "spiral x coordinate to OUT X"
+    },
+    {
+      "from": "I5.out",
+      "to": "OUT_Y.in",
+      "label": "spiral y coordinate to OUT Y"
+    }
+  ],
+  "outputs": {
+    "x": "OUT_X.out",
+    "y": "OUT_Y.out",
+    "tau": "I1.out",
+    "cos": "I2.out",
+    "minusSin": "I3.out",
+    "sin": "INV1.out"
+  },
+  "parameters": {
+    "firstStepsExampleId": "first-steps-euler-spiral",
+    "page": 19,
+    "equation": "x(t)=integral cos(tau^2/2) dtau, y(t)=integral sin(tau^2/2) dtau",
+    "scopePreset": "xy",
+    "tauRate": 0.1,
+    "tauSpan": 6,
+    "normalizedTauSweep": true,
+    "eulerSpiralAutoCenterForRun": true,
+    "rampRate": 0.016666666666666666,
+    "oscillatorRate": 0.6,
+    "xScale": 0.6,
+    "cos0": 0.6603167082440802,
+    "minusSin0": 0.7509872467716762,
+    "minusSinMagnitude0": 0.7509872467716762,
+    "yScale": 0.6,
+    "coordinateRate": 0.05,
+    "opTimeSeconds": 120,
+    "coefficients": {
+      "P1": 0.016666666666666666,
+      "P2": 0.6,
+      "P3": 0.6603167082440802,
+      "P4": 0.7509872467716762,
+      "P5": 0.6
+    },
+    "centeredInitial": {
+      "x0": -0.227496485419856,
+      "y0": -0.2339582398432739,
+      "expectedCenteredFinalX": 0.227496485419856,
+      "expectedCenteredFinalY": 0.2339582398432739
+    },
+    "centeredSweep": {
+      "opTimeSeconds": 120,
+      "tauRate": 0.1,
+      "tauSpan": 6,
+      "normalizedTauStart": -1,
+      "normalizedTauEnd": 1,
+      "rampRate": 0.016666666666666666,
+      "oscillatorRate": 0.6,
+      "coordinateRate": 0.05,
+      "xScale": 0.6,
+      "yScale": 0.6,
+      "cos0": 0.6603167082440802,
+      "minusSin0": 0.7509872467716762,
+      "x0": -0.227496485419856,
+      "y0": -0.2339582398432739,
+      "expectedCenteredFinalX": 0.227496485419856,
+      "expectedCenteredFinalY": 0.2339582398432739
+    },
+    "expectedFinalAtDefaultOpTime": {
+      "tau": 0.9999999999997894,
+      "cos": 0.6603167082383918,
+      "minusSin": 0.7509872467766892,
+      "x": 0.2274964854212502,
+      "y": 0.23395823984297467
+    },
+    "expectedFinalAt20s": {
+      "tau": 0.9999999999997894,
+      "cos": 0.6603167082383918,
+      "minusSin": 0.7509872467766892,
+      "x": 0.2274964854212502,
+      "y": 0.23395823984297467
+    }
+  }
+}

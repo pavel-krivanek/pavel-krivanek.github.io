@@ -1,0 +1,179 @@
+{
+  "schemaVersion": "analog-thing-design-template/v1",
+  "id": "multiplier-product",
+  "title": "Multiplier product",
+  "category": "nonlinear block",
+  "description": "Normalized four-quadrant multiplication from two coefficient-scaled constants.",
+  "sourceDesignId": "multiplier-product",
+  "defaultMode": "OP",
+  "runnable": true,
+  "tags": [
+    "gallery-design",
+    "nonlinear block",
+    "multiplier-product",
+    "design-template"
+  ],
+  "walkthrough": [
+    {
+      "title": "Prepare X and Y factors",
+      "text": "P1 and P2 scale +1 and -1 into the two multiplier inputs.",
+      "socketFocus": [],
+      "controlFocus": []
+    },
+    {
+      "title": "Route the product",
+      "text": "MUL1 outputs the normalized four-quadrant product and the template routes it to Y.",
+      "socketFocus": [],
+      "controlFocus": []
+    }
+  ],
+  "runOptions": {
+    "mode": "OP"
+  },
+  "design": {
+    "schemaVersion": "analog-thing-design/v1",
+    "kind": "custom-design",
+    "inventory": "that-prototype-board/v006",
+    "metadata": {
+      "name": "Multiplier product",
+      "description": "The multiplier computes a normalized four-quadrant product from two coefficient-scaled constants.",
+      "author": "",
+      "source": "static custom-design gallery",
+      "tags": [
+        "gallery-design",
+        "nonlinear block",
+        "multiplier-product"
+      ],
+      "createdAt": "2026-05-26T00:00:00.000Z",
+      "modifiedAt": "2026-05-26T00:00:00.000Z",
+      "notes": ""
+    },
+    "components": [
+      {
+        "id": "PLUS1"
+      },
+      {
+        "id": "MINUS1"
+      },
+      {
+        "id": "P1",
+        "coefficient": 0.6,
+        "label": "x coefficient"
+      },
+      {
+        "id": "P2",
+        "coefficient": 0.4,
+        "label": "y coefficient"
+      },
+      {
+        "id": "MUL1"
+      },
+      {
+        "id": "OUT_Y",
+        "label": "Y / product"
+      }
+    ],
+    "coefficients": {
+      "P1": 0.6,
+      "P2": 0.4,
+      "P3": 0.5,
+      "P4": 0.5,
+      "P5": 0.5,
+      "P6": 0.5,
+      "P7": 0.5,
+      "P8": 0.5
+    },
+    "cables": [
+      {
+        "id": "cable-1",
+        "from": {
+          "logicalSocketId": "PLUS1.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "P1.in",
+          "physicalSocketId": null
+        },
+        "label": "x = +0.6",
+        "color": null
+      },
+      {
+        "id": "cable-2",
+        "from": {
+          "logicalSocketId": "MINUS1.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "P2.in",
+          "physicalSocketId": null
+        },
+        "label": "y = -0.4",
+        "color": null
+      },
+      {
+        "id": "cable-3",
+        "from": {
+          "logicalSocketId": "P1.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "MUL1.x",
+          "physicalSocketId": null
+        },
+        "label": "multiplier x input",
+        "color": null
+      },
+      {
+        "id": "cable-4",
+        "from": {
+          "logicalSocketId": "P2.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "MUL1.y",
+          "physicalSocketId": null
+        },
+        "label": "multiplier y input",
+        "color": null
+      },
+      {
+        "id": "cable-5",
+        "from": {
+          "logicalSocketId": "MUL1.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "OUT_Y.in",
+          "physicalSocketId": null
+        },
+        "label": "product to Y output",
+        "color": null
+      }
+    ],
+    "outputRouting": {
+      "channels": {
+        "X": "P1.out",
+        "Y": "OUT_Y.out",
+        "Z": null,
+        "U": null
+      },
+      "aliases": {
+        "y": "OUT_Y.out",
+        "x": "P1.out",
+        "yInput": "P2.out",
+        "product": "MUL1.out"
+      }
+    },
+    "operationDefaults": {
+      "mode": "OP",
+      "duration": 0,
+      "dt": 0.01,
+      "sampleEvery": 1,
+      "opTime": 8,
+      "cycles": 3,
+      "clip": false
+    },
+    "notes": "",
+    "sourcePatchSchemaVersion": "analog-thing-patch/v1"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "analog-thing-design-template/v1",
+  "id": "first-steps-helper-abs",
+  "title": "First Steps Helper: Absolute Value",
+  "category": "First Steps helper",
+  "description": "Booklet Section 10.3 helper selecting the absolute value of adjustable input A.",
+  "sourceDesignId": "first-steps-helper-abs",
+  "defaultMode": "OP",
+  "runnable": true,
+  "tags": [
+    "first-steps",
+    "helper",
+    "absolute-value",
+    "comparator-helper"
+  ],
+  "walkthrough": [
+    {
+      "title": "Generate A",
+      "text": "P1 is mapped through the full-range helper to create input A.",
+      "socketFocus": [
+        "P1.out",
+        "SUM1.out",
+        "INV1.out"
+      ],
+      "controlFocus": [
+        "P1"
+      ]
+    },
+    {
+      "title": "Create -A and compare with zero",
+      "text": "INV2 forms -A. CMP1 compares A against ZERO.",
+      "socketFocus": [
+        "INV1.out",
+        "INV2.in",
+        "INV2.out",
+        "ZERO.out",
+        "CMP1.a",
+        "CMP1.b"
+      ]
+    },
+    {
+      "title": "Display absolute value",
+      "text": "The positive branch is A and the non-positive branch is -A, so OUT Y shows abs(A).",
+      "socketFocus": [
+        "CMP1.positive",
+        "CMP1.nonPositive",
+        "CMP1.out",
+        "OUT_Y.in"
+      ],
+      "controlFocus": [
+        "Y"
+      ]
+    }
+  ]
+}

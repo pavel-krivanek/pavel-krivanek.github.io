@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "analog-thing-patch/v1",
+  "inventory": "that-prototype-board/v006",
+  "name": "First Steps: Radioactive Decay",
+  "description": "Exact block-level translation of the First Steps radioactive decay patch: Ndot = -lambda N. The integrator output carries -N, the inverter exposes positive N on OUT X.",
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "I1",
+      "label": "Integrator / -N"
+    },
+    {
+      "id": "INV1",
+      "label": "Inverter / N"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.5,
+      "label": "P1 initial sample N0"
+    },
+    {
+      "id": "P2",
+      "coefficient": 0.5,
+      "label": "P2 decay coefficient lambda"
+    },
+    {
+      "id": "OUT_X",
+      "label": "X / decay curve N"
+    }
+  ],
+  "cables": [
+    {
+      "from": "PLUS1.out",
+      "to": "P1.in",
+      "label": "+1 into P1 so the coefficient knob sets N0"
+    },
+    {
+      "from": "P1.out",
+      "to": "I1.ic",
+      "label": "IC input sets I1.out to -N0 at the start of each run"
+    },
+    {
+      "from": "I1.out",
+      "to": "P2.in",
+      "label": "feedback of -N through lambda coefficient"
+    },
+    {
+      "from": "P2.out",
+      "to": "I1.in1",
+      "label": "lambda*(-N) into the inverting integrator gives decay"
+    },
+    {
+      "from": "I1.out",
+      "to": "INV1.in",
+      "label": "recover positive N for display"
+    },
+    {
+      "from": "INV1.out",
+      "to": "OUT_X.in",
+      "label": "decay curve to OUT X"
+    }
+  ],
+  "outputs": {
+    "x": "OUT_X.out",
+    "n": "OUT_X.out",
+    "minusN": "I1.out",
+    "lambdaInput": "P2.out"
+  },
+  "parameters": {
+    "firstStepsExampleId": "first-steps-radioactive-decay",
+    "page": 15,
+    "equation": "Ndot = -lambda*N",
+    "n0": 0.5,
+    "lambda": 0.5,
+    "expectedInitialN": 0.5,
+    "expectedNAtT4": 0.06766764161830635
+  }
+}

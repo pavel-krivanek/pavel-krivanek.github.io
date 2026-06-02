@@ -1,0 +1,158 @@
+{
+  "schemaVersion": "analog-thing-design/v1",
+  "kind": "custom-design",
+  "inventory": "that-prototype-board/v006",
+  "metadata": {
+    "name": "XIR summing-junction extension",
+    "description": "An XIR resistor network contributes an extra weighted term through a summer summing junction.",
+    "author": "",
+    "source": "static custom-design gallery",
+    "tags": [
+      "gallery-design",
+      "patch expansion",
+      "xir-summing-junction"
+    ],
+    "createdAt": "2026-05-26T00:00:00.000Z",
+    "modifiedAt": "2026-05-26T00:00:00.000Z",
+    "notes": ""
+  },
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.2,
+      "label": "ordinary summer term"
+    },
+    {
+      "id": "P2",
+      "coefficient": 0.03,
+      "label": "XIR x10 term source"
+    },
+    {
+      "id": "XIR1"
+    },
+    {
+      "id": "SUM1"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / summer plus XIR"
+    }
+  ],
+  "coefficients": {
+    "P1": 0.2,
+    "P2": 0.03,
+    "P3": 0.5,
+    "P4": 0.5,
+    "P5": 0.5,
+    "P6": 0.5,
+    "P7": 0.5,
+    "P8": 0.5
+  },
+  "cables": [
+    {
+      "id": "cable-1",
+      "from": {
+        "logicalSocketId": "PLUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P1.in",
+        "physicalSocketId": null
+      },
+      "label": "ordinary +0.20 input",
+      "color": null
+    },
+    {
+      "id": "cable-2",
+      "from": {
+        "logicalSocketId": "PLUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P2.in",
+        "physicalSocketId": null
+      },
+      "label": "source for x10 XIR input",
+      "color": null
+    },
+    {
+      "id": "cable-3",
+      "from": {
+        "logicalSocketId": "P1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in1",
+        "physicalSocketId": null
+      },
+      "label": "ordinary summer contribution",
+      "color": null
+    },
+    {
+      "id": "cable-4",
+      "from": {
+        "logicalSocketId": "P2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "XIR1.in10_1",
+        "physicalSocketId": null
+      },
+      "label": "0.03 through x10 input gives 0.30",
+      "color": null
+    },
+    {
+      "id": "cable-5",
+      "from": {
+        "logicalSocketId": "XIR1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.sj",
+        "physicalSocketId": null
+      },
+      "label": "XIR output into summing junction",
+      "color": null
+    },
+    {
+      "id": "cable-6",
+      "from": {
+        "logicalSocketId": "SUM1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "OUT_Y.in",
+        "physicalSocketId": null
+      },
+      "label": "negated total to Y output",
+      "color": null
+    }
+  ],
+  "outputRouting": {
+    "channels": {
+      "X": null,
+      "Y": "OUT_Y.out",
+      "Z": null,
+      "U": null
+    },
+    "aliases": {
+      "y": "OUT_Y.out",
+      "xirContribution": "XIR1.out",
+      "summer": "SUM1.out"
+    }
+  },
+  "operationDefaults": {
+    "mode": "OP",
+    "duration": 0,
+    "dt": 0.01,
+    "sampleEvery": 1,
+    "opTime": 8,
+    "cycles": 3,
+    "clip": false
+  },
+  "notes": "",
+  "sourcePatchSchemaVersion": "analog-thing-patch/v1"
+}

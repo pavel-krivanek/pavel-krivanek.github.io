@@ -1,0 +1,97 @@
+{
+  "schemaVersion": "analog-thing-design-template/v1",
+  "id": "first-steps-euler-spiral",
+  "title": "First Steps: Euler Spiral",
+  "category": "First Steps application",
+  "description": "Section 9.5 Euler spiral patch with normalized tau sweep, OP-TIME-aware phase centering, centered X/Y coordinate initial states, and X/Y scope output.",
+  "sourceDesignId": "first-steps-euler-spiral",
+  "defaultMode": "REPF",
+  "runnable": true,
+  "tags": [
+    "first-steps",
+    "euler-spiral",
+    "xy-display",
+    "design-template"
+  ],
+  "walkthrough": [
+    {
+      "title": "Generate the tau ramp",
+      "text": "P1 scales -1 and feeds I1. In v081 the preset uses a normalized tau variable that sweeps from -1 to +1 across the selected OP-TIME; the runtime derives the visible phase span from that OP-TIME.",
+      "socketFocus": [
+        "MINUS1.out",
+        "P1.in",
+        "P1.out",
+        "I1.in1",
+        "I1.out"
+      ],
+      "controlFocus": [
+        "P1"
+      ]
+    },
+    {
+      "title": "Build the quadrature oscillator",
+      "text": "I2 and I3 hold the cos-like and -sin-like states. MUL1 forms tau*sin and MUL2 forms tau*cos, closing the variable-frequency loop. Their rates and initial states are auto-centered for the selected OP-TIME.",
+      "socketFocus": [
+        "I3.out",
+        "INV1.in",
+        "INV1.out",
+        "I1.out",
+        "MUL1.x",
+        "MUL1.y",
+        "MUL1.out",
+        "I2.in1",
+        "I2.out",
+        "MUL2.x",
+        "MUL2.y",
+        "MUL2.out",
+        "I3.in1"
+      ],
+      "controlFocus": [
+        "P3",
+        "P4"
+      ]
+    },
+    {
+      "title": "Integrate the x coordinate",
+      "text": "P2 scales the cos-like signal. INV2 supplies the sign needed by the inverting I4 integrator, and I4.out is routed to OUT X. The serialized template gives I4 a centered initial state so the default sweep starts on the negative arm.",
+      "socketFocus": [
+        "I2.out",
+        "P2.in",
+        "P2.out",
+        "INV2.in",
+        "INV2.out",
+        "I4.in1",
+        "I4.out",
+        "OUT_X.in"
+      ],
+      "controlFocus": [
+        "P2",
+        "X"
+      ]
+    },
+    {
+      "title": "Integrate the y coordinate and use X/Y display",
+      "text": "P5 scales I3.out, which is the -sin-like signal. The inverting I5 integrator recovers the positive y motion and sends it to OUT Y for x/y mode. I5 also has a centered initial state so the trace crosses the origin mid-run and shows both arms.",
+      "socketFocus": [
+        "I3.out",
+        "P5.in",
+        "P5.out",
+        "I5.in1",
+        "I5.out",
+        "OUT_Y.in"
+      ],
+      "controlFocus": [
+        "P5",
+        "Y"
+      ]
+    }
+  ],
+  "recommendedRun": {
+    "mode": "REPF",
+    "opTime": 120,
+    "cycles": 1,
+    "dt": 0.005,
+    "sampleEvery": 20,
+    "scopePreset": "xy"
+  }
+}

@@ -1,0 +1,215 @@
+{
+  "schemaVersion": "analog-thing-patch/v1",
+  "inventory": "that-prototype-board/v006",
+  "name": "First Steps: Hunter/Prey Population Dynamics",
+  "description": "Booklet-style Lotka-Volterra active-block patch from First Steps Section 9.6. I1 carries hare population h, I2 carries lynx population l, MUL1 computes h*l, and OUT X/Y provide the roll-mode time traces; the same two outputs can still be switched to X/Y for phase-space exploration.",
+  "components": [
+    {
+      "id": "MINUS1"
+    },
+    {
+      "id": "I1",
+      "label": "Integrator / hare population h"
+    },
+    {
+      "id": "I2",
+      "label": "Integrator / lynx population l"
+    },
+    {
+      "id": "MUL1",
+      "label": "Multiplier / h*l interaction"
+    },
+    {
+      "id": "SUM1",
+      "label": "Summer / -h_dot input"
+    },
+    {
+      "id": "SUM2",
+      "label": "Summer / -l_dot input"
+    },
+    {
+      "id": "INV1",
+      "label": "Inverter / -beta*h*l"
+    },
+    {
+      "id": "INV2",
+      "label": "Inverter / -gamma*l"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.6,
+      "label": "P1 initial hare population h0"
+    },
+    {
+      "id": "P2",
+      "coefficient": 0.6,
+      "label": "P2 initial lynx population l0"
+    },
+    {
+      "id": "P3",
+      "coefficient": 0.365,
+      "label": "P3 hare growth alpha"
+    },
+    {
+      "id": "P4",
+      "coefficient": 0.95,
+      "label": "P4 predation beta"
+    },
+    {
+      "id": "P5",
+      "coefficient": 0.09,
+      "label": "P5 lynx death gamma"
+    },
+    {
+      "id": "P6",
+      "coefficient": 0.84,
+      "label": "P6 lynx growth delta"
+    },
+    {
+      "id": "OUT_X",
+      "label": "X / hare population h"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / lynx population l"
+    }
+  ],
+  "cables": [
+    {
+      "from": "MINUS1.out",
+      "to": "P1.in",
+      "label": "-1 through P1 gives -h0 for the inverting IC socket"
+    },
+    {
+      "from": "P1.out",
+      "to": "I1.ic",
+      "label": "initialize I1.out to positive hare population h0"
+    },
+    {
+      "from": "MINUS1.out",
+      "to": "P2.in",
+      "label": "-1 through P2 gives -l0 for the inverting IC socket"
+    },
+    {
+      "from": "P2.out",
+      "to": "I2.ic",
+      "label": "initialize I2.out to positive lynx population l0"
+    },
+    {
+      "from": "I1.out",
+      "to": "MUL1.x",
+      "label": "hare population into h*l interaction multiplier"
+    },
+    {
+      "from": "I2.out",
+      "to": "MUL1.y",
+      "label": "lynx population into h*l interaction multiplier"
+    },
+    {
+      "from": "I1.out",
+      "to": "P3.in",
+      "label": "scale hare population by alpha"
+    },
+    {
+      "from": "MUL1.out",
+      "to": "P4.in",
+      "label": "scale interaction by beta"
+    },
+    {
+      "from": "P4.out",
+      "to": "INV1.in",
+      "label": "invert beta*h*l for the hare equation"
+    },
+    {
+      "from": "P3.out",
+      "to": "SUM1.in1",
+      "label": "alpha*h term"
+    },
+    {
+      "from": "INV1.out",
+      "to": "SUM1.in2",
+      "label": "-beta*h*l term"
+    },
+    {
+      "from": "SUM1.out",
+      "to": "I1.in1",
+      "label": "summer output is -h_dot, so the inverting integrator advances h_dot"
+    },
+    {
+      "from": "MUL1.out",
+      "to": "P6.in",
+      "label": "scale interaction by delta"
+    },
+    {
+      "from": "I2.out",
+      "to": "P5.in",
+      "label": "scale lynx population by gamma"
+    },
+    {
+      "from": "P5.out",
+      "to": "INV2.in",
+      "label": "invert gamma*l for the lynx equation"
+    },
+    {
+      "from": "P6.out",
+      "to": "SUM2.in1",
+      "label": "delta*h*l term"
+    },
+    {
+      "from": "INV2.out",
+      "to": "SUM2.in2",
+      "label": "-gamma*l term"
+    },
+    {
+      "from": "SUM2.out",
+      "to": "I2.in1",
+      "label": "summer output is -l_dot, so the inverting integrator advances l_dot"
+    },
+    {
+      "from": "I1.out",
+      "to": "OUT_X.in",
+      "label": "hare population to OUT X"
+    },
+    {
+      "from": "I2.out",
+      "to": "OUT_Y.in",
+      "label": "lynx population to OUT Y"
+    }
+  ],
+  "outputs": {
+    "x": "OUT_X.out",
+    "y": "OUT_Y.out",
+    "hare": "OUT_X.out",
+    "lynx": "OUT_Y.out",
+    "interaction": "MUL1.out",
+    "hareGrowth": "P3.out",
+    "predation": "P4.out",
+    "lynxDeath": "P5.out",
+    "lynxGrowth": "P6.out"
+  },
+  "parameters": {
+    "firstStepsExampleId": "first-steps-hunter-prey",
+    "page": 20,
+    "equation": "h_dot = alpha*h - beta*h*l; l_dot = delta*h*l - gamma*l",
+    "scopePreset": "time",
+    "h0": 0.6,
+    "l0": 0.6,
+    "alpha": 0.365,
+    "beta": 0.95,
+    "gamma": 0.09,
+    "delta": 0.84,
+    "duration": 100,
+    "coefficients": {
+      "P1": 0.6,
+      "P2": 0.6,
+      "P3": 0.365,
+      "P4": 0.95,
+      "P5": 0.09,
+      "P6": 0.84
+    },
+    "expectedFinalAt100s": {
+      "h": 0.024789002723988287,
+      "l": 1.0048489823043394
+    }
+  }
+}

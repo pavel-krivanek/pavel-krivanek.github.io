@@ -1,0 +1,151 @@
+{
+  "schemaVersion": "analog-thing-patch/v1",
+  "inventory": "that-prototype-board/v006",
+  "name": "First Steps: Mass-Spring-Damper System",
+  "description": "Exact block-level translation of First Steps Section 9.2: yddot = (1/m) * (-(D*ydot + s*y)). I1 carries -ydot, I2 carries y, and OUT X shows displacement.",
+  "components": [
+    {
+      "id": "MINUS1"
+    },
+    {
+      "id": "ZERO"
+    },
+    {
+      "id": "I1",
+      "rate": 1000,
+      "label": "Integrator / -ydot"
+    },
+    {
+      "id": "I2",
+      "rate": 1000,
+      "label": "Integrator / y"
+    },
+    {
+      "id": "INV1",
+      "label": "Inverter / ydot"
+    },
+    {
+      "id": "SUM1",
+      "label": "Summer / -(D*ydot + s*y)"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.5,
+      "label": "P1 initial displacement y0"
+    },
+    {
+      "id": "P2",
+      "coefficient": 0.5,
+      "label": "P2 spring coefficient s"
+    },
+    {
+      "id": "P3",
+      "coefficient": 0.05,
+      "label": "P3 damping coefficient D"
+    },
+    {
+      "id": "P4",
+      "coefficient": 0.5,
+      "label": "P4 inverse mass 1/m"
+    },
+    {
+      "id": "OUT_X",
+      "label": "X / displacement y"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / velocity ydot"
+    }
+  ],
+  "cables": [
+    {
+      "from": "ZERO.out",
+      "to": "I1.ic",
+      "label": "zero initial velocity: I1.out starts at -ydot = 0"
+    },
+    {
+      "from": "MINUS1.out",
+      "to": "P1.in",
+      "label": "-1 into P1 gives -y0 for the inverting IC socket"
+    },
+    {
+      "from": "P1.out",
+      "to": "I2.ic",
+      "label": "initialize I2.out to positive displacement y0"
+    },
+    {
+      "from": "P4.out",
+      "to": "I1.in1",
+      "label": "acceleration yddot enters the first inverting integrator"
+    },
+    {
+      "from": "I1.out",
+      "to": "I2.in1",
+      "label": "-ydot into the second inverting integrator yields displacement y"
+    },
+    {
+      "from": "I1.out",
+      "to": "INV1.in",
+      "label": "invert -ydot to recover positive velocity ydot"
+    },
+    {
+      "from": "I2.out",
+      "to": "P2.in",
+      "label": "scale displacement by spring coefficient s"
+    },
+    {
+      "from": "INV1.out",
+      "to": "P3.in",
+      "label": "scale velocity by damping coefficient D"
+    },
+    {
+      "from": "P2.out",
+      "to": "SUM1.in1",
+      "label": "spring force term s*y"
+    },
+    {
+      "from": "P3.out",
+      "to": "SUM1.in2",
+      "label": "damper force term D*ydot"
+    },
+    {
+      "from": "SUM1.out",
+      "to": "P4.in",
+      "label": "negated force sum scaled by inverse mass"
+    },
+    {
+      "from": "I2.out",
+      "to": "OUT_X.in",
+      "label": "displacement output to OUT X"
+    },
+    {
+      "from": "INV1.out",
+      "to": "OUT_Y.in",
+      "label": "velocity output to OUT Y for diagnostics"
+    }
+  ],
+  "outputs": {
+    "x": "OUT_X.out",
+    "y": "OUT_X.out",
+    "displacement": "OUT_X.out",
+    "velocity": "OUT_Y.out",
+    "minusVelocity": "I1.out",
+    "forceSum": "SUM1.out",
+    "acceleration": "P4.out"
+  },
+  "parameters": {
+    "firstStepsExampleId": "first-steps-mass-spring-damper",
+    "page": 16,
+    "equation": "yddot = inverseMass * (-(damping*ydot + spring*y))",
+    "y0": 0.5,
+    "v0": 0,
+    "spring": 0.5,
+    "damping": 0.05,
+    "inverseMass": 0.5,
+    "integratorRate": 1000,
+    "opTimeSeconds": 0.08,
+    "normalizedTimeAtOpTime": 80,
+    "expectedInitialDisplacement": 0.5,
+    "expectedDisplacementAt80ms": -0.11748783735605553
+  }
+}

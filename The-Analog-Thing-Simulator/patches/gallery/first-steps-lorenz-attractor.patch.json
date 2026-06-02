@@ -1,0 +1,299 @@
+{
+  "schemaVersion": "analog-thing-patch/v1",
+  "inventory": "that-prototype-board/v006",
+  "name": "First Steps: Lorenz Attractor",
+  "description": "Booklet-style active-block translation of First Steps Section 9.7. I1/I2/I3 carry -x, -y, and -z; MUL1 computes x*y; SUM1 forms s = -(1 - 2.68z); MUL2 computes r = -x*s; OUT X/Y/Z provide projection-ready channels.",
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "ZERO"
+    },
+    {
+      "id": "I1",
+      "label": "Integrator / -x"
+    },
+    {
+      "id": "I2",
+      "label": "Integrator / -y"
+    },
+    {
+      "id": "I3",
+      "label": "Integrator / -z"
+    },
+    {
+      "id": "INV1",
+      "label": "Inverter / x display"
+    },
+    {
+      "id": "INV2",
+      "label": "Inverter / y display and x-equation drive"
+    },
+    {
+      "id": "INV3",
+      "label": "Inverter / z display"
+    },
+    {
+      "id": "MUL1",
+      "label": "Multiplier / x*y"
+    },
+    {
+      "id": "SUM1",
+      "label": "Summer / s = -(1 - 2.68z)"
+    },
+    {
+      "id": "MUL2",
+      "label": "Multiplier / r = -x*s"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.18,
+      "label": "P1 y-to-x coefficient 0.18, used through x10 as 1.8"
+    },
+    {
+      "id": "P2",
+      "coefficient": 0.15,
+      "label": "P2 xy coefficient 0.15, used through x10 as 1.5"
+    },
+    {
+      "id": "P3",
+      "coefficient": 0.2667,
+      "label": "P3 z damping coefficient 0.2667"
+    },
+    {
+      "id": "P4",
+      "coefficient": 0.268,
+      "label": "P4 z shape coefficient 0.268, used through x10 as 2.68"
+    },
+    {
+      "id": "P5",
+      "coefficient": 0.1536,
+      "label": "P5 r coefficient 0.1536, used through x10 as 1.536"
+    },
+    {
+      "id": "P6",
+      "coefficient": 0.1,
+      "label": "P6 y damping coefficient 0.1"
+    },
+    {
+      "id": "P7",
+      "coefficient": 0.18,
+      "label": "P7 simulator IC helper for initial x"
+    },
+    {
+      "id": "OUT_X",
+      "label": "X / Lorenz x"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / Lorenz y"
+    },
+    {
+      "id": "OUT_Z",
+      "label": "Z / Lorenz z"
+    }
+  ],
+  "cables": [
+    {
+      "from": "PLUS1.out",
+      "to": "P7.in",
+      "label": "P7 sets the nonzero x initial condition used to start the attractor"
+    },
+    {
+      "from": "P7.out",
+      "to": "I1.ic",
+      "label": "initialize I1.out to -x0 through the inverting IC convention"
+    },
+    {
+      "from": "ZERO.out",
+      "to": "I2.ic",
+      "label": "initialize y to zero"
+    },
+    {
+      "from": "ZERO.out",
+      "to": "I3.ic",
+      "label": "initialize z to zero"
+    },
+    {
+      "from": "I1.out",
+      "to": "INV1.in",
+      "label": "recover x from I1.out = -x"
+    },
+    {
+      "from": "I2.out",
+      "to": "INV2.in",
+      "label": "recover y from I2.out = -y"
+    },
+    {
+      "from": "I3.out",
+      "to": "INV3.in",
+      "label": "recover z from I3.out = -z"
+    },
+    {
+      "from": "I1.out",
+      "to": "I1.in1",
+      "label": "-x state supplies the +x term inside d(-x)/dt"
+    },
+    {
+      "from": "INV2.out",
+      "to": "P1.in",
+      "label": "scale y by 0.18 before x10 weighting"
+    },
+    {
+      "from": "P1.out",
+      "to": "I1.in10",
+      "label": "x10 input implements 1.8*y in the -x equation"
+    },
+    {
+      "from": "I1.out",
+      "to": "MUL1.x",
+      "label": "-x into xy multiplier"
+    },
+    {
+      "from": "I2.out",
+      "to": "MUL1.y",
+      "label": "-y into xy multiplier, product is x*y"
+    },
+    {
+      "from": "MUL1.out",
+      "to": "P2.in",
+      "label": "scale x*y by 0.15 before x10 weighting"
+    },
+    {
+      "from": "P2.out",
+      "to": "I3.in10",
+      "label": "x10 input implements 1.5*x*y in the -z equation"
+    },
+    {
+      "from": "I3.out",
+      "to": "P3.in",
+      "label": "scale -z by beta=0.2667 for the -z equation"
+    },
+    {
+      "from": "P3.out",
+      "to": "I3.in1",
+      "label": "adds -0.2667*z so I3 derivative becomes -1.5xy + 0.2667z"
+    },
+    {
+      "from": "I3.out",
+      "to": "P4.in",
+      "label": "scale -z by 0.268 for the s expression"
+    },
+    {
+      "from": "PLUS1.out",
+      "to": "SUM1.in1",
+      "label": "+1 term for s = -(1 - 2.68z)"
+    },
+    {
+      "from": "P4.out",
+      "to": "SUM1.in10_1",
+      "label": "x10 contribution gives -2.68z before the negating summer"
+    },
+    {
+      "from": "I1.out",
+      "to": "MUL2.x",
+      "label": "-x into r multiplier"
+    },
+    {
+      "from": "SUM1.out",
+      "to": "MUL2.y",
+      "label": "s into r multiplier so output is r = -x*s"
+    },
+    {
+      "from": "MUL2.out",
+      "to": "P5.in",
+      "label": "scale r by 0.1536 before x10 weighting"
+    },
+    {
+      "from": "P5.out",
+      "to": "I2.in10",
+      "label": "x10 input implements 1.536*r in the -y equation"
+    },
+    {
+      "from": "I2.out",
+      "to": "P6.in",
+      "label": "scale -y by 0.1 for the -y equation"
+    },
+    {
+      "from": "P6.out",
+      "to": "I2.in1",
+      "label": "adds -0.1*y before the inverting integrator"
+    },
+    {
+      "from": "INV1.out",
+      "to": "OUT_X.in",
+      "label": "Lorenz x to OUT X"
+    },
+    {
+      "from": "INV2.out",
+      "to": "OUT_Y.in",
+      "label": "Lorenz y to OUT Y"
+    },
+    {
+      "from": "INV3.out",
+      "to": "OUT_Z.in",
+      "label": "Lorenz z to OUT Z"
+    }
+  ],
+  "outputs": {
+    "x": "OUT_X.out",
+    "y": "OUT_Y.out",
+    "z": "OUT_Z.out",
+    "minusX": "I1.out",
+    "minusY": "I2.out",
+    "minusZ": "I3.out",
+    "xy": "MUL1.out",
+    "s": "SUM1.out",
+    "r": "MUL2.out"
+  },
+  "parameters": {
+    "firstStepsExampleId": "first-steps-lorenz-attractor",
+    "page": 21,
+    "equation": "-x = - integral(1.8*y - x) dt + C; -z = - integral(1.5*x*y - 0.2667*z) dt; -y = - integral(1.536*r - 0.1*y) dt",
+    "scopePreset": "xy",
+    "projectionPresets": {
+      "xy": [
+        "OUT_X.out",
+        "OUT_Y.out"
+      ],
+      "zx": [
+        "OUT_Z.out",
+        "OUT_X.out"
+      ],
+      "zy": [
+        "OUT_Z.out",
+        "OUT_Y.out"
+      ]
+    },
+    "x0": 0.18,
+    "y0": 0,
+    "z0": 0,
+    "yToXCoefficient": 0.18,
+    "xyCoefficient": 0.15,
+    "zDamping": 0.2667,
+    "zShapeCoefficient": 0.268,
+    "rCoefficient": 0.1536,
+    "yDamping": 0.1,
+    "duration": 300,
+    "coefficients": {
+      "P1": 0.18,
+      "P2": 0.15,
+      "P3": 0.2667,
+      "P4": 0.268,
+      "P5": 0.1536,
+      "P6": 0.1,
+      "P7": 0.18
+    },
+    "expectedFinalAt300s": {
+      "x": 0.03255283450148567,
+      "y": 0.01707881659258236,
+      "z": 0.2277742077373439,
+      "maxAbs": {
+        "x": 0.7909444715518229,
+        "y": 0.6109010769380436,
+        "z": 0.643516597793521
+      }
+    }
+  }
+}

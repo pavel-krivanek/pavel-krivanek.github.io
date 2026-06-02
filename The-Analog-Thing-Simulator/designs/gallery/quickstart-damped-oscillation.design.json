@@ -1,0 +1,240 @@
+{
+  "schemaVersion": "analog-thing-design/v1",
+  "kind": "custom-design",
+  "inventory": "that-prototype-board/v006",
+  "metadata": {
+    "name": "Quickstart damped oscillation",
+    "description": "The main prototype target, using two integrators, one inverter, three coefficients, and a negating summer.",
+    "author": "",
+    "source": "static custom-design gallery",
+    "tags": [
+      "gallery-design",
+      "dynamic system",
+      "quickstart-damped-oscillation"
+    ],
+    "createdAt": "2026-05-26T00:00:00.000Z",
+    "modifiedAt": "2026-05-26T00:00:00.000Z",
+    "notes": ""
+  },
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "I1"
+    },
+    {
+      "id": "I2"
+    },
+    {
+      "id": "INV1"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.5,
+      "label": "P1 spring coefficient k"
+    },
+    {
+      "id": "P2",
+      "coefficient": 0.5,
+      "label": "P2 damping coefficient d"
+    },
+    {
+      "id": "SUM1"
+    },
+    {
+      "id": "P3",
+      "coefficient": 0.5,
+      "label": "P3 inverse mass 1/m"
+    },
+    {
+      "id": "OUT_X",
+      "label": "X / velocity"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / position"
+    }
+  ],
+  "coefficients": {
+    "P1": 0.5,
+    "P2": 0.5,
+    "P3": 0.5,
+    "P4": 0.5,
+    "P5": 0.5,
+    "P6": 0.5,
+    "P7": 0.5,
+    "P8": 0.5
+  },
+  "cables": [
+    {
+      "id": "cable-1",
+      "from": {
+        "logicalSocketId": "PLUS1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I1.ic",
+        "physicalSocketId": null
+      },
+      "label": "initial velocity +1 becomes I1.out = -1",
+      "color": null
+    },
+    {
+      "id": "cable-3",
+      "from": {
+        "logicalSocketId": "P3.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I1.in1",
+        "physicalSocketId": null
+      },
+      "label": "acceleration input to first integrator",
+      "color": null
+    },
+    {
+      "id": "cable-4",
+      "from": {
+        "logicalSocketId": "I1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "I2.in1",
+        "physicalSocketId": null
+      },
+      "label": "integrate minus velocity into position",
+      "color": null
+    },
+    {
+      "id": "cable-5",
+      "from": {
+        "logicalSocketId": "I1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "INV1.in",
+        "physicalSocketId": null
+      },
+      "label": "recover positive velocity",
+      "color": null
+    },
+    {
+      "id": "cable-6",
+      "from": {
+        "logicalSocketId": "I2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P1.in",
+        "physicalSocketId": null
+      },
+      "label": "spring term k*x",
+      "color": null
+    },
+    {
+      "id": "cable-7",
+      "from": {
+        "logicalSocketId": "INV1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P2.in",
+        "physicalSocketId": null
+      },
+      "label": "damping term d*x_dot",
+      "color": null
+    },
+    {
+      "id": "cable-8",
+      "from": {
+        "logicalSocketId": "P1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in1",
+        "physicalSocketId": null
+      },
+      "label": "summer input for spring force",
+      "color": null
+    },
+    {
+      "id": "cable-9",
+      "from": {
+        "logicalSocketId": "P2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "SUM1.in2",
+        "physicalSocketId": null
+      },
+      "label": "summer input for damping force",
+      "color": null
+    },
+    {
+      "id": "cable-10",
+      "from": {
+        "logicalSocketId": "SUM1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "P3.in",
+        "physicalSocketId": null
+      },
+      "label": "apply inverse mass to force sum",
+      "color": null
+    },
+    {
+      "id": "cable-11",
+      "from": {
+        "logicalSocketId": "INV1.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "OUT_X.in",
+        "physicalSocketId": null
+      },
+      "label": "velocity display",
+      "color": null
+    },
+    {
+      "id": "cable-12",
+      "from": {
+        "logicalSocketId": "I2.out",
+        "physicalSocketId": null
+      },
+      "to": {
+        "logicalSocketId": "OUT_Y.in",
+        "physicalSocketId": null
+      },
+      "label": "position display",
+      "color": null
+    }
+  ],
+  "outputRouting": {
+    "channels": {
+      "X": "OUT_X.out",
+      "Y": "OUT_Y.out",
+      "Z": null,
+      "U": null
+    },
+    "aliases": {
+      "x": "OUT_X.out",
+      "velocity": "OUT_X.out",
+      "position": "OUT_Y.out",
+      "minusVelocity": "I1.out",
+      "accelerationInput": "P3.out"
+    }
+  },
+  "operationDefaults": {
+    "mode": "REPF",
+    "duration": 40,
+    "dt": 0.01,
+    "sampleEvery": 50,
+    "opTime": 8,
+    "cycles": 3,
+    "clip": false
+  },
+  "notes": "",
+  "sourcePatchSchemaVersion": "analog-thing-patch/v1"
+}

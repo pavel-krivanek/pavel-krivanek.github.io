@@ -1,0 +1,373 @@
+{
+  "schemaVersion": "analog-thing-design-template/v1",
+  "id": "first-steps-mass-spring-damper",
+  "title": "First Steps: Mass-Spring-Damper System",
+  "category": "First Steps application",
+  "description": "Section 9.2 underdamped suspension patch with two integrators, one inverter, one summer, and four coefficient potentiometers.",
+  "sourceDesignId": "first-steps-mass-spring-damper",
+  "defaultMode": "REPF",
+  "runnable": true,
+  "tags": [
+    "first-steps",
+    "mass-spring-damper",
+    "design-template"
+  ],
+  "walkthrough": [
+    {
+      "title": "Initialize displacement and velocity",
+      "text": "P1 is fed from -1 so its output initializes I2.out to positive y0 through the inverting IC socket. ZERO initializes I1.out to zero velocity.",
+      "socketFocus": [
+        "MINUS1.out",
+        "P1.in",
+        "P1.out",
+        "I2.ic",
+        "ZERO.out",
+        "I1.ic"
+      ],
+      "controlFocus": [
+        "P1"
+      ]
+    },
+    {
+      "title": "Cascade the two integrators",
+      "text": "P4.out feeds I1 as acceleration. I1.out carries -ydot, which feeds I2 so I2.out becomes displacement y.",
+      "socketFocus": [
+        "P4.out",
+        "I1.in1",
+        "I1.out",
+        "I2.in1",
+        "I2.out"
+      ],
+      "controlFocus": []
+    },
+    {
+      "title": "Build the spring and damper force sum",
+      "text": "I2.out is scaled by P2 as s*y. INV1 recovers ydot from -ydot, P3 scales it as D*ydot, and SUM1 forms -(D*ydot + s*y).",
+      "socketFocus": [
+        "I2.out",
+        "P2.in",
+        "P2.out",
+        "I1.out",
+        "INV1.in",
+        "INV1.out",
+        "P3.in",
+        "P3.out",
+        "SUM1.in1",
+        "SUM1.in2"
+      ],
+      "controlFocus": [
+        "P2",
+        "P3"
+      ]
+    },
+    {
+      "title": "Scale by inverse mass and display displacement",
+      "text": "P4 applies 1/m to the negated force sum. I2.out is routed to OUT X as the underdamped suspension displacement, with velocity also available on OUT Y for diagnostics.",
+      "socketFocus": [
+        "SUM1.out",
+        "P4.in",
+        "P4.out",
+        "I2.out",
+        "OUT_X.in",
+        "INV1.out",
+        "OUT_Y.in"
+      ],
+      "controlFocus": [
+        "P4",
+        "X",
+        "Y"
+      ]
+    }
+  ],
+  "runOptions": {
+    "mode": "REPF",
+    "opTime": 0.08,
+    "cycles": 3,
+    "dt": 0.0001,
+    "sampleEvery": 25
+  },
+  "design": {
+    "schemaVersion": "analog-thing-design/v1",
+    "kind": "custom-design",
+    "inventory": "that-prototype-board/v006",
+    "metadata": {
+      "name": "First Steps: Mass-Spring-Damper System",
+      "description": "Booklet Section 9.2 underdamped suspension patch. P1 sets y0, P2 sets spring coefficient s, P3 sets damping coefficient D, P4 sets inverse mass 1/m, and OUT X shows displacement.",
+      "author": "",
+      "source": "THAT First Steps v2 Section 9.2 block-level template",
+      "tags": [
+        "first-steps",
+        "application",
+        "mass-spring-damper",
+        "dynamic-system",
+        "underdamped"
+      ],
+      "createdAt": "2026-05-28T00:00:00.000Z",
+      "modifiedAt": "2026-05-28T00:00:00.000Z",
+      "notes": ""
+    },
+    "components": [
+      {
+        "id": "MINUS1"
+      },
+      {
+        "id": "ZERO"
+      },
+      {
+        "id": "I1",
+        "rate": 1000,
+        "label": "Integrator / -ydot"
+      },
+      {
+        "id": "I2",
+        "rate": 1000,
+        "label": "Integrator / y"
+      },
+      {
+        "id": "INV1",
+        "label": "Inverter / ydot"
+      },
+      {
+        "id": "SUM1",
+        "label": "Summer / -(D*ydot + s*y)"
+      },
+      {
+        "id": "P1",
+        "coefficient": 0.5,
+        "label": "P1 initial displacement y0"
+      },
+      {
+        "id": "P2",
+        "coefficient": 0.5,
+        "label": "P2 spring coefficient s"
+      },
+      {
+        "id": "P3",
+        "coefficient": 0.05,
+        "label": "P3 damping coefficient D"
+      },
+      {
+        "id": "P4",
+        "coefficient": 0.5,
+        "label": "P4 inverse mass 1/m"
+      },
+      {
+        "id": "OUT_X",
+        "label": "X / displacement y"
+      },
+      {
+        "id": "OUT_Y",
+        "label": "Y / velocity ydot"
+      }
+    ],
+    "coefficients": {
+      "P1": 0.5,
+      "P2": 0.5,
+      "P3": 0.05,
+      "P4": 0.5,
+      "P5": 0.5,
+      "P6": 0.5,
+      "P7": 0.5,
+      "P8": 0.5
+    },
+    "cables": [
+      {
+        "id": "cable-1",
+        "from": {
+          "logicalSocketId": "ZERO.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "I1.ic",
+          "physicalSocketId": null
+        },
+        "label": "zero initial velocity: I1.out starts at -ydot = 0",
+        "color": null
+      },
+      {
+        "id": "cable-2",
+        "from": {
+          "logicalSocketId": "MINUS1.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "P1.in",
+          "physicalSocketId": null
+        },
+        "label": "-1 into P1 gives -y0 for the inverting IC socket",
+        "color": null
+      },
+      {
+        "id": "cable-3",
+        "from": {
+          "logicalSocketId": "P1.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "I2.ic",
+          "physicalSocketId": null
+        },
+        "label": "initialize I2.out to positive displacement y0",
+        "color": null
+      },
+      {
+        "id": "cable-4",
+        "from": {
+          "logicalSocketId": "P4.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "I1.in1",
+          "physicalSocketId": null
+        },
+        "label": "acceleration yddot enters the first inverting integrator",
+        "color": null
+      },
+      {
+        "id": "cable-5",
+        "from": {
+          "logicalSocketId": "I1.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "I2.in1",
+          "physicalSocketId": null
+        },
+        "label": "-ydot into the second inverting integrator yields displacement y",
+        "color": null
+      },
+      {
+        "id": "cable-6",
+        "from": {
+          "logicalSocketId": "I1.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "INV1.in",
+          "physicalSocketId": null
+        },
+        "label": "invert -ydot to recover positive velocity ydot",
+        "color": null
+      },
+      {
+        "id": "cable-7",
+        "from": {
+          "logicalSocketId": "I2.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "P2.in",
+          "physicalSocketId": null
+        },
+        "label": "scale displacement by spring coefficient s",
+        "color": null
+      },
+      {
+        "id": "cable-8",
+        "from": {
+          "logicalSocketId": "INV1.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "P3.in",
+          "physicalSocketId": null
+        },
+        "label": "scale velocity by damping coefficient D",
+        "color": null
+      },
+      {
+        "id": "cable-9",
+        "from": {
+          "logicalSocketId": "P2.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "SUM1.in1",
+          "physicalSocketId": null
+        },
+        "label": "spring force term s*y",
+        "color": null
+      },
+      {
+        "id": "cable-10",
+        "from": {
+          "logicalSocketId": "P3.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "SUM1.in2",
+          "physicalSocketId": null
+        },
+        "label": "damper force term D*ydot",
+        "color": null
+      },
+      {
+        "id": "cable-11",
+        "from": {
+          "logicalSocketId": "SUM1.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "P4.in",
+          "physicalSocketId": null
+        },
+        "label": "negated force sum scaled by inverse mass",
+        "color": null
+      },
+      {
+        "id": "cable-12",
+        "from": {
+          "logicalSocketId": "I2.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "OUT_X.in",
+          "physicalSocketId": null
+        },
+        "label": "displacement output to OUT X",
+        "color": null
+      },
+      {
+        "id": "cable-13",
+        "from": {
+          "logicalSocketId": "INV1.out",
+          "physicalSocketId": null
+        },
+        "to": {
+          "logicalSocketId": "OUT_Y.in",
+          "physicalSocketId": null
+        },
+        "label": "velocity output to OUT Y for diagnostics",
+        "color": null
+      }
+    ],
+    "outputRouting": {
+      "channels": {
+        "X": "OUT_X.out",
+        "Y": "OUT_Y.out",
+        "Z": null,
+        "U": null
+      },
+      "aliases": {
+        "x": "OUT_X.out",
+        "y": "OUT_X.out",
+        "displacement": "OUT_X.out",
+        "velocity": "OUT_Y.out",
+        "minusVelocity": "I1.out",
+        "forceSum": "SUM1.out",
+        "acceleration": "P4.out"
+      }
+    },
+    "operationDefaults": {
+      "mode": "REPF",
+      "duration": 40,
+      "opTime": 0.08,
+      "cycles": 3,
+      "dt": 0.0001,
+      "sampleEvery": 25,
+      "clip": false
+    },
+    "notes": "",
+    "sourcePatchSchemaVersion": "analog-thing-patch/v1"
+  }
+}

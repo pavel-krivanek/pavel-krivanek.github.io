@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "analog-thing-patch/v1",
+  "inventory": "that-prototype-board/v006",
+  "name": "Multiplier product demo",
+  "description": "Uses two coefficient potentiometers and one multiplier to produce a normalized four-quadrant product.",
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "MINUS1"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.6,
+      "label": "x coefficient"
+    },
+    {
+      "id": "P2",
+      "coefficient": 0.4,
+      "label": "y coefficient"
+    },
+    {
+      "id": "MUL1"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / product"
+    }
+  ],
+  "cables": [
+    {
+      "from": "PLUS1.out",
+      "to": "P1.in",
+      "label": "x = +0.6"
+    },
+    {
+      "from": "MINUS1.out",
+      "to": "P2.in",
+      "label": "y = -0.4"
+    },
+    {
+      "from": "P1.out",
+      "to": "MUL1.x",
+      "label": "multiplier x input"
+    },
+    {
+      "from": "P2.out",
+      "to": "MUL1.y",
+      "label": "multiplier y input"
+    },
+    {
+      "from": "MUL1.out",
+      "to": "OUT_Y.in",
+      "label": "product to Y output"
+    }
+  ],
+  "outputs": {
+    "y": "OUT_Y.out",
+    "x": "P1.out",
+    "yInput": "P2.out",
+    "product": "MUL1.out"
+  },
+  "parameters": {
+    "expectedY": -0.24
+  }
+}

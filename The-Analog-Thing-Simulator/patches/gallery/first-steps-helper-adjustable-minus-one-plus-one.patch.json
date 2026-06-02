@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "analog-thing-patch/v1",
+  "inventory": "that-prototype-board/v006",
+  "name": "First Steps Helper: Adjustable Value -1 to +1",
+  "description": "Section 10.4 helper. P1 is mapped from 0..1 to a full machine-unit output by summing 2*P1 - 1 and displaying the result on OUT Y.",
+  "components": [
+    {
+      "id": "PLUS1"
+    },
+    {
+      "id": "MINUS1"
+    },
+    {
+      "id": "P1",
+      "coefficient": 0.5,
+      "label": "P1 adjustable knob k"
+    },
+    {
+      "id": "SUM1",
+      "label": "Summer / -(2*k - 1)"
+    },
+    {
+      "id": "INV1",
+      "label": "Inverter / 2*k - 1"
+    },
+    {
+      "id": "OUT_Y",
+      "label": "Y / adjustable -1..+1 value"
+    }
+  ],
+  "cables": [
+    {
+      "from": "PLUS1.out",
+      "to": "P1.in",
+      "label": "+1 into P1 gives knob value k in 0..1"
+    },
+    {
+      "from": "P1.out",
+      "to": "SUM1.in1",
+      "label": "first k contribution"
+    },
+    {
+      "from": "P1.out",
+      "to": "SUM1.in2",
+      "label": "second k contribution, giving 2*k"
+    },
+    {
+      "from": "MINUS1.out",
+      "to": "SUM1.in3",
+      "label": "-1 offset contribution"
+    },
+    {
+      "from": "SUM1.out",
+      "to": "INV1.in",
+      "label": "recover non-inverted 2*k - 1"
+    },
+    {
+      "from": "INV1.out",
+      "to": "OUT_Y.in",
+      "label": "full machine-unit adjustable value to OUT Y"
+    }
+  ],
+  "outputs": {
+    "y": "OUT_Y.out",
+    "adjustable": "OUT_Y.out",
+    "rawSummer": "SUM1.out",
+    "knob": "P1.out"
+  },
+  "parameters": {
+    "firstStepsExampleId": "first-steps-helper-adjustable-minus-one-plus-one",
+    "page": 24,
+    "equation": "out = 2*k - 1, with k in [0,1]",
+    "coefficient": 0.5,
+    "expectedValue": 0
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "analog-thing-design-template/v1",
+  "id": "first-steps-helper-non-negative-only",
+  "title": "First Steps Helper: Non-Negative Values Only",
+  "category": "First Steps helper",
+  "description": "Booklet Section 10.5 helper passing A when positive and zero otherwise.",
+  "sourceDesignId": "first-steps-helper-non-negative-only",
+  "defaultMode": "OP",
+  "runnable": true,
+  "tags": [
+    "first-steps",
+    "helper",
+    "non-negative-only",
+    "comparator-helper"
+  ],
+  "walkthrough": [
+    {
+      "title": "Generate A",
+      "text": "P1 is mapped through the full-range helper to create input A.",
+      "socketFocus": [
+        "P1.out",
+        "SUM1.out",
+        "INV1.out"
+      ],
+      "controlFocus": [
+        "P1"
+      ]
+    },
+    {
+      "title": "Compare with zero",
+      "text": "CMP1 compares A against ZERO.",
+      "socketFocus": [
+        "INV1.out",
+        "ZERO.out",
+        "CMP1.a",
+        "CMP1.b"
+      ]
+    },
+    {
+      "title": "Clamp negative values",
+      "text": "The positive branch is A and the non-positive branch is ZERO, so OUT Y shows max(A,0).",
+      "socketFocus": [
+        "CMP1.positive",
+        "CMP1.nonPositive",
+        "CMP1.out",
+        "OUT_Y.in"
+      ],
+      "controlFocus": [
+        "Y"
+      ]
+    }
+  ]
+}

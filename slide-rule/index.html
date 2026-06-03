@@ -1,0 +1,1010 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Single-page Slide Rule Simulator</title>
+<style>
+  :root {
+    --bg: #f6f2e8;
+    --panel: rgba(255,255,255,.92);
+    --ink: #1e1b18;
+    --muted: #635d55;
+    --line: #cdbf9e;
+    --row: #fffaf0;
+    --slide: #f2e5c4;
+    --accent: #8a2f1b;
+    --cursor: rgba(72, 132, 220, .18);
+    --cursorStroke: rgba(37, 82, 155, .42);
+    --shadow: 0 8px 24px rgba(0,0,0,.14);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    overflow: hidden;
+  }
+  #app {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+  header {
+    display: flex;
+    gap: .45rem;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: .45rem .55rem;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    box-shadow: 0 1px 8px rgba(0,0,0,.08);
+    z-index: 5;
+  }
+  .title { font-weight: 700; margin-right: .4rem; white-space: nowrap; }
+  button, input {
+    font: inherit;
+    color: inherit;
+    border: 1px solid var(--line);
+    background: white;
+    border-radius: .55rem;
+    padding: .42rem .55rem;
+    min-height: 2.1rem;
+  }
+  button { cursor: pointer; user-select: none; }
+  button:active { transform: translateY(1px); }
+  input[type="number"] { width: 5.6rem; padding-inline: .45rem; }
+  input[type="range"] { width: min(36vw, 16rem); min-height: unset; padding: 0; }
+  .group { display: inline-flex; align-items: center; gap: .35rem; white-space: nowrap; }
+  .tiny { font-size: .82rem; color: var(--muted); }
+  #viewport {
+    position: relative;
+    overflow: auto;
+    overscroll-behavior: none;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(255,255,255,.7), transparent 34rem),
+      linear-gradient(#f8f0dd, #efe2c6);
+    touch-action: none;
+  }
+  #ruleSvg { display: block; user-select: none; -webkit-user-select: none; cursor: grab; }
+  #ruleSvg.dragging { cursor: grabbing; }
+  #scalePanel {
+    position: fixed;
+    z-index: 20;
+    inset: auto .65rem 4.1rem .65rem;
+    max-width: 46rem;
+    margin-inline: auto;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: .8rem;
+    box-shadow: var(--shadow);
+    padding: .7rem;
+    display: none;
+  }
+  #scalePanel.open { display: block; }
+  #scalePanel h2 { margin: 0 0 .5rem; font-size: 1rem; }
+  #scaleChoices {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9.2rem, 1fr));
+    gap: .45rem;
+  }
+  #scaleChoices label {
+    display: flex;
+    gap: .45rem;
+    align-items: center;
+    padding: .45rem;
+    border: 1px solid var(--line);
+    border-radius: .6rem;
+    background: white;
+  }
+  #scaleChoices input { min-height: unset; }
+  footer {
+    padding: .45rem .6rem calc(.45rem + env(safe-area-inset-bottom));
+    background: var(--panel);
+    border-top: 1px solid var(--line);
+    font-size: .92rem;
+    line-height: 1.3;
+    z-index: 5;
+  }
+  #readout { display: flex; gap: .5rem 1rem; align-items: center; flex-wrap: wrap; }
+  .pill {
+    display: inline-flex;
+    gap: .25rem;
+    align-items: baseline;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: .18rem .55rem;
+    background: white;
+    white-space: nowrap;
+  }
+  .pill strong { font-variant-numeric: tabular-nums; }
+  .hint { color: var(--muted); }
+
+  .mobile-only { display: none; }
+  #detailsPanel {
+    position: fixed;
+    z-index: 24;
+    inset: auto .65rem calc(.65rem + env(safe-area-inset-bottom)) .65rem;
+    max-height: min(82dvh, 42rem);
+    overflow: auto;
+    overscroll-behavior: contain;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: .85rem;
+    box-shadow: var(--shadow);
+    padding: .72rem;
+    display: none;
+  }
+  #detailsPanel.open { display: block; }
+  .detailsHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    margin-bottom: .55rem;
+  }
+  .detailsHeader h2 { margin: 0; font-size: 1rem; }
+  .detailsControls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    gap: .45rem;
+    margin: .55rem 0;
+  }
+  .detailsControl {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    min-width: 0;
+  }
+  .detailsControl label {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+    width: 100%;
+    color: var(--muted);
+    font-size: .82rem;
+  }
+  .detailsControl input[type="range"] { width: 100%; }
+  .detailsControl input[type="number"] { width: 100%; }
+  #detailsReadout {
+    display: flex;
+    gap: .45rem .65rem;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: .35rem;
+    border: 1px solid var(--line);
+    border-radius: .65rem;
+    background: rgba(255,255,255,.62);
+  }
+  #detailsScaleChoices {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9.2rem, 1fr));
+    gap: .45rem;
+  }
+  #detailsScaleChoices label {
+    display: flex;
+    gap: .45rem;
+    align-items: center;
+    padding: .45rem;
+    border: 1px solid var(--line);
+    border-radius: .6rem;
+    background: white;
+  }
+  #detailsScaleChoices input { min-height: unset; }
+
+  @media (max-width: 650px), ((pointer: coarse) and (max-height: 650px)) {
+    #app { grid-template-rows: auto 1fr; }
+    header {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: .35rem;
+      padding: .42rem;
+    }
+    header button {
+      width: 100%;
+      min-height: 2.35rem;
+      padding: .4rem .35rem;
+    }
+    @media (orientation: landscape) and (max-height: 650px) {
+      header { padding: .32rem .42rem; }
+      header button { min-height: 2.05rem; padding: .28rem .35rem; }
+    }
+    .desktop-extra, .hide-small, footer { display: none !important; }
+    .mobile-only { display: inline-flex; align-items: center; justify-content: center; }
+    .zoomGroup { display: contents; }
+    #centerCursor { order: 1; }
+    #zoomIn { order: 2; }
+    #zoomOut { order: 3; }
+    #detailsBtn { order: 4; }
+    #scalePanel { display: none !important; }
+    #detailsPanel { inset: auto .45rem calc(.45rem + env(safe-area-inset-bottom)) .45rem; }
+  }
+</style>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f6f2e8">
+  <meta name="application-name" content="Slide Rule">
+  <meta name="apple-mobile-web-app-title" content="Slide Rule">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+</head>
+<body>
+<div id="app">
+  <header>
+    <span class="title desktop-extra">Slide rule</span>
+    <button id="centerCursor" type="button" title="Move the cursor to the center of the current view">Center</button>
+    <span class="group zoomGroup">
+      <button id="zoomIn" type="button" aria-label="Zoom in">+</button>
+      <button id="zoomOut" type="button" aria-label="Zoom out">−</button>
+      <input id="zoom" class="desktop-extra" type="range" min="0.7" max="6" value="1" step="0.05" aria-label="Zoom">
+    </span>
+    <button id="detailsBtn" class="mobile-only" type="button" aria-expanded="false">Details</button>
+
+    <button id="scalesBtn" class="desktop-extra" type="button" aria-expanded="false">Scales</button>
+    <button id="constantsBtn" class="desktop-extra" type="button" title="Toggle constant markers">Constants: on</button>
+    <button id="adaptiveBtn" class="desktop-extra" type="button" title="Toggle adaptive extra tick subdivisions">Adaptive ticks: on</button>
+    <span class="group desktop-extra">
+      <span class="tiny">Align C1→D</span>
+      <input id="alignValue" type="number" min="1" max="9.999999" value="2" step="0.001" inputmode="decimal">
+      <button id="alignBtn" type="button">Align</button>
+    </span>
+    <button id="resetSlide" class="desktop-extra" type="button">Reset slide</button>
+  </header>
+  <main id="viewport" aria-label="Zoomable slide rule viewport">
+    <svg id="ruleSvg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Slide rule with selectable logarithmic scales"></svg>
+  </main>
+  <footer><div id="readout"></div></footer>
+</div>
+<section id="scalePanel" aria-label="Scale selector">
+  <h2>Select scales</h2>
+  <div id="scaleChoices"></div>
+  <p class="tiny">Drag C, B, or CI horizontally to move the slide. Drag the wider blue cursor glass to read values. Pinch, Ctrl+wheel, or use the zoom control to zoom. Adaptive ticks add extra subdivisions while zooming; when off, tick density stays fixed.</p>
+</section>
+
+<section id="detailsPanel" aria-label="Details">
+  <div class="detailsHeader">
+    <h2>Details</h2>
+    <button id="detailsClose" type="button">Close</button>
+  </div>
+
+  <div id="detailsReadout"></div>
+
+  <div class="detailsControls">
+    <button id="mobileConstantsBtn" type="button">Constants: on</button>
+    <button id="mobileAdaptiveBtn" type="button">Adaptive ticks: on</button>
+    <button id="mobileResetSlide" type="button">Reset slide</button>
+
+    <div class="detailsControl">
+      <label>Zoom
+        <input id="mobileZoom" type="range" min="0.7" max="6" value="1" step="0.05" aria-label="Zoom">
+      </label>
+    </div>
+
+    <div class="detailsControl">
+      <label>Align C1→D
+        <input id="mobileAlignValue" type="number" min="1" max="9.999999" value="2" step="0.001" inputmode="decimal">
+      </label>
+      <button id="mobileAlignBtn" type="button">Align</button>
+    </div>
+  </div>
+
+  <h2>Select scales</h2>
+  <div id="detailsScaleChoices"></div>
+  <p class="tiny">The compact mobile header intentionally shows only Center, +, −, and Details. Center moves the cursor to the middle of the current view. The readout and secondary settings are here.</p>
+</section>
+<script>
+(() => {
+  "use strict";
+
+  const MODEL_W = 1800;
+  const TOP_PAD = 30;
+  const ROW_H = 66;
+  const GROUP_GAP = 2;
+  const BOTTOM_PAD = 46;
+  const CURSOR_TOUCH_PX = 78;
+  const MAX_FINE_LEVEL = 4;
+  // In adaptive mode, tick density is screen-distance based and increases while zooming.
+  // In fixed mode, density is calculated at zoom=1 and deliberately does not change
+  // during zoom; it still fills the coarse base scale, but does not reveal extra ticks.
+  const BASE_MAX_TICK_GAP_PX = 15;
+  const ADAPTIVE_MAX_TICK_GAP_PX = 8;
+
+  const svg = document.getElementById("ruleSvg");
+  const viewport = document.getElementById("viewport");
+  const readout = document.getElementById("readout");
+  const zoomInput = document.getElementById("zoom");
+  const scalePanel = document.getElementById("scalePanel");
+  const scaleChoices = document.getElementById("scaleChoices");
+  const constantsBtn = document.getElementById("constantsBtn");
+  const adaptiveBtn = document.getElementById("adaptiveBtn");
+  const detailsPanel = document.getElementById("detailsPanel");
+  const detailsBtn = document.getElementById("detailsBtn");
+  const detailsClose = document.getElementById("detailsClose");
+  const detailsReadout = document.getElementById("detailsReadout");
+  const detailsScaleChoices = document.getElementById("detailsScaleChoices");
+  const mobileConstantsBtn = document.getElementById("mobileConstantsBtn");
+  const mobileAdaptiveBtn = document.getElementById("mobileAdaptiveBtn");
+  const mobileResetSlide = document.getElementById("mobileResetSlide");
+  const mobileZoomInput = document.getElementById("mobileZoom");
+  const mobileAlignValue = document.getElementById("mobileAlignValue");
+  const mobileAlignBtn = document.getElementById("mobileAlignBtn");
+
+  const scaleDefs = [
+    { id: "A",  title: "A square scale, 1–100", type: "log", cycles: 2, movable: false, section: "topBody" },
+    { id: "B",  title: "B square scale on slide", type: "log", cycles: 2, movable: true, section: "slide" },
+    { id: "CI", title: "CI inverted C scale", type: "log", cycles: 1, movable: true, inverse: true, section: "slide" },
+    { id: "C",  title: "C logarithmic slide scale", type: "log", cycles: 1, movable: true, section: "slide" },
+    { id: "D",  title: "D logarithmic fixed scale", type: "log", cycles: 1, movable: false, section: "bottomBody" },
+    { id: "K",  title: "K cube scale, 1–1000", type: "log", cycles: 3, movable: false, section: "bottomBody" },
+    { id: "L",  title: "L linear log10 scale, 0–1", type: "linear", movable: false, section: "bottomBody" }
+  ];
+
+  const constants = [
+    { label: "π", value: Math.PI },
+    { label: "e", value: Math.E },
+    { label: "√2", value: Math.SQRT2 },
+    { label: "√3", value: Math.sqrt(3) },
+    { label: "φ", value: (1 + Math.sqrt(5)) / 2 },
+    { label: "ln10", value: Math.LN10 },
+    { label: "log₁₀e", lValue: Math.LOG10E }
+  ];
+
+  const state = {
+    zoom: 1,
+    slideOffset: 0,
+    cursorX: MODEL_W * Math.log10(Math.PI),
+    showConstants: true,
+    adaptiveTicks: true,
+    selected: new Set(["A", "B", "CI", "C", "D", "K", "L"]),
+    height: 0,
+    rowInfos: [],
+    drag: null,
+    pointers: new Map(),
+    pinch: null
+  };
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+  }
+
+  function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
+
+  function fmt(n, digits = 6) {
+    if (!Number.isFinite(n)) return "—";
+    if ((Math.abs(n) >= 1000) || (Math.abs(n) < 0.001 && n !== 0)) return n.toExponential(4);
+    return Number(n.toPrecision(digits)).toString();
+  }
+
+  function labelForValue(v) {
+    if (v >= 100) return String(Math.round(v));
+    if (v >= 10) return Number(v.toPrecision(3)).toString();
+    return Number(v.toPrecision(2)).toString();
+  }
+
+  function logX(value, cycles, inverse) {
+    const x = MODEL_W * Math.log10(value) / cycles;
+    return inverse ? MODEL_W - x : x;
+  }
+
+  function linearX(value) { return MODEL_W * value; }
+
+  function pathLine(x1, y1, x2, y2, klass = "") {
+    return `<line class="${klass}" x1="${x1.toFixed(3)}" y1="${y1.toFixed(3)}" x2="${x2.toFixed(3)}" y2="${y2.toFixed(3)}"/>`;
+  }
+
+  function text(x, y, content, klass = "", anchor = "middle") {
+    return `<text class="${klass}" x="${x.toFixed(3)}" y="${y.toFixed(3)}" text-anchor="${anchor}">${esc(content)}</text>`;
+  }
+
+  function tickLine(x, axisY, length, direction, klass) {
+    const y1 = direction === "down" ? axisY - length : axisY + length;
+    return pathLine(x, y1, x, axisY, klass);
+  }
+
+  function tickLength(kind) {
+    if (kind === "major") return 31;
+    if (kind === "minor") return 22;
+    if (kind === "fine") return 15;
+    return 9;
+  }
+
+  function axisForRow(rowY, direction) {
+    return direction === "down" ? rowY + ROW_H : rowY;
+  }
+
+  function labelYFor(rowY, direction) {
+    // Keep labels outside the tick band.  For upward-facing scales the
+    // ticks occupy the top half of the row, so labels live near the bottom.
+    // For downward-facing scales the ticks occupy the bottom half, so labels
+    // live near the top.
+    return direction === "down" ? rowY + 18 : rowY + ROW_H - 16;
+  }
+
+  function constLabelYFor(rowY, direction) {
+    return direction === "down" ? rowY + 8 : rowY + ROW_H - 5;
+  }
+
+  function rowBg(def, y) {
+    const fill = def.movable ? "var(--slide)" : "var(--row)";
+    return `<rect x="0" y="${y}" width="${MODEL_W}" height="${ROW_H}" fill="${fill}"/>`;
+  }
+
+  function majorLabel(value, cycles) {
+    if (Math.abs(value - 1) < 1e-10) return "1";
+    return labelForValue(value);
+  }
+
+  function logMajorValues(cycles) {
+    const values = [];
+    for (let cycle = 0; cycle < cycles; cycle++) {
+      const decade = Math.pow(10, cycle);
+      for (let mant = 1; mant <= 9; mant++) values.push(decade * mant);
+    }
+    values.push(Math.pow(10, cycles));
+    return values;
+  }
+
+  function choosePartsForGap(screenPx, maxGapPx) {
+    // Subdivide an interval just enough so adjacent graduation lines stay
+    // below a maximum screen distance.  Parts are restricted to the usual
+    // slide-rule-friendly 2, 5, and 10 splits.
+    const required = Math.ceil(screenPx / maxGapPx);
+    if (required <= 1) return 0;
+    if (required <= 2) return 2;
+    if (required <= 5) return 5;
+    return 10;
+  }
+
+  function logMajorValues(cycles) {
+    const values = [];
+    for (let cycle = 0; cycle < cycles; cycle++) {
+      const decade = Math.pow(10, cycle);
+      for (let mant = 1; mant <= 9; mant++) values.push(decade * mant);
+    }
+    values.push(Math.pow(10, cycles));
+    return values;
+  }
+
+  function tickKindForLevel(level) {
+    if (level <= 0) return "minor";
+    if (level === 1) return "fine";
+    return "hair";
+  }
+
+  function tickDensityZoom() {
+    return state.adaptiveTicks ? state.zoom : 1;
+  }
+
+  function drawDistanceCappedLogTicks(def, axisY, direction, maxGapPx) {
+    const majors = logMajorValues(def.cycles);
+    const densityZoom = tickDensityZoom();
+    let out = "";
+    for (let i = 0; i < majors.length - 1; i++) {
+      out += drawDistanceCappedLogInterval(majors[i], majors[i + 1], def, axisY, direction, maxGapPx, densityZoom, 0);
+    }
+    return out;
+  }
+
+  function drawDistanceCappedLogInterval(v0, v1, def, axisY, direction, maxGapPx, densityZoom, level) {
+    if (level >= MAX_FINE_LEVEL) return "";
+    const x0 = logX(v0, def.cycles, !!def.inverse);
+    const x1 = logX(v1, def.cycles, !!def.inverse);
+    const screenPx = Math.abs(x1 - x0) * densityZoom;
+    const parts = choosePartsForGap(screenPx, maxGapPx);
+    if (!parts) return "";
+
+    let out = "";
+    const kind = tickKindForLevel(level);
+    const klass = `tick ${kind} cappedTick`;
+    const len = tickLength(kind);
+    const nextValues = [v0];
+
+    for (let i = 1; i < parts; i++) {
+      const value = v0 + (v1 - v0) * i / parts;
+      nextValues.push(value);
+      const x = logX(value, def.cycles, !!def.inverse);
+      if (x >= -0.001 && x <= MODEL_W + 0.001) out += tickLine(x, axisY, len, direction, klass);
+    }
+    nextValues.push(v1);
+
+    // Continue only inside the newly created intervals that still exceed the
+    // cap.  This is what fills spaces such as 10–20 on A/B without requiring
+    // a hard-coded table for each decade.
+    for (let i = 0; i < nextValues.length - 1; i++) {
+      out += drawDistanceCappedLogInterval(nextValues[i], nextValues[i + 1], def, axisY, direction, maxGapPx, densityZoom, level + 1);
+    }
+    return out;
+  }
+
+  function drawDistanceCappedLinearTicks(axisY, direction, maxGapPx) {
+    const densityZoom = tickDensityZoom();
+    let out = "";
+    for (let i = 0; i < 10; i++) {
+      out += drawDistanceCappedLinearInterval(i / 10, (i + 1) / 10, axisY, direction, maxGapPx, densityZoom, 0);
+    }
+    return out;
+  }
+
+  function drawDistanceCappedLinearInterval(v0, v1, axisY, direction, maxGapPx, densityZoom, level) {
+    if (level >= MAX_FINE_LEVEL) return "";
+    const x0 = linearX(v0);
+    const x1 = linearX(v1);
+    const screenPx = Math.abs(x1 - x0) * densityZoom;
+    const parts = choosePartsForGap(screenPx, maxGapPx);
+    if (!parts) return "";
+
+    let out = "";
+    const kind = tickKindForLevel(level);
+    const klass = `tick ${kind} cappedTick`;
+    const len = tickLength(kind);
+    const nextValues = [v0];
+
+    for (let i = 1; i < parts; i++) {
+      const value = v0 + (v1 - v0) * i / parts;
+      nextValues.push(value);
+      const x = linearX(value);
+      out += tickLine(x, axisY, len, direction, klass);
+    }
+    nextValues.push(v1);
+
+    for (let i = 0; i < nextValues.length - 1; i++) {
+      out += drawDistanceCappedLinearInterval(nextValues[i], nextValues[i + 1], axisY, direction, maxGapPx, densityZoom, level + 1);
+    }
+    return out;
+  }
+
+  function drawLogRow(def, y, direction) {
+    const axisY = axisForRow(y, direction);
+    const labelY = labelYFor(y, direction);
+    let out = rowBg(def, y);
+
+    out += pathLine(0, axisY, MODEL_W, axisY, "axis");
+    out += text(12, labelY, def.id, "scaleName", "start");
+    out += text(MODEL_W - 12, labelY, def.id, "scaleName", "end");
+
+    out += drawDistanceCappedLogTicks(def, axisY, direction, state.adaptiveTicks ? ADAPTIVE_MAX_TICK_GAP_PX : BASE_MAX_TICK_GAP_PX);
+
+    const majors = logMajorValues(def.cycles);
+    for (const value of majors) {
+      const x = logX(value, def.cycles, !!def.inverse);
+      if (x < -0.001 || x > MODEL_W + 0.001) continue;
+      out += tickLine(x, axisY, tickLength("major"), direction, "tick major");
+      out += text(x, labelY, majorLabel(value, def.cycles), "tickLabel");
+    }
+
+    if (state.showConstants) {
+      for (const c of constants) {
+        if (!c.value) continue;
+        if (c.value < 1 || c.value > Math.pow(10, def.cycles)) continue;
+        const x = logX(c.value, def.cycles, !!def.inverse);
+        if (x < 0 || x > MODEL_W) continue;
+        out += tickLine(x, axisY, ROW_H - 10, direction, "constLine");
+        out += text(x, constLabelYFor(y, direction), c.label, "constLabel");
+      }
+    }
+    return out;
+  }
+
+  function drawLinearRow(def, y, direction) {
+    const axisY = axisForRow(y, direction);
+    const labelY = labelYFor(y, direction);
+    let out = rowBg(def, y);
+
+    out += pathLine(0, axisY, MODEL_W, axisY, "axis");
+    out += text(12, labelY, def.id, "scaleName", "start");
+    out += text(MODEL_W - 12, labelY, def.id, "scaleName", "end");
+
+    out += drawDistanceCappedLinearTicks(axisY, direction, state.adaptiveTicks ? ADAPTIVE_MAX_TICK_GAP_PX : BASE_MAX_TICK_GAP_PX);
+
+    for (let i = 0; i <= 10; i++) {
+      const v = i / 10;
+      const x = linearX(v);
+      out += tickLine(x, axisY, tickLength("major"), direction, "tick major");
+      const lbl = i === 0 ? "0" : (i === 10 ? "1" : "." + i);
+      out += text(x, labelY, lbl, "tickLabel");
+    }
+
+    if (state.showConstants) {
+      for (const c of constants) {
+        const v = c.lValue ?? (c.value >= 1 && c.value <= 10 ? Math.log10(c.value) : null);
+        if (v == null || v < 0 || v > 1) continue;
+        const x = linearX(v);
+        out += tickLine(x, axisY, ROW_H - 10, direction, "constLine");
+        out += text(x, constLabelYFor(y, direction), c.label, "constLabel");
+      }
+    }
+    return out;
+  }
+
+  function groupBySection(selectedDefs, section) {
+    return selectedDefs.filter(def => def.section === section);
+  }
+
+  function drawSectionBackground(y, rows, movable) {
+    if (!rows.length) return "";
+    const h = rows.length * ROW_H;
+    const fill = movable ? "var(--slide)" : "var(--row)";
+    return `<rect x="0" y="${y}" width="${MODEL_W}" height="${h}" rx="${movable ? 3 : 7}" fill="${fill}" stroke="none"/>`;
+  }
+
+  function drawRows() {
+    const selectedDefs = scaleDefs.filter(d => state.selected.has(d.id));
+    const topBody = groupBySection(selectedDefs, "topBody");
+    const slide = groupBySection(selectedDefs, "slide");
+    const bottomBody = groupBySection(selectedDefs, "bottomBody");
+
+    state.rowInfos = [];
+    let fixedOut = "";
+    let slideOut = "";
+    let decorOut = "";
+    let y = TOP_PAD;
+
+    function addRows(rows, section, movable) {
+      const startY = y;
+      if (rows.length) {
+        const bg = drawSectionBackground(startY, rows, movable);
+        if (movable) slideOut += bg; else fixedOut += bg;
+      }
+
+      rows.forEach((def, index) => {
+        let direction;
+        if (section === "topBody") direction = "down";
+        else if (section === "bottomBody") direction = "up";
+        else direction = index < rows.length / 2 ? "up" : "down";
+
+        state.rowInfos.push({ id: def.id, movable: def.movable, y, h: ROW_H, type: def.type, cycles: def.cycles || 1, inverse: !!def.inverse });
+        const row = def.type === "linear" ? drawLinearRow(def, y, direction) : drawLogRow(def, y, direction);
+        if (movable) slideOut += row; else fixedOut += row;
+        y += ROW_H;
+      });
+
+      return { startY, endY: y };
+    }
+
+    const topSection = addRows(topBody, "topBody", false);
+    if (topBody.length && slide.length) {
+      decorOut += pathLine(0, y, MODEL_W, y, "edgeLine");
+      y += GROUP_GAP;
+    }
+
+    const slideStart = y;
+    const slideSection = addRows(slide, "slide", true);
+    const slideEnd = y;
+
+    if (slide.length && bottomBody.length) {
+      decorOut += pathLine(0, y, MODEL_W, y, "edgeLine");
+      y += GROUP_GAP;
+    }
+
+    const bottomSection = addRows(bottomBody, "bottomBody", false);
+
+    if (topBody.length) decorOut += pathLine(0, topSection.startY, MODEL_W, topSection.startY, "bodyOuterLine");
+    if (bottomBody.length) decorOut += pathLine(0, bottomSection.endY, MODEL_W, bottomSection.endY, "bodyOuterLine");
+    if (slide.length) {
+      decorOut += pathLine(0, slideStart, MODEL_W, slideStart, "slideOuterLine");
+      decorOut += pathLine(0, slideEnd, MODEL_W, slideEnd, "slideOuterLine");
+    }
+
+    state.height = y + BOTTOM_PAD;
+    const slideTransform = `translate(${state.slideOffset.toFixed(3)} 0)`;
+
+    return `
+      <style>
+        .axis { stroke: #1e1b18; stroke-width: .65; opacity: .14; vector-effect: non-scaling-stroke; }
+        .edgeLine { stroke: #1e1b18; stroke-width: .45; opacity: .38; vector-effect: non-scaling-stroke; }
+        .bodyOuterLine, .slideOuterLine { stroke: #1e1b18; stroke-width: .45; opacity: .18; vector-effect: non-scaling-stroke; }
+        .tick { stroke: #1e1b18; stroke-width: .9; vector-effect: non-scaling-stroke; }
+        .major { stroke-width: 1.25; opacity: .94; }
+        .minor { opacity: .72; }
+        .fine { opacity: .52; }
+        .hair { opacity: .34; }
+        .tickLabel { font: 16px system-ui, sans-serif; fill: #1e1b18; dominant-baseline: middle; }
+        .scaleName { font: 700 17px system-ui, sans-serif; fill: #4d3429; dominant-baseline: middle; }
+        .constLine { stroke: var(--accent); stroke-width: 1.1; stroke-dasharray: 4 4; opacity: .72; vector-effect: non-scaling-stroke; }
+        .constLabel { font: 700 14px system-ui, sans-serif; fill: var(--accent); dominant-baseline: middle; }
+        .cursorLine { stroke: #101010; stroke-width: 2.2; vector-effect: non-scaling-stroke; }
+        .cursorGlass { fill: var(--cursor); stroke: var(--cursorStroke); stroke-width: 1.1; vector-effect: non-scaling-stroke; }
+        .cursorHandle { fill: rgba(255,255,255,.95); stroke: #101010; stroke-width: 1.1; vector-effect: non-scaling-stroke; }
+        .slideGrip { fill: rgba(138,47,27,.08); stroke: rgba(138,47,27,.30); stroke-width: .75; vector-effect: non-scaling-stroke; }
+        .caption { font: 14px system-ui, sans-serif; fill: #635d55; }
+      </style>
+      <rect x="0" y="0" width="${MODEL_W}" height="${state.height}" fill="transparent"/>
+      <text x="0" y="18" class="caption">Selectable logarithmic slide rule. Movable scales: B, C, CI.</text>
+      ${decorOut}
+      <g id="fixedRows">${fixedOut}</g>
+      <g id="slideRows" transform="${slideTransform}">${slideOut}</g>
+      ${drawCursor()}
+      <rect class="slideGrip" x="0" y="${state.height - 36}" width="${MODEL_W}" height="25" rx="7"/>
+      <text x="${MODEL_W / 2}" y="${state.height - 18}" text-anchor="middle" class="caption">Drag movable rows or this strip to slide B/C/CI</text>
+    `;
+  }
+
+  function drawCursor() {
+    const x = state.cursorX;
+    const w = CURSOR_TOUCH_PX / state.zoom;
+    const x0 = x - w / 2;
+    return `
+      <g id="cursor">
+        <rect class="cursorGlass" x="${x0.toFixed(3)}" y="${TOP_PAD - 16}" width="${w.toFixed(3)}" height="${Math.max(20, state.height - TOP_PAD - 26)}" rx="${Math.max(3, 6 / state.zoom).toFixed(3)}"/>
+        <line class="cursorLine" x1="${x.toFixed(3)}" y1="${TOP_PAD - 18}" x2="${x.toFixed(3)}" y2="${state.height - 15}"/>
+        <circle class="cursorHandle" cx="${x.toFixed(3)}" cy="${TOP_PAD - 18}" r="${Math.max(6 / state.zoom, 2).toFixed(3)}"/>
+      </g>
+    `;
+  }
+
+  function render() {
+    svg.setAttribute("viewBox", `0 0 ${MODEL_W} ${state.height || 600}`);
+    svg.innerHTML = drawRows();
+    svg.setAttribute("viewBox", `0 0 ${MODEL_W} ${state.height}`);
+    svg.style.width = `${MODEL_W * state.zoom}px`;
+    svg.style.height = `${state.height * state.zoom}px`;
+    updateReadout();
+  }
+
+  function updateCursorOnly() {
+    const old = svg.querySelector("#cursor");
+    if (old) old.outerHTML = drawCursor();
+    updateReadout();
+  }
+
+  function updateReadout() {
+    const values = [];
+    for (const row of state.rowInfos) {
+      const v = valueAt(row, state.cursorX);
+      if (v != null && Number.isFinite(v)) values.push(`<span class="pill">${esc(row.id)} <strong>${fmt(v)}</strong></span>`);
+    }
+    const factor = Math.pow(10, state.slideOffset / MODEL_W);
+    const constantsText = state.showConstants ? `<span class="pill">constants <strong>π e √2 √3 φ ln10 log₁₀e</strong></span>` : "";
+    const adaptiveText = `<span class="pill">ticks <strong>${state.adaptiveTicks ? "adaptive" : "fixed"}</strong></span>`;
+    const html = values.join("") + `<span class="pill">C/D factor <strong>${fmt(factor)}</strong></span>` + adaptiveText + constantsText + `<span class="hint">Drag to pan; drag movable scales to slide; drag blue cursor glass to read.</span>`;
+    readout.innerHTML = html;
+    detailsReadout.innerHTML = html;
+  }
+
+  function valueAt(row, cursorX) {
+    let x = cursorX - (row.movable ? state.slideOffset : 0);
+    if (x < 0 || x > MODEL_W) return null;
+    if (row.type === "linear") return x / MODEL_W;
+    if (row.inverse) return Math.pow(10, row.cycles * (1 - x / MODEL_W));
+    return Math.pow(10, row.cycles * x / MODEL_W);
+  }
+
+  function modelPoint(evt) {
+    const rect = svg.getBoundingClientRect();
+    return { x: (evt.clientX - rect.left) / state.zoom, y: (evt.clientY - rect.top) / state.zoom, px: evt.clientX, py: evt.clientY };
+  }
+
+  function rowAt(modelY) { return state.rowInfos.find(r => modelY >= r.y && modelY <= r.y + r.h); }
+
+  function setZoom(newZoom, anchorClientX = viewport.clientWidth / 2, anchorClientY = viewport.clientHeight / 2) {
+    newZoom = clamp(newZoom, 0.7, 6);
+    const rect = viewport.getBoundingClientRect();
+    const anchorX = anchorClientX - rect.left;
+    const anchorY = anchorClientY - rect.top;
+    const modelX = (viewport.scrollLeft + anchorX) / state.zoom;
+    const modelY = (viewport.scrollTop + anchorY) / state.zoom;
+    state.zoom = newZoom;
+    zoomInput.value = String(newZoom);
+    mobileZoomInput.value = String(newZoom);
+    render();
+    viewport.scrollLeft = modelX * state.zoom - anchorX;
+    viewport.scrollTop = modelY * state.zoom - anchorY;
+  }
+
+  function setSlideOffset(offset) {
+    state.slideOffset = clamp(offset, -MODEL_W * 0.96, MODEL_W * 0.96);
+    const g = svg.querySelector("#slideRows");
+    if (g) g.setAttribute("transform", `translate(${state.slideOffset.toFixed(3)} 0)`);
+    updateReadout();
+  }
+
+  function setCursor(x) {
+    state.cursorX = clamp(x, 0, MODEL_W);
+    updateCursorOnly();
+  }
+
+  function scaleChoiceMarkup() {
+    return scaleDefs.map(def => `
+      <label>
+        <input type="checkbox" data-scale="${esc(def.id)}" ${state.selected.has(def.id) ? "checked" : ""}>
+        <span><strong>${esc(def.id)}</strong> <span class="tiny">${esc(def.title)}</span></span>
+      </label>
+    `).join("");
+  }
+
+  function syncScaleCheckboxes() {
+    document.querySelectorAll('input[data-scale]').forEach(box => {
+      box.checked = state.selected.has(box.dataset.scale);
+    });
+  }
+
+  function handleScaleChoiceChange(evt) {
+    const box = evt.target.closest("input[data-scale]");
+    if (!box) return;
+    if (box.checked) state.selected.add(box.dataset.scale); else state.selected.delete(box.dataset.scale);
+    syncScaleCheckboxes();
+    render();
+  }
+
+  function buildScalePanel() {
+    const markup = scaleChoiceMarkup();
+    scaleChoices.innerHTML = markup;
+    detailsScaleChoices.innerHTML = markup;
+    scaleChoices.addEventListener("change", handleScaleChoiceChange);
+    detailsScaleChoices.addEventListener("change", handleScaleChoiceChange);
+  }
+
+  function alignC1ToD(value) {
+    value = Number(value);
+    if (!Number.isFinite(value) || value <= 0) return;
+    while (value < 1) value *= 10;
+    while (value >= 10) value /= 10;
+    setSlideOffset(MODEL_W * Math.log10(value));
+    document.getElementById("alignValue").value = fmt(value, 7);
+    mobileAlignValue.value = fmt(value, 7);
+  }
+
+  document.getElementById("scalesBtn").addEventListener("click", () => {
+    const open = !scalePanel.classList.contains("open");
+    scalePanel.classList.toggle("open", open);
+    document.getElementById("scalesBtn").setAttribute("aria-expanded", open ? "true" : "false");
+  });
+
+  function updateControlLabels() {
+    constantsBtn.textContent = `Constants: ${state.showConstants ? "on" : "off"}`;
+    mobileConstantsBtn.textContent = constantsBtn.textContent;
+    adaptiveBtn.textContent = `Adaptive ticks: ${state.adaptiveTicks ? "on" : "off"}`;
+    mobileAdaptiveBtn.textContent = adaptiveBtn.textContent;
+    zoomInput.value = String(state.zoom);
+    mobileZoomInput.value = String(state.zoom);
+  }
+
+  function setConstantsVisible(value) {
+    state.showConstants = !!value;
+    updateControlLabels();
+    render();
+  }
+
+  function setAdaptiveTicks(value) {
+    state.adaptiveTicks = !!value;
+    updateControlLabels();
+    render();
+  }
+
+  function centerCursorInCurrentView() {
+    const centerModelX = (viewport.scrollLeft + viewport.clientWidth / 2) / state.zoom;
+    setCursor(centerModelX);
+  }
+
+  function toggleDetails(open = !detailsPanel.classList.contains("open")) {
+    detailsPanel.classList.toggle("open", open);
+    detailsBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) updateReadout();
+  }
+
+  constantsBtn.addEventListener("click", () => setConstantsVisible(!state.showConstants));
+  mobileConstantsBtn.addEventListener("click", () => setConstantsVisible(!state.showConstants));
+
+  adaptiveBtn.addEventListener("click", () => setAdaptiveTicks(!state.adaptiveTicks));
+  mobileAdaptiveBtn.addEventListener("click", () => setAdaptiveTicks(!state.adaptiveTicks));
+
+  document.getElementById("zoomOut").addEventListener("click", () => setZoom(state.zoom / 1.2));
+  document.getElementById("zoomIn").addEventListener("click", () => setZoom(state.zoom * 1.2));
+  zoomInput.addEventListener("input", () => setZoom(Number(zoomInput.value)));
+  mobileZoomInput.addEventListener("input", () => setZoom(Number(mobileZoomInput.value)));
+  document.getElementById("resetSlide").addEventListener("click", () => setSlideOffset(0));
+  mobileResetSlide.addEventListener("click", () => setSlideOffset(0));
+  document.getElementById("centerCursor").addEventListener("click", centerCursorInCurrentView);
+  document.getElementById("alignBtn").addEventListener("click", () => alignC1ToD(document.getElementById("alignValue").value));
+  mobileAlignBtn.addEventListener("click", () => alignC1ToD(mobileAlignValue.value));
+  detailsBtn.addEventListener("click", () => toggleDetails());
+  detailsClose.addEventListener("click", () => toggleDetails(false));
+
+  viewport.addEventListener("wheel", evt => {
+    if (!evt.ctrlKey && !evt.metaKey) return;
+    evt.preventDefault();
+    const factor = Math.exp(-evt.deltaY * 0.002);
+    setZoom(state.zoom * factor, evt.clientX, evt.clientY);
+  }, { passive: false });
+
+  svg.addEventListener("pointerdown", evt => {
+    svg.setPointerCapture(evt.pointerId);
+    svg.classList.add("dragging");
+    state.pointers.set(evt.pointerId, { x: evt.clientX, y: evt.clientY });
+
+    if (state.pointers.size === 2) {
+      const pts = [...state.pointers.values()];
+      state.pinch = { dist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y), zoom: state.zoom };
+      state.drag = null;
+      return;
+    }
+
+    const p = modelPoint(evt);
+    const row = rowAt(p.y);
+    const nearCursor = Math.abs(p.x - state.cursorX) <= CURSOR_TOUCH_PX / (2 * state.zoom);
+    const onGrip = p.y >= state.height - 40;
+    const mode = nearCursor ? "cursor" : (onGrip || (row && row.movable)) ? "slide" : "pan";
+    state.drag = { mode, startX: p.x, startY: p.y, startPX: evt.clientX, startPY: evt.clientY, startScrollLeft: viewport.scrollLeft, startScrollTop: viewport.scrollTop, startSlideOffset: state.slideOffset, moved: false };
+  });
+
+  svg.addEventListener("pointermove", evt => {
+    if (!state.pointers.has(evt.pointerId)) return;
+    state.pointers.set(evt.pointerId, { x: evt.clientX, y: evt.clientY });
+
+    if (state.pointers.size === 2 && state.pinch) {
+      const pts = [...state.pointers.values()];
+      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      const midX = (pts[0].x + pts[1].x) / 2;
+      const midY = (pts[0].y + pts[1].y) / 2;
+      setZoom(state.pinch.zoom * dist / state.pinch.dist, midX, midY);
+      return;
+    }
+
+    if (!state.drag) return;
+    const dxPX = evt.clientX - state.drag.startPX;
+    const dyPX = evt.clientY - state.drag.startPY;
+    const dxModel = dxPX / state.zoom;
+    if (Math.abs(dxPX) + Math.abs(dyPX) > 3) state.drag.moved = true;
+
+    if (state.drag.mode === "slide") setSlideOffset(state.drag.startSlideOffset + dxModel);
+    else if (state.drag.mode === "cursor") setCursor(state.drag.startX + dxModel);
+    else {
+      viewport.scrollLeft = state.drag.startScrollLeft - dxPX;
+      viewport.scrollTop = state.drag.startScrollTop - dyPX;
+    }
+  });
+
+  svg.addEventListener("pointerup", evt => {
+    const drag = state.drag;
+    state.pointers.delete(evt.pointerId);
+    if (state.pointers.size < 2) state.pinch = null;
+    state.drag = null;
+    svg.classList.remove("dragging");
+
+    if (drag && !drag.moved) {
+      const p = modelPoint(evt);
+      const row = rowAt(p.y);
+      if (row && !row.movable) setCursor(p.x);
+    }
+  });
+
+  svg.addEventListener("pointercancel", evt => {
+    state.pointers.delete(evt.pointerId);
+    state.drag = null;
+    state.pinch = null;
+    svg.classList.remove("dragging");
+  });
+
+  window.addEventListener("keydown", evt => {
+    if (evt.key === "ArrowLeft") {
+      evt.preventDefault();
+      setCursor(state.cursorX - (evt.shiftKey ? 25 : 5) / state.zoom);
+    } else if (evt.key === "ArrowRight") {
+      evt.preventDefault();
+      setCursor(state.cursorX + (evt.shiftKey ? 25 : 5) / state.zoom);
+    } else if (evt.key === "+" || evt.key === "=") setZoom(state.zoom * 1.15);
+    else if (evt.key === "-") setZoom(state.zoom / 1.15);
+  });
+
+  buildScalePanel();
+  updateControlLabels();
+  render();
+  requestAnimationFrame(() => {
+    viewport.scrollLeft = state.cursorX * state.zoom - viewport.clientWidth / 2;
+    viewport.scrollTop = 0;
+  });
+})();
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("service-worker.js", { scope: "./" });
+  });
+}
+</script>
+
+</body>
+</html>

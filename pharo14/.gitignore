@@ -1,0 +1,12 @@
+.DS_Store
+node_modules/
+gh-pages
+dist/*.min.js*
+*.code-workspace
+
+# local Pharo fixtures and generated outputs
+pharo14-*.image
+*.changes
+*.sources
+test-artifacts/
+generated-bundles/

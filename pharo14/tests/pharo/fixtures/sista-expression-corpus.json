@@ -1,0 +1,156 @@
+[
+  {
+    "name": "quick integer arithmetic",
+    "expression": "1 + 2"
+  },
+  {
+    "name": "negative integer division",
+    "expression": "(-7) // 3"
+  },
+  {
+    "name": "branch true false",
+    "expression": "true ifTrue: [ 5 ] ifFalse: [ 6 ]"
+  },
+  {
+    "name": "temp assignment and loop",
+    "expression": "| x | x := 0. [ x < 3 ] whileTrue: [ x := x + 1 ]. x"
+  },
+  {
+    "name": "literal array and cascade",
+    "expression": "(OrderedCollection new add: 1; add: 2; size)"
+  },
+  {
+    "name": "simple full closure",
+    "expression": "[ 1 + 2 ] value"
+  },
+  {
+    "name": "argument full closure",
+    "expression": "[ :x | x + 2 ] value: 5"
+  },
+  {
+    "name": "copied temp closure",
+    "expression": "| x | x := 5. [ x + 2 ] value"
+  },
+  {
+    "name": "copied temp mutation",
+    "expression": "| x f | x := 1. f := [ x := x + 1 ]. f value. f value. x"
+  },
+  {
+    "name": "nested closure factory",
+    "expression": "(([ :x | [ :y | x + y ] ] value: 3) value: 4)"
+  },
+  {
+    "name": "nested three-level closure",
+    "expression": "((([ :x | [ :y | [ :z | x + y + z ] ] ] value: 1) value: 2) value: 3)"
+  },
+  {
+    "name": "collection iteration block",
+    "expression": "| sum | sum := 0. 1 to: 5 do: [ :i | sum := sum + i ]. sum"
+  },
+  {
+    "name": "dynamic array construction",
+    "expression": "{ 1 + 2 . [ 3 + 4 ] value . 5 } sum"
+  },
+  {
+    "name": "caseOf closures",
+    "expression": "2 caseOf: { [1] -> [10]. [2] -> [20] } otherwise: [30]"
+  },
+  {
+    "name": "non local return",
+    "expression": "[ ^ 5 ] value"
+  },
+  {
+    "name": "directed super yourself",
+    "expression": "super yourself"
+  },
+  {
+    "name": "directed super class name",
+    "expression": "super class name"
+  },
+  {
+    "name": "active context sender is nil",
+    "expression": "thisContext sender isNil"
+  },
+  {
+    "name": "ensure unwind closure",
+    "expression": "| x | x := 0. [ x := 1. 3 ] ensure: [ x := x + 4 ]. x"
+  },
+  {
+    "name": "exception handler closure",
+    "expression": "[ 1 / 0 ] on: ZeroDivide do: [ :ex | 42 ]",
+    "skipEval": true
+  },
+  {
+    "name": "large temp index",
+    "expression": "| a0 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 a13 a14 a15 a16 a17 a18 a19 | a19 := 123. a19"
+  },
+  {
+    "name": "many argument closure",
+    "expression": "[ :a :b :c :d :e :f :g :h :i | a + i ] valueWithArguments: #(1 2 3 4 5 6 7 8 9)"
+  },
+  {
+    "name": "large literal and send indexes",
+    "expression": "{ #a . #b . #c . #d . #e . #f . #g . #h . #i . #j . #k . #l . #m . #n . #o . #p . #q . #r . #s . #t . #u . #v . #w . #x . #y . #z . #aa . #ab . #ac . #ad . #ae . #af . #ag . #ah . #ai . #aj . #ak . #al . #am . #an . #ao . #ap . #aq . #ar . #as . #at . #au . #av . #aw . #ax . #ay . #az . #ba . #bb . #bc . #bd . #be . #bf . #bg . #bh . #bi . #bj . #bk . #bl . #bm . #bn . #bo . #bp . #bq . #br . #bs . #bt . #bu . #bv . #bw . #bx . #by . #bz . #ca . #cb . #cc . #cd . #ce . #cf . #cg . #ch . #ci . #cj . #ck . #cl . #cm . #cn . #co . #cp . #cq . #cr . #cs . #ct . #cu . #cv . #cw . #cx . #cy . #cz . #da . #db . #dc . #dd . #de . #df . #dg . #dh . #di . #dj . #dk . #dl . #dm . #dn . #do . #dp . #dq . #dr . #ds . #dt . #du . #dv . #dw . #dx . #dy . #dz . #ea . #eb . #ec . #ed . #ee . #ef . #eg . #eh . #ei . #ej . #ek . #el . #em . #en . #eo . #ep . #eq . #er . #es . #et . #eu . #ev . #ew . #ex . #ey . #ez . #fa . #fb . #fc . #fd . #fe . #ff . #fg . #fh . #fi . #fj . #fk . #fl . #fm . #fn . #fo . #fp . #fq . #fr . #fs . #ft . #fu . #fv . #fw . #fx . #fy . #fz . #ga . #gb . #gc . #gd . #ge . #gf . #gg . #gh . #gi . #gj . #gk . #gl . #gm . #gn . #go . #gp . #gq . #gr . #gs . #gt . #gu . #gv . #gw . #gx . #gy . #gz . #ha . #hb . #hc . #hd . #he . #hf . #hg . #hh . #hi . #hj . #hk . #hl . #hm . #hn . #ho . #hp . #hq . #hr . #hs . #ht . #hu . #hv . #hw . #hx . #hy . #hz . #ia . #ib . #ic . #id . #ie . #if . #ig . #ih . #ii . #ij . #ik . #il . #im . #in . #io . #ip . #iq . #ir . #is . #it . #iu . #iv . #iw . #ix . #iy . #iz . #ja . #jb . #jc . #jd . #je . #jf . #jg . #jh . #ji . #jj } last"
+  },
+  {
+    "name": "quick true jump whileFalse",
+    "expression": "| x | x := 0. [ x = 3 ] whileFalse: [ x := x + 1 ]. x"
+  },
+  {
+    "name": "extended true jump whileFalse",
+    "expression": "| x | x := 0. [ x = 300 ] whileFalse: [ x := x + 1. x := x + 1. x := x + 1. x := x + 1. x := x + 1. x := x + 1. x := x + 1. x := x + 1. x := x + 1. x := x + 1. x := x + 1. x := x + 1. x := x + 1. x := x + 1. x := x + 1. x := x + 1. x := x + 1. x := x + 1. x := x + 1. x := x + 1 ]. x"
+  },
+  {
+    "name": "receiver quick variable access",
+    "expression": "Point>>x receiver variable access",
+    "source": "squeakJSProbe ^ x",
+    "className": "Point",
+    "skipEval": true
+  },
+  {
+    "name": "receiver quick variable pop",
+    "expression": "Point>>x receiver variable pop",
+    "source": "squeakJSProbe x := 5. ^ x",
+    "className": "Point",
+    "skipEval": true
+  },
+  {
+    "name": "receiver extended variable access",
+    "expression": "OCIRBytecodeGenerator>>compilationContext receiver variable access",
+    "source": "squeakJSProbe ^ compilationContext",
+    "className": "OCIRBytecodeGenerator",
+    "skipEval": true
+  },
+  {
+    "name": "receiver extended variable pop",
+    "expression": "OCIRBytecodeGenerator>>compilationContext receiver variable pop",
+    "source": "squeakJSProbe compilationContext := nil. ^ compilationContext",
+    "className": "OCIRBytecodeGenerator",
+    "skipEval": true
+  },
+  {
+    "name": "receiver extended variable store",
+    "expression": "OCIRBytecodeGenerator>>compilationContext receiver variable store",
+    "source": "squeakJSProbe ^ (compilationContext := nil)",
+    "className": "OCIRBytecodeGenerator",
+    "skipEval": true
+  },
+  {
+    "name": "literal variable extended access and pop",
+    "expression": "extended global literal-variable push/pop",
+    "source": "DoIt SqueakJSSistaProbeGlobal01. SqueakJSSistaProbeGlobal02. SqueakJSSistaProbeGlobal03. SqueakJSSistaProbeGlobal04. SqueakJSSistaProbeGlobal05. SqueakJSSistaProbeGlobal06. SqueakJSSistaProbeGlobal07. SqueakJSSistaProbeGlobal08. SqueakJSSistaProbeGlobal09. SqueakJSSistaProbeGlobal10. SqueakJSSistaProbeGlobal11. SqueakJSSistaProbeGlobal12. SqueakJSSistaProbeGlobal13. SqueakJSSistaProbeGlobal14. SqueakJSSistaProbeGlobal15. SqueakJSSistaProbeGlobal16. SqueakJSSistaProbeGlobal17 := 99. ^ SqueakJSSistaProbeGlobal17",
+    "skipEval": true
+  },
+  {
+    "name": "literal variable extended store",
+    "expression": "extended global literal-variable store",
+    "source": "DoIt SqueakJSSistaProbeGlobal01. SqueakJSSistaProbeGlobal02. SqueakJSSistaProbeGlobal03. SqueakJSSistaProbeGlobal04. SqueakJSSistaProbeGlobal05. SqueakJSSistaProbeGlobal06. SqueakJSSistaProbeGlobal07. SqueakJSSistaProbeGlobal08. SqueakJSSistaProbeGlobal09. SqueakJSSistaProbeGlobal10. SqueakJSSistaProbeGlobal11. SqueakJSSistaProbeGlobal12. SqueakJSSistaProbeGlobal13. SqueakJSSistaProbeGlobal14. SqueakJSSistaProbeGlobal15. SqueakJSSistaProbeGlobal16. ^ (SqueakJSSistaProbeGlobal17 := 99)",
+    "skipEval": true
+  },
+  {
+    "name": "primitive fallback method",
+    "expression": "<primitive: 1> ^ 42",
+    "source": "DoIt <primitive: 1> ^ 42",
+    "skipEval": true
+  }
+]

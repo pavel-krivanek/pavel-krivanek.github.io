@@ -1,0 +1,1576 @@
+THERE_BE_DRAGONS_HERE
+Error: Null FFI Backend
+11 June 2026 3:24:10.770895 pm
+
+VM: unix - x86_64 - linux-gnu - JSInterpreter VMMaker.js-codefrau.1
+JSInterpreter VMMaker.js-codefrau.1
+
+Image: Pharo-14.0.0+SNAPSHOT.build.693.sha.6a0497e0d7690e869acee26238d086d1db4344a3 (64 Bit)
+
+NullFFIBackend>>loadSymbol:module:
+	Receiver: a NullFFIBackend
+	Receiver's instance variables: 
+a NullFFIBackend
+	Arguments and temporary variables: 
+		temp1: 	#memcpy
+		temp2: 	'libc.so.6'
+
+ExternalAddress class>>loadSymbol:module:
+	Receiver: ExternalAddress
+	Receiver's instance variables: 
+		superclass: 	ByteArray
+		methodDict: 	a MethodDictionary(#+->ExternalAddress>>#+ #=->ExternalAddress>[..]
+		format: 	1048576
+		layout: 	a ByteLayout
+		protocols: 	an Array(Protocol (copying) - 5 selector(s) Protocol (arithmetic[..]
+		subclasses: 	nil
+		name: 	#ExternalAddress
+		classPool: 	nil
+		sharedPools: 	nil
+		environment: 	a SystemEnvironment(lots of globals)
+		commentSourcePointer: 	17815246
+		packageTag: 	a PackageTag(Uncategorized)
+		wordSize: 	8
+
+	Arguments and temporary variables: 
+		temp1: 	#memcpy
+		temp2: 	'libc.so.6'
+
+TFExternalFunction>>validate
+	Receiver: a TFExternalFunction
+	Receiver's instance variables: 
+		handle: 	<<error during printing: primitive #integerOfObject:at:size:signed: in NullFFIBackend failed>>
+	Arguments and temporary variables: 
+x
+
+TFSameThreadRunner>>invokeFunction:withArguments:
+	Receiver: <<error during printing: primitive #integerOfObject:at:size:signed: in NullFFIBackend failed>>
+	Receiver's instance variables: 
+		handle: 	<<error during printing: primitive #integerOfObject:at:size:signed: in NullFFIBackend failed>>
+	Arguments and temporary variables: 
+		temp1: 	a TFExternalFunction
+		temp2: 	an Array(@ aCollection of class Arraywith a failing printOn: is get[..]
+
+LibC>>memCopy:to:size:
+	Receiver: a LibC
+	Receiver's instance variables: 
+a LibC
+	Arguments and temporary variables: 
+<<error during printing: primitive #integerOfObject:at:size:signed: in NullFFIBackend failed>>
+
+TFCalloutAPI(FFICalloutAPI)>>function:library:
+	Receiver: a TFCalloutAPI
+	Receiver's instance variables: 
+		options: 	#(#+ #optStrict)
+		callingConvention: 	#cdecl
+		senderContext: 	LibC>>memCopy:to:size:
+		uFFIEntryPointContext: 	nil
+		fixedArgumentCount: 	0
+
+	Arguments and temporary variables: 
+		temp1: 	#(#void #* #memcpy #(#void #* #dest #, #const #void #* #src #, #siz[..]
+		temp2: 	a LibC
+		temp3: 	LibC>>memCopy:to:size:
+		temp4: 	LibC>>#memCopy:to:size:
+		temp5: 	#ffiCall:
+
+TFCalloutAPI(FFICalloutAPI)>>function:module:
+	Receiver: a TFCalloutAPI
+	Receiver's instance variables: 
+		options: 	#(#+ #optStrict)
+		callingConvention: 	#cdecl
+		senderContext: 	LibC>>memCopy:to:size:
+		uFFIEntryPointContext: 	nil
+		fixedArgumentCount: 	0
+
+	Arguments and temporary variables: 
+		temp1: 	#(#void #* #memcpy #(#void #* #dest #, #const #void #* #src #, #siz[..]
+		temp2: 	a LibC
+
+LibC(FFILibrary)>>ffiCall:
+	Receiver: a LibC
+	Receiver's instance variables: 
+a LibC
+	Arguments and temporary variables: 
+		temp1: 	#(#void #* #memcpy #(#void #* #dest #, #const #void #* #src #, #siz[..]
+
+LibC>>memCopy:to:size:
+	Receiver: a LibC
+	Receiver's instance variables: 
+a LibC
+	Arguments and temporary variables: 
+<<error during printing: primitive #integerOfObject:at:size:signed: in NullFFIBackend failed>>
+
+LibC class>>memCopy:to:size:
+	Receiver: LibC
+	Receiver's instance variables: 
+		superclass: 	FFILibrary
+		methodDict: 	a MethodDictionary(#close:->LibC>>#close: #currentProcessId->Li[..]
+		format: 	0
+		layout: 	a FixedLayout
+		protocols: 	an Array(Protocol (api - input/output) - 3 selector(s) Protocol [..]
+		subclasses: 	nil
+		name: 	#LibC
+		classPool: 	nil
+		sharedPools: 	an OrderedCollection(LibCTypes)
+		environment: 	a SystemEnvironment(lots of globals)
+		commentSourcePointer: 	31121886
+		packageTag: 	a PackageTag(Libraries)
+		uniqueInstance: 	a LibC
+
+	Arguments and temporary variables: 
+<<error during printing: primitive #integerOfObject:at:size:signed: in NullFFIBackend failed>>
+
+ExternalAddress(ByteArray)>>writeString:
+	Receiver: <<error during printing: primitive #integerOfObject:at:size:signed: in NullFFIBackend failed>>
+	Receiver's instance variables: 
+<<error during printing: primitive #integerOfObject:at:size:signed: in NullFFIBackend failed>>
+	Arguments and temporary variables: 
+		temp1: 	#[97 98 99]
+
+ExternalAddress class>>fromString:
+	Receiver: ExternalAddress
+	Receiver's instance variables: 
+		superclass: 	ByteArray
+		methodDict: 	a MethodDictionary(#+->ExternalAddress>>#+ #=->ExternalAddress>[..]
+		format: 	1048576
+		layout: 	a ByteLayout
+		protocols: 	an Array(Protocol (copying) - 5 selector(s) Protocol (arithmetic[..]
+		subclasses: 	nil
+		name: 	#ExternalAddress
+		classPool: 	nil
+		sharedPools: 	nil
+		environment: 	a SystemEnvironment(lots of globals)
+		commentSourcePointer: 	17815246
+		packageTag: 	a PackageTag(Uncategorized)
+		wordSize: 	8
+
+	Arguments and temporary variables: 
+<<error during printing: primitive #integerOfObject:at:size:signed: in NullFFIBackend failed>>
+
+UndefinedObject>>DoIt
+	Receiver: nil
+	Receiver's instance variables: 
+nil
+	Arguments and temporary variables: 
+x
+
+OpalEvaluator>>evaluate:
+	Receiver: an OpalEvaluator
+	Receiver's instance variables: 
+		failBlock: 	nil
+		permitFaultyEvaluation: 	nil
+		compiler: 	an OpalCompiler
+		logged: 	false
+		bindings: 	#()
+		context: 	nil
+		receiver: 	nil
+
+	Arguments and temporary variables: 
+		temp1: 	'{ Smalltalk vm operatingSystemName. (Smalltalk os environment at: [..]
+		temp2: 	an OCSuccessCompilationResult
+
+[ ] in ClapCodeEvaluator>>evaluateExpression
+	Receiver: a ClapCodeEvaluator
+	Receiver's instance variables: 
+		context: 	a ClapContext(#('eval' '{ Smalltalk vm operatingSystemName. (Small[..]
+		expression: 	an OrderedCollection('{ Smalltalk vm operatingSystemName. (Smal[..]
+
+	Arguments and temporary variables: 
+x
+
+FullBlockClosure(BlockClosure)>>on:do:
+	Receiver: [ ] in ClapCodeEvaluator>>#evaluateExpression
+	Receiver's instance variables: 
+		outerContext: 	ClapCodeEvaluator>>evaluateExpression
+		compiledBlock: 	a CompiledBlock: [ OpalEvaluator new evaluate: self source ]
+		numArgs: 	0
+		receiver: 	a ClapCodeEvaluator
+
+	Arguments and temporary variables: 
+		temp1: 	Error
+		temp2: 	[ ] in ClapCodeEvaluator>>#evaluateExpression
+
+ClapCodeEvaluator>>evaluateExpression
+	Receiver: a ClapCodeEvaluator
+	Receiver's instance variables: 
+		context: 	a ClapContext(#('eval' '{ Smalltalk vm operatingSystemName. (Small[..]
+		expression: 	an OrderedCollection('{ Smalltalk vm operatingSystemName. (Smal[..]
+
+	Arguments and temporary variables: 
+x
+
+ClapCodeEvaluator>>evaluate
+	Receiver: a ClapCodeEvaluator
+	Receiver's instance variables: 
+		context: 	a ClapContext(#('eval' '{ Smalltalk vm operatingSystemName. (Small[..]
+		expression: 	an OrderedCollection('{ Smalltalk vm operatingSystemName. (Smal[..]
+
+	Arguments and temporary variables: 
+x
+
+ClapCodeEvaluator>>execute
+	Receiver: a ClapCodeEvaluator
+	Receiver's instance variables: 
+		context: 	a ClapContext(#('eval' '{ Smalltalk vm operatingSystemName. (Small[..]
+		expression: 	an OrderedCollection('{ Smalltalk vm operatingSystemName. (Smal[..]
+
+	Arguments and temporary variables: 
+		temp1: 	nil
+
+ClapCodeEvaluator(ClapApplication)>>executeOrPrintHelp
+	Receiver: a ClapCodeEvaluator
+	Receiver's instance variables: 
+		context: 	a ClapContext(#('eval' '{ Smalltalk vm operatingSystemName. (Small[..]
+		expression: 	an OrderedCollection('{ Smalltalk vm operatingSystemName. (Smal[..]
+
+	Arguments and temporary variables: 
+x
+
+[ ] in ClapContext>>executeToExit:
+	Receiver: a ClapContext(#('eval' '{ Smalltalk vm operatingSystemName. (Smalltalk os environment [..]
+	Receiver's instance variables: 
+		specification: 	a ClapRoot(<subcommand>)
+		arguments: 	#('eval' '{ Smalltalk vm operatingSystemName. (Smalltalk os envi[..]
+		obeyingExits: 	true
+		stdio: 	Stdio
+		match: 	a ClapCompositeMatch(eval { Smalltalk vm operatingSystemName. (Small[..]
+		leftovers: 	#()
+		session: 	a WorkingSession
+		exitException: 	nil
+
+	Arguments and temporary variables: 
+x
+
+FullBlockClosure(BlockClosure)>>on:do:
+	Receiver: [ ] in ClapContext>>#executeToExit:
+	Receiver's instance variables: 
+		outerContext: 	ClapContext>>executeToExit:
+		compiledBlock: 	a CompiledBlock: [
+		self rememberSession.
+		self ifMismatch[..]
+		numArgs: 	0
+		receiver: 	a ClapContext(#('eval' '{ Smalltalk vm operatingSystemName. (Smal[..]
+
+	Arguments and temporary variables: 
+		temp1: 	Exit
+		temp2: 	[ ] in ClapContext>>#executeToExit:
+
+ClapContext>>executeToExit:
+	Receiver: a ClapContext(#('eval' '{ Smalltalk vm operatingSystemName. (Smalltalk os environment [..]
+	Receiver's instance variables: 
+		specification: 	a ClapRoot(<subcommand>)
+		arguments: 	#('eval' '{ Smalltalk vm operatingSystemName. (Smalltalk os envi[..]
+		obeyingExits: 	true
+		stdio: 	Stdio
+		match: 	a ClapCompositeMatch(eval { Smalltalk vm operatingSystemName. (Small[..]
+		leftovers: 	#()
+		session: 	a WorkingSession
+		exitException: 	nil
+
+	Arguments and temporary variables: 
+		temp1: 	[ ] in ClapContext>>#execute
+
+ClapContext>>execute
+	Receiver: a ClapContext(#('eval' '{ Smalltalk vm operatingSystemName. (Smalltalk os environment [..]
+	Receiver's instance variables: 
+		specification: 	a ClapRoot(<subcommand>)
+		arguments: 	#('eval' '{ Smalltalk vm operatingSystemName. (Smalltalk os envi[..]
+		obeyingExits: 	true
+		stdio: 	Stdio
+		match: 	a ClapCompositeMatch(eval { Smalltalk vm operatingSystemName. (Small[..]
+		leftovers: 	#()
+		session: 	a WorkingSession
+		exitException: 	nil
+
+	Arguments and temporary variables: 
+x
+
+ClapContext class>>executeWithPragmaCommandsAndArguments:
+	Receiver: ClapContext
+	Receiver's instance variables: 
+		superclass: 	ClapExpression
+		methodDict: 	a MethodDictionary(#allValidations->ClapContext>>#allValidation[..]
+		format: 	65544
+		layout: 	a FixedLayout
+		protocols: 	an Array(Protocol (running) - 6 selector(s) Protocol (initializa[..]
+		subclasses: 	nil
+		name: 	#ClapContext
+		classPool: 	nil
+		sharedPools: 	an OrderedCollection()
+		environment: 	a SystemEnvironment(lots of globals)
+		commentSourcePointer: 	5834380
+		packageTag: 	a PackageTag(Activation)
+
+	Arguments and temporary variables: 
+		temp1: 	#('eval' '{ Smalltalk vm operatingSystemName. (Smalltalk os environ[..]
+
+ClapCommandLineHandler>>activateCommand
+	Receiver: a ClapCommandLineHandler
+	Receiver's instance variables: 
+		commandLine: 	a CommandLineArguments
+		session: 	a WorkingSession
+		stdout: 	nil
+		stderr: 	nil
+
+	Arguments and temporary variables: 
+x
+
+[ ] in ClapCommandLineHandler(CommandLineHandler)>>activateAndHandleExit
+	Receiver: a ClapCommandLineHandler
+	Receiver's instance variables: 
+		commandLine: 	a CommandLineArguments
+		session: 	a WorkingSession
+		stdout: 	nil
+		stderr: 	nil
+
+	Arguments and temporary variables: 
+x
+
+FullBlockClosure(BlockClosure)>>on:do:
+	Receiver: [ ] in CommandLineHandler>>#activateAndHandleExit
+	Receiver's instance variables: 
+		outerContext: 	ClapCommandLineHandler(CommandLineHandler)>>activateAndHandleExit
+		compiledBlock: 	a CompiledBlock: [ self activateCommand ]
+		numArgs: 	0
+		receiver: 	a ClapCommandLineHandler
+
+	Arguments and temporary variables: 
+		temp1: 	Exit
+		temp2: 	[ ] in CommandLineHandler>>#activateAndHandleExit
+
+ClapCommandLineHandler(CommandLineHandler)>>activateAndHandleExit
+	Receiver: a ClapCommandLineHandler
+	Receiver's instance variables: 
+		commandLine: 	a CommandLineArguments
+		session: 	a WorkingSession
+		stdout: 	nil
+		stderr: 	nil
+
+	Arguments and temporary variables: 
+x
+
+[ ] in ClapCommandLineHandler(CommandLineHandler)>>activate
+	Receiver: a ClapCommandLineHandler
+	Receiver's instance variables: 
+		commandLine: 	a CommandLineArguments
+		session: 	a WorkingSession
+		stdout: 	nil
+		stderr: 	nil
+
+	Arguments and temporary variables: 
+x
+
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+	Receiver: [ ] in CommandLineHandler>>#activate
+	Receiver's instance variables: 
+		outerContext: 	ClapCommandLineHandler(CommandLineHandler)>>activate
+		compiledBlock: 	a CompiledBlock: [ self activateAndHandleExit ]
+		numArgs: 	0
+		receiver: 	a ClapCommandLineHandler
+
+	Arguments and temporary variables: 
+x
+
+
+--- The full stack ---
+NullFFIBackend>>loadSymbol:module:
+ExternalAddress class>>loadSymbol:module:
+TFExternalFunction>>validate
+TFSameThreadRunner>>invokeFunction:withArguments:
+LibC>>memCopy:to:size:
+TFCalloutAPI(FFICalloutAPI)>>function:library:
+TFCalloutAPI(FFICalloutAPI)>>function:module:
+LibC(FFILibrary)>>ffiCall:
+LibC>>memCopy:to:size:
+LibC class>>memCopy:to:size:
+ExternalAddress(ByteArray)>>writeString:
+ExternalAddress class>>fromString:
+UndefinedObject>>DoIt
+OpalEvaluator>>evaluate:
+[ ] in ClapCodeEvaluator>>evaluateExpression
+FullBlockClosure(BlockClosure)>>on:do:
+ClapCodeEvaluator>>evaluateExpression
+ClapCodeEvaluator>>evaluate
+ClapCodeEvaluator>>execute
+ClapCodeEvaluator(ClapApplication)>>executeOrPrintHelp
+[ ] in ClapContext>>executeToExit:
+FullBlockClosure(BlockClosure)>>on:do:
+ClapContext>>executeToExit:
+ClapContext>>execute
+ClapContext class>>executeWithPragmaCommandsAndArguments:
+ClapCommandLineHandler>>activateCommand
+[ ] in ClapCommandLineHandler(CommandLineHandler)>>activateAndHandleExit
+FullBlockClosure(BlockClosure)>>on:do:
+ClapCommandLineHandler(CommandLineHandler)>>activateAndHandleExit
+[ ] in ClapCommandLineHandler(CommandLineHandler)>>activate
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+-------------------------------------------------------------------------------
+
+Processes and their stacks: 
+Process: a Process in [ ] in TFCallbackQueue>>forkCallbackProcess
+  stack:
+
+[ ] in TFCallbackQueue>>forkCallbackProcess
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in AtomicSharedQueue>>waitForNewItems
+  stack:
+
+AtomicSharedQueue>>waitForNewItems
+AtomicSharedQueue>>next
+TKTWorkerProcess>>privateNextTask
+TKTWorkerProcess>>workerLoop
+MessageSend>>value
+[ ] in TKTPharoProcessProvider>>createProcessDoing:named:
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in AtomicSharedQueue>>waitForNewItems
+  stack:
+
+AtomicSharedQueue>>waitForNewItems
+AtomicSharedQueue>>next
+TKTWorkerProcess>>privateNextTask
+TKTWorkerProcess>>workerLoop
+MessageSend>>value
+[ ] in TKTPharoProcessProvider>>createProcessDoing:named:
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in DelayMicrosecondTicker>>waitForUserSignalled:orExpired:
+  stack:
+
+DelayMicrosecondTicker>>waitForUserSignalled:orExpired:
+[ ] in DelaySemaphoreScheduler(DelayBasicScheduler)>>runBackendLoopAtTimingPriority
+FullBlockClosure(BlockClosure)>>ensure:
+DelaySemaphoreScheduler(DelayBasicScheduler)>>runBackendLoopAtTimingPriority
+[ ] in DelaySemaphoreScheduler(DelayBasicScheduler)>>startTimerEventLoopPriority:
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in ProcessorScheduler>>yield
+  stack:
+
+ProcessorScheduler>>yield
+MorphicRenderLoop>>doOneCycleWhile:
+[ ] in UndefinedObject(MorphicUIManager)>>spawnNewProcess
+[ ] in CleanBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in SmalltalkImage>>lowSpaceWatcher
+  stack:
+
+SmalltalkImage>>lowSpaceWatcher
+[ ] in SmalltalkImage>>installLowSpaceWatcher
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in [ ] in FullBlockClosure(BlockClosure)>>newProcess
+  stack:
+
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in nil
+  stack:
+
+Array(SequenceableCollection)>>do:
+[ ] in UndefinedObject(NonInteractiveErrorHandler)>>quitFrom:withMessage:
+[ ] in SmalltalkImage>>logDuring:
+FullBlockClosure(BlockClosure)>>ensure:
+SmalltalkImage>>logDuring:
+[ ] in NonInteractiveErrorHandler>>quitFrom:withMessage:
+FullBlockClosure(BlockClosure)>>ensure:
+NonInteractiveErrorHandler>>quitFrom:withMessage:
+NonInteractiveErrorHandler>>handleError:log:
+NonInteractiveErrorHandler(ErrorHandler)>>handleError:
+Process>>handleError:
+Error(Exception)>>unhandledErrorAction
+UnhandledError>>defaultAction
+UndefinedObject>>handleSignal:
+Context>>handleSignal:
+Context>>handleSignal:
+Context>>handleSignal:
+UnhandledError(Exception)>>signal
+UnhandledError class>>signalForException:
+Error(Exception)>>raiseUnhandledError
+------------------------------
+
+Process: a Process in FinalizationProcess class>>finalizationProcess
+  stack:
+
+FinalizationProcess class>>finalizationProcess
+[ ] in FinalizationProcess class>>restartFinalizationProcess
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+THERE_BE_DRAGONS_HERE
+Instance of NullFFIBackend did not understand #primLoadSymbol:module:
+11 June 2026 3:25:23.657175 pm
+
+VM: unix - x86_64 - linux-gnu - JSInterpreter VMMaker.js-codefrau.1
+JSInterpreter VMMaker.js-codefrau.1
+
+Image: Pharo-14.0.0+SNAPSHOT.build.693.sha.6a0497e0d7690e869acee26238d086d1db4344a3 (64 Bit)
+
+ByteSymbol(Symbol)>>handleDoesNotUnderstand:to:
+	Receiver: #primLoadSymbol:module:
+	Receiver's instance variables: 
+#primLoadSymbol:module:
+	Arguments and temporary variables: 
+		temp1: 	primLoadSymbol: #memcpy module: 'libc.so.6'
+		temp2: 	a NullFFIBackend
+		temp3: 	Instance of NullFFIBackend did not understand #primLoadSymbol:module:
+		temp4: 	nil
+
+NullFFIBackend(Object)>>doesNotUnderstand: 'primLoadSymbol:module:'
+	Receiver: a NullFFIBackend
+	Receiver's instance variables: 
+a NullFFIBackend
+	Arguments and temporary variables: 
+		temp1: 	primLoadSymbol: #memcpy module: 'libc.so.6'
+
+NullFFIBackend(TFFIBackend)>>loadSymbol:module:
+	Receiver: a NullFFIBackend
+	Receiver's instance variables: 
+a NullFFIBackend
+	Arguments and temporary variables: 
+		temp1: 	#memcpy
+		temp2: 	'libc.so.6'
+		temp3: 	'libc.so.6'
+
+ExternalAddress class>>loadSymbol:module:
+	Receiver: ExternalAddress
+	Receiver's instance variables: 
+		superclass: 	ByteArray
+		methodDict: 	a MethodDictionary(#+->ExternalAddress>>#+ #=->ExternalAddress>[..]
+		format: 	1048576
+		layout: 	a ByteLayout
+		protocols: 	an Array(Protocol (copying) - 5 selector(s) Protocol (arithmetic[..]
+		subclasses: 	nil
+		name: 	#ExternalAddress
+		classPool: 	nil
+		sharedPools: 	nil
+		environment: 	a SystemEnvironment(lots of globals)
+		commentSourcePointer: 	17815246
+		packageTag: 	a PackageTag(Uncategorized)
+		wordSize: 	8
+
+	Arguments and temporary variables: 
+		temp1: 	#memcpy
+		temp2: 	'libc.so.6'
+
+TFExternalFunction>>validate
+	Receiver: a TFExternalFunction
+	Receiver's instance variables: 
+		handle: 	@ 16r00000000
+		definition: 	a TFFunctionDefinition(@ 16r00000006)
+		functionName: 	#memcpy
+		moduleName: 	'libc.so.6'
+
+	Arguments and temporary variables: 
+x
+
+TFSameThreadRunner>>invokeFunction:withArguments:
+	Receiver: a TFSameThreadRunner(@ 16r00000000)
+	Receiver's instance variables: 
+		handle: 	@ 16r00000000
+		callbackInvocationStack: 	a Stack()
+		stackProtect: 	a Semaphore()
+		exceptionHandler: 	a TFForkCallbackExceptionHandler
+		semaphorePool: 	a TFPool(5 elements)
+		callbackReturnSemaphore: 	a Semaphore()
+
+	Arguments and temporary variables: 
+		temp1: 	a TFExternalFunction
+		temp2: 	an Array(@ 16r00000004 @ 16r00000005 3)
+
+LibC>>memCopy:to:size:
+	Receiver: a LibC
+	Receiver's instance variables: 
+a LibC
+	Arguments and temporary variables: 
+		temp1: 	#[97 98 99]
+		temp2: 	@ 16r00000004
+		temp3: 	3
+		temp4: 	nil
+		temp5: 	an Array(@ 16r00000004 @ 16r00000005 3)
+
+TFCalloutAPI(FFICalloutAPI)>>function:library:
+	Receiver: a TFCalloutAPI
+	Receiver's instance variables: 
+		options: 	#(#+ #optStrict)
+		callingConvention: 	#cdecl
+		senderContext: 	LibC>>memCopy:to:size:
+		uFFIEntryPointContext: 	nil
+		fixedArgumentCount: 	0
+
+	Arguments and temporary variables: 
+		temp1: 	#(#void #* #memcpy #(#void #* #dest #, #const #void #* #src #, #siz[..]
+		temp2: 	a LibC
+		temp3: 	LibC>>memCopy:to:size:
+		temp4: 	LibC>>#memCopy:to:size:
+		temp5: 	#ffiCall:
+
+TFCalloutAPI(FFICalloutAPI)>>function:module:
+	Receiver: a TFCalloutAPI
+	Receiver's instance variables: 
+		options: 	#(#+ #optStrict)
+		callingConvention: 	#cdecl
+		senderContext: 	LibC>>memCopy:to:size:
+		uFFIEntryPointContext: 	nil
+		fixedArgumentCount: 	0
+
+	Arguments and temporary variables: 
+		temp1: 	#(#void #* #memcpy #(#void #* #dest #, #const #void #* #src #, #siz[..]
+		temp2: 	a LibC
+
+LibC(FFILibrary)>>ffiCall:
+	Receiver: a LibC
+	Receiver's instance variables: 
+a LibC
+	Arguments and temporary variables: 
+		temp1: 	#(#void #* #memcpy #(#void #* #dest #, #const #void #* #src #, #siz[..]
+
+LibC>>memCopy:to:size:
+	Receiver: a LibC
+	Receiver's instance variables: 
+a LibC
+	Arguments and temporary variables: 
+		temp1: 	#[97 98 99]
+		temp2: 	@ 16r00000004
+		temp3: 	3
+
+LibC class>>memCopy:to:size:
+	Receiver: LibC
+	Receiver's instance variables: 
+		superclass: 	FFILibrary
+		methodDict: 	a MethodDictionary(#close:->LibC>>#close: #currentProcessId->Li[..]
+		format: 	0
+		layout: 	a FixedLayout
+		protocols: 	an Array(Protocol (api - input/output) - 3 selector(s) Protocol [..]
+		subclasses: 	nil
+		name: 	#LibC
+		classPool: 	nil
+		sharedPools: 	an OrderedCollection(LibCTypes)
+		environment: 	a SystemEnvironment(lots of globals)
+		commentSourcePointer: 	31121886
+		packageTag: 	a PackageTag(Libraries)
+		uniqueInstance: 	a LibC
+
+	Arguments and temporary variables: 
+		temp1: 	#[97 98 99]
+		temp2: 	@ 16r00000004
+		temp3: 	3
+
+ExternalAddress(ByteArray)>>writeString:
+	Receiver: @ 16r00000004
+	Receiver's instance variables: 
+@ 16r00000004
+	Arguments and temporary variables: 
+		temp1: 	#[97 98 99]
+
+ExternalAddress class>>fromString:
+	Receiver: ExternalAddress
+	Receiver's instance variables: 
+		superclass: 	ByteArray
+		methodDict: 	a MethodDictionary(#+->ExternalAddress>>#+ #=->ExternalAddress>[..]
+		format: 	1048576
+		layout: 	a ByteLayout
+		protocols: 	an Array(Protocol (copying) - 5 selector(s) Protocol (arithmetic[..]
+		subclasses: 	nil
+		name: 	#ExternalAddress
+		classPool: 	nil
+		sharedPools: 	nil
+		environment: 	a SystemEnvironment(lots of globals)
+		commentSourcePointer: 	17815246
+		packageTag: 	a PackageTag(Uncategorized)
+		wordSize: 	8
+
+	Arguments and temporary variables: 
+		temp1: 	'abc'
+		temp2: 	@ 16r00000004
+		temp3: 	#[97 98 99]
+
+UndefinedObject>>DoIt
+	Receiver: nil
+	Receiver's instance variables: 
+nil
+	Arguments and temporary variables: 
+x
+
+OpalEvaluator>>evaluate:
+	Receiver: an OpalEvaluator
+	Receiver's instance variables: 
+		failBlock: 	nil
+		permitFaultyEvaluation: 	nil
+		compiler: 	an OpalCompiler
+		logged: 	false
+		bindings: 	#()
+		context: 	nil
+		receiver: 	nil
+
+	Arguments and temporary variables: 
+		temp1: 	'{ Smalltalk vm operatingSystemName. (Smalltalk os environment at: [..]
+		temp2: 	an OCSuccessCompilationResult
+
+[ ] in ClapCodeEvaluator>>evaluateExpression
+	Receiver: a ClapCodeEvaluator
+	Receiver's instance variables: 
+		context: 	a ClapContext(#('eval' '{ Smalltalk vm operatingSystemName. (Small[..]
+		expression: 	an OrderedCollection('{ Smalltalk vm operatingSystemName. (Smal[..]
+
+	Arguments and temporary variables: 
+x
+
+FullBlockClosure(BlockClosure)>>on:do:
+	Receiver: [ ] in ClapCodeEvaluator>>#evaluateExpression
+	Receiver's instance variables: 
+		outerContext: 	ClapCodeEvaluator>>evaluateExpression
+		compiledBlock: 	a CompiledBlock: [ OpalEvaluator new evaluate: self source ]
+		numArgs: 	0
+		receiver: 	a ClapCodeEvaluator
+
+	Arguments and temporary variables: 
+		temp1: 	Error
+		temp2: 	[ ] in ClapCodeEvaluator>>#evaluateExpression
+
+ClapCodeEvaluator>>evaluateExpression
+	Receiver: a ClapCodeEvaluator
+	Receiver's instance variables: 
+		context: 	a ClapContext(#('eval' '{ Smalltalk vm operatingSystemName. (Small[..]
+		expression: 	an OrderedCollection('{ Smalltalk vm operatingSystemName. (Smal[..]
+
+	Arguments and temporary variables: 
+x
+
+ClapCodeEvaluator>>evaluate
+	Receiver: a ClapCodeEvaluator
+	Receiver's instance variables: 
+		context: 	a ClapContext(#('eval' '{ Smalltalk vm operatingSystemName. (Small[..]
+		expression: 	an OrderedCollection('{ Smalltalk vm operatingSystemName. (Smal[..]
+
+	Arguments and temporary variables: 
+x
+
+ClapCodeEvaluator>>execute
+	Receiver: a ClapCodeEvaluator
+	Receiver's instance variables: 
+		context: 	a ClapContext(#('eval' '{ Smalltalk vm operatingSystemName. (Small[..]
+		expression: 	an OrderedCollection('{ Smalltalk vm operatingSystemName. (Smal[..]
+
+	Arguments and temporary variables: 
+		temp1: 	nil
+
+ClapCodeEvaluator(ClapApplication)>>executeOrPrintHelp
+	Receiver: a ClapCodeEvaluator
+	Receiver's instance variables: 
+		context: 	a ClapContext(#('eval' '{ Smalltalk vm operatingSystemName. (Small[..]
+		expression: 	an OrderedCollection('{ Smalltalk vm operatingSystemName. (Smal[..]
+
+	Arguments and temporary variables: 
+x
+
+[ ] in ClapContext>>executeToExit:
+	Receiver: a ClapContext(#('eval' '{ Smalltalk vm operatingSystemName. (Smalltalk os environment [..]
+	Receiver's instance variables: 
+		specification: 	a ClapRoot(<subcommand>)
+		arguments: 	#('eval' '{ Smalltalk vm operatingSystemName. (Smalltalk os envi[..]
+		obeyingExits: 	true
+		stdio: 	Stdio
+		match: 	a ClapCompositeMatch(eval { Smalltalk vm operatingSystemName. (Small[..]
+		leftovers: 	#()
+		session: 	a WorkingSession
+		exitException: 	nil
+
+	Arguments and temporary variables: 
+x
+
+FullBlockClosure(BlockClosure)>>on:do:
+	Receiver: [ ] in ClapContext>>#executeToExit:
+	Receiver's instance variables: 
+		outerContext: 	ClapContext>>executeToExit:
+		compiledBlock: 	a CompiledBlock: [
+		self rememberSession.
+		self ifMismatch[..]
+		numArgs: 	0
+		receiver: 	a ClapContext(#('eval' '{ Smalltalk vm operatingSystemName. (Smal[..]
+
+	Arguments and temporary variables: 
+		temp1: 	Exit
+		temp2: 	[ ] in ClapContext>>#executeToExit:
+
+ClapContext>>executeToExit:
+	Receiver: a ClapContext(#('eval' '{ Smalltalk vm operatingSystemName. (Smalltalk os environment [..]
+	Receiver's instance variables: 
+		specification: 	a ClapRoot(<subcommand>)
+		arguments: 	#('eval' '{ Smalltalk vm operatingSystemName. (Smalltalk os envi[..]
+		obeyingExits: 	true
+		stdio: 	Stdio
+		match: 	a ClapCompositeMatch(eval { Smalltalk vm operatingSystemName. (Small[..]
+		leftovers: 	#()
+		session: 	a WorkingSession
+		exitException: 	nil
+
+	Arguments and temporary variables: 
+		temp1: 	[ ] in ClapContext>>#execute
+
+ClapContext>>execute
+	Receiver: a ClapContext(#('eval' '{ Smalltalk vm operatingSystemName. (Smalltalk os environment [..]
+	Receiver's instance variables: 
+		specification: 	a ClapRoot(<subcommand>)
+		arguments: 	#('eval' '{ Smalltalk vm operatingSystemName. (Smalltalk os envi[..]
+		obeyingExits: 	true
+		stdio: 	Stdio
+		match: 	a ClapCompositeMatch(eval { Smalltalk vm operatingSystemName. (Small[..]
+		leftovers: 	#()
+		session: 	a WorkingSession
+		exitException: 	nil
+
+	Arguments and temporary variables: 
+x
+
+ClapContext class>>executeWithPragmaCommandsAndArguments:
+	Receiver: ClapContext
+	Receiver's instance variables: 
+		superclass: 	ClapExpression
+		methodDict: 	a MethodDictionary(#allValidations->ClapContext>>#allValidation[..]
+		format: 	65544
+		layout: 	a FixedLayout
+		protocols: 	an Array(Protocol (running) - 6 selector(s) Protocol (initializa[..]
+		subclasses: 	nil
+		name: 	#ClapContext
+		classPool: 	nil
+		sharedPools: 	an OrderedCollection()
+		environment: 	a SystemEnvironment(lots of globals)
+		commentSourcePointer: 	5834380
+		packageTag: 	a PackageTag(Activation)
+
+	Arguments and temporary variables: 
+		temp1: 	#('eval' '{ Smalltalk vm operatingSystemName. (Smalltalk os environ[..]
+
+ClapCommandLineHandler>>activateCommand
+	Receiver: a ClapCommandLineHandler
+	Receiver's instance variables: 
+		commandLine: 	a CommandLineArguments
+		session: 	a WorkingSession
+		stdout: 	nil
+		stderr: 	nil
+
+	Arguments and temporary variables: 
+x
+
+[ ] in ClapCommandLineHandler(CommandLineHandler)>>activateAndHandleExit
+	Receiver: a ClapCommandLineHandler
+	Receiver's instance variables: 
+		commandLine: 	a CommandLineArguments
+		session: 	a WorkingSession
+		stdout: 	nil
+		stderr: 	nil
+
+	Arguments and temporary variables: 
+x
+
+FullBlockClosure(BlockClosure)>>on:do:
+	Receiver: [ ] in CommandLineHandler>>#activateAndHandleExit
+	Receiver's instance variables: 
+		outerContext: 	ClapCommandLineHandler(CommandLineHandler)>>activateAndHandleExit
+		compiledBlock: 	a CompiledBlock: [ self activateCommand ]
+		numArgs: 	0
+		receiver: 	a ClapCommandLineHandler
+
+	Arguments and temporary variables: 
+		temp1: 	Exit
+		temp2: 	[ ] in CommandLineHandler>>#activateAndHandleExit
+
+ClapCommandLineHandler(CommandLineHandler)>>activateAndHandleExit
+	Receiver: a ClapCommandLineHandler
+	Receiver's instance variables: 
+		commandLine: 	a CommandLineArguments
+		session: 	a WorkingSession
+		stdout: 	nil
+		stderr: 	nil
+
+	Arguments and temporary variables: 
+x
+
+[ ] in ClapCommandLineHandler(CommandLineHandler)>>activate
+	Receiver: a ClapCommandLineHandler
+	Receiver's instance variables: 
+		commandLine: 	a CommandLineArguments
+		session: 	a WorkingSession
+		stdout: 	nil
+		stderr: 	nil
+
+	Arguments and temporary variables: 
+x
+
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+	Receiver: [ ] in CommandLineHandler>>#activate
+	Receiver's instance variables: 
+		outerContext: 	ClapCommandLineHandler(CommandLineHandler)>>activate
+		compiledBlock: 	a CompiledBlock: [ self activateAndHandleExit ]
+		numArgs: 	0
+		receiver: 	a ClapCommandLineHandler
+
+	Arguments and temporary variables: 
+x
+
+
+--- The full stack ---
+ByteSymbol(Symbol)>>handleDoesNotUnderstand:to:
+NullFFIBackend(Object)>>doesNotUnderstand: 'primLoadSymbol:module:'
+NullFFIBackend(TFFIBackend)>>loadSymbol:module:
+ExternalAddress class>>loadSymbol:module:
+TFExternalFunction>>validate
+TFSameThreadRunner>>invokeFunction:withArguments:
+LibC>>memCopy:to:size:
+TFCalloutAPI(FFICalloutAPI)>>function:library:
+TFCalloutAPI(FFICalloutAPI)>>function:module:
+LibC(FFILibrary)>>ffiCall:
+LibC>>memCopy:to:size:
+LibC class>>memCopy:to:size:
+ExternalAddress(ByteArray)>>writeString:
+ExternalAddress class>>fromString:
+UndefinedObject>>DoIt
+OpalEvaluator>>evaluate:
+[ ] in ClapCodeEvaluator>>evaluateExpression
+FullBlockClosure(BlockClosure)>>on:do:
+ClapCodeEvaluator>>evaluateExpression
+ClapCodeEvaluator>>evaluate
+ClapCodeEvaluator>>execute
+ClapCodeEvaluator(ClapApplication)>>executeOrPrintHelp
+[ ] in ClapContext>>executeToExit:
+FullBlockClosure(BlockClosure)>>on:do:
+ClapContext>>executeToExit:
+ClapContext>>execute
+ClapContext class>>executeWithPragmaCommandsAndArguments:
+ClapCommandLineHandler>>activateCommand
+[ ] in ClapCommandLineHandler(CommandLineHandler)>>activateAndHandleExit
+FullBlockClosure(BlockClosure)>>on:do:
+ClapCommandLineHandler(CommandLineHandler)>>activateAndHandleExit
+[ ] in ClapCommandLineHandler(CommandLineHandler)>>activate
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+-------------------------------------------------------------------------------
+
+Processes and their stacks: 
+Process: a Process in [ ] in TFCallbackQueue>>forkCallbackProcess
+  stack:
+
+[ ] in TFCallbackQueue>>forkCallbackProcess
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in AtomicSharedQueue>>waitForNewItems
+  stack:
+
+AtomicSharedQueue>>waitForNewItems
+AtomicSharedQueue>>next
+TKTWorkerProcess>>privateNextTask
+TKTWorkerProcess>>workerLoop
+MessageSend>>value
+[ ] in TKTPharoProcessProvider>>createProcessDoing:named:
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in AtomicSharedQueue>>waitForNewItems
+  stack:
+
+AtomicSharedQueue>>waitForNewItems
+AtomicSharedQueue>>next
+TKTWorkerProcess>>privateNextTask
+TKTWorkerProcess>>workerLoop
+MessageSend>>value
+[ ] in TKTPharoProcessProvider>>createProcessDoing:named:
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in DelayMicrosecondTicker>>waitForUserSignalled:orExpired:
+  stack:
+
+DelayMicrosecondTicker>>waitForUserSignalled:orExpired:
+[ ] in DelaySemaphoreScheduler(DelayBasicScheduler)>>runBackendLoopAtTimingPriority
+FullBlockClosure(BlockClosure)>>ensure:
+DelaySemaphoreScheduler(DelayBasicScheduler)>>runBackendLoopAtTimingPriority
+[ ] in DelaySemaphoreScheduler(DelayBasicScheduler)>>startTimerEventLoopPriority:
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in ProcessorScheduler>>yield
+  stack:
+
+ProcessorScheduler>>yield
+MorphicRenderLoop>>doOneCycleWhile:
+[ ] in UndefinedObject(MorphicUIManager)>>spawnNewProcess
+[ ] in CleanBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in SmalltalkImage>>lowSpaceWatcher
+  stack:
+
+SmalltalkImage>>lowSpaceWatcher
+[ ] in SmalltalkImage>>installLowSpaceWatcher
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in [ ] in FullBlockClosure(BlockClosure)>>newProcess
+  stack:
+
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in nil
+  stack:
+
+Array(SequenceableCollection)>>do:
+[ ] in UndefinedObject(NonInteractiveErrorHandler)>>quitFrom:withMessage:
+[ ] in SmalltalkImage>>logDuring:
+FullBlockClosure(BlockClosure)>>ensure:
+SmalltalkImage>>logDuring:
+[ ] in NonInteractiveErrorHandler>>quitFrom:withMessage:
+FullBlockClosure(BlockClosure)>>ensure:
+NonInteractiveErrorHandler>>quitFrom:withMessage:
+NonInteractiveErrorHandler>>handleError:log:
+NonInteractiveErrorHandler(ErrorHandler)>>handleError:
+Process>>handleError:
+MessageNotUnderstood(Exception)>>unhandledErrorAction
+UnhandledError>>defaultAction
+UndefinedObject>>handleSignal:
+Context>>handleSignal:
+Context>>handleSignal:
+Context>>handleSignal:
+UnhandledError(Exception)>>signal
+UnhandledError class>>signalForException:
+MessageNotUnderstood(Exception)>>raiseUnhandledError
+------------------------------
+
+Process: a Process in FinalizationProcess class>>finalizationProcess
+  stack:
+
+FinalizationProcess class>>finalizationProcess
+[ ] in FinalizationProcess class>>restartFinalizationProcess
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+THERE_BE_DRAGONS_HERE
+Error: Cannot open non source file: pharo14-full.changes
+11 June 2026 6:03:08.979329 pm
+
+VM: unix - x86_64 - linux-gnu - JSInterpreter VMMaker.js-codefrau.1
+JSInterpreter VMMaker.js-codefrau.1
+
+Image: Pharo-14.0.0+SNAPSHOT.build.693.sha.6a0497e0d7690e869acee26238d086d1db4344a3 (64 Bit)
+
+SourceFile>>tryOpenReadOnly:
+	Receiver: SourceFile(pharo14-full.changes)
+	Receiver's instance variables: 
+		stream: 	nil
+		potentialLocations: 	an Array({imageDirectory} File @ .)
+		formatVersionClass: 	nil
+		fileName: 	'pharo14-full.changes'
+
+	Arguments and temporary variables: 
+		temp1: 	false
+		temp2: 	a SourceFileCharacterReadWriteStream
+
+PharoFilesOpener>>changesFileOrNilReadOnly:
+	Receiver: a PharoFilesOpener
+	Receiver's instance variables: 
+a PharoFilesOpener
+	Arguments and temporary variables: 
+		temp1: 	false
+		temp2: 	nil
+
+PharoFilesOpener>>changesFileOrNil
+	Receiver: a PharoFilesOpener
+	Receiver's instance variables: 
+a PharoFilesOpener
+	Arguments and temporary variables: 
+x
+
+FilesSourcesManager>>ensureOpen
+	Receiver: a FilesSourcesManager
+	Receiver's instance variables: 
+		files: 	#(nil nil)
+		readOnlyQueue: 	SharedQueue with 0 items
+		flushChanges: 	true
+		exporterClass: 	CodeExporterV100
+
+	Arguments and temporary variables: 
+		temp1: 	SourceFile(/mnt/data/work-v042/Pharo14.0-64bit-6a0497e.sources)
+		temp2: 	nil
+
+FilesSourcesManager>>startUp
+	Receiver: a FilesSourcesManager
+	Receiver's instance variables: 
+		files: 	#(nil nil)
+		readOnlyQueue: 	SharedQueue with 0 items
+		flushChanges: 	true
+		exporterClass: 	CodeExporterV100
+
+	Arguments and temporary variables: 
+x
+
+SourcesManager class>>startUp:
+	Receiver: SourcesManager
+	Receiver's instance variables: 
+		superclass: 	Object
+		methodDict: 	a MethodDictionary(#changeRecordsFor:->SourcesManager>>#changeR[..]
+		format: 	0
+		layout: 	a FixedLayout
+		protocols: 	an Array(Protocol (accessing) - 4 selector(s) Protocol (public -[..]
+		subclasses: 	{NoSourcesManager. FilesSourcesManager}
+		name: 	#SourcesManager
+		classPool: 	a Dictionary(#Current->a FilesSourcesManager )
+		sharedPools: 	nil
+		environment: 	a SystemEnvironment(lots of globals)
+		commentSourcePointer: 	68078660
+		packageTag: 	a PackageTag(Sources)
+
+	Arguments and temporary variables: 
+		temp1: 	true
+
+ClassSessionHandler>>startup:
+	Receiver: a ClassSessionHandler(SourcesManager)
+	Receiver's instance variables: 
+		registeredClassName: 	#SourcesManager
+
+	Arguments and temporary variables: 
+		temp1: 	true
+
+[ ] in WorkingSession>>runStartup:
+	Receiver: a WorkingSession
+	Receiver's instance variables: 
+		manager: 	a SessionManager
+		deferredStartupActions: 	an OrderedCollection([ ] in CommandLineHandler clas[..]
+
+	Arguments and temporary variables: 
+		temp1: 	a ClassSessionHandler(SourcesManager)
+		temp2: 	true
+
+[ ] in WorkingSession>>runList:do:
+	Receiver: a WorkingSession
+	Receiver's instance variables: 
+		manager: 	a SessionManager
+		deferredStartupActions: 	an OrderedCollection([ ] in CommandLineHandler clas[..]
+
+	Arguments and temporary variables: 
+		temp1: 	a ClassSessionHandler(SourcesManager)
+		temp2: 	[ ] in WorkingSession>>#runStartup:
+
+FullBlockClosure(BlockClosure)>>on:do:
+	Receiver: [ ] in WorkingSession>>#runList:do:
+	Receiver's instance variables: 
+		outerContext: 	[ ] in WorkingSession>>runList:do:
+		compiledBlock: 	a CompiledBlock: [ aBlock value: arg3 ]
+		numArgs: 	0
+		receiver: 	a WorkingSession
+
+	Arguments and temporary variables: 
+		temp1: 	Exception
+		temp2: 	[ ] in WorkingSession>>#runList:do:
+
+[ ] in WorkingSession>>runList:do:
+	Receiver: a WorkingSession
+	Receiver's instance variables: 
+		manager: 	a SessionManager
+		deferredStartupActions: 	an OrderedCollection([ ] in CommandLineHandler clas[..]
+
+	Arguments and temporary variables: 
+		temp1: 	a ClassSessionHandler(SourcesManager)
+		temp2: 	[ ] in WorkingSession>>#runStartup:
+
+Array(SequenceableCollection)>>do:
+	Receiver: an Array(a ClassSessionHandler(SmallInteger) a ClassSessionHandler(Delay) a ClassSessi[..]
+	Receiver's instance variables: 
+an Array(a ClassSessionHandler(SmallInteger) a ClassSessionHandler(Delay) a ClassSessi[..]
+	Arguments and temporary variables: 
+		temp1: 	[ ] in WorkingSession>>#runList:do:
+		temp2: 	54
+		temp3: 	15
+
+WorkingSession>>runList:do:
+	Receiver: a WorkingSession
+	Receiver's instance variables: 
+		manager: 	a SessionManager
+		deferredStartupActions: 	an OrderedCollection([ ] in CommandLineHandler clas[..]
+
+	Arguments and temporary variables: 
+		temp1: 	an Array(a ClassSessionHandler(SmallInteger) a ClassSessionHandler([..]
+		temp2: 	[ ] in WorkingSession>>#runStartup:
+
+WorkingSession>>runStartup:
+	Receiver: a WorkingSession
+	Receiver's instance variables: 
+		manager: 	a SessionManager
+		deferredStartupActions: 	an OrderedCollection([ ] in CommandLineHandler clas[..]
+
+	Arguments and temporary variables: 
+		temp1: 	true
+
+WorkingSession>>start:
+	Receiver: a WorkingSession
+	Receiver's instance variables: 
+		manager: 	a SessionManager
+		deferredStartupActions: 	an OrderedCollection([ ] in CommandLineHandler clas[..]
+
+	Arguments and temporary variables: 
+		temp1: 	true
+
+[ ] in SnapshotOperation>>performSnapshot
+	Receiver: a SnapshotOperation
+	Receiver's instance variables: 
+		isImageStarting: 	true
+		error: 	nil
+		save: 	true
+		quit: 	false
+		sessionManager: 	a SessionManager
+		imageFormatOption: 	nil
+
+	Arguments and temporary variables: 
+x
+
+FullBlockClosure(BlockClosure)>>on:do:
+	Receiver: [ ] in SnapshotOperation>>#performSnapshot
+	Receiver's instance variables: 
+		outerContext: 	SnapshotOperation>>performSnapshot
+		compiledBlock: 	a CompiledBlock: [
+			isImageStarting ifTrue: [ sessionManag[..]
+		numArgs: 	0
+		receiver: 	a SnapshotOperation
+
+	Arguments and temporary variables: 
+		temp1: 	Error
+		temp2: 	[ ] in BlockClosure>>#onErrorDo:
+
+FullBlockClosure(BlockClosure)>>onErrorDo:
+	Receiver: [ ] in SnapshotOperation>>#performSnapshot
+	Receiver's instance variables: 
+		outerContext: 	SnapshotOperation>>performSnapshot
+		compiledBlock: 	a CompiledBlock: [
+			isImageStarting ifTrue: [ sessionManag[..]
+		numArgs: 	0
+		receiver: 	a SnapshotOperation
+
+	Arguments and temporary variables: 
+		temp1: 	[ ] in SnapshotOperation>>#executeStoringError:
+
+SnapshotOperation>>executeStoringError:
+	Receiver: a SnapshotOperation
+	Receiver's instance variables: 
+		isImageStarting: 	true
+		error: 	nil
+		save: 	true
+		quit: 	false
+		sessionManager: 	a SessionManager
+		imageFormatOption: 	nil
+
+	Arguments and temporary variables: 
+		temp1: 	[ ] in SnapshotOperation>>#performSnapshot
+
+SnapshotOperation>>performSnapshot
+	Receiver: a SnapshotOperation
+	Receiver's instance variables: 
+		isImageStarting: 	true
+		error: 	nil
+		save: 	true
+		quit: 	false
+		sessionManager: 	a SessionManager
+		imageFormatOption: 	nil
+
+	Arguments and temporary variables: 
+x
+
+SessionManager>>launchSnapshot:andQuit:
+	Receiver: a SessionManager
+	Receiver's instance variables: 
+		currentSession: 	a WorkingSession
+		categories: 	an OrderedCollection(a SessionCategory(System) a SessionCategor[..]
+		guiCategory: 	a SessionCategory(Graphical User Interface)
+		toolsCategory: 	a SessionCategory(Tools)
+		networkCategory: 	a SessionCategory(Network)
+		systemCategory: 	a SessionCategory(System)
+		userCategory: 	a SessionCategory(User)
+
+	Arguments and temporary variables: 
+		temp1: 	true
+		temp2: 	false
+		temp3: 	a SnapshotOperation
+
+[ ] in SessionManager>>snapshot:andQuit:
+	Receiver: a SessionManager
+	Receiver's instance variables: 
+		currentSession: 	a WorkingSession
+		categories: 	an OrderedCollection(a SessionCategory(System) a SessionCategor[..]
+		guiCategory: 	a SessionCategory(Graphical User Interface)
+		toolsCategory: 	a SessionCategory(Tools)
+		networkCategory: 	a SessionCategory(Network)
+		systemCategory: 	a SessionCategory(System)
+		userCategory: 	a SessionCategory(User)
+
+	Arguments and temporary variables: 
+		temp1: 	true
+		temp2: 	false
+		temp3: 	a Semaphore()
+		temp4: 	an Array(a SnapshotOperation)
+
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+	Receiver: [ ] in SessionManager>>#snapshot:andQuit:
+	Receiver's instance variables: 
+		outerContext: 	SessionManager>>snapshot:andQuit:
+		compiledBlock: 	a CompiledBlock: [
+		tmp3 := self launchSnapshot: save andQu[..]
+		numArgs: 	0
+		receiver: 	a SessionManager
+
+	Arguments and temporary variables: 
+x
+
+
+--- The full stack ---
+SourceFile>>tryOpenReadOnly:
+PharoFilesOpener>>changesFileOrNilReadOnly:
+PharoFilesOpener>>changesFileOrNil
+FilesSourcesManager>>ensureOpen
+FilesSourcesManager>>startUp
+SourcesManager class>>startUp:
+ClassSessionHandler>>startup:
+[ ] in WorkingSession>>runStartup:
+[ ] in WorkingSession>>runList:do:
+FullBlockClosure(BlockClosure)>>on:do:
+[ ] in WorkingSession>>runList:do:
+Array(SequenceableCollection)>>do:
+WorkingSession>>runList:do:
+WorkingSession>>runStartup:
+WorkingSession>>start:
+[ ] in SnapshotOperation>>performSnapshot
+FullBlockClosure(BlockClosure)>>on:do:
+FullBlockClosure(BlockClosure)>>onErrorDo:
+SnapshotOperation>>executeStoringError:
+SnapshotOperation>>performSnapshot
+SessionManager>>launchSnapshot:andQuit:
+[ ] in SessionManager>>snapshot:andQuit:
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+-------------------------------------------------------------------------------
+
+Processes and their stacks: 
+Process: a Process in [ ] in TFCallbackQueue>>forkCallbackProcess
+  stack:
+
+[ ] in TFCallbackQueue>>forkCallbackProcess
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in AtomicSharedQueue>>waitForNewItems
+  stack:
+
+AtomicSharedQueue>>waitForNewItems
+AtomicSharedQueue>>next
+TKTWorkerProcess>>privateNextTask
+TKTWorkerProcess>>workerLoop
+MessageSend>>value
+[ ] in TKTPharoProcessProvider>>createProcessDoing:named:
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in AtomicSharedQueue>>waitForNewItems
+  stack:
+
+AtomicSharedQueue>>waitForNewItems
+AtomicSharedQueue>>next
+TKTWorkerProcess>>privateNextTask
+TKTWorkerProcess>>workerLoop
+MessageSend>>value
+[ ] in TKTPharoProcessProvider>>createProcessDoing:named:
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in DelayMicrosecondTicker>>waitForUserSignalled:orExpired:
+  stack:
+
+DelayMicrosecondTicker>>waitForUserSignalled:orExpired:
+[ ] in DelaySemaphoreScheduler(DelayBasicScheduler)>>runBackendLoopAtTimingPriority
+FullBlockClosure(BlockClosure)>>ensure:
+DelaySemaphoreScheduler(DelayBasicScheduler)>>runBackendLoopAtTimingPriority
+[ ] in DelaySemaphoreScheduler(DelayBasicScheduler)>>startTimerEventLoopPriority:
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in ProcessorScheduler>>yield
+  stack:
+
+ProcessorScheduler>>yield
+MorphicRenderLoop>>doOneCycleWhile:
+[ ] in UndefinedObject(MorphicUIManager)>>spawnNewProcess
+[ ] in CleanBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in nil
+  stack:
+
+Array(SequenceableCollection)>>do:
+[ ] in UndefinedObject(NonInteractiveErrorHandler)>>quitFrom:withMessage:
+[ ] in SmalltalkImage>>logDuring:
+FullBlockClosure(BlockClosure)>>ensure:
+SmalltalkImage>>logDuring:
+[ ] in NonInteractiveErrorHandler>>quitFrom:withMessage:
+FullBlockClosure(BlockClosure)>>ensure:
+NonInteractiveErrorHandler>>quitFrom:withMessage:
+NonInteractiveErrorHandler>>handleError:log:
+NonInteractiveErrorHandler(ErrorHandler)>>handleError:
+Process>>handleError:
+Error(Exception)>>unhandledErrorAction
+UnhandledError>>defaultAction
+UndefinedObject>>handleSignal:
+Context>>handleSignal:
+Context>>handleSignal:
+UnhandledError(Exception)>>signal
+UnhandledError class>>signalForException:
+Error(Exception)>>raiseUnhandledError
+[ ] in SessionManagerErrorHandler>>handleError:log:
+------------------------------
+
+Process: a Process in Process>>endProcess
+  stack:
+
+Process>>endProcess
+------------------------------
+
+Process: a Process in SmalltalkImage>>lowSpaceWatcher
+  stack:
+
+SmalltalkImage>>lowSpaceWatcher
+[ ] in SmalltalkImage>>installLowSpaceWatcher
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in [ ] in FullBlockClosure(BlockClosure)>>newProcess
+  stack:
+
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+
+Process: a Process in FinalizationProcess class>>finalizationProcess
+  stack:
+
+FinalizationProcess class>>finalizationProcess
+[ ] in FinalizationProcess class>>restartFinalizationProcess
+[ ] in FullBlockClosure(BlockClosure)>>newProcess
+------------------------------
+

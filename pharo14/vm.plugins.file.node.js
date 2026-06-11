@@ -1,0 +1,390 @@
+"use strict";
+/*
+ * Copyright (c) 2013-2025 Vanessa Freudenberg
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+var fs = require("fs");
+var path = require("path");
+
+var previousWriteBuffers = [
+    "", // stdin, unused
+    "", // stdout
+    "", // stderr
+];
+
+var openFileDescriptors = [];
+
+function isValidNodeFileHandle(handle) {
+    return !!handle && Number.isInteger(handle.fd) && handle.fd >= 0;
+}
+
+Object.extend(Squeak.Primitives.prototype,
+'FilePlugin', {
+    primitiveDirectoryCreate: function(argCount) {
+        var dirNameObj = this.stackNonInteger(0);
+        if (!this.success) return false;
+        var dirName = dirNameObj.bytesAsString();
+        try {
+            fs.mkdirSync(dirName);
+        } catch(e) {
+            console.error("Failed to create directory: " + dirName);
+            return false;
+        }
+        return this.popNIfOK(argCount);	// Answer self
+    },
+    primitiveDirectoryDelete: function(argCount) {
+        var dirNameObj = this.stackNonInteger(0);
+        if (!this.success) return false;
+        var dirName = dirName.bytesAsString();
+        try {
+            fs.rmdirSync(dirName);
+        } catch(e) {
+            console.error("Failed to delete directory: " + dirName);
+            return false;
+        }
+        return this.popNIfOK(argCount);	// Answer self
+    },
+    primitiveDirectoryDelimitor: function(argCount) {
+        var delimitor = this.emulateMac ? ':' : path.sep;
+        return this.popNandPushIfOK(argCount + 1, this.charFromInt(delimitor.charCodeAt(0)));
+    },
+    primitiveDirectoryLookup: function(argCount) {
+        var index = this.stackInteger(0),
+            dirNameObj = this.stackNonInteger(1);
+        if (!this.success) return false;
+        var dirName = dirNameObj.bytesAsString();
+        var entry = null;
+        try {
+            var dirEntries = fs.readdirSync(dirName);
+            if (index < 1 || index > dirEntries.length) return false;
+            var dirEntry = dirEntries[index - 1];
+            var stats = fs.statSync(dirName + path.sep + dirEntry);
+            entry = [
+                dirEntry,                                           // Name
+                Math.floor((stats.ctimeMs - Squeak.Epoch) / 1000),  // Creation time (seconds sinds Smalltalk epoch)
+                Math.floor((stats.mtimeMs - Squeak.Epoch) / 1000),  // Modification time (seconds sinds Smalltalk epoch)
+                stats.isDirectory(),                                // Directory flag
+                stats.isFile() ? stats.size : 0                     // File size
+            ];
+        } catch(e) {
+            if (e.errno !== -20) {
+                console.error("Failed to read directory: " + dirName);
+            }
+            return false;
+        }
+        this.popNandPushIfOK(argCount + 1, this.makeStObject(entry));  // entry or nil
+        return true;
+    },
+    primitiveFileStdioHandles: function(argCount) {
+        var handles = [
+            this.makeFileHandle('/dev/stdin', 0, false),
+            this.makeFileHandle('/dev/stdout', 1, true),
+            this.makeFileHandle('/dev/stderr', 2, true),
+        ];
+        this.popNandPushIfOK(argCount + 1, this.makeStArray(handles));
+        return true;
+    },
+    primitiveFileDescriptorType: function(argCount) {
+        var fd = this.stackInteger(0);
+        if (!this.success) return false;
+        var type = -1;
+        try {
+            var stats = fs.fstatSync(fd);
+            if (stats.isFile()) type = 3;
+            else if (stats.isFIFO() || stats.isSocket()) type = 2;
+            else if (stats.isCharacterDevice()) type = require("tty").isatty(fd) ? 1 : 2;
+            else type = 2;
+        } catch(e) {
+            type = -1;
+        }
+        this.popNandPushIfOK(argCount + 1, type);
+        return true;
+    },
+    primitiveConnectToFileDescriptor: function(argCount) {
+        var writeFlag = this.stackBoolean(0),
+            fd = this.stackInteger(1);
+        if (!this.success || fd < 0) return false;
+        var handle = this.makeFileHandle('/dev/fd/' + fd, fd, writeFlag);
+        this.popNandPushIfOK(argCount + 1, handle);
+        return true;
+    },
+    primitiveFileSync: function(argCount) {
+        var handle = this.stackNonInteger(0);
+        if (!this.success || !isValidNodeFileHandle(handle)) return false;
+        try {
+            fs.fsyncSync(handle.fd);
+        } catch(e) {
+            return false;
+        }
+        return this.popNIfOK(argCount);
+    },
+    primitiveWaitForDataWithSemaphore: function(argCount) {
+        var _semaphoreIndex = this.stackInteger(0),
+            _handle = this.stackNonInteger(1);
+        if (!this.success) return false;
+        return this.popNandPushIfOK(argCount + 1, this.vm.trueObj);
+    },
+    primitiveFileOpen: function(argCount) {
+        var writeFlag = this.stackBoolean(0),
+            fileNameObj = this.stackNonInteger(1);
+        if (!this.success) return false;
+        var fileName = fileNameObj.bytesAsString();
+        var fd;
+        try {
+            fd = fs.openSync(fileName, writeFlag ? "a+" : "r");
+            if (fd < 0) return false;
+        } catch(e) {
+            console.error("Failed to open file: " + fileName);
+            return false;
+        }
+        var handle = this.makeFileHandle(fileName, fd, writeFlag);
+        openFileDescriptors.push(fd);
+        this.popNandPushIfOK(argCount + 1, handle);
+        return true;
+    },
+    primitiveFileSize: function(argCount) {
+        var handle = this.stackNonInteger(0);
+        if (!this.success || !isValidNodeFileHandle(handle)) return false;
+        var fileSize;
+        try {
+            fileSize = fs.fstatSync(handle.fd).size;
+        } catch(e) {
+            console.error("Failed to get file size for fd " + handle.fd);
+            return false;
+        }
+        this.popNandPushIfOK(argCount + 1, this.makeLargeIfNeeded(fileSize));
+        return true;
+    },
+    primitiveFileGetPosition: function(argCount) {
+        var handle = this.stackNonInteger(0);
+        if (!this.success) return false;
+        this.popNandPushIfOK(argCount + 1, this.makeLargeIfNeeded(handle.filePos));
+        return true;
+    },
+    primitiveFileSetPosition: function(argCount) {
+        var pos = this.stackPos32BitInt(0),
+            handle = this.stackNonInteger(1);
+        if (!this.success) return false;
+        handle.filePos = pos;
+        return this.popNIfOK(argCount);	// Answer self
+    },
+    primitiveFileAtEnd: function(argCount) {
+        var handle = this.stackNonInteger(0);
+        if (!this.success || !isValidNodeFileHandle(handle)) return false;
+        var fileAtEnd;
+        try {
+            fileAtEnd = handle.filePos >= fs.fstatSync(handle.fd).size;
+        } catch(e) {
+            console.error("Failed to decide if at end of file");
+            return false;
+        }
+        this.popNandPushIfOK(argCount + 1, this.makeStObject(fileAtEnd));
+        return true;
+    },
+    primitiveDirectorySetMacTypeAndCreator: function(argCount) {
+        return this.popNIfOK(argCount);	// Answer self
+    },
+    primitiveFileRead: function(argCount) {
+        var count = this.stackInteger(0),
+            startIndex = this.stackInteger(1) - 1, // make zero based
+            arrayObj = this.stackNonInteger(2),
+            handle = this.stackNonInteger(3);
+        if (!this.success || !arrayObj.isWordsOrBytes() || !isValidNodeFileHandle(handle)) return false;
+        if (!count) return this.popNandPushIfOK(argCount + 1, 0);
+        var array = arrayObj.bytes;
+        if (!array) {
+            array = arrayObj.wordsAsUint8Array();
+            startIndex *= 4;
+            count *= 4;
+        }
+        if (startIndex < 0 || startIndex + count > array.length)
+            return false;
+        if (handle.fd === 0) {
+            console.warn("File reading on stdin not implemented yet");
+            return false;
+        }
+        var bytesRead;
+        try {
+            bytesRead = fs.readSync(handle.fd, array, startIndex, count, handle.filePos);
+            handle.filePos += bytesRead;
+        } catch(e) {
+            console.error("Failed to read from file");
+            return false;
+        }
+        count = arrayObj.bytes ? bytesRead : bytesRead >> 2;  // words
+        this.popNandPushIfOK(argCount + 1, count);
+        return true;
+    },
+    primitiveFileWrite: function(argCount) {
+        var count = this.stackInteger(0),
+            startIndex = this.stackInteger(1) - 1, // make zero based
+            arrayObj = this.stackNonInteger(2),
+            handle = this.stackNonInteger(3);
+        if (!this.success || !isValidNodeFileHandle(handle) || !handle.fileWrite) return false;
+        if (!count) return this.popNandPushIfOK(argCount + 1, 0);
+        var array = arrayObj.bytes;
+        if (!array) {
+            array = arrayObj.wordsAsUint8Array();
+            startIndex *= 4;
+            count *= 4;
+        }
+        if (!array) return false;
+        if (startIndex < 0 || startIndex + count > array.length)
+            return false;
+        var bytesWritten;
+        if (handle.fd === 1 || handle.fd === 2) {
+            var logger = handle.fd === 1 ? console.log : console.error;
+            var buffer = array.slice(startIndex, startIndex + count);
+            while (count > 0 && buffer.length > 0) {
+                var linefeedIndex = buffer.indexOf(10);
+                if (linefeedIndex >= 0) {
+                    logger(previousWriteBuffers[handle.fd] + String.fromCharCode.apply(null, buffer.slice(0, linefeedIndex)));
+                    previousWriteBuffers[handle.fd] = "";
+                    buffer = buffer.slice(linefeedIndex + 1);
+                    bytesWritten += linefeedIndex + 1;  // incl. the linefeed character
+                    count -= linefeedIndex + 1;
+                    handle.filePos += linefeedIndex + 1;
+                } else {
+                    previousWriteBuffers[handle.fd] += String.fromCharCode.apply(null, buffer);
+                    bytesWritten += buffer.length;
+                    count -= buffer.length;
+                    handle.filePos += buffer.length;
+                }
+            }
+        } else {
+            try {
+                bytesWritten = fs.writeSync(handle.fd, array, startIndex, count, handle.filePos);
+                handle.filePos += bytesWritten;
+            } catch(e) {
+                console.error("Failed to write to file");
+                return false;
+            }
+        }
+        if (!arrayObj.bytes) bytesWritten = bytesWritten >> 2;  // words
+        this.popNandPushIfOK(argCount + 1, bytesWritten);
+        return true;
+    },
+    primitiveFileFlush: function(argCount) {
+        var handle = this.stackNonInteger(0);
+        if (!this.success || !isValidNodeFileHandle(handle)) return false;
+        if (handle.fd === 1 || handle.fd === 2) {
+            var logger = handle.fd === 1 ? console.log : console.error;
+            logger(previousWriteBuffers[handle.fd]);
+            previousWriteBuffers[handle.fd] = "";
+        } else {
+            try {
+                fs.fsyncSync(handle.fd);
+            } catch(e) {
+                console.error("Failed to flush file");
+                return false;
+            }
+        }
+        return this.popNIfOK(argCount);	// Answer self
+    },
+    primitiveFileTruncate: function(argCount) {
+        var pos = this.stackPos32BitInt(0),
+            handle = this.stackNonInteger(1);
+        if (!this.success || !isValidNodeFileHandle(handle) || !handle.fileWrite) return false;
+        try {
+            var fileSize = fs.fstatSync(handle.fd).size;
+            if (fileSize > pos) {
+                fs.ftruncateSync(handle.fd, pos);
+                if (handle.filePos > pos) handle.filePos = pos;
+            }
+        } catch(e) {
+            console.error("Failed to truncate file");
+            return false;
+        }
+        return this.popNIfOK(argCount);	// Answer self
+    },
+    primitiveFileClose: function(argCount) {
+        var handle = this.stackNonInteger(0);
+        if (!this.success || !isValidNodeFileHandle(handle)) return false;
+        try {
+            fs.closeSync(handle.fd);
+            openFileDescriptors = openFileDescriptors.filter(function(fd) { return fd !== handle.fd; });
+        } catch(e) {
+            console.error("Failed to close file");
+            return false;
+        }
+        return this.popNIfOK(argCount);	// Answer self
+    },
+    primitiveFileRename: function(argCount) {
+        var oldNameObj = this.stackNonInteger(1),
+            newNameObj = this.stackNonInteger(0);
+        if (!this.success) return false;
+        var oldName = oldNameObj.bytesAsString(),
+            newName = newNameObj.bytesAsString();
+        try {
+            fs.renameSync(oldName, newName);
+        } catch(e) {
+            console.error("Failed to rename file from: " + oldName + " to: " + newName);
+            return false;
+        }
+        return this.popNIfOK(argCount);	// Answer self
+    },
+    primitiveFileDelete: function(argCount) {
+        var fileNameObj = this.stackNonInteger(0);
+        if (!this.success) return false;
+        var fileName = fileNameObj.bytesAsString();
+        try {
+            fs.unlinkSync(fileName);
+        } catch(e) {
+            console.error("Failed to delete file: " + fileName);
+            return false;
+        }
+        return this.popNIfOK(argCount);	// Answer self
+    },
+    makeFileHandle: function(filename, fd, writeFlag) {
+        var handle = this.makeStString("squeakjs:" + filename);
+        handle.fd = fd;                 // shared between handles
+        handle.fileWrite = writeFlag;   // specific to this handle
+        handle.filePos = 0;             // specific to this handle
+        return handle;
+    },
+    filenameToSqueak: function(unixpath) {
+        return unixpath;
+    },
+    filenameFromSqueak: function(filepath) {
+        return filepath;
+    },
+});
+
+Object.extend(Squeak, {
+    flushAllFiles: function() {
+        openFileDescriptors.forEach(function(fd) {
+            try {
+                fs.fsyncSync(fd);
+            } catch(e) {
+                console.error("Failed to flush one of the files");
+            }
+        });
+    },
+    filePut: function(fileName, buffer) {
+        try {
+            // Node does not support ArrayBuffer and Bun does not support DataView,
+            // use a TypedArray as argument to writeFileSync.
+            fs.writeFileSync(fileName, new Uint8Array(buffer));
+        } catch(e) {
+            console.error("Failed to create file with content: " + fileName);
+        }
+    },
+});

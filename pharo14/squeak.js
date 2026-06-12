@@ -310,8 +310,9 @@ var UnicodeToMacRoman = {};
 for (var i = 0; i < MacRomanToUnicode.length; i++)
     UnicodeToMacRoman[MacRomanToUnicode[i]] = i + 128;
 
-function recordKeyboardEvent(unicode, timestamp, display) {
+function recordKeyboardEvent(unicode, timestamp, display, options) {
     if (!display.vm) return;
+    options = options || {};
     var macCode = UnicodeToMacRoman[unicode] || (unicode < 128 ? unicode : 0);
     var modifiersAndKey = (display.buttons >> 3) << 8 | macCode;
     var squeakKeyboardEvent = [
@@ -322,7 +323,7 @@ function recordKeyboardEvent(unicode, timestamp, display) {
         display.buttons >> 3,
         unicode,  // Unicode
     ];
-    if (Squeak.FFIEmulation && Squeak.FFIEmulation.enqueueSDLEventFromSqueakEvent)
+    if (!options.skipSDL && Squeak.FFIEmulation && Squeak.FFIEmulation.enqueueSDLEventFromSqueakEvent)
         Squeak.FFIEmulation.enqueueSDLEventFromSqueakEvent(display, squeakKeyboardEvent);
     if (display.eventQueue) {
         display.eventQueue.push(squeakKeyboardEvent);
@@ -340,6 +341,17 @@ function recordKeyboardEvent(unicode, timestamp, display) {
     }
     display.idle = 0;
     if (display.runNow) display.runNow('keyboard'); // don't wait for timeout to run
+}
+
+function displayUsesDirectSDLKeyboard(display) {
+    return !!(display && display.sdlKeyboardDirect && Squeak.FFIEmulation);
+}
+
+function wakeDisplayForKeyboard(display, reason) {
+    if (!display || !display.vm) return;
+    if (display.signalInputEvent) display.signalInputEvent();
+    display.idle = 0;
+    if (display.runNow) display.runNow(reason || 'keyboard');
 }
 
 function recordDragDropEvent(type, evt, canvas, display) {
@@ -858,9 +870,13 @@ function createSqueakDisplay(canvas, options) {
             // generate keyboard events for each character
             // single input could be many characters, e.g. for emoji
             var chars = Array.from(evt.data); // split by surrogate pairs
+            var directSDLText = displayUsesDirectSDLKeyboard(display)
+                && Squeak.FFIEmulation.enqueueSDLTextInputFromBrowserEvent;
             for (var i = 0; i < chars.length; i++) {
                 var unicode = chars[i].codePointAt(0); // codePointAt combines pair into unicode
-                recordKeyboardEvent(unicode, evt.timeStamp, display);
+                if (directSDLText)
+                    Squeak.FFIEmulation.enqueueSDLTextInputFromBrowserEvent(display, chars[i], evt.timeStamp);
+                recordKeyboardEvent(unicode, evt.timeStamp, display, { skipSDL: !!directSDLText });
             }
             if (!hadDeadChars && evt.isComposing && evt.inputType === "insertCompositionText") {
                 deadChars = deadChars.concat(chars);
@@ -874,6 +890,12 @@ function createSqueakDisplay(canvas, options) {
         deadKey = evt.key === "Dead";
         if (deadKey) return;  // let browser handle dead keys
         recordModifiers(evt, display);
+        var directSDLKey = displayUsesDirectSDLKeyboard(display)
+            && Squeak.FFIEmulation.enqueueSDLKeyDownFromBrowserEvent;
+        if (directSDLKey) {
+            Squeak.FFIEmulation.enqueueSDLKeyDownFromBrowserEvent(display, evt);
+            wakeDisplayForKeyboard(display, 'keyboard');
+        }
         var squeakCode = ({
             8: 8,   // Backspace
             9: 9,   // Tab
@@ -892,7 +914,7 @@ function createSqueakDisplay(canvas, options) {
             46: 127, // Delete
         })[evt.keyCode];
         if (squeakCode) { // special key pressed
-            recordKeyboardEvent(squeakCode, evt.timeStamp, display);
+            recordKeyboardEvent(squeakCode, evt.timeStamp, display, { skipSDL: !!directSDLKey });
             return evt.preventDefault();
         }
         // copy/paste new-style
@@ -921,7 +943,7 @@ function createSqueakDisplay(canvas, options) {
         if (display.buttons & (Squeak.Keyboard_Cmd | Squeak.Keyboard_Ctrl)) {
             var code = evt.key.toLowerCase().charCodeAt(0);
             if ((display.buttons & Squeak.Keyboard_Ctrl) && code >= 96 && code < 127) code &= 0x1F; // ctrl-<key>
-            recordKeyboardEvent(code, evt.timeStamp, display);
+            recordKeyboardEvent(code, evt.timeStamp, display, { skipSDL: !!directSDLKey });
             return evt.preventDefault();
         }
     };
@@ -933,8 +955,12 @@ function createSqueakDisplay(canvas, options) {
             8: 8, 9: 9, 13: 13, 27: 27, 32: 32, 33: 11, 34: 12, 35: 4, 36: 1,
             37: 28, 38: 30, 39: 29, 40: 31, 45: 5, 46: 127,
         })[evt.keyCode] || 0;
-        if (unicode && Squeak.FFIEmulation && Squeak.FFIEmulation.enqueueSDLKeyUpFromBrowserEvent)
+        if (displayUsesDirectSDLKeyboard(display) && Squeak.FFIEmulation.enqueueSDLKeyUpFromBrowserEvent) {
+            Squeak.FFIEmulation.enqueueSDLKeyUpFromBrowserEvent(display, evt);
+            wakeDisplayForKeyboard(display, 'keyboard');
+        } else if (unicode && Squeak.FFIEmulation && Squeak.FFIEmulation.enqueueSDLKeyUpFromBrowserEvent) {
             Squeak.FFIEmulation.enqueueSDLKeyUpFromBrowserEvent(display, unicode, modifiers);
+        }
     };
     function resetInput() {
         input.value = "**";

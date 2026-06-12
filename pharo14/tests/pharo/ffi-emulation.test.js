@@ -718,4 +718,74 @@ exports.run = async function(t) {
         t.ok(r.result >= 0x8000, "SDL_RegisterEvents returns a user-event type range");
     });
 
+
+    await t.test("SDL2 direct browser keyboard bridge preserves scancodes, modifiers, repeats, and UTF-8 text", async t => {
+        const display = { context: { canvas: {} }, mouseX: 0, mouseY: 0, buttons: 0 };
+        const prim = makePrimitive([], display);
+        const intType = makeTFBasicType(prim, "sint", 18);
+        const pointerType = makeTFBasicType(prim, "pointer", 12);
+        function call(name, returnType, args) {
+            const fn = makeTFExternalFunction(prim, "libSDL2-2.0.so.0", name, returnType, args.map(() => pointerType));
+            prim.vm.stack = [null, fn, makeArray(args)];
+            prim.vm.sp = prim.vm.stack.length - 1;
+            prim.success = true;
+            const ok = prim.ffi_primitiveSameThreadCallout(2);
+            return { ok, result: prim.vm.lastPushed };
+        }
+
+        let r = call("SDL_CreateWindow", pointerType, [makeString(prim, "Keyboard"), 0, 0, 64, 48, 4]);
+        t.ok(r.ok, "SDL_CreateWindow succeeds");
+        display.sdlEventQueue = [];
+        const sdl = Squeak.externalModules["libSDL2-2.0"];
+        sdl.keyboardState.fill(0);
+        sdl.modState = 0;
+
+        Squeak.FFIEmulation.enqueueSDLKeyDownFromBrowserEvent(display, { code: "KeyA", key: "A", shiftKey: true, ctrlKey: true, altKey: false, metaKey: false, repeat: true, timeStamp: 1234 });
+        const eventAddress = prim.ffiMakeStExternalAddress();
+        eventAddress.jsData = new ArrayBuffer(56);
+        r = call("SDL_PollEvent", intType, [eventAddress]);
+        t.ok(r.ok, "SDL_PollEvent succeeds for direct keydown");
+        t.equal(r.result, 1, "one direct keydown is queued");
+        let view = new DataView(eventAddress.jsData);
+        t.equal(view.getUint32(0, true), 0x300, "direct browser keydown becomes SDL_KEYDOWN");
+        t.equal(view.getUint8(13), 1, "browser repeat flag is preserved");
+        t.equal(view.getInt32(16, true), 4, "KeyboardEvent.code KeyA maps to SDL scancode A");
+        t.equal(view.getInt32(20, true), 97, "SDL letter key symbol remains lowercase while text input carries case");
+        t.equal(view.getUint16(24, true) & 0x00C3, 0x00C3, "Shift and Ctrl modifiers are preserved in SDL mod bits");
+        t.equal(sdl.keyboardState[4], 1, "keyboard state marks scancode A pressed");
+
+        Squeak.FFIEmulation.enqueueSDLTextInputFromBrowserEvent(display, "Á", 1235);
+        r = call("SDL_PollEvent", intType, [eventAddress]);
+        t.ok(r.ok, "SDL_PollEvent succeeds for direct text input");
+        view = new DataView(eventAddress.jsData);
+        t.equal(view.getUint32(0, true), 0x303, "direct browser text becomes SDL_TEXTINPUT");
+        t.equal(view.getUint8(12), 0xC3, "SDL_TEXTINPUT stores UTF-8 byte 1 for Á");
+        t.equal(view.getUint8(13), 0x81, "SDL_TEXTINPUT stores UTF-8 byte 2 for Á");
+        t.equal(view.getUint8(14), 0, "SDL_TEXTINPUT payload is NUL terminated");
+
+        Squeak.FFIEmulation.enqueueSDLKeyUpFromBrowserEvent(display, { code: "KeyA", key: "A", shiftKey: false, ctrlKey: false, altKey: false, metaKey: false, timeStamp: 1236 });
+        t.equal(sdl.keyboardState[4], 0, "direct keyup clears scancode A state before polling");
+        r = call("SDL_PollEvent", intType, [eventAddress]);
+        t.ok(r.ok, "SDL_PollEvent succeeds for direct keyup");
+        view = new DataView(eventAddress.jsData);
+        t.equal(view.getUint32(0, true), 0x301, "direct browser keyup becomes SDL_KEYUP");
+        t.equal(view.getInt32(16, true), 4, "keyup keeps the physical SDL scancode");
+
+        Squeak.FFIEmulation.enqueueSDLKeyDownFromBrowserEvent(display, { code: "ShiftLeft", key: "Shift", shiftKey: true, ctrlKey: false, altKey: false, metaKey: false, repeat: false, timeStamp: 1237 });
+        r = call("SDL_PollEvent", intType, [eventAddress]);
+        t.ok(r.ok, "SDL_PollEvent succeeds for modifier keydown");
+        view = new DataView(eventAddress.jsData);
+        t.equal(view.getUint32(0, true), 0x300, "modifier-only keydown is queued");
+        t.equal(view.getInt32(16, true), 225, "ShiftLeft maps to SDL_SCANCODE_LSHIFT");
+        t.equal(view.getInt32(20, true), 0x400000E1 | 0, "ShiftLeft maps to SDLK_LSHIFT");
+        t.equal(sdl.keyboardState[225], 1, "keyboard state records modifier keys too");
+
+        Squeak.FFIEmulation.enqueueSDLKeyDownFromBrowserEvent(display, { code: "ArrowLeft", key: "ArrowLeft", shiftKey: false, ctrlKey: false, altKey: false, metaKey: false, repeat: false, timeStamp: 1238 });
+        r = call("SDL_PollEvent", intType, [eventAddress]);
+        t.ok(r.ok, "SDL_PollEvent succeeds for arrow keydown");
+        view = new DataView(eventAddress.jsData);
+        t.equal(view.getInt32(16, true), 80, "ArrowLeft maps from DOM code to SDL_SCANCODE_LEFT");
+        t.equal(view.getInt32(20, true), 0x40000050, "ArrowLeft maps to SDLK_LEFT");
+    });
+
 };

@@ -1233,3 +1233,40 @@ PHARO14_FULL_IMAGE=/path/to/Pharo14.image PHARO14_OSWINDOW_SMOKE=1 node tools/ru
 ```
 
 Manual browser test remains the same URL.  After a hard reload, the initial display should no longer be CSS-stretched, and after resizing the browser area Pharo should be told the new SDL window size instead of continuing to render into the old partial extent.
+
+## v046 direct SDL browser keyboard bridge
+
+v045 fixed canvas sizing; the next browser-visible issue was keyboard input.  The old bridge generated SDL keyboard events indirectly from SqueakJS's legacy key-char event stream.  That is not sufficient for Pharo's SDL2/OSWindow path because SDL distinguishes physical key events from text input:
+
+- `SDL_KEYDOWN`/`SDL_KEYUP` carry a physical scancode, key symbol, modifier mask, and repeat flag.
+- `SDL_TEXTINPUT` carries UTF-8 text produced by the current keyboard layout / IME.
+- Modifier-only keys such as Shift, Ctrl, Alt, and Meta must still generate keydown/keyup events and update `SDL_GetKeyboardState`.
+
+The legacy char-derived bridge lost or distorted those details.  It could not report modifier-only transitions, derived scancodes from Unicode characters instead of DOM `KeyboardEvent.code`, and encoded non-ASCII `SDL_TEXTINPUT` bytes by truncating JavaScript UTF-16 code units.
+
+v046 adds a direct browser-to-SDL keyboard path once an SDL window is bound to a SqueakJS display:
+
+- `SDL_CreateWindow` marks the display as using direct SDL keyboard input.
+- Browser `keydown` now queues SDL keydown records directly from DOM `KeyboardEvent.code`, `key`, modifier flags, and `repeat`.
+- Browser `keyup` queues direct SDL keyup records and clears the scancode in `SDL_GetKeyboardState`.
+- Browser `input` queues SDL text-input events separately, while the old Squeak key-char event queue is still maintained for non-SDL images.
+- `SDL_TEXTINPUT` payloads are now UTF-8 encoded and NUL-terminated, matching SDL's `char text[32]` contract.
+- DOM codes for letters, digits, punctuation, arrows, navigation keys, function keys, numpad keys, and modifier keys are mapped to SDL scancodes and key symbols.
+- SDL modifier masks now come from DOM Shift/Ctrl/Alt/Meta state for direct keyboard events, instead of overloading Squeak's legacy `Keyboard_Cmd` bit.
+
+Regression coverage:
+
+- `tests/pharo/ffi-emulation.test.js` now verifies direct browser keydown/keyup for `KeyA`, Shift/Ctrl modifiers, repeat state, modifier-only `ShiftLeft`, `ArrowLeft`, keyboard-state updates, and UTF-8 text input for `Á`.
+- The existing Squeak-event-derived keyboard test remains in place for compatibility with the older event path.
+
+Focused checks:
+
+```sh
+node tools/browser-module-smoke.js
+node tools/run-pharo-tests.js tests/pharo/ffi-emulation.test.js
+PHARO14_FULL_IMAGE=/path/to/Pharo14.image node tools/run-pharo-tests.js tests/pharo/browser-sandbox.test.js
+PHARO14_FULL_IMAGE=/path/to/Pharo14.image PHARO14_OSWINDOW_SMOKE=1 node tools/run-pharo-tests.js tests/pharo/oswindow-sdl2-smoke.test.js
+./verify.sh
+```
+
+Manual browser test remains the same URL.  After a hard reload, normal text keys, arrows/navigation keys, shortcuts with modifiers, and Shift/Ctrl/Alt/Meta state should reach Pharo through SDL rather than through the lossy legacy char-event translation.

@@ -1066,6 +1066,29 @@ Object.extend(Squeak.Primitives.prototype,
         return null;
     }
 
+    function utf8ByteView(value) {
+        if (value === null || value === undefined) return new Uint8Array([0]);
+        if (value instanceof Uint8Array || value instanceof ArrayBuffer || ArrayBuffer.isView(value) || value && value.bytes)
+            return byteView(value);
+        var string = String(value);
+        if (typeof TextEncoder === "function") {
+            var encoded = new TextEncoder().encode(string), out = new Uint8Array(encoded.length + 1);
+            out.set(encoded);
+            return out;
+        }
+        var bytes = [];
+        for (var i = 0; i < string.length; i++) {
+            var cp = string.codePointAt(i);
+            if (cp > 0xFFFF) i++;
+            if (cp <= 0x7F) bytes.push(cp);
+            else if (cp <= 0x7FF) bytes.push(0xC0 | (cp >> 6), 0x80 | (cp & 0x3F));
+            else if (cp <= 0xFFFF) bytes.push(0xE0 | (cp >> 12), 0x80 | ((cp >> 6) & 0x3F), 0x80 | (cp & 0x3F));
+            else bytes.push(0xF0 | (cp >> 18), 0x80 | ((cp >> 12) & 0x3F), 0x80 | ((cp >> 6) & 0x3F), 0x80 | (cp & 0x3F));
+        }
+        bytes.push(0);
+        return new Uint8Array(bytes);
+    }
+
     function cStringLength(value, maxLen) {
         var view = byteView(value);
         if (!view) return makeCString(value).length;
@@ -1262,9 +1285,20 @@ Object.extend(Squeak.Primitives.prototype,
             var sdl = this.libraries && this.libraries["libSDL2-2.0"];
             if (sdl && sdl.enqueueSqueakDisplayEvent) sdl.enqueueSqueakDisplayEvent(display, event);
         },
+        enqueueSDLKeyDownFromBrowserEvent: function(display, event) {
+            var sdl = this.libraries && this.libraries["libSDL2-2.0"];
+            if (sdl && sdl.queueBrowserKeyDown) return sdl.queueBrowserKeyDown(display, event);
+            return false;
+        },
         enqueueSDLKeyUpFromBrowserEvent: function(display, unicode, modifiers) {
             var sdl = this.libraries && this.libraries["libSDL2-2.0"];
-            if (sdl && sdl.queueBrowserKeyUp) sdl.queueBrowserKeyUp(display, unicode, modifiers);
+            if (sdl && sdl.queueBrowserKeyUp) return sdl.queueBrowserKeyUp(display, unicode, modifiers);
+            return false;
+        },
+        enqueueSDLTextInputFromBrowserEvent: function(display, text, timestamp) {
+            var sdl = this.libraries && this.libraries["libSDL2-2.0"];
+            if (sdl && sdl.queueBrowserTextInput) return sdl.queueBrowserTextInput(display, text, timestamp);
+            return false;
         }
     });
 
@@ -1538,7 +1572,7 @@ Object.extend(Squeak.Primitives.prototype,
             case 0x303: // SDL_TEXTINPUT
                 if (view.byteLength >= 44) {
                     view.setUint32(8, evt.windowID >>> 0, true);
-                    var text = byteView(evt.text || "");
+                    var text = utf8ByteView(evt.text || "");
                     for (var ti = 0; text && ti < Math.min(31, text.length); ti++) view.setUint8(12 + ti, text[ti]);
                 }
                 break;
@@ -1604,6 +1638,90 @@ Object.extend(Squeak.Primitives.prototype,
             case 127: return 127;
             default: return unicode;
         }
+    }
+
+
+    var SDL_SCANCODE_MASK = 0x40000000;
+    var SDL_DOM_CODE_SCANCODES = (function() {
+        var map = {
+            Enter: 40, Escape: 41, Backspace: 42, Tab: 43, Space: 44,
+            Minus: 45, Equal: 46, BracketLeft: 47, BracketRight: 48, Backslash: 49,
+            Semicolon: 51, Quote: 52, Backquote: 53, Comma: 54, Period: 55, Slash: 56,
+            CapsLock: 57, PrintScreen: 70, ScrollLock: 71, Pause: 72,
+            Insert: 73, Home: 74, PageUp: 75, Delete: 76, End: 77, PageDown: 78,
+            ArrowRight: 79, ArrowLeft: 80, ArrowDown: 81, ArrowUp: 82,
+            NumLock: 83, NumpadDivide: 84, NumpadMultiply: 85, NumpadSubtract: 86,
+            NumpadAdd: 87, NumpadEnter: 88, NumpadDecimal: 99, IntlBackslash: 100,
+            ContextMenu: 101, NumpadEqual: 103,
+            ControlLeft: 224, ShiftLeft: 225, AltLeft: 226, MetaLeft: 227,
+            ControlRight: 228, ShiftRight: 229, AltRight: 230, MetaRight: 231,
+        };
+        for (var i = 0; i < 26; i++) map["Key" + String.fromCharCode(65 + i)] = 4 + i;
+        for (var d = 1; d <= 9; d++) map["Digit" + d] = 29 + d;
+        map.Digit0 = 39;
+        for (var f = 1; f <= 12; f++) map["F" + f] = 57 + f;
+        for (var n = 1; n <= 9; n++) map["Numpad" + n] = 88 + n;
+        map.Numpad0 = 98;
+        return map;
+    })();
+
+    var SDL_DOM_CODE_KEYSYMS = {
+        Enter: 13, Escape: 27, Backspace: 8, Tab: 9, Space: 32,
+        Minus: 45, Equal: 61, BracketLeft: 91, BracketRight: 93, Backslash: 92,
+        Semicolon: 59, Quote: 39, Backquote: 96, Comma: 44, Period: 46, Slash: 47,
+        CapsLock: SDL_SCANCODE_MASK | 57, PrintScreen: SDL_SCANCODE_MASK | 70, ScrollLock: SDL_SCANCODE_MASK | 71, Pause: SDL_SCANCODE_MASK | 72,
+        Insert: SDL_SCANCODE_MASK | 73, Home: SDL_SCANCODE_MASK | 74, PageUp: SDL_SCANCODE_MASK | 75,
+        Delete: 127, End: SDL_SCANCODE_MASK | 77, PageDown: SDL_SCANCODE_MASK | 78,
+        ArrowRight: SDL_SCANCODE_MASK | 79, ArrowLeft: SDL_SCANCODE_MASK | 80, ArrowDown: SDL_SCANCODE_MASK | 81, ArrowUp: SDL_SCANCODE_MASK | 82,
+        NumLock: SDL_SCANCODE_MASK | 83, NumpadDivide: 47, NumpadMultiply: 42, NumpadSubtract: 45,
+        NumpadAdd: 43, NumpadEnter: 13, NumpadDecimal: 46, NumpadEqual: 61,
+        ContextMenu: SDL_SCANCODE_MASK | 101,
+        ControlLeft: SDL_SCANCODE_MASK | 224, ShiftLeft: SDL_SCANCODE_MASK | 225, AltLeft: SDL_SCANCODE_MASK | 226, MetaLeft: SDL_SCANCODE_MASK | 227,
+        ControlRight: SDL_SCANCODE_MASK | 228, ShiftRight: SDL_SCANCODE_MASK | 229, AltRight: SDL_SCANCODE_MASK | 230, MetaRight: SDL_SCANCODE_MASK | 231,
+    };
+    for (var sf = 1; sf <= 12; sf++) SDL_DOM_CODE_KEYSYMS["F" + sf] = SDL_SCANCODE_MASK | (57 + sf);
+    for (var sd = 1; sd <= 9; sd++) SDL_DOM_CODE_KEYSYMS["Digit" + sd] = 48 + sd;
+    SDL_DOM_CODE_KEYSYMS.Digit0 = 48;
+    for (var sn = 1; sn <= 9; sn++) SDL_DOM_CODE_KEYSYMS["Numpad" + sn] = 48 + sn;
+    SDL_DOM_CODE_KEYSYMS.Numpad0 = 48;
+
+    function sdlModMaskFromBrowserEvent(evt) {
+        evt = evt || {};
+        var mod = 0;
+        if (evt.shiftKey) mod |= 0x0003; // KMOD_SHIFT
+        if (evt.ctrlKey) mod |= 0x00C0;  // KMOD_CTRL
+        if (evt.altKey) mod |= 0x0300;   // KMOD_ALT
+        if (evt.metaKey) mod |= 0x0C00;  // KMOD_GUI
+        if (evt.getModifierState) {
+            if (evt.getModifierState("NumLock")) mod |= 0x1000;
+            if (evt.getModifierState("CapsLock")) mod |= 0x2000;
+            if (evt.getModifierState("AltGraph")) mod |= 0x4000;
+        }
+        return mod >>> 0;
+    }
+
+    function sdlScancodeForBrowserEvent(evt) {
+        evt = evt || {};
+        var code = evt.code || "";
+        if (SDL_DOM_CODE_SCANCODES[code] !== undefined) return SDL_DOM_CODE_SCANCODES[code] | 0;
+        if (evt.key && evt.key.length === 1) return sdlScancodeForUnicode(evt.key.codePointAt(0));
+        return 0;
+    }
+
+    function sdlKeySymForBrowserEvent(evt) {
+        evt = evt || {};
+        var code = evt.code || "";
+        if (SDL_DOM_CODE_KEYSYMS[code] !== undefined) return SDL_DOM_CODE_KEYSYMS[code] | 0;
+        if (evt.key && evt.key.length === 1) {
+            var cp = evt.key.codePointAt(0);
+            if (cp >= 65 && cp <= 90) return cp + 32; // SDL letter keysyms are lowercase key codes; text comes via SDL_TEXTINPUT.
+            return cp | 0;
+        }
+        return sdlKeySymForUnicode(evt.keyCode || evt.which || 0);
+    }
+
+    function browserKeyboardEventTimestamp(evt) {
+        return evt && evt.timeStamp !== undefined ? evt.timeStamp >>> 0 : ((Date.now() - sdl2.startTime) >>> 0);
     }
 
     function parseSDLEvent(ptr) {
@@ -1853,6 +1971,7 @@ Object.extend(Squeak.Primitives.prototype,
             }
             display.sdlWindow = window;
             display.sdlEventQueue = display.sdlEventQueue || [];
+            display.sdlKeyboardDirect = true;
             applySDLCursorToWindow(window);
             return window;
         },
@@ -1878,10 +1997,29 @@ Object.extend(Squeak.Primitives.prototype,
                 };
             }
         },
-        queueBrowserKeyUp: function(display, unicode, modifiers) {
+        queueBrowserKeyEvent: function(display, evt, down) {
             var window = display && display.sdlWindow || this.defaultWindow(), windowID = window && window.id || 0,
+                scancode = sdlScancodeForBrowserEvent(evt), sym = sdlKeySymForBrowserEvent(evt), mod = sdlModMaskFromBrowserEvent(evt),
+                type = down ? 0x300 : 0x301;
+            this.queueEvent({ type: type, windowID: windowID, timestamp: browserKeyboardEventTimestamp(evt), state: down ? 1 : 0, repeat: down && evt && evt.repeat ? 1 : 0, scancode: scancode, sym: sym, mod: mod }, display);
+            return true;
+        },
+        queueBrowserKeyDown: function(display, evt) {
+            return this.queueBrowserKeyEvent(display, evt || {}, true);
+        },
+        queueBrowserKeyUp: function(display, evtOrUnicode, modifiers) {
+            if (evtOrUnicode && typeof evtOrUnicode === "object" && (evtOrUnicode.key !== undefined || evtOrUnicode.code !== undefined))
+                return this.queueBrowserKeyEvent(display, evtOrUnicode, false);
+            var unicode = evtOrUnicode | 0, window = display && display.sdlWindow || this.defaultWindow(), windowID = window && window.id || 0,
                 scancode = sdlScancodeForUnicode(unicode), sym = sdlKeySymForUnicode(unicode), mod = sdlModMaskFromSqueak(modifiers || 0);
             this.queueEvent({ type: 0x301, windowID: windowID, state: 0, repeat: 0, scancode: scancode, sym: sym, mod: mod }, display);
+            return true;
+        },
+        queueBrowserTextInput: function(display, text, timestamp) {
+            if (text === null || text === undefined || text === "") return false;
+            var window = display && display.sdlWindow || this.defaultWindow(), windowID = window && window.id || 0;
+            this.queueEvent({ type: 0x303, windowID: windowID, timestamp: timestamp === undefined ? undefined : timestamp >>> 0, text: String(text) }, display);
+            return true;
         },
         queueWindowEvent: function(window, event, data1, data2) {
             this.queueEvent({ type: 0x200, windowID: window && window.id || 0, event: event, data1: data1 || 0, data2: data2 || 0 }, window && window.display);

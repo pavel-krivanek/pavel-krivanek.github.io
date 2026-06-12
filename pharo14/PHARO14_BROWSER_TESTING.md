@@ -486,3 +486,36 @@ Run before manual browser testing:
 node tools/browser-module-smoke.js
 ./verify.sh
 ```
+
+## v046 keyboard mapping
+
+v046 changes browser keyboard delivery for the Pharo SDL2 path.  Classic SqueakJS keyboard input is still maintained for old images, but once Pharo creates an SDL window the browser DOM events are also translated directly into SDL events.
+
+Expected behavior after a hard reload:
+
+- Printable text is delivered as SDL text input (`SDL_TEXTINPUT`) encoded as UTF-8.
+- Physical keydown/keyup events use DOM `KeyboardEvent.code` for SDL scancodes, so shifted letters and non-text keys are no longer guessed from Unicode characters.
+- Modifier-only keys generate SDL key events and update `SDL_GetKeyboardState`.
+- Arrow keys, Home/End, PageUp/PageDown, Insert/Delete, function keys, punctuation, and numpad keys have explicit SDL scancode/keycode mappings.
+- Repeated keys preserve the browser repeat flag in the SDL keydown event.
+
+Useful browser-console diagnostics on the active display object:
+
+```js
+sdlKeyboardDirect
+sdlEventQueue
+```
+
+For a quick manual check, click/focus the Pharo canvas and try:
+
+- typing lowercase and uppercase letters;
+- Backspace/Delete and arrow keys in a text editor;
+- Shift-only and Ctrl/Alt/Meta shortcuts;
+- holding a key long enough to repeat.
+
+Run before manual browser testing:
+
+```sh
+node tools/run-pharo-tests.js tests/pharo/ffi-emulation.test.js
+./verify.sh
+```

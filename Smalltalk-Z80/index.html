@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smalltalk-Z80 for ZX Spectrum 48K</title>
+  <meta name="description" content="Smalltalk-Z80: a Smalltalk object system for the 48K ZX Spectrum.">
+  <link rel="icon" href="assets/favicon.png">
+  <style>
+    :root { --ink:#111; --muted:#666; --line:#d8d8d8; --soft:#f7f7f7; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #fff;
+      color: var(--ink);
+      font: 18px/1.5 Georgia, "Arial", serif;
+    }
+    main { max-width: 980px; margin: 0 auto; padding: 48px 24px 64px; }
+    header { border-bottom: 1px solid var(--line); padding-bottom: 22px; margin-bottom: 30px; }
+    h1 { margin: 0 0 8px; font: 700 54px/1.02 Arial, Helvetica, sans-serif; letter-spacing: -1.8px; }
+    h2 { margin: 44px 0 16px; font: 700 26px/1.1 Arial, Helvetica, sans-serif; }
+    p { margin: 0 0 14px; }
+    a { color: #0645ad; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+    .subtitle { font-size: 22px; color: navy; padding-bottom: 20px; font-style: bold; }
+    .lede { max-width: 760px; font-size: 21px; }
+    .facts { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 18px 0 0; list-style: none; }
+    .facts li { border: 1px solid var(--line); padding: 7px 10px; background: var(--soft); font-size: 16px; }
+    .hero { margin: 28px 0 10px; }
+    .hero img { width: min(100%, 620px); height: auto; display: block; }
+    .downloads { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px; }
+    .button {
+      display: inline-block;
+      border: 1px solid #111;
+      padding: 8px 12px;
+      color: #111;
+      text-decoration: none;
+      background: #fff;
+      font: 700 16px/1.2 Arial, Helvetica, sans-serif;
+    }
+    .button:hover { background: #f0f0f0; }
+    .note { color: var(--muted); font-size: 15px; max-width: 760px; }
+    .shots { overflow-x: auto; padding-bottom: 6px; }
+    .shot-row { display: flex; gap: 18px; align-items: flex-start; min-width: max-content; }
+    figure { margin: 0; }
+    figcaption { color: var(--muted); font-size: 15px; margin-top: 6px; font-style: italic; }
+    .screenshot img {
+      display: block;
+      width: 320px;
+      height: 240px;
+      max-width: none;
+      image-rendering: pixelated;
+    }
+    .review img { width: min(100%, 760px); height: auto; display: block; border: 1px solid var(--line); }
+    footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--line); }
+    @media (max-width: 620px) {
+      body { font-size: 17px; }
+      main { padding: 30px 16px 48px; }
+      h1 { font-size: 40px; }
+      .lede { font-size: 19px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Smalltalk-Z80</h1>
+    <p class="subtitle">Smalltalk-80 for ZX Spectrum 48K</p>
+    <p class="lede">There were implementations of many programming languages for the ZX Spectrum: BASIC, Assembler, Pascal, Forth, Lisp, C, Prolog, Modula-2...</p>
+    <p class="lede">However, it is not widely known that there is another implementation of a famous programming language for the ZX Spectrum: Smalltalk-80, which was released on the Spectrum under the name Smalltalk-Z80.</p>
+    <p class="lede">Although it does not include the original Xerox user interface due to the hardware limitations of this microcomputer, it still provides a basic IDE featuring a Browser, Workspace, and Transcript.</p>
+    <p class="lede">The original textbook has also been preserved. Here you will find details on how to use the program, a description of the language, and a list of differences from its original counterpart.</p>
+  </header>
+
+  <section class="hero" aria-label="Cassette and Primer photograph">
+    <img src="assets/cassette-primer.jpg" alt="Smalltalk-Z80 cassette and spiral-bound Primer">
+  </section>
+
+  <section aria-labelledby="get-it">
+    <h2 id="get-it">Download and run</h2>
+    <p>Download the cassette image and the Primer, or try the TAP directly in QAOP.</p>
+    <div class="downloads">
+      <a class="button" href="downloads/Smalltalk-Z80.tap" download>Download TAP</a>
+      <a class="button" href="downloads/Smalltalk-Z80-Primer.pdf" download>Download Primer (PDF)</a>
+      <a class="button" href="run-qaop-data.html" target="_blank" rel="noopener">Try in emulator (QAOP)</a>
+    </div>
+    <p class="note"><strong>Note: </strong>In QAOP, switch to full screen with F11. It prevents the browser from stealing important Spectrum and Smalltalk-Z80 shortcuts.</p>
+    <p class="note">The emulator link embeds the TAP in the URL and is experimental; if it fails, open QAOP and load the downloaded TAP.</p>
+  </section>
+
+  <section aria-labelledby="screenshots">
+    <h2 id="screenshots">Screenshots</h2>
+    <div class="shots">
+      <div class="shot-row">
+        <figure class="screenshot">
+          <img src="assets/loading-screen.png" alt="Smalltalk-Z80 loading screen on ZX Spectrum">
+          <figcaption>Loading screen</figcaption>
+        </figure>
+        <figure class="screenshot">
+          <img src="assets/browser.png" alt="Smalltalk-Z80 Browser showing classes and a method editor">
+          <figcaption>Smalltalk Browser</figcaption>
+        </figure>
+        <figure class="screenshot">
+          <img src="assets/workspace.png" alt="Smalltalk-Z80 Workspace showing evaluated expressions">
+          <figcaption>Workspace and Transcript</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="review">
+    <h2 id="review">Magazine reviews</h2>
+    <p>There is only one known contemporary review of this program, though it was not exactly effusive in its praise.</p>
+    <figure class="review">
+      <img src="assets/review-photo.jpg" alt="Smalltalk-Z80 review page photograph">
+      <figcaption>Review page</figcaption>
+    </figure>
+  </section>
+
+  <footer>
+    <p><strong>Note: </strong>It's sad that this program had to wait so long to be rediscovered. More specifically, it had to wait until the year it was created, 2026.</p>
+  </footer>
+</main>
+<script>
+(function () {
+  var link = document.getElementById('qaop-link');
+  var tapUrl = new URL('downloads/Smalltalk-Z80.tap', window.location.href).href;
+  link.href = 'https://torinak.com/qaop/#48#l=' + tapUrl;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+<IfModule mod_headers.c>
+  <FilesMatch "\.(tap|TAP)$">
+    Header set Access-Control-Allow-Origin "*"
+    Header set Content-Type "application/x.zx.tap"
+  </FilesMatch>
+</IfModule>

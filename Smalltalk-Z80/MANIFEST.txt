@@ -1,0 +1,14 @@
+./.htaccess
+./MANIFEST.txt
+./README.md
+./_headers
+./assets/browser.png
+./assets/cassette-primer.jpg
+./assets/favicon.png
+./assets/loading-screen.png
+./assets/review-photo.jpg
+./assets/workspace.png
+./downloads/Smalltalk-Z80-Primer.pdf
+./downloads/Smalltalk-Z80.tap
+./index.html
+./run-qaop-data.html

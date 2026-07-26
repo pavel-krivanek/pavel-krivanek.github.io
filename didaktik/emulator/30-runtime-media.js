@@ -457,6 +457,41 @@
           }
         }), w[v] = p, 1 == v) && setRuntimeFlag(4, 1);
       };
+      Q.getTapeState = function getTapeState() {
+        const tape = queuedTapeLoad || queuedTapeLoadFallback;
+        if (!tape?._) return null;
+        return {
+          bytes: tape._,
+          headOffset: d ? tape.C | 0 : tape.J | 0,
+          nextBlockOffset: tape.J | 0,
+          active: !!d,
+          loop: !!tape.g
+        };
+      };
+      Q.setTapeHeadOffset = function setTapeHeadOffset(offset) {
+        const tape = queuedTapeLoad || queuedTapeLoadFallback;
+        if (!tape?._) return false;
+        offset = Number(offset);
+        if (!Number.isInteger(offset) || offset < 0 || offset > tape._.length) return false;
+        d = null;
+        tape.C = offset;
+        tape.J = offset;
+        tape.g = 1;
+        queuedTapeLoad = tape;
+        if (queuedTapeLoadFallback?._ === tape._) {
+          queuedTapeLoadFallback.C = offset;
+          queuedTapeLoadFallback.J = offset;
+          queuedTapeLoadFallback.g = 1;
+        }
+        return true;
+      };
+      Q.ejectTape = function ejectTape() {
+        beginLoad(2);
+        d = null;
+        queuedTapeLoad = g1;
+        queuedTapeLoadFallback = g1;
+        setRuntimeFlag(4, 0);
+      };
     }
     Q.setAudioGain = function setAudioGain(e) {
       audioGainNode && (audioGainNode.value = e * e);

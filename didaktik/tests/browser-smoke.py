@@ -85,6 +85,22 @@ with sync_playwright() as playwright:
       cpu: __qaop.cpuCore.getState()
     })""")
 
+    layout = page.evaluate("""() => {
+      const panel = document.querySelector('.control-panel');
+      const emulator = document.querySelector('.emulator-pane');
+      return {
+        viewportHeight: innerHeight,
+        documentHeight: document.documentElement.scrollHeight,
+        bodyHeight: document.body.scrollHeight,
+        panelHeight: panel.getBoundingClientRect().height,
+        panelScrollHeight: panel.scrollHeight,
+        panelOverflowY: getComputedStyle(panel).overflowY,
+        emulatorBottom: emulator.getBoundingClientRect().bottom,
+        machineLabelSize: parseFloat(getComputedStyle(document.querySelector('.machine-selector')).fontSize),
+        browserTableSize: parseFloat(getComputedStyle(document.querySelector('.browser-table')).fontSize)
+      };
+    }""")
+
     page.check('#melodikControl')
     page.wait_for_function("window.qaop.state.ay && didaktikD80.getStatus().sound.melodikEnabled")
     melodik = page.evaluate("""() => {
@@ -193,7 +209,7 @@ with sync_playwright() as playwright:
         page.wait_for_function("document.getElementById('snapButton').dataset.ready === 'true'", timeout=30_000)
         machine_profiles.append(page.evaluate("""() => ({
           id: didaktikD80.currentMachineId,
-          label: document.getElementById('machineHeading').textContent,
+          label: document.getElementById('machineSelect').selectedOptions[0].textContent,
           profile: __qaop.getMachineMemoryProfile(),
           bank: didaktikD80.getStatus().machine.bank,
           bundledRom: didaktikD80.getStatus().machine.bundledRom,
@@ -263,6 +279,7 @@ with sync_playwright() as playwright:
 
     result = {
         'initial': initial,
+        'layout': layout,
         'melodik': melodik,
         'melodikOff': melodik_off,
         'bt100': bt100,
@@ -279,6 +296,12 @@ with sync_playwright() as playwright:
     print(json.dumps(result, indent=2))
 
     assert initial['status']['initialized']
+    assert layout['documentHeight'] <= layout['viewportHeight']
+    assert layout['bodyHeight'] <= layout['viewportHeight']
+    assert layout['emulatorBottom'] <= layout['viewportHeight']
+    assert layout['panelOverflowY'] == 'auto'
+    assert layout['machineLabelSize'] >= 13
+    assert layout['browserTableSize'] >= 10.5
     assert not initial['status']['paged']
     assert initial['status']['drives'][0]['disk']['byteLength'] == 737_280
     assert initial['status']['sound'] == {

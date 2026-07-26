@@ -27,7 +27,6 @@
 </div></div></div></section><aside aria-labelledby="storageHeading" class="storage-panel control-panel"><header class="control-header">
 <div>
 <h1>Didaktik + D80 + BT-100</h1>
-<p class="subtitle" id="machineSubtitle">Didaktik 80K with MDOS 2.93 and two emulated D40/D80 drives.</p>
 </div>
 <div aria-label="System status" class="system-badges">
 <span class="status-badge" id="systemStatus">Starting…</span>
@@ -36,10 +35,8 @@
 <span class="status-badge status-badge--muted" id="bankStatus">Bank 0</span>
 <span class="status-badge status-badge--muted" id="soundStatus">Beeper only</span>
 </div>
-</header><section aria-labelledby="machineHeading" class="machine-controls-card"><div class="panel-heading panel-heading--machine">
+</header><section aria-label="Machine controls" class="machine-controls-card"><div class="panel-heading panel-heading--machine">
 <div>
-<p class="section-kicker">Computer</p>
-<h2 id="machineHeading">Didaktik 80K</h2>
 <label class="machine-selector">Machine
             <select id="machineSelect">
 <option value="didaktik80">Didaktik 80K</option>
@@ -75,6 +72,7 @@
 <div aria-label="Disk subsystem views" class="storage-tabs" role="tablist">
 <button aria-controls="drivesPanel" aria-selected="true" class="storage-tab is-active" data-storage-tab="drives" id="drivesTab" role="tab" type="button">Drives</button>
 <button aria-controls="filesPanel" aria-selected="false" class="storage-tab" data-storage-tab="files" id="filesTab" role="tab" type="button">Image files</button>
+<button aria-controls="tapePanel" aria-selected="false" class="storage-tab" data-storage-tab="tape" id="tapeTab" role="tab" type="button">Tape</button>
 <button aria-controls="printerPanel" aria-selected="false" class="storage-tab" data-storage-tab="printer" id="printerTab" role="tab" type="button">BT-100</button>
 </div>
 <div aria-labelledby="drivesTab" class="storage-tab-panel" id="drivesPanel" role="tabpanel">
@@ -171,6 +169,40 @@
 </div>
 <button disabled="" id="downloadFileButton" type="button">Download file</button>
 </div>
+<section class="hex-viewer" hidden id="fileHexViewer" aria-labelledby="fileHexTitle">
+<div class="hex-viewer-heading">
+<strong id="fileHexTitle">File contents</strong>
+<span id="fileHexSummary"></span>
+</div>
+<pre id="fileHexDump" tabindex="0" aria-label="Selected MDOS file contents in hexadecimal"></pre>
+</section>
+</section>
+<section aria-labelledby="tapeTab" class="storage-tab-panel tape-browser" hidden="" id="tapePanel" role="tabpanel">
+<div class="tape-toolbar">
+<input accept=".tap,application/x.zx.tap,application/x-spectrum-tap,application/octet-stream" hidden="" id="tapeFile" type="file"/>
+<div class="tape-actions">
+<button id="tapeInsert" type="button">Insert TAP</button>
+<button disabled="" id="tapeRewind" type="button">Rewind</button>
+<button disabled="" id="tapeEject" type="button">Eject</button>
+</div>
+<strong class="tape-position" id="tapeCurrentPosition">No tape</strong>
+</div>
+<div class="browser-summary" id="tapeSummary">No tape inserted.</div>
+<p class="browser-empty" id="tapeEmpty">Insert a TAP image to inspect its blocks.</p>
+<div class="browser-table-wrap tape-table-wrap" hidden="" id="tapeTableWrap">
+<table class="browser-table tape-table">
+<thead><tr><th>Head</th><th>#</th><th>Kind</th><th>Name</th><th>Payload</th><th>Checksum</th></tr></thead>
+<tbody id="tapeBlockRows"></tbody>
+</table>
+</div>
+<p class="screen-help">Click a block row to move the virtual tape head to the beginning of that block. The next ROM tape load starts there.</p>
+<section class="hex-viewer" hidden id="tapeHexViewer" aria-labelledby="tapeHexTitle">
+<div class="hex-viewer-heading">
+<strong id="tapeHexTitle">TAP block contents</strong>
+<span id="tapeHexSummary"></span>
+</div>
+<pre id="tapeHexDump" tabindex="0" aria-label="Selected TAP block contents in hexadecimal"></pre>
+</section>
 </section>
 <section aria-labelledby="printerTab" class="storage-tab-panel printer-panel" hidden="" id="printerPanel" role="tabpanel">
 <div class="printer-toolbar">
@@ -284,6 +316,8 @@
 <script src="emulator/30-runtime-media.js"></script>
 <script src="emulator/40-persistence-startup.js"></script>
 <script src="bt100-printer.js"></script>
+<script src="tap-browser.js"></script>
+<script src="hex-viewer.js"></script>
 <script src="didaktik-d80.js"></script>
 <script src="app.js"></script>
 </body>

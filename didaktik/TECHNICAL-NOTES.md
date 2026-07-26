@@ -426,3 +426,21 @@ The compact control panel retains a visible `fullscreenButton`, while F11 is han
 ### Standalone display filtering
 
 QAOP keeps a 336 × 544 backing canvas for a 336 × 272 logical display. The previous `image-rendering: pixelated` rule preserved the doubled vertical scanline structure while the page scaled it by a non-integer factor, producing conspicuous horizontal striping. The standalone shell now uses normal browser resampling, which combines the row pairs before presentation, and explicitly disables QAOP CRT distortion so settings from another QAOP installation cannot affect this emulator.
+
+
+## TAP browser and selectable tape head
+
+`tap-browser.js` parses standard TAP framing independently of the ROM loader: each block begins with a little-endian 16-bit byte count, followed by the flag byte, payload and XOR checksum. Standard 19-byte header blocks are decoded and paired with their following data blocks for display.
+
+The QAOP runtime now exposes three narrow tape hooks:
+
+- `getTapeState()` returns the mounted byte stream and current byte offset;
+- `setTapeHeadOffset(offset)` cancels any partial fast-load transfer and sets both the current and next block cursors;
+- `ejectTape()` aborts pending tape input and clears both active and fallback tape references.
+
+The UI only supplies offsets that came from parsed TAP block boundaries. Selecting a row therefore positions the tape before its two-byte length field, exactly where QAOP's ROM fast-loader expects the next block to begin. The current-row marker follows the loader cursor and shows the end-of-tape state separately.
+
+
+## Viewport-contained control layout
+
+The desktop shell uses `100dvh` as a fixed workspace height. Its padding is included by `border-box`, the emulator width is calculated from the remaining vertical room after bezel chrome, and the document body has no desktop overflow. The right panel receives `overflow: auto`, so long drive, tape, printer and hex-browser content scrolls without moving the emulator or producing a second page scrollbar. Below 980 pixels the layout returns to normal document flow. The browser integration test checks document height, emulator bounds, internal panel scrolling and minimum control font sizes.

@@ -14,7 +14,10 @@
   let activeStorageTab = 'drives';
   let browserDrive = 0;
   let selectedDirectoryIndex = null;
+  let tapeImage = null;
+  let selectedTapeBlockIndex = null;
   let machineSwitching = false;
+  const hexViewState = { file: null, tape: null };
   const printerView = {
     fullCanvas: null,
     fullContext: null,
@@ -45,6 +48,27 @@
 
   function basicAutostart(value) {
     return value >= 0x8000 ? 'none' : String(value);
+  }
+
+  function hideHexViewer(kind) {
+    const viewer = byId(`${kind}HexViewer`);
+    if (viewer) viewer.hidden = true;
+    hexViewState[kind] = null;
+  }
+
+  function showHexViewer(kind, key, title, summary, bytes, baseOffset = 0) {
+    const viewer = byId(`${kind}HexViewer`);
+    const dump = byId(`${kind}HexDump`);
+    if (!viewer || !dump || !window.DidaktikHex) return;
+    viewer.hidden = false;
+    byId(`${kind}HexTitle`).textContent = title;
+    byId(`${kind}HexSummary`).textContent = summary;
+    if (hexViewState[kind] === key) return;
+    const content = typeof bytes === 'function' ? bytes() : bytes;
+    dump.textContent = window.DidaktikHex.format(content, { baseOffset });
+    dump.scrollTop = 0;
+    dump.scrollLeft = 0;
+    hexViewState[kind] = key;
   }
 
   function printerGeometry(status) {
@@ -325,10 +349,8 @@
 
   function render(status) {
     const machine = status.machine || { id: 'didaktik80', label: 'Didaktik 80K', shortLabel: 'GAMA', memoryDescription: '' };
-    byId('machineHeading').textContent = machine.label;
     byId('machineSelect').value = machine.id;
     byId('machineMemory').textContent = machine.memoryDescription;
-    byId('machineSubtitle').textContent = `${machine.label} with MDOS 2.93 and two emulated D40/D80 drives.`;
     const isSpectrum = machine.id === 'spectrum48' || machine.id === 'spectrum128';
     byId('machineBrand').textContent = isSpectrum ? 'ZX SPECTRUM' : 'DIDAKTIK';
     byId('machineModelMark').textContent = machine.shortLabel;
@@ -369,6 +391,7 @@
     byId('controllerStatus').className = `status-badge ${status.controllerPhase === 'idle' ? 'status-badge--muted' : 'status-badge--active'}`;
     status.drives.forEach((drive, index) => renderDrive(index, drive, status.selectedDrive));
     if (activeStorageTab === 'files') renderFileBrowser();
+    else if (activeStorageTab === 'tape') renderTapeBrowser();
     else if (activeStorageTab === 'printer') renderPrinterPanel(status);
   }
 
@@ -483,7 +506,7 @@
   }
 
   function setStorageTab(tab) {
-    if (!['drives', 'files', 'printer'].includes(tab)) return;
+    if (!['drives', 'files', 'tape', 'printer'].includes(tab)) return;
     activeStorageTab = tab;
     for (const button of document.querySelectorAll('[data-storage-tab]')) {
       const active = button.dataset.storageTab === tab;
@@ -493,8 +516,10 @@
     }
     byId('drivesPanel').hidden = tab !== 'drives';
     byId('filesPanel').hidden = tab !== 'files';
+    byId('tapePanel').hidden = tab !== 'tape';
     byId('printerPanel').hidden = tab !== 'printer';
     if (tab === 'files') renderFileBrowser();
+    else if (tab === 'tape') renderTapeBrowser();
     else if (tab === 'printer') renderPrinterPanel();
   }
 
@@ -527,6 +552,7 @@
     if (!disk || !file) {
       details.hidden = true;
       download.disabled = true;
+      hideHexViewer('file');
       return;
     }
 
@@ -556,6 +582,24 @@
     warning.hidden = file.chainComplete;
     warning.textContent = file.chainError || 'The FAT chain is incomplete.';
     download.disabled = !file.chainComplete;
+    if (file.chainComplete) {
+      try {
+        showHexViewer(
+          'file',
+          file,
+          `${file.displayName} — file contents`,
+          `${file.byteLength.toLocaleString()} bytes · offsets relative to the extracted file`,
+          () => disk.extractFile(file),
+          0
+        );
+      } catch (error) {
+        hideHexViewer('file');
+        warning.hidden = false;
+        warning.textContent = error.message;
+      }
+    } else {
+      hideHexViewer('file');
+    }
   }
 
   function renderFileBrowser() {
@@ -635,6 +679,129 @@
     renderSelectedFile(disk, catalog.files.find(file => file.directoryIndex === selectedDirectoryIndex) || null);
   }
 
+  function tapeHeadBlock(state = window.DidaktikTap?.getState?.()) {
+    if (!tapeImage || !state) return null;
+    return tapeImage.blockAtOffset(state.headOffset);
+  }
+
+  function renderTapeBrowser() {
+    const rows = byId('tapeBlockRows');
+    if (!rows) return;
+    rows.replaceChildren();
+    const summary = byId('tapeSummary');
+    const empty = byId('tapeEmpty');
+    const tableWrap = byId('tapeTableWrap');
+    const rewind = byId('tapeRewind');
+    const eject = byId('tapeEject');
+    const position = byId('tapeCurrentPosition');
+    const state = window.DidaktikTap?.getState?.() || null;
+
+    if (!tapeImage || !state) {
+      summary.textContent = 'No tape inserted.';
+      empty.hidden = false;
+      tableWrap.hidden = true;
+      rewind.disabled = true;
+      eject.disabled = true;
+      position.textContent = 'No tape';
+      selectedTapeBlockIndex = null;
+      hideHexViewer('tape');
+      return;
+    }
+
+    const current = tapeHeadBlock(state);
+    if (current) selectedTapeBlockIndex = current.index;
+    if (selectedTapeBlockIndex === null || !tapeImage.blocks[selectedTapeBlockIndex]) selectedTapeBlockIndex = 0;
+    const selectedBlock = tapeImage.blocks[selectedTapeBlockIndex] || null;
+    summary.textContent = `${tapeImage.fileName} · ${tapeImage.blocks.length} blocks · ${readableBytes(tapeImage.bytes.length)}`;
+    empty.hidden = true;
+    tableWrap.hidden = false;
+    rewind.disabled = state.headOffset === 0;
+    eject.disabled = false;
+    position.textContent = current
+      ? `Head at block ${current.number} of ${tapeImage.blocks.length}`
+      : state.headOffset >= tapeImage.bytes.length ? 'Head at end of tape' : `Head at byte ${state.headOffset}`;
+
+    for (const block of tapeImage.blocks) {
+      const isCurrent = current?.index === block.index;
+      const row = document.createElement('tr');
+      row.dataset.tapeBlock = String(block.index);
+      row.tabIndex = 0;
+      row.classList.toggle('is-current', isCurrent);
+      row.classList.toggle('is-selected', selectedBlock?.index === block.index);
+      row.title = `${block.detail}. Click to set the tape head here.`;
+
+      const headCell = makeCell(isCurrent ? '●' : '○', 'tape-head-cell');
+      headCell.setAttribute('aria-label', isCurrent ? 'Current tape head position' : 'Set tape head here');
+      row.append(
+        headCell,
+        makeCell(String(block.number), 'numeric-cell'),
+        makeCell(block.kind),
+        makeCell(block.name || '—', 'file-name-cell'),
+        makeCell(readableBytes(block.payloadLength), 'numeric-cell'),
+        makeCell(block.checksumValid ? 'OK' : 'Bad', block.checksumValid ? 'tape-checksum-ok' : 'chain-warning')
+      );
+      const select = () => setTapeHeadToBlock(block.index);
+      row.addEventListener('click', select);
+      row.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        select();
+      });
+      rows.append(row);
+    }
+
+    if (selectedBlock) {
+      const blockBytes = tapeImage.bytes.subarray(selectedBlock.dataOffset, selectedBlock.endOffset);
+      showHexViewer(
+        'tape',
+        selectedBlock,
+        `Block ${selectedBlock.number}: ${selectedBlock.name || selectedBlock.kind}`,
+        `${blockBytes.length.toLocaleString()} bytes · absolute TAP offsets · flag, payload and checksum`,
+        blockBytes,
+        selectedBlock.dataOffset
+      );
+    } else {
+      hideHexViewer('tape');
+    }
+  }
+
+  function setTapeHeadToBlock(index) {
+    const block = tapeImage?.blocks[index];
+    if (!block) return;
+    selectedTapeBlockIndex = block.index;
+    if (!window.DidaktikTap.setHeadOffset(block.offset)) {
+      setNotice('Unable to move the tape head because no TAP image is mounted.', 'error');
+      return;
+    }
+    renderTapeBrowser();
+    setNotice(`Tape head positioned at block ${block.number}: ${block.name || block.kind}.`, 'success');
+    focusMachine();
+  }
+
+  async function loadTapeFromFile(file) {
+    if (!file) return false;
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const parsed = new window.DidaktikTap.TapImage(bytes, file.name);
+    await window.DidaktikTap.mountFile(file);
+    tapeImage = parsed;
+    selectedTapeBlockIndex = 0;
+    window.DidaktikTap.setHeadOffset(0);
+    setStorageTab('tape');
+    renderTapeBrowser();
+    setNotice(`${file.name} inserted: ${parsed.blocks.length} TAP blocks.`, 'success');
+    return true;
+  }
+
+  function ejectTape() {
+    window.DidaktikTap?.eject?.();
+    const name = tapeImage?.fileName || 'Tape';
+    tapeImage = null;
+    selectedTapeBlockIndex = null;
+    renderTapeBrowser();
+    setNotice(`${name} ejected.`);
+    focusMachine();
+  }
+
   function downloadSelectedFile() {
     const disk = emulator?.drives[browserDrive]?.disk;
     const file = selectedFile();
@@ -665,7 +832,7 @@
         if (browserDrive === index) selectedDirectoryIndex = null;
         setNotice(`${disk?.fileName || 'Disk'} ejected from drive ${index ? 'B' : 'A'}.`);
         renderFileBrowser();
-      renderPrinterPanel();
+        renderPrinterPanel();
       } else if (action === 'save') {
         downloadDisk(index);
       } else if (action === 'new40' || action === 'new80') {
@@ -676,7 +843,7 @@
         selectedDirectoryIndex = null;
         setNotice(`New unformatted ${tracks}-track image inserted into drive ${index ? 'B' : 'A'}. Use FORMAT in MDOS before storing files.`, 'success');
         renderFileBrowser();
-      renderPrinterPanel();
+        renderPrinterPanel();
       }
     } catch (error) {
       console.error(error);
@@ -694,13 +861,18 @@
   }
 
   async function mountDroppedFiles(files, preferredIndex) {
-    const images = Array.from(files || []).filter(file => file && file.size);
+    const incoming = Array.from(files || []).filter(file => file && file.size);
+    if (!incoming.length) return;
+    const tape = incoming.find(file => /\.tap$/i.test(file.name));
+    if (tape) await loadTapeFromFile(tape);
+
+    const images = incoming.filter(file => file !== tape);
     if (!images.length) return;
     const firstIndex = preferredIndex ?? (emulator.drives[0].disk ? (emulator.drives[1].disk ? 0 : 1) : 0);
     const assignments = [[firstIndex, images[0]]];
     if (images[1]) assignments.push([1 - firstIndex, images[1]]);
     for (const [index, file] of assignments) await loadDiskFromFile(index, file, { focus: false });
-    if (images.length > 2) setNotice(`Mounted the first two images; ${images.length - 2} additional file(s) were ignored.`);
+    if (images.length > 2) setNotice(`Mounted the first two disk images; ${images.length - 2} additional file(s) were ignored.`);
   }
 
   function bindDragAndDrop() {
@@ -887,6 +1059,23 @@
     byId('fileFilter').addEventListener('input', renderFileBrowser);
     byId('downloadFileButton').addEventListener('click', downloadSelectedFile);
 
+    byId('tapeInsert').addEventListener('click', () => byId('tapeFile').click());
+    byId('tapeRewind').addEventListener('click', () => {
+      if (!tapeImage?.blocks.length) return;
+      setTapeHeadToBlock(0);
+    });
+    byId('tapeEject').addEventListener('click', ejectTape);
+    byId('tapeFile').addEventListener('change', async event => {
+      try {
+        await loadTapeFromFile(event.target.files[0]);
+      } catch (error) {
+        console.error(error);
+        setNotice(error.message || String(error), 'error');
+      } finally {
+        event.target.value = '';
+      }
+    });
+
     byId('printerColor').addEventListener('change', event => {
       const color = event.target.value === 'blue' ? 'blue' : 'black';
       emulator.setPrinterCarbonColor(color);
@@ -989,6 +1178,7 @@
       setSnapEnabled(true);
       setNotice(`${emulator.getMachineProfile().label} is ready. MDOS is resident and 036-KOMPAKT.d80 is mounted in drive A.`, 'success');
       renderFileBrowser();
+      renderTapeBrowser();
       renderPrinterPanel();
       window.setInterval(() => emulator && render(emulator.getStatus()), 200);
       focusMachine();

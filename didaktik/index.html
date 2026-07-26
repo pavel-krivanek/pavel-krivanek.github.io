@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="Standalone Didaktik and ZX Spectrum emulator with Didaktik D80 disks and BT-100 printer emulation." name="description"/>
+<title>Didaktik + D80 + BT-100</title>
+<link href="styles.css" rel="stylesheet"/>
+</head>
+<body>
+
+<main class="app-shell"><section aria-label="Emulator" class="emulator-pane"><div class="screen-bezel">
+<div class="screen-label"><span id="machineBrand">DIDAKTIK</span><small id="machineModelMark">GAMA</small></div>
+
+
+<div class="emulator-fullscreen-target" id="emulatorFullscreenTarget"><div class="emulator-screen-slot" id="emulatorScreenSlot">
+<main aria-label="Emulated Didaktik screen. Click here before typing." id="f" tabindex="0">
+<canvas id="s"><q>© 1982 Sinclair Research Ltd</q></canvas>
+<div hidden="" id="k"></div>
+<div hidden="" id="h" tabindex="-1"><img alt="ZX Spectrum keyboard layout" id="qaopKeyboardImage" src="qaop/keyboard.svg"/><p><kbd>Shift</kbd> is Caps Shift; <kbd>Alt</kbd> is Symbol Shift.</p></div>
+<svg aria-hidden="true" id="p" viewbox="0 0 31 31"><path d="m0 4q0-4 4-4h23q4 0 4 4v23q0 4-4 4h-23q-4 0-4-4m7-2h6v-19h-6m11 19h6v-19h-6"></path></svg>
+<i aria-hidden="true"></i>
+</main>
+<div hidden="" id="b"></div>
+<div hidden="" id="m"></div>
+</div></div></div></section><aside aria-labelledby="storageHeading" class="storage-panel control-panel"><header class="control-header">
+<div>
+<h1>Didaktik + D80 + BT-100</h1>
+<p class="subtitle" id="machineSubtitle">Didaktik 80K with MDOS 2.93 and two emulated D40/D80 drives.</p>
+</div>
+<div aria-label="System status" class="system-badges">
+<span class="status-badge" id="systemStatus">Starting…</span>
+<span class="status-badge status-badge--muted" id="romStatus">ROM not paged</span>
+<span class="status-badge status-badge--muted" id="controllerStatus">FDC idle</span>
+<span class="status-badge status-badge--muted" id="bankStatus">Bank 0</span>
+<span class="status-badge status-badge--muted" id="soundStatus">Beeper only</span>
+</div>
+</header><section aria-labelledby="machineHeading" class="machine-controls-card"><div class="panel-heading panel-heading--machine">
+<div>
+<p class="section-kicker">Computer</p>
+<h2 id="machineHeading">Didaktik 80K</h2>
+<label class="machine-selector">Machine
+            <select id="machineSelect">
+<option value="didaktik80">Didaktik 80K</option>
+<option value="didaktikM">Didaktik M</option>
+<option value="didaktikKompakt">Didaktik Kompakt</option>
+<option value="spectrum48">ZX Spectrum 48K</option>
+<option value="spectrum128">ZX Spectrum 128K</option>
+</select>
+</label>
+<p class="machine-memory" id="machineMemory">16K ROM + fixed 16K screen RAM + two switchable 32K RAM banks</p>
+</div>
+<div aria-label="Machine controls" class="machine-actions" role="group">
+<button id="pauseButton" type="button">Pause</button>
+<button id="resetButton" type="button">Reset</button>
+<button id="powerButton" type="button">Power cycle</button>
+<button class="button-accent" disabled="" id="snapButton" type="button">SNAP</button>
+<button id="keyboardButton" type="button">Keyboard</button>
+<button id="fullscreenButton" type="button">Fullscreen</button>
+<label class="check-control peripheral-control" id="melodikLabel" title="Attach a Didaktik Melodik AY-3-8912 interface"><input disabled="" id="melodikControl" type="checkbox"/> Melodik (AY)</label>
+<label class="volume-control">Volume
+            <input id="volumeControl" max="100" min="0" step="1" type="range" value="65"/>
+</label>
+<label class="check-control"><input id="muteControl" type="checkbox"/> Mute</label>
+</div>
+</div><p class="screen-help">Click the emulator before typing. F11 shows only the emulator in fullscreen; press F11 again or Escape to leave fullscreen.</p></section>
+<div class="panel-heading panel-heading--storage">
+<div>
+<p class="section-kicker">Disk subsystem</p>
+<h2 id="storageHeading">Didaktik D80</h2>
+</div>
+<span class="controller-chip">MDOS 2.93</span>
+</div>
+<div aria-label="Disk subsystem views" class="storage-tabs" role="tablist">
+<button aria-controls="drivesPanel" aria-selected="true" class="storage-tab is-active" data-storage-tab="drives" id="drivesTab" role="tab" type="button">Drives</button>
+<button aria-controls="filesPanel" aria-selected="false" class="storage-tab" data-storage-tab="files" id="filesTab" role="tab" type="button">Image files</button>
+<button aria-controls="printerPanel" aria-selected="false" class="storage-tab" data-storage-tab="printer" id="printerTab" role="tab" type="button">BT-100</button>
+</div>
+<div aria-labelledby="drivesTab" class="storage-tab-panel" id="drivesPanel" role="tabpanel">
+<div class="drive-stack">
+<article class="drive-card" data-drive="0">
+<div class="drive-title-row">
+<div>
+<p class="drive-letter">Drive A:</p>
+<h3 id="driveAName">Empty</h3>
+</div>
+<div aria-label="Drive A activity" class="drive-lamp" id="driveALamp"><span></span></div>
+</div>
+<dl class="drive-details">
+<div><dt>Volume</dt><dd id="driveAVolume">—</dd></div>
+<div><dt>Geometry</dt><dd id="driveAGeometry">—</dd></div>
+<div><dt>Track</dt><dd id="driveATrack">0</dd></div>
+<div><dt>State</dt><dd id="driveAState">No disk</dd></div>
+</dl>
+<div class="drive-controls">
+<input accept=".d40,.d80,application/octet-stream" hidden="" id="driveAFile" type="file"/>
+<button data-action="load" data-drive="0" type="button">Insert image</button>
+<button data-action="eject" data-drive="0" type="button">Eject</button>
+<button data-action="save" data-drive="0" type="button">Download</button>
+</div>
+<div class="drive-controls drive-controls--secondary">
+<button data-action="new40" data-drive="0" type="button">New D40 image</button>
+<button data-action="new80" data-drive="0" type="button">New D80 image</button>
+<label class="check-control"><input data-action="protect" data-drive="0" id="driveAWriteProtect" type="checkbox"/> Write protected</label>
+</div>
+<p class="drop-hint">Drop a <code>.d40</code> or <code>.d80</code> image here</p>
+</article>
+<article class="drive-card" data-drive="1">
+<div class="drive-title-row">
+<div>
+<p class="drive-letter">Drive B:</p>
+<h3 id="driveBName">Empty</h3>
+</div>
+<div aria-label="Drive B activity" class="drive-lamp" id="driveBLamp"><span></span></div>
+</div>
+<dl class="drive-details">
+<div><dt>Volume</dt><dd id="driveBVolume">—</dd></div>
+<div><dt>Geometry</dt><dd id="driveBGeometry">—</dd></div>
+<div><dt>Track</dt><dd id="driveBTrack">0</dd></div>
+<div><dt>State</dt><dd id="driveBState">No disk</dd></div>
+</dl>
+<div class="drive-controls">
+<input accept=".d40,.d80,application/octet-stream" hidden="" id="driveBFile" type="file"/>
+<button data-action="load" data-drive="1" type="button">Insert image</button>
+<button data-action="eject" data-drive="1" type="button">Eject</button>
+<button data-action="save" data-drive="1" type="button">Download</button>
+</div>
+<div class="drive-controls drive-controls--secondary">
+<button data-action="new40" data-drive="1" type="button">New D40 image</button>
+<button data-action="new80" data-drive="1" type="button">New D80 image</button>
+<label class="check-control"><input data-action="protect" data-drive="1" id="driveBWriteProtect" type="checkbox"/> Write protected</label>
+</div>
+<p class="drop-hint">Drop a <code>.d40</code> or <code>.d80</code> image here</p>
+</article>
+</div>
+<section class="help-card">
+<h3>Using MDOS</h3>
+<p>The supplied D80 image is inserted into drive A at startup. MDOS initializes automatically after reset; enter disk commands directly in BASIC. <strong>SNAP</strong> saves the complete current machine state to the active writable disk as <code>SNAPSHOT00</code> through <code>SNAPSHOT99</code>, then resumes the program.</p>
+<div aria-label="Useful MDOS commands" class="command-grid">
+<code>CAT</code><span>catalogue drive A</span>
+<code>CAT "B:"</code><span>catalogue drive B</span>
+<code>LOAD *"name"</code><span>load a file</span>
+</div>
+</section>
+</div>
+<section aria-labelledby="filesTab" class="storage-tab-panel image-browser" hidden="" id="filesPanel" role="tabpanel">
+<div class="browser-toolbar">
+<div aria-label="Image to browse" class="browser-drive-selector" role="group">
+<button aria-pressed="true" class="is-active" data-browser-drive="0" id="browserDriveA" type="button">Drive A:</button>
+<button aria-pressed="false" data-browser-drive="1" id="browserDriveB" type="button">Drive B:</button>
+</div>
+<label class="browser-search">Filter
+            <input autocomplete="off" id="fileFilter" placeholder="name or type" type="search"/>
+</label>
+</div>
+<div class="browser-summary" id="imageBrowserSummary">No image selected.</div>
+<p class="browser-empty" id="imageBrowserEmpty">Insert an MDOS image to browse its directory.</p>
+<div class="browser-table-wrap" hidden="" id="imageBrowserTableWrap">
+<table class="browser-table">
+<thead><tr><th>Name</th><th>Kind</th><th>Size</th><th>Start / line</th><th>Attr.</th></tr></thead>
+<tbody id="imageFileRows"></tbody>
+</table>
+</div>
+<div class="file-details" hidden="" id="fileDetails">
+<div>
+<p class="section-kicker">Selected file</p>
+<h3 id="selectedFileName">—</h3>
+<dl id="selectedFileMetadata"></dl>
+<p class="chain-warning" hidden="" id="selectedFileWarning"></p>
+</div>
+<button disabled="" id="downloadFileButton" type="button">Download file</button>
+</div>
+</section>
+<section aria-labelledby="printerTab" class="storage-tab-panel printer-panel" hidden="" id="printerPanel" role="tabpanel">
+<div class="printer-toolbar">
+<p class="printer-summary" id="printerSummary">No BT-100 activity yet.</p>
+<div class="printer-actions">
+<button id="printerNewPage" type="button">Change paper</button>
+<button id="printerResetHead" type="button">Reset printer</button>
+<button id="printerPrint" type="button">Print / save as PDF</button>
+<button id="printerDownloadPng" type="button">Download PNG</button>
+</div>
+</div>
+<div class="printer-controls-grid">
+<label>Carbon paper color
+            <select id="printerColor">
+<option value="black">Black</option>
+<option value="blue">Blue</option>
+</select>
+</label>
+<label>Mechanical speed
+            <select id="printerSpeed">
+<option value="1">1× — authentic</option>
+<option value="10">10×</option>
+<option value="100">100×</option>
+</select>
+</label>
+<label>Dot darkness
+            <div class="printer-range-row">
+<input id="printerDarkness" max="100" min="40" step="1" type="range" value="75"/>
+<output for="printerDarkness" id="printerDarknessValue">75%</output>
+</div>
+</label>
+<div class="printer-status-box"><span>Head</span><strong id="printerHead">0, 0</strong></div>
+<div class="printer-status-box"><span>Dots</span><strong id="printerDots">0</strong></div>
+<div class="printer-status-box"><span>Port A / B / CTRL</span><strong id="printerPorts">$0000 / $0000 / $0000</strong></div>
+<div class="printer-status-box"><span>Limit switches</span><strong id="printerLimits">none</strong></div>
+</div>
+<div class="printer-shift-box">
+<p>Shift paper</p>
+<div class="printer-shift-pad">
+<button aria-label="Shift paper up" id="printerShiftUp" type="button">↑</button>
+<button aria-label="Shift paper left" id="printerShiftLeft" type="button">←</button>
+<button aria-label="Shift paper down" id="printerShiftDown" type="button">↓</button>
+<button aria-label="Shift paper right" id="printerShiftRight" type="button">→</button>
+</div>
+</div>
+<div class="printer-preview-wrap">
+<canvas aria-label="BT-100 paper preview" id="printerPreview"></canvas>
+</div>
+<p class="screen-help">The emulation uses the Didaktik optional 8255 path on ports <code>1Fh</code>, <code>3Fh</code>, <code>5Fh</code> and <code>7Fh</code>. The BT-100 model applies a small left/right raster bias so the same pixel column lands slightly differently when scanned in opposite directions.</p>
+</section>
+<p aria-live="polite" class="notice" id="notice" role="status">Loading ROMs and sample disk…</p>
+</aside></main>
+<dialog class="keyboard-dialog" id="keyboardDialog">
+<form method="dialog">
+<div class="dialog-heading">
+<div><p class="section-kicker">Input reference</p><h2>Didaktik keyboard</h2></div>
+<button aria-label="Close keyboard" type="submit">Close</button>
+</div>
+<img alt="ZX Spectrum keyboard layout" src="qaop/keyboard.svg"/>
+<p><kbd>Shift</kbd> maps to Caps Shift, <kbd>Alt</kbd> to Symbol Shift, and <kbd>Backspace</kbd> to delete.</p>
+</form>
+</dialog>
+<!-- Required QAOP controls remain hidden; the standalone page supplies its own controls above. -->
+<b hidden="" id="e"></b>
+<aside hidden="" id="l">
+<header><h1><span>Didaktik D80</span></h1></header>
+<section>
+<input type="checkbox"/><button data-c="pause" disabled="">Pause</button>
+<button data-c="reset" disabled="">Reset</button>
+<button data-c="open" disabled="">Open</button>
+<button data-c="save" disabled="">Save</button>
+<select data-c="model" disabled=""><option value="48">Spectrum 48 K</option><option value="128">Spectrum 128 K</option><option value="tc2048">Timex TC 2048</option></select>
+<input type="checkbox"/><button data-c="ay" disabled="">AY</button>
+<input type="checkbox"/><button data-c="kj" disabled="">Kempston</button>
+<input type="checkbox"/><button data-c="if1" disabled="">Interface 1</button>
+<p id="v"><input type="checkbox"/><button data-c="mute">Mute</button><input title="Volume" type="range"/></p>
+</section>
+<section class="d"><dl class="keys"><dt>F8</dt><dd data-c="layout">Keyboard layout</dd></dl></section>
+<section><button data-c="share" hidden="">Share link</button></section>
+<a href="https://torinak.com/qaop/" rel="author">© Jan Bobrowski</a>
+</aside>
+<aside hidden="" id="r">
+<details hidden="" id="u" open=""><summary>User list</summary><ul class="u"></ul></details>
+<details id="z" open=""><summary>Snapshots</summary><ul class="u"></ul><button data-c="remember" disabled="">Create</button></details>
+</aside>
+<svg hidden="" id="t"></svg>
+<script>
+    window.QAOP_ASSET_BASE = 'qaop/';
+    (function () {
+      const wrapHistory = method => {
+        const original = history[method].bind(history);
+        history[method] = function (state, unused) {
+          try { return original(state, unused, location.pathname + location.search + location.hash); }
+          catch (_) { return original(state, unused); }
+        };
+      };
+      wrapHistory('replaceState');
+      wrapHistory('pushState');
+      try {
+        if (navigator.serviceWorker && navigator.serviceWorker.register) {
+          navigator.serviceWorker.register = () => Promise.resolve({ update() {}, index: { add() {} } });
+        }
+      } catch (_) {}
+    })();
+  </script>
+<script src="emulator/00-namespace.js"></script>
+<script src="emulator/05-shared-helpers.js"></script>
+<script>globalThis.__qaop && (globalThis.__qaop.m = window.QAOP_ASSET_BASE);</script>
+<script src="emulator/10-ui-shell.js"></script>
+<script src="emulator/20-machine-core.js"></script>
+<script src="emulator/30-runtime-media.js"></script>
+<script src="emulator/40-persistence-startup.js"></script>
+<script src="bt100-printer.js"></script>
+<script src="didaktik-d80.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

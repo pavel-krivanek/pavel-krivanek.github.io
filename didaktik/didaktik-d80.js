@@ -10,6 +10,11 @@
   const PORT_8255_CONTROL = 0x7f;
   const PORT_8255_DISABLE = 0x97;
   const PORT_8255_ENABLE = 0x99;
+  const KEMPSTON_MOUSE_BUTTONS_PORT = 0xfadf;
+  const KEMPSTON_MOUSE_X_PORT = 0xfbdf;
+  const KEMPSTON_MOUSE_Y_PORT = 0xffdf;
+  const KEMPSTON_MOUSE_BUTTONS_MASK = 0x0120;
+  const KEMPSTON_MOUSE_AXIS_MASK = 0x0520;
   const SECTOR_SIZE = 512;
 
   const MACHINE_PROFILES = Object.freeze({
@@ -719,6 +724,84 @@
     }
   }
 
+  class KempstonMouse {
+    constructor(notify = () => {}) {
+      this.notify = notify;
+      this.enabled = false;
+      this.x = 0;
+      this.y = 0;
+      this.buttons = 0xff;
+    }
+
+    setEnabled(enabled) {
+      const next = !!enabled;
+      if (this.enabled === next) return this.getStatus();
+      this.enabled = next;
+      if (!next) this.buttons = 0xff;
+      this.notify();
+      return this.getStatus();
+    }
+
+    move(deltaX, deltaY) {
+      if (!this.enabled) return false;
+      const dx = Math.trunc(Number(deltaX) || 0);
+      const dy = Math.trunc(Number(deltaY) || 0);
+      if (!dx && !dy) return false;
+      this.x = (this.x + dx) & 0xff;
+      // Kempston Y is a free-running counter whose conventional screen driver
+      // direction is opposite to DOM movementY (positive DOM Y means down).
+      this.y = (this.y - dy) & 0xff;
+      this.notify();
+      return true;
+    }
+
+    setButton(browserButton, pressed) {
+      if (!this.enabled) return false;
+      const bit = browserButton === 0 ? 1 : browserButton === 1 ? 2 : browserButton === 2 ? 0 : -1;
+      if (bit < 0) return false;
+      const mask = 1 << bit;
+      const next = pressed ? (this.buttons & ~mask) : (this.buttons | mask);
+      if (next === this.buttons) return false;
+      this.buttons = next & 0xff;
+      this.notify();
+      return true;
+    }
+
+    releaseButtons() {
+      if (this.buttons === 0xff) return false;
+      this.buttons = 0xff;
+      this.notify();
+      return true;
+    }
+
+    readPort(port) {
+      if (!this.enabled) return null;
+      port &= 0xffff;
+      if ((port & KEMPSTON_MOUSE_BUTTONS_MASK) === (KEMPSTON_MOUSE_BUTTONS_PORT & KEMPSTON_MOUSE_BUTTONS_MASK)) {
+        return this.buttons;
+      }
+      if ((port & KEMPSTON_MOUSE_AXIS_MASK) === (KEMPSTON_MOUSE_X_PORT & KEMPSTON_MOUSE_AXIS_MASK)) {
+        return this.x;
+      }
+      if ((port & KEMPSTON_MOUSE_AXIS_MASK) === (KEMPSTON_MOUSE_Y_PORT & KEMPSTON_MOUSE_AXIS_MASK)) {
+        return this.y;
+      }
+      return null;
+    }
+
+    getStatus() {
+      return {
+        enabled: this.enabled,
+        x: this.x,
+        y: this.y,
+        buttons: this.buttons,
+        left: !(this.buttons & 0x02),
+        right: !(this.buttons & 0x01),
+        middle: !(this.buttons & 0x04)
+      };
+    }
+  }
+
   class DidaktikD80 {
     constructor(runtime, mdosRom, options = {}) {
       this.runtime = runtime;
@@ -736,6 +819,7 @@
       this.paged = false;
       this.controller = new UPD765Subset(this.drives, () => this.scheduleNotify());
       this.printer = new global.BT100Printer(() => this.scheduleNotify());
+      this.mouse = new KempstonMouse(() => this.scheduleNotify());
       this.printer.setFrameCycles(this.getMachineProfile().frameCycles);
       this.device = this.createDevice();
     }
@@ -766,6 +850,8 @@
           if (low === PORT_8255_PORT_A) return self.printer.readPortA(time);
           if (low === PORT_8255_PORT_B) return self.printer.readPortB(time);
           if (low === PORT_8255_PORT_C) return self.printer.readPortC(time);
+          const mouseValue = self.mouse.readPort(port);
+          if (mouseValue !== null) return mouseValue;
           return self.device.edge_in(port, time);
         },
         out(port, value, time) {
@@ -841,6 +927,22 @@
       };
     }
 
+    setKempstonMouseEnabled(enabled) {
+      return this.mouse.setEnabled(enabled);
+    }
+
+    moveKempstonMouse(deltaX, deltaY) {
+      return this.mouse.move(deltaX, deltaY);
+    }
+
+    setKempstonMouseButton(button, pressed) {
+      return this.mouse.setButton(button, pressed);
+    }
+
+    releaseKempstonMouseButtons() {
+      return this.mouse.releaseButtons();
+    }
+
     setPrinterSpeedFactor(value) {
       return this.printer.setSpeedFactor(value);
     }
@@ -885,6 +987,7 @@
       this.memory.fill(0, 0x3800, 0x4000);
       this.controller.powerReset();
       this.printer.resetHead();
+      this.mouse.releaseButtons();
       this.pageOut();
       this.runtime.rebuildBusHandlers();
       this.runtime.resetMachine();
@@ -967,6 +1070,7 @@
           ayEnabled: this.isAyEnabled(profile)
         },
         printer: this.printer.getStatus(),
+        mouse: this.mouse.getStatus(),
         paged: this.paged,
         initialized: this.isInitialized(),
         selectedDrive: this.controller.selectedDrive,
@@ -997,6 +1101,7 @@
     UPD765Subset,
     DidaktikD80,
     BT100Printer: global.BT100Printer,
+    KempstonMouse,
     MACHINE_PROFILES,
     inferGeometry
   });

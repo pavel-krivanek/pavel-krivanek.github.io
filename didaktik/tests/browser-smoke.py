@@ -101,6 +101,52 @@ with sync_playwright() as playwright:
       };
     }""")
 
+    page.click('#mouseTab')
+    mouse_initial = page.evaluate("""() => ({
+      enabled: didaktikD80.getStatus().mouse.enabled,
+      checked: document.getElementById('mouseEnabled').checked,
+      capture: document.getElementById('mouseCaptureStatus').textContent
+    })""")
+    page.check('#mouseEnabled')
+    page.wait_for_function("didaktikD80.getStatus().mouse.enabled")
+    page.evaluate("""() => {
+      const sensitivity = document.getElementById('mouseSensitivity');
+      sensitivity.value = '150';
+      sensitivity.dispatchEvent(new Event('input', { bubbles: true }));
+    }""")
+    page.click('#f', position={'x': 100, 'y': 100})
+    page.wait_for_function("document.pointerLockElement === document.getElementById('f')")
+    page.evaluate("""() => {
+      const event = new MouseEvent('mousemove', { bubbles: true, cancelable: true });
+      Object.defineProperties(event, {
+        movementX: { value: 2 },
+        movementY: { value: -2 }
+      });
+      document.dispatchEvent(event);
+    }""")
+    page.mouse.down(button='left')
+    mouse_pressed = page.evaluate("() => __qaop.machineBus.in(0xfadf) & 0xff")
+    page.mouse.up(button='left')
+    mouse_enabled = page.evaluate("""() => ({
+      status: didaktikD80.getStatus().mouse,
+      ports: [
+        __qaop.machineBus.in(0xfbdf) & 0xff,
+        __qaop.machineBus.in(0xffdf) & 0xff,
+        __qaop.machineBus.in(0xfadf) & 0xff
+      ],
+      sensitivity: document.getElementById('mouseSensitivityValue').textContent,
+      capture: document.getElementById('mouseCaptureStatus').textContent,
+      locked: document.pointerLockElement === document.getElementById('f')
+    })""")
+    page.keyboard.press('Escape')
+    page.wait_for_function("document.pointerLockElement === null")
+    page.uncheck('#mouseEnabled')
+    mouse_final = page.evaluate("""() => ({
+      enabled: didaktikD80.getStatus().mouse.enabled,
+      capture: document.getElementById('mouseCaptureStatus').textContent,
+      storedSensitivity: localStorage.getItem('didaktik-d80.kempston-mouse-sensitivity')
+    })""")
+
     page.check('#melodikControl')
     page.wait_for_function("window.qaop.state.ay && didaktikD80.getStatus().sound.melodikEnabled")
     melodik = page.evaluate("""() => {
@@ -273,7 +319,7 @@ with sync_playwright() as playwright:
         rows,
         privateState: Array.from({length: 8}, (_, offset) => __qaop.peekMemoryRaw(0x5bf8 + offset))
       };
-    })""")
+    }""")
 
 
 
@@ -282,6 +328,12 @@ with sync_playwright() as playwright:
         'layout': layout,
         'melodik': melodik,
         'melodikOff': melodik_off,
+        'mouse': {
+            'initial': mouse_initial,
+            'pressed': mouse_pressed,
+            'enabled': mouse_enabled,
+            'final': mouse_final,
+        },
         'bt100': bt100,
         'browserView': browser_view,
         'dragDrop': drag_drop,
@@ -308,6 +360,20 @@ with sync_playwright() as playwright:
         'melodikAvailable': True, 'melodikEnabled': False, 'melodikRequested': False,
         'builtInAy': False, 'ayEnabled': False
     }
+    assert initial['status']['mouse'] == {
+        'enabled': False, 'x': 0, 'y': 0, 'buttons': 255,
+        'left': False, 'right': False, 'middle': False
+    }
+    assert mouse_initial == {'enabled': False, 'checked': False, 'capture': 'Disabled'}
+    assert mouse_pressed == 0xfd
+    assert mouse_enabled['status'] == {
+        'enabled': True, 'x': 3, 'y': 3, 'buttons': 255,
+        'left': False, 'right': False, 'middle': False
+    }
+    assert mouse_enabled['ports'] == [3, 3, 255]
+    assert mouse_enabled['sensitivity'] == '150%'
+    assert mouse_enabled['capture'] == 'Captured' and mouse_enabled['locked']
+    assert mouse_final == {'enabled': False, 'capture': 'Disabled', 'storedSensitivity': '150'}
     assert initial['canvas'][0] and initial['canvas'][1]
     assert melodik['controlChecked'] and not melodik['controlDisabled']
     assert melodik['badge'] == 'Melodik AY'

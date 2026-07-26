@@ -34,7 +34,7 @@ vm.runInContext(fs.readFileSync(path.join(projectRoot, 'didaktik-d80.js'), 'utf8
   filename: 'didaktik-d80.js'
 });
 
-const { DiskImage, Drive, UPD765Subset, DidaktikD80, MACHINE_PROFILES, inferGeometry } = context.DidaktikD80Internals;
+const { DiskImage, Drive, UPD765Subset, DidaktikD80, KempstonMouse, MACHINE_PROFILES, inferGeometry } = context.DidaktikD80Internals;
 const sampleBytes = new Uint8Array(fs.readFileSync(path.join(projectRoot, 'disks', '036-KOMPAKT.d80')));
 
 function makeController(images = [sampleBytes, null]) {
@@ -239,6 +239,59 @@ function readBytes(controller, count) {
   assert.equal(emulator.getStatus().sound.melodikEnabled, true);
 
   
+
+(function kempstonMousePortsMovementAndButtons() {
+  const mouse = new KempstonMouse(() => {});
+  assert.equal(mouse.readPort(0xfbdf), null, 'disabled mouse must not drive the bus');
+
+  mouse.setEnabled(true);
+  assert.equal(mouse.readPort(0xfbdf), 0);
+  assert.equal(mouse.readPort(0xffdf), 0);
+  assert.equal(mouse.readPort(0xfadf), 0xff);
+
+  mouse.move(260, 1);
+  assert.equal(mouse.readPort(0xfbdf), 4, 'X counter must wrap at 255');
+  assert.equal(mouse.readPort(0xffdf), 255, 'downward DOM movement decrements Kempston Y');
+
+  mouse.setButton(0, true); // browser left -> Kempston D1, active low
+  assert.equal(mouse.readPort(0xfadf), 0xfd);
+  mouse.setButton(2, true); // browser right -> Kempston D0, active low
+  assert.equal(mouse.readPort(0xfadf), 0xfc);
+  mouse.setButton(1, true); // browser middle -> Kempston D2, active low
+  assert.equal(mouse.readPort(0xfadf), 0xf8);
+  assert.deepEqual({ ...mouse.getStatus() }, {
+    enabled: true, x: 4, y: 255, buttons: 0xf8, left: true, right: true, middle: true
+  });
+  mouse.releaseButtons();
+  assert.equal(mouse.readPort(0xfadf), 0xff);
+
+  // The original interface partially decodes these address bits rather than
+  // requiring one exact 16-bit port value.
+  assert.equal(mouse.readPort(0xf3df), 4);
+  assert.equal(mouse.readPort(0xefdf), 255);
+  assert.equal(mouse.readPort(0xeadf), 0xff);
+  assert.equal(mouse.readPort(0x1234), null);
+
+  mouse.setEnabled(false);
+  assert.equal(mouse.readPort(0xfbdf), null);
+})();
+
+(function kempstonMouseIsWiredIntoThePeripheralDevice() {
+  const runtime = {
+    getMachineBankState() { return { profile: 'spectrum48', bank: null, upperPages: null }; },
+    rebuildBusHandlers() {}, resetMachine() {}, cpuCore: { nmi() {} }
+  };
+  const emulator = new DidaktikD80(runtime, new Uint8Array(0x3800), {
+    machineId: 'spectrum48', machineRoms: {}
+  });
+  emulator.setKempstonMouseEnabled(true);
+  emulator.moveKempstonMouse(7, -9);
+  assert.equal(emulator.device.in(0xfbdf, 0), 7);
+  assert.equal(emulator.device.in(0xffdf, 0), 9);
+  emulator.setKempstonMouseButton(0, true);
+  assert.equal(emulator.device.in(0xfadf, 0), 0xfd);
+})();
+
 (function bt100PrinterBasics() {
   const printer = new context.DidaktikD80Internals.BT100Printer(() => {});
   printer.setSpeedFactor(10);

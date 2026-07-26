@@ -935,3 +935,117 @@ body {
   .emulator-pane .screen-bezel { width: 100%; }
   .control-panel { height: auto; }
 }
+
+
+/* Kempston mouse standalone panel */
+.mouse-panel {
+  display: grid;
+  gap: 10px;
+}
+.mouse-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.mouse-toolbar h3 {
+  margin: 2px 0 0;
+  font-size: 18px;
+}
+.mouse-enable-control {
+  flex: 0 0 auto;
+}
+.mouse-controls-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.mouse-sensitivity-control,
+.mouse-status-box,
+.mouse-capture-card {
+  border: 1px solid #394446;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #171d1f;
+}
+.mouse-sensitivity-control {
+  display: grid;
+  gap: 7px;
+  color: #cbd4cf;
+  font-size: 12px;
+}
+.mouse-range-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 48px;
+  align-items: center;
+  gap: 9px;
+}
+.mouse-range-row input[type="range"] {
+  width: 100%;
+  accent-color: var(--green);
+}
+.mouse-range-row output {
+  color: #dce5e0;
+  font: 700 11px var(--mono);
+  text-align: right;
+}
+.mouse-status-box span {
+  display: block;
+  margin-bottom: 4px;
+  color: #87938e;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.mouse-status-box strong {
+  color: #e1e8e4;
+  font: 700 12px var(--mono);
+}
+.mouse-capture-card {
+  border-style: dashed;
+  color: #c7d0cb;
+}
+.mouse-capture-card strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #dfe8e2;
+  font-size: 13px;
+}
+.mouse-capture-card p {
+  margin: 0;
+  color: #aab4af;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.mouse-capture-card.is-ready {
+  border-color: #607d4b;
+  background: #1c251b;
+}
+.mouse-capture-card.is-captured {
+  border-color: var(--green);
+  background: #202b1e;
+  box-shadow: inset 0 0 0 1px rgba(152, 210, 99, .16);
+}
+#f.mouse-capture-ready {
+  cursor: crosshair;
+}
+#f.mouse-captured {
+  cursor: none;
+}
+
+@media (max-width: 1100px) {
+  .mouse-controls-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .mouse-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .mouse-controls-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -123,7 +123,25 @@ The UI stores a persistent Melodik preference independently from the selected co
 
 The status model distinguishes `melodikRequested`, `melodikEnabled`, `builtInAy` and effective `ayEnabled`; this prevents the disabled 128K checkbox from being mistaken for disabled AY sound.
 
-## 5. Emulated disk-hardware generation
+## 5. Kempston mouse interface
+
+The Kempston mouse is implemented as another device in QAOP's chained I/O bus. It is independent of QAOP's optional Kempston joystick state and does not modify keyboard or joystick handling. The standalone UI leaves it disabled at startup.
+
+The interface follows the original partial address decoding rather than matching only three exact 16-bit values:
+
+```text
+FADFh  buttons   decode mask 0120h
+FBDFh  X counter decode mask 0520h
+FFDFh  Y counter decode mask 0520h
+```
+
+The button register idles at `FFh`. Pressed buttons clear their bits: D0 is right, D1 left and D2 middle. The X and Y registers are free-running 8-bit counters and therefore wrap at both ends. DOM `movementX` increments X. DOM `movementY` is subtracted from Y because browser coordinates increase downward, while classic Kempston drivers conventionally invert the raw Y counter when mapping it to screen coordinates.
+
+Pointer lock is a UI concern only. With the interface enabled, a trusted click on the emulator screen requests pointer lock; movement and button events are intercepted before QAOP's normal pointer handlers. **Esc** calls `exitPointerLock`, releases all emulated buttons and restores the normal screen cursor. Disabling the interface performs the same cleanup.
+
+Sensitivity is applied before deltas reach the device. The UI keeps fractional X/Y remainders, so a 25% setting converts four one-pixel host movements into one counter step instead of dropping all four. The sensitivity setting is persistent; the enable state intentionally is not.
+
+## 6. Emulated disk-hardware generation
 
 The original Didaktik D40 described in the manual uses a WD2797 controller, a 16 KiB EPROM of which 14 KiB is occupied, and 2 KiB of interface RAM. Later D80/Didaktik Kompakt hardware changed the controller, and MDOS 2.x rewrote the low-level disk routines for it.
 
@@ -136,7 +154,7 @@ size:   14336 bytes (3800h)
 SHA256: a701402806c401762eb9ade4b32fbd0dc8eb1a7c6ee45199805a455f905ddd93
 ```
 
-## 6. D80 interface memory and paging
+## 7. D80 interface memory and paging
 
 The external 16 KiB window is arranged as:
 
@@ -151,7 +169,7 @@ QAOP normally treats a plug-in low-memory page as wholly read-only. The copied Q
 
 The D80 plug-in is layered after computer-memory selection. It temporarily replaces only `0000h-3FFFh`; it does not alter the selected Gama upper bank or Spectrum 128 RAM page. Paging the interface out reveals whichever computer ROM belongs to the current profile.
 
-## 7. RESET and SNAP entry
+## 8. RESET and SNAP entry
 
 At reset, the first instruction fetch at address zero selects the MDOS window. A cold start tests and clears the interface RAM, writes a private system marker, initializes both drives, and then returns to the computer ROM through the page-out address.
 
@@ -165,7 +183,7 @@ The real MDOS NMI routine saves the registers, constructs a name from `SNAPSHOT0
 
 The UI does not permit SNAP during reset initialization. This is important because the computer ROM temporarily uses startup stack and register states that are not representative of a running machine.
 
-## 8. I/O ports used by MDOS 2.93
+## 9. I/O ports used by MDOS 2.93
 
 The later ROM uses the low eight bits of the following Z80 I/O addresses:
 
@@ -221,7 +239,7 @@ A separate registration defect became clear with `LPRINT "I"`. At authentic spee
 
 A second defect affected raster quality rather than termination. QAOP passes the current cycle position within a video frame to peripheral I/O handlers; at the next frame the value wraps backwards by 69,888 cycles on the 48K-derived profiles. Treating that wrap as a printer-clock reset discarded the motion between the last access of one frame and the first access of the next. When the boundary fell after an encoder edge but before the needle pulse, the strike was placed early and a glyph row could appear torn. The printer now maintains a frame epoch (69,888 cycles for 48K profiles, 70,908 for 128K) and integrates carriage and paper motion on an unwrapped cycle clock. A unit test starts the motor late in one frame and verifies the exact travel reported by the first poll in the following frame.
 
-## 9. Controller phases
+## 10. Controller phases
 
 MDOS waits for exact high-nibble patterns in the main-status register:
 
@@ -235,7 +253,7 @@ F0h  execution phase; CPU reads sector data
 
 Unknown commands return the uPD765 invalid-command result `80h`.
 
-## 10. Implemented commands
+## 11. Implemented commands
 
 ```text
 03h  SPECIFY
@@ -270,7 +288,7 @@ C, H, R, N follow
 
 Because MDOS sets EOT equal to the requested sector number, a real uPD765 finishes the single-sector command at end-of-cylinder. The MDOS 2.93 `CODERR` routine explicitly requires the `ST0=40h` class together with `ST1.EN=1`; returning `ST0=00h` is treated as error 59, `Internal error`.
 
-## 11. Drive model
+## 12. Drive model
 
 Two drive instances are present throughout the machine lifetime. Each stores:
 
@@ -283,7 +301,7 @@ SEEK and RECALIBRATE queue the two-byte result consumed later by SENSE INTERRUPT
 
 A D40 image can be used in the 80-track mechanism. MDOS itself decides when double stepping is required; the controller keeps physical seek position separate from the C/H/R identifier used to locate a sector in the raw image.
 
-## 12. Raw image mapping
+## 13. Raw image mapping
 
 Images are flat sector dumps. For ordinary 40/80-track, two-sided media:
 
@@ -304,7 +322,7 @@ The supplied image has:
 volume name: NoNameDisk
 ```
 
-## 13. MDOS filesystem facts relevant to emulation
+## 14. MDOS filesystem facts relevant to emulation
 
 The controller does not interpret files, but these details explain the access patterns produced by the ROM:
 
@@ -319,7 +337,7 @@ The controller does not interpret files, but these details explain the access pa
 
 New images made by the UI are intentionally zero-filled and unformatted. The real MDOS `FORMAT` command creates the boot sector, FAT, directory and data-area markers through FORMAT TRACK and WRITE DATA commands.
 
-## 14. Image browser and extraction
+## 15. Image browser and extraction
 
 The **Image files** tab is a read-only filesystem view over the currently mounted byte array. It does not bypass the controller for machine operations and does not modify the image. Its parser uses the MDOS on-disk structures directly:
 
@@ -339,7 +357,7 @@ Extraction follows the chain until the number of sectors implied by the director
 
 Drag-and-drop uses the same insertion path, validation and dirty-image confirmation as the hidden file inputs. One file is mounted in the drop target; a second dropped file is mounted in the other mechanism.
 
-## 15. Deliberate limits
+## 16. Deliberate limits
 
 The current disk model is command- and sector-accurate for ordinary MDOS images. It does not model:
 
@@ -358,7 +376,7 @@ Machine-profile limits are:
 
 These omissions do not replace MDOS filesystem logic. The supplied ROM still performs command construction, controller polling, FAT traversal, directory handling, file allocation, formatting and SNAP creation.
 
-## 16. Verification coverage
+## 17. Verification coverage
 
 `tests/controller.test.js` covers:
 
@@ -370,7 +388,8 @@ These omissions do not replace MDOS filesystem logic. The supplied ROM still per
 - SEEK, RECALIBRATE and SENSE INTERRUPT STATUS;
 - FORMAT TRACK and its normal completion status;
 - D40 logical-cylinder access with an 80-track physical double-step position;
-- controller power reset.
+- controller power reset;
+- disabled-bus behavior, partial Kempston port decoding, counter wrapping, Y direction and active-low three-button mapping.
 
 The optional browser smoke test additionally:
 
@@ -383,13 +402,14 @@ The optional browser smoke test additionally:
 - attaches Melodik on a 48K-derived profile, writes and reads AY register 0 through `FFFDh`/`BFFDh`, and checks QAOP serializes active AY state;
 - carries the Melodik preference across Didaktik M, Kompakt, Spectrum 48K and Didaktik 80K, while verifying Spectrum 128K disables the external control but retains built-in AY;
 - detaches Melodik again and verifies that AY state disappears on the Didaktik profile;
+- verifies the mouse starts disabled, enables it from its standalone tab, captures the pointer from a trusted screen click, exercises the three ports and releases capture with Escape;
 - opens and selects entries in the image browser;
 - mounts a second image through a synthetic browser drag-and-drop event;
 - confirms interface RAM writes and MDOS ROM protection;
 - presses SNAP, waits for actual disk writes and verifies that execution returns;
 - rejects any page or console error.
 
-## 17. Primary references
+## 18. Primary references
 
 - Didaktik Gama bank-switching example and `OUT 127,n`: https://z00m.speccy.cz/files/DG-Pripojenie-periferii.pdf
 - MDOS disk format: https://cygnus.speccy.cz/popis_mdos-format.php
@@ -397,6 +417,8 @@ The optional browser smoke test additionally:
 - ZX Spectrum 128K technical reference: https://worldofspectrum.org/faq/reference/128kreference.htm
 - AY-3-8912 and Melodik-compatible port description: https://cygnus.speccy.cz/popis_ay38912.php
 - Melodik overview and Spectrum-128-compatible connection: https://cs.wikipedia.org/wiki/Melodik
+- Kempston mouse port addresses, partial decode masks and button bit assignment: https://worldofspectrum.org/faq/reference/ports.htm
+- Kempston mouse 8-bit wrapping counters and standard button mapping: https://sinclair.wiki.zxnet.co.uk/wiki/Kempston_Mouse
 - BT-100 mechanism overview, one slotted wheel per motor and 480 carriage positions: https://dexovo.cz/specifika-socialistickej-tlace.php
 - BT-100 overview and approximate 150-dot/s specification: https://pmd85.borik.net/wiki/BT-100
 - Supplied `mdos20.lst`, used to identify the exact MDOS 2.x controller protocol and verify the ROM bytes.

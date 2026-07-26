@@ -1,6 +1,6 @@
 # Didaktik + D80 + BT-100
 
-A standalone browser emulator for Didaktik and ZX Spectrum machines with MDOS 2.93 and two independently emulated D40/D80 disk mechanisms. It uses the QAOP machine core extracted from the supplied ZX Workbench, but it is a separate page and does not depend on the Workbench application.
+A standalone browser emulator for Didaktik and ZX Spectrum machines with MDOS 2.93, two independently emulated D40/D80 disk mechanisms, BT-100 printing and an optional Kempston mouse. It uses the QAOP machine core extracted from the supplied ZX Workbench, but it is a separate page and does not depend on the Workbench application.
 
 The machine selector provides:
 
@@ -70,6 +70,24 @@ BFFDh  write data to the selected AY register
 The interface can be toggled without resetting the computer. Disabling it removes the AY device and leaves only the normal 1-bit beeper. The selection survives changes among the four compatible machine profiles.
 
 On **ZX Spectrum 128K**, the Melodik control is disabled and unchecked because that profile already contains its own AY-3-8912. AY sound remains active through the built-in device.
+
+## Kempston mouse
+
+Open the **Mouse** tab to attach a standard Kempston mouse interface. The interface is deliberately disabled on every page load. Enabling it does not reset the emulated computer or D80 subsystem.
+
+When enabled, click the emulator screen to enter browser pointer lock. Mouse movement and all three standard buttons are then sent to the emulated interface until **Esc** releases the pointer. Disabling the interface also releases pointer lock and clears any held button state.
+
+The sensitivity slider covers 25% through 300%. Its value is remembered in browser storage, while the enabled state is not. Fractional movement is accumulated so sensitivities below 100% do not discard repeated small movements.
+
+The emulated hardware exposes the standard partially decoded ports:
+
+```text
+FADFh  buttons, active low: D0 right, D1 left, D2 middle
+FBDFh  8-bit X counter
+FFDFh  8-bit Y counter
+```
+
+Both counters wrap naturally between 0 and 255. Browser movement to the right increments X; downward browser movement decrements the Kempston Y counter, matching the convention expected by classic Spectrum mouse drivers.
 
 ## Disk mechanisms
 
@@ -172,7 +190,7 @@ Run the portable checks with:
 ./verify.sh
 ```
 
-This validates JavaScript syntax, controller behavior, MDOS directory/FAT parsing, file extraction, TAP block parsing, bundled media hashes, and a source-grounded Desktop BT-100 handshake that completes all 480 pixel cycles of a 60-byte row.
+This validates JavaScript syntax, controller behavior, Kempston mouse port decoding and wrapping counters, MDOS directory/FAT parsing, file extraction, TAP block parsing, bundled media hashes, and a source-grounded Desktop BT-100 handshake that completes all 480 pixel cycles of a 60-byte row.
 
 A focused Playwright regression uses the real V1.1 driver and `LPRINT "I"` at authentic printer speed:
 

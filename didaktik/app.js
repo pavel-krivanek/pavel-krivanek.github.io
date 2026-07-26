@@ -7,6 +7,7 @@
   const PRINTER_SPEED_STORAGE_KEY = 'didaktik-d80.bt100-speed';
   const PRINTER_COLOR_STORAGE_KEY = 'didaktik-d80.bt100-color';
   const PRINTER_DARKNESS_STORAGE_KEY = 'didaktik-d80.bt100-darkness';
+  const MOUSE_SENSITIVITY_STORAGE_KEY = 'didaktik-d80.kempston-mouse-sensitivity';
   const PRINTER_SPEED_OPTIONS = [1, 10, 100];
   let emulator = null;
   let paused = false;
@@ -17,6 +18,10 @@
   let tapeImage = null;
   let selectedTapeBlockIndex = null;
   let machineSwitching = false;
+  let mouseEnabled = false;
+  let mouseSensitivity = 100;
+  let mouseFractionX = 0;
+  let mouseFractionY = 0;
   const hexViewState = { file: null, tape: null };
   const printerView = {
     fullCanvas: null,
@@ -347,6 +352,148 @@
     card.querySelector('[data-action="save"]').disabled = !disk;
   }
 
+  function mouseCaptureTarget() {
+    return byId('f');
+  }
+
+  function mouseIsCaptured() {
+    return document.pointerLockElement === mouseCaptureTarget();
+  }
+
+  function renderMousePanel(status = emulator?.getStatus()) {
+    const mouse = status?.mouse || { enabled: false, x: 0, y: 0, left: false, right: false, middle: false };
+    const captured = mouse.enabled && mouseIsCaptured();
+    const enabledControl = byId('mouseEnabled');
+    if (enabledControl) enabledControl.checked = !!mouse.enabled;
+    const sensitivityControl = byId('mouseSensitivity');
+    if (sensitivityControl) sensitivityControl.value = String(mouseSensitivity);
+    const sensitivityValue = byId('mouseSensitivityValue');
+    if (sensitivityValue) sensitivityValue.textContent = `${mouseSensitivity}%`;
+    const captureStatus = byId('mouseCaptureStatus');
+    if (captureStatus) captureStatus.textContent = !mouse.enabled ? 'Disabled' : captured ? 'Captured' : 'Ready';
+    const coordinates = byId('mouseCoordinates');
+    if (coordinates) coordinates.textContent = `${mouse.x}, ${mouse.y}`;
+    const pressed = [];
+    if (mouse.left) pressed.push('left');
+    if (mouse.right) pressed.push('right');
+    if (mouse.middle) pressed.push('middle');
+    const buttons = byId('mouseButtons');
+    if (buttons) buttons.textContent = pressed.join(' + ') || 'none';
+
+    const card = byId('mouseCaptureCard');
+    const target = mouseCaptureTarget();
+    if (card) {
+      card.classList.toggle('is-ready', !!mouse.enabled && !captured);
+      card.classList.toggle('is-captured', captured);
+      const heading = card.querySelector('strong');
+      if (heading) heading.textContent = !mouse.enabled
+        ? 'Mouse capture is disabled.'
+        : captured ? 'Pointer captured by the emulator.' : 'Click the emulator screen to capture the mouse.';
+    }
+    const help = byId('mouseCaptureHelp');
+    if (help) help.textContent = captured
+      ? 'Move and click normally. Press Esc to release the pointer.'
+      : 'Enable the interface, then click the emulator screen to grab the pointer. Press Esc to release it.';
+    if (target) {
+      target.classList.toggle('mouse-capture-ready', !!mouse.enabled && !captured);
+      target.classList.toggle('mouse-captured', captured);
+    }
+  }
+
+  function scaledMouseDelta(value, axis) {
+    const scaled = value * mouseSensitivity / 100 + (axis === 'x' ? mouseFractionX : mouseFractionY);
+    const whole = scaled < 0 ? Math.ceil(scaled) : Math.floor(scaled);
+    if (axis === 'x') mouseFractionX = scaled - whole;
+    else mouseFractionY = scaled - whole;
+    return whole;
+  }
+
+  function resetMouseFractions() {
+    mouseFractionX = 0;
+    mouseFractionY = 0;
+  }
+
+  function setMouseEnabled(enabled) {
+    mouseEnabled = !!enabled;
+    resetMouseFractions();
+    const mouse = emulator?.setKempstonMouseEnabled(mouseEnabled);
+    if (!mouseEnabled && mouseIsCaptured()) document.exitPointerLock?.();
+    renderMousePanel(emulator?.getStatus());
+    setNotice(mouseEnabled
+      ? 'Kempston mouse enabled. Click the emulator screen to capture it; press Esc to release.'
+      : 'Kempston mouse disabled.', 'success');
+    if (!mouseEnabled) focusMachine();
+    return mouse;
+  }
+
+  function bindKempstonMouse() {
+    const target = mouseCaptureTarget();
+    if (!target) return;
+
+    target.addEventListener('click', () => {
+      if (!mouseEnabled || mouseIsCaptured()) return;
+      focusMachine();
+      if (!target.requestPointerLock) {
+        setNotice('This browser does not support pointer-lock mouse capture.', 'error');
+        return;
+      }
+      try {
+        const request = target.requestPointerLock();
+        if (request?.catch) request.catch(error => {
+          console.error(error);
+          setNotice('The browser refused mouse capture.', 'error');
+        });
+      } catch (error) {
+        console.error(error);
+        setNotice('The browser refused mouse capture.', 'error');
+      }
+    });
+
+    target.addEventListener('contextmenu', event => {
+      if (!mouseEnabled) return;
+      event.preventDefault();
+    });
+
+    document.addEventListener('pointerlockchange', () => {
+      resetMouseFractions();
+      emulator?.releaseKempstonMouseButtons();
+      renderMousePanel(emulator?.getStatus());
+      if (mouseEnabled) setNotice(mouseIsCaptured()
+        ? 'Mouse captured. Press Esc to release it.'
+        : 'Mouse released. Click the emulator screen to capture it again.');
+    });
+
+    document.addEventListener('pointerlockerror', () => {
+      renderMousePanel(emulator?.getStatus());
+      setNotice('The browser could not capture the mouse pointer.', 'error');
+    });
+
+    document.addEventListener('keydown', event => {
+      if (event.key !== 'Escape' || !mouseIsCaptured()) return;
+      document.exitPointerLock?.();
+      event.stopImmediatePropagation();
+    }, true);
+
+    document.addEventListener('mousemove', event => {
+      if (!mouseEnabled || !mouseIsCaptured() || !emulator) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const dx = scaledMouseDelta(event.movementX || 0, 'x');
+      const dy = scaledMouseDelta(event.movementY || 0, 'y');
+      if (dx || dy) emulator.moveKempstonMouse(dx, dy);
+    }, true);
+
+    const handleButton = pressed => event => {
+      if (!mouseEnabled || !mouseIsCaptured() || !emulator || event.button > 2) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      emulator.setKempstonMouseButton(event.button, pressed);
+      renderMousePanel(emulator.getStatus());
+    };
+    document.addEventListener('mousedown', handleButton(true), true);
+    document.addEventListener('mouseup', handleButton(false), true);
+  }
+
   function render(status) {
     const machine = status.machine || { id: 'didaktik80', label: 'Didaktik 80K', shortLabel: 'GAMA', memoryDescription: '' };
     byId('machineSelect').value = machine.id;
@@ -390,9 +537,11 @@
     byId('controllerStatus').textContent = `FDC ${status.controllerPhase}`;
     byId('controllerStatus').className = `status-badge ${status.controllerPhase === 'idle' ? 'status-badge--muted' : 'status-badge--active'}`;
     status.drives.forEach((drive, index) => renderDrive(index, drive, status.selectedDrive));
+    renderMousePanel(status);
     if (activeStorageTab === 'files') renderFileBrowser();
     else if (activeStorageTab === 'tape') renderTapeBrowser();
     else if (activeStorageTab === 'printer') renderPrinterPanel(status);
+    else if (activeStorageTab === 'mouse') renderMousePanel(status);
   }
 
   function focusMachine() {
@@ -506,7 +655,7 @@
   }
 
   function setStorageTab(tab) {
-    if (!['drives', 'files', 'tape', 'printer'].includes(tab)) return;
+    if (!['drives', 'files', 'tape', 'printer', 'mouse'].includes(tab)) return;
     activeStorageTab = tab;
     for (const button of document.querySelectorAll('[data-storage-tab]')) {
       const active = button.dataset.storageTab === tab;
@@ -518,9 +667,11 @@
     byId('filesPanel').hidden = tab !== 'files';
     byId('tapePanel').hidden = tab !== 'tape';
     byId('printerPanel').hidden = tab !== 'printer';
+    byId('mousePanel').hidden = tab !== 'mouse';
     if (tab === 'files') renderFileBrowser();
     else if (tab === 'tape') renderTapeBrowser();
     else if (tab === 'printer') renderPrinterPanel();
+    else if (tab === 'mouse') renderMousePanel();
   }
 
   function setBrowserDrive(index) {
@@ -962,6 +1113,7 @@
 
   function bindControls() {
     bindEmulatorFullscreen();
+    bindKempstonMouse();
     byId('machineSelect').addEventListener('change', event => selectMachine(event.target.value));
 
     byId('resetButton').addEventListener('click', async () => {
@@ -1037,6 +1189,14 @@
 
     byId('muteControl').addEventListener('change', event => {
       window.qaop.command('mute', event.target.checked);
+    });
+
+    byId('mouseEnabled').addEventListener('change', event => setMouseEnabled(event.target.checked));
+    byId('mouseSensitivity').addEventListener('input', event => {
+      mouseSensitivity = Math.max(25, Math.min(300, Number(event.target.value) || 100));
+      localStorage.setItem(MOUSE_SENSITIVITY_STORAGE_KEY, String(mouseSensitivity));
+      resetMouseFractions();
+      renderMousePanel(emulator?.getStatus());
     });
 
     document.querySelector('.storage-panel').addEventListener('click', handleDriveAction);
@@ -1154,12 +1314,16 @@
       const printerSpeed = PRINTER_SPEED_OPTIONS.includes(storedPrinterSpeed) ? storedPrinterSpeed : 1;
       const printerColor = localStorage.getItem(PRINTER_COLOR_STORAGE_KEY) === 'blue' ? 'blue' : 'black';
       const printerDarkness = Math.max(40, Math.min(100, Number(localStorage.getItem(PRINTER_DARKNESS_STORAGE_KEY)) || 75));
+      mouseSensitivity = Math.max(25, Math.min(300, Number(localStorage.getItem(MOUSE_SENSITIVITY_STORAGE_KEY)) || 100));
       byId('machineSelect').value = machineId;
       byId('melodikControl').checked = melodikEnabled;
       byId('printerSpeed').value = String(printerSpeed);
       byId('printerColor').value = printerColor;
       byId('printerDarkness').value = String(printerDarkness);
       byId('printerDarknessValue').textContent = `${printerDarkness}%`;
+      byId('mouseEnabled').checked = false;
+      byId('mouseSensitivity').value = String(mouseSensitivity);
+      byId('mouseSensitivityValue').textContent = `${mouseSensitivity}%`;
       printerView.darkness = printerDarkness;
       emulator = await window.createDidaktikD80({
         driveAUrl: 'disks/036-KOMPAKT.d80',
@@ -1169,6 +1333,8 @@
       // The standalone UI uses clean browser resampling. Do not inherit QAOP's
       // optional CRT distortion from settings saved by another QAOP page.
       window.qaop.set({ crt: false });
+      emulator.setKempstonMouseEnabled(false);
+      mouseEnabled = false;
       emulator.setPrinterSpeedFactor(printerSpeed);
       emulator.setPrinterCarbonColor(printerColor);
       emulator.onChange(render);
@@ -1180,6 +1346,7 @@
       renderFileBrowser();
       renderTapeBrowser();
       renderPrinterPanel();
+      renderMousePanel();
       window.setInterval(() => emulator && render(emulator.getStatus()), 200);
       focusMachine();
     } catch (error) {

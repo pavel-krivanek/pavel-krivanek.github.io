@@ -74,6 +74,7 @@
 <button aria-controls="filesPanel" aria-selected="false" class="storage-tab" data-storage-tab="files" id="filesTab" role="tab" type="button">Image files</button>
 <button aria-controls="tapePanel" aria-selected="false" class="storage-tab" data-storage-tab="tape" id="tapeTab" role="tab" type="button">Tape</button>
 <button aria-controls="printerPanel" aria-selected="false" class="storage-tab" data-storage-tab="printer" id="printerTab" role="tab" type="button">BT-100</button>
+<button aria-controls="mousePanel" aria-selected="false" class="storage-tab" data-storage-tab="mouse" id="mouseTab" role="tab" type="button">Mouse</button>
 </div>
 <div aria-labelledby="drivesTab" class="storage-tab-panel" id="drivesPanel" role="tabpanel">
 <div class="drive-stack">
@@ -252,6 +253,31 @@
 <canvas aria-label="BT-100 paper preview" id="printerPreview"></canvas>
 </div>
 <p class="screen-help">The emulation uses the Didaktik optional 8255 path on ports <code>1Fh</code>, <code>3Fh</code>, <code>5Fh</code> and <code>7Fh</code>. The BT-100 model applies a small left/right raster bias so the same pixel column lands slightly differently when scanned in opposite directions.</p>
+</section>
+<section aria-labelledby="mouseTab" class="storage-tab-panel mouse-panel" hidden="" id="mousePanel" role="tabpanel">
+<div class="mouse-toolbar">
+<div>
+<p class="section-kicker">Pointing device</p>
+<h3>Kempston mouse</h3>
+</div>
+<label class="check-control peripheral-control mouse-enable-control"><input id="mouseEnabled" type="checkbox"/> Enable mouse</label>
+</div>
+<div class="mouse-controls-grid">
+<label class="mouse-sensitivity-control">Sensitivity
+<div class="mouse-range-row">
+<input id="mouseSensitivity" max="300" min="25" step="5" type="range" value="100"/>
+<output for="mouseSensitivity" id="mouseSensitivityValue">100%</output>
+</div>
+</label>
+<div class="mouse-status-box"><span>Capture</span><strong id="mouseCaptureStatus">Disabled</strong></div>
+<div class="mouse-status-box"><span>Coordinates</span><strong id="mouseCoordinates">0, 0</strong></div>
+<div class="mouse-status-box"><span>Buttons</span><strong id="mouseButtons">none</strong></div>
+</div>
+<div class="mouse-capture-card" id="mouseCaptureCard">
+<strong>Mouse capture is disabled.</strong>
+<p id="mouseCaptureHelp">Enable the interface, then click the emulator screen to grab the pointer. Press <kbd>Esc</kbd> to release it.</p>
+</div>
+<p class="screen-help">The interface exposes the standard Kempston mouse counters on <code>FBDFh</code> and <code>FFDFh</code>, with active-low buttons on <code>FADFh</code>. Coordinates wrap from 255 to 0 like the hardware counters.</p>
 </section>
 <p aria-live="polite" class="notice" id="notice" role="status">Loading ROMs and sample disk…</p>
 </aside></main>

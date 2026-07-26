@@ -10,6 +10,55 @@
     Q.x = (e, t) => e?.closest?.(t);
     Q.z = (e, t) => t == g1 ? e.textContent : e.textContent = t;
     Q.S = e => e.preventDefault();
+    const standardPhysicalKeyCodes = {
+      Backspace: 8,
+      Tab: 9,
+      Enter: 13,
+      NumpadEnter: 13,
+      ShiftLeft: 16,
+      ShiftRight: 16,
+      ControlLeft: 17,
+      ControlRight: 17,
+      AltLeft: 18,
+      AltRight: 18,
+      Pause: 19,
+      CapsLock: 20,
+      Escape: 27,
+      Space: 32,
+      PageUp: 33,
+      PageDown: 34,
+      End: 35,
+      Home: 36,
+      ArrowLeft: 37,
+      ArrowUp: 38,
+      ArrowRight: 39,
+      ArrowDown: 40,
+      Insert: 45,
+      Delete: 46,
+      Semicolon: 186,
+      Equal: 187,
+      Comma: 188,
+      Minus: 189,
+      Period: 190,
+      Slash: 191,
+      Backquote: 192,
+      BracketLeft: 219,
+      Backslash: 220,
+      BracketRight: 221,
+      Quote: 222
+    };
+    Q.getLogicalKeyCode = function getLogicalKeyCode(event) {
+      const physicalCode = event?.code || "";
+
+      // The Spectrum keyboard is QWERTY, so direct typing must follow physical
+      // key positions rather than the characters produced by the host layout.
+      // KeyboardEvent.code is layout-independent: on Czech QWERTZ the key
+      // labelled Z still reports KeyY and must therefore drive Spectrum Y.
+      if (/^Key[A-Z]$/.test(physicalCode)) return physicalCode.charCodeAt(3);
+      if (/^Digit[0-9]$/.test(physicalCode)) return physicalCode.charCodeAt(5);
+      if (/^F(?:[1-9]|1[0-2])$/.test(physicalCode)) return 111 + +physicalCode.slice(1);
+      return standardPhysicalKeyCodes[physicalCode] ?? (event?.which || event?.keyCode || 0);
+    };
     Q.r1 = URL.createObjectURL;
     Q.$1 = (...e) => new Uint8Array(...e);
     Q.n1 = e => Uint8Array.from(e, i1(e) ? e => e.charCodeAt(0) : g1);

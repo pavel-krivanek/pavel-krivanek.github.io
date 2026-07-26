@@ -59,9 +59,9 @@
         a,
         {
           type: l,
-          target: u,
-          which: c
-        } = n;
+          target: u
+        } = n,
+        c = getLogicalKeyCode(n);
       if (resumeAudioOnInteraction?.(), !n.repeat) {
         if (l = "u" == l[3], e = n.altKey | n.metaKey || 2 * n.ctrlKey, t = setPaused(), (r = "f" == u?.id) && !t) {
           if (20 == c) {
@@ -74,7 +74,7 @@
         if (l = t => {
           var r = n.timeStamp;
           keyHoldHandler = e => {
-            S(e), keyHoldHandler = g1, e.which == c && t(e.timeStamp - r);
+            S(e), keyHoldHandler = g1, getLogicalKeyCode(e) == c && t(e.timeStamp - r);
           };
         }, a = v($, ".h"), i = 119 == c, a || i) {
           i && S(n);

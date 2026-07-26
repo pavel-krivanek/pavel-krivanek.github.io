@@ -85,6 +85,38 @@ with sync_playwright() as playwright:
       cpu: __qaop.cpuCore.getState()
     })""")
 
+    keyboard_layout = page.evaluate("""() => {
+      const canvas = document.getElementById('f');
+      const event = (type, key, code, legacy) => ({
+        type, key, code, which: legacy, keyCode: legacy, target: canvas,
+        repeat: false, altKey: false, metaKey: false, ctrlKey: false, shiftKey: false,
+        timeStamp: performance.now(), getModifierState: () => false,
+        preventDefault() { this.defaultPrevented = true; }
+      });
+      const expected = legacy => {
+        __qaop.driveKeyboardMatrix(~legacy, true, 0);
+        const rows = Array.from(__qaop.keyMatrixRows);
+        __qaop.driveKeyboardMatrix();
+        return rows;
+      };
+      const expectedY = expected(89);
+      const expectedZ = expected(90);
+
+      // Deliberately provide character-oriented legacy values opposite to the
+      // physical codes: KeyboardEvent.code must remain authoritative.
+      __qaop.handleKey(event('keydown', 'z', 'KeyY', 90));
+      const czechZKeyDown = Array.from(__qaop.keyMatrixRows);
+      __qaop.handleKey(event('keyup', 'z', 'KeyY', 90));
+      const czechZKeyUp = Array.from(__qaop.keyMatrixRows);
+
+      __qaop.handleKey(event('keydown', 'y', 'KeyZ', 89));
+      const czechYKeyDown = Array.from(__qaop.keyMatrixRows);
+      __qaop.handleKey(event('keyup', 'y', 'KeyZ', 89));
+      const czechYKeyUp = Array.from(__qaop.keyMatrixRows);
+
+      return { expectedY, expectedZ, czechZKeyDown, czechZKeyUp, czechYKeyDown, czechYKeyUp };
+    }""")
+
     layout = page.evaluate("""() => {
       const panel = document.querySelector('.control-panel');
       const emulator = document.querySelector('.emulator-pane');
@@ -325,6 +357,7 @@ with sync_playwright() as playwright:
 
     result = {
         'initial': initial,
+        'keyboardLayout': keyboard_layout,
         'layout': layout,
         'melodik': melodik,
         'melodikOff': melodik_off,
@@ -348,6 +381,10 @@ with sync_playwright() as playwright:
     print(json.dumps(result, indent=2))
 
     assert initial['status']['initialized']
+    assert keyboard_layout['czechZKeyDown'] == keyboard_layout['expectedY']
+    assert keyboard_layout['czechYKeyDown'] == keyboard_layout['expectedZ']
+    assert keyboard_layout['czechZKeyUp'] == [255] * 8
+    assert keyboard_layout['czechYKeyUp'] == [255] * 8
     assert layout['documentHeight'] <= layout['viewportHeight']
     assert layout['bodyHeight'] <= layout['viewportHeight']
     assert layout['emulatorBottom'] <= layout['viewportHeight']

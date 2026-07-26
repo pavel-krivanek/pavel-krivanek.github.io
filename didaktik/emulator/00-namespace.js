@@ -73,6 +73,7 @@
         x: void 0,
         z: void 0,
         S: void 0,
+        getLogicalKeyCode: void 0,
         r1: void 0,
         $1: void 0,
         n1: void 0,

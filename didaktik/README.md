@@ -30,6 +30,14 @@ MDOS initializes automatically during reset. The **SNAP** button stays unavailab
 
 On desktop-sized windows, the emulator remains fixed on the left and the right control panel uses the remaining width. The document itself is constrained to the browser viewport; only the control panel scrolls. Control labels, status values, browser tables and hex dumps use larger, higher-contrast type. The selected computer is shown only by the machine selector.
 
+## Host keyboard mapping
+
+Direct keyboard input follows the **physical ZX Spectrum QWERTY layout**, not the active character layout of the host operating system. The browser's layout-independent `KeyboardEvent.code` identifies each physical key position.
+
+On a Czech or German QWERTZ keyboard, the key labelled **Z** occupies the Spectrum **Y** position and therefore enters **Y**; the key labelled **Y** enters **Z**. The same rule applies to other national layouts such as AZERTY. Number-row and punctuation keys likewise retain their Spectrum physical positions, so Czech `ě`/`Digit2` operates Spectrum **2**.
+
+The same physical identity is used for key-down and key-up, preventing stuck keys. The on-screen keyboard and pasted-text input are unchanged because they already address Spectrum keys directly.
+
 ## Machine selection and memory banking
 
 Changing the machine performs a power cycle but keeps both mounted disk images, write-protection settings and unsaved modifications. The selected profile is remembered in browser storage.

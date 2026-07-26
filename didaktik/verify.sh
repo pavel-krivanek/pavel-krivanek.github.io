@@ -6,10 +6,14 @@ node --check bt100-printer.js
 node --check tap-browser.js
 node --check hex-viewer.js
 node --check emulator/00-namespace.js
+node --check emulator/05-shared-helpers.js
+node --check emulator/10-ui-shell.js
 node --check emulator/30-runtime-media.js
 node --check didaktik-d80.js
 node --check app.js
 node tests/controller.test.js
+node tests/keyboard-layout.test.js
+python3 tests/keyboard-browser.test.py
 node tests/tap-browser.test.js
 node tests/hex-viewer.test.js
 python3 tests/dom-bindings.test.py

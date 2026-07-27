@@ -7,6 +7,9 @@
   const PRINTER_SPEED_STORAGE_KEY = 'didaktik-d80.bt100-speed';
   const PRINTER_COLOR_STORAGE_KEY = 'didaktik-d80.bt100-color';
   const PRINTER_DARKNESS_STORAGE_KEY = 'didaktik-d80.bt100-darkness';
+  const PRINTER_DOT_SIZE_STORAGE_KEY = 'didaktik-d80.bt100-dot-size';
+  const PRINTER_RANDOM_OFFSET_STORAGE_KEY = 'didaktik-d80.bt100-random-offset';
+  const PRINTER_RANDOM_DOTS_STORAGE_KEY = 'didaktik-d80.bt100-random-dots';
   const MOUSE_SENSITIVITY_STORAGE_KEY = 'didaktik-d80.kempston-mouse-sensitivity';
   const PRINTER_SPEED_OPTIONS = [1, 10, 100];
   let emulator = null;
@@ -30,7 +33,10 @@
     pageSerial: -1,
     stampKey: '',
     stamps: [],
-    darkness: 75
+    darkness: 75,
+    dotSize: 220,
+    randomOffset: 13,
+    randomDots: true
   };
 
   const byId = id => document.getElementById(id);
@@ -100,6 +106,14 @@
     return Math.max(0.4, Math.min(1, printerView.darkness / 100));
   }
 
+  function printerDotSizeRatio() {
+    return Math.max(0.4, Math.min(2.6, printerView.dotSize / 100));
+  }
+
+  function printerRandomOffsetRatio() {
+    return Math.max(0, Math.min(0.5, printerView.randomOffset / 100));
+  }
+
   function invalidatePrinterPreview() {
     printerView.pageSerial = -1;
     printerView.renderedDots = 0;
@@ -127,49 +141,70 @@
     return { geometry, previewContext: preview.getContext('2d') };
   }
 
-  function createDotStamp(index, color, darkness) {
-    const stamp = document.createElement('canvas');
-    stamp.width = 18;
-    stamp.height = 18;
-    const ctx = stamp.getContext('2d');
+  function createDotStamp(index, color, darkness, dotSize, randomized, pitch) {
     const palette = printerPalette(color);
     const [r, g, b] = palette.fill;
     const [er, eg, eb] = palette.edge;
     const seed = index + 1;
-    const radius = 4.2 + (seed % 5) * 0.16;
-    ctx.translate(9, 9);
-    ctx.rotate((seed % 11) * 0.11);
-    ctx.shadowColor = `rgba(${er}, ${eg}, ${eb}, ${0.16 + darkness * 0.08})`;
-    ctx.shadowBlur = 1.2 + (seed % 3) * 0.35;
+    const nominalDiameter = pitch * dotSize;
+    const sizeVariation = randomized ? 0.94 + (seed % 7) * 0.018 : 1;
+    const radius = nominalDiameter * sizeVariation / 2;
+    const padding = Math.max(4, Math.ceil(radius * 0.75));
+    const side = Math.max(12, Math.ceil(radius * 2 + padding * 2));
+    const center = side / 2;
+    const stamp = document.createElement('canvas');
+    stamp.width = side;
+    stamp.height = side;
+    const ctx = stamp.getContext('2d');
+    ctx.translate(center, center);
+
+    if (randomized) ctx.rotate((seed % 11) * 0.11);
+    ctx.shadowColor = `rgba(${er}, ${eg}, ${eb}, ${0.12 + darkness * 0.12})`;
+    ctx.shadowBlur = randomized ? 0.7 + (seed % 3) * 0.25 : 0.55;
     ctx.beginPath();
-    for (let step = 0; step < 14; step += 1) {
-      const angle = (Math.PI * 2 * step) / 14;
-      const wobble = Math.sin(angle * (2 + (seed % 3)) + seed * 0.3) * 0.55 + Math.cos(angle * (3 + (seed % 4)) - seed * 0.17) * 0.35;
-      const local = radius + wobble;
-      const x = Math.cos(angle) * local;
-      const y = Math.sin(angle) * (local * (0.88 + (seed % 4) * 0.04));
-      if (!step) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    if (randomized) {
+      for (let step = 0; step < 18; step += 1) {
+        const angle = (Math.PI * 2 * step) / 18;
+        const wobble = (
+          Math.sin(angle * (2 + (seed % 3)) + seed * 0.3) * 0.09
+          + Math.cos(angle * (3 + (seed % 4)) - seed * 0.17) * 0.055
+        );
+        const local = radius * (1 + wobble);
+        const x = Math.cos(angle) * local;
+        const y = Math.sin(angle) * local * (0.91 + (seed % 4) * 0.025);
+        if (!step) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+    } else {
+      ctx.arc(0, 0, radius, 0, Math.PI * 2);
     }
-    ctx.closePath();
-    const fillAlpha = Math.min(0.98, (0.52 + (seed % 6) * 0.045) * (0.72 + darkness * 0.42));
+
+    const shapeOpacity = randomized ? 0.84 + (seed % 6) * 0.027 : 1;
+    const fillAlpha = Math.min(1, darkness * shapeOpacity);
     ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${fillAlpha})`;
     ctx.fill();
-    ctx.lineWidth = 0.55;
-    const edgeAlpha = Math.min(0.75, 0.18 + darkness * 0.22);
-    ctx.strokeStyle = `rgba(${er}, ${eg}, ${eb}, ${edgeAlpha})`;
+    ctx.lineWidth = Math.max(0.4, nominalDiameter * 0.055);
+    ctx.strokeStyle = `rgba(${er}, ${eg}, ${eb}, ${Math.min(0.72, 0.16 + darkness * 0.42)})`;
     ctx.stroke();
     ctx.shadowBlur = 0;
-    ctx.beginPath();
-    ctx.arc(-1.1 + (seed % 3) * 0.35, -1.3 + (seed % 4) * 0.22, 1.2 + (seed % 2) * 0.2, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(255,255,255,${0.04 + (1 - darkness) * 0.03 + (seed % 4) * 0.008})`;
-    ctx.fill();
+
+    if (randomized) {
+      ctx.beginPath();
+      ctx.arc(-radius * 0.22, -radius * 0.24, Math.max(0.45, radius * 0.22), 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${0.025 + (1 - darkness) * 0.04 + (seed % 4) * 0.006})`;
+      ctx.fill();
+    }
     return stamp;
   }
 
-  function ensurePrinterStamps(color, darkness) {
-    const key = `${color}:${darkness}`;
-    if (printerView.stampKey === key && printerView.stamps.length === 20) return;
-    printerView.stamps = Array.from({ length: 20 }, (_, index) => createDotStamp(index, color, darkness));
+  function ensurePrinterStamps(color, darkness, dotSize, randomized, pitch) {
+    const count = randomized ? 20 : 1;
+    const key = `${color}:${darkness}:${dotSize}:${randomized ? 1 : 0}:${pitch}`;
+    if (printerView.stampKey === key && printerView.stamps.length === count) return;
+    printerView.stamps = Array.from(
+      { length: count },
+      (_, index) => createDotStamp(index, color, darkness, dotSize, randomized, pitch)
+    );
     printerView.stampKey = key;
   }
 
@@ -187,13 +222,30 @@
   }
 
   function drawPrintedDot(mark, status, geometry) {
-    ensurePrinterStamps(mark.color || status.carbonColor, printerDarknessMultiplier());
-    const stamp = printerView.stamps[mark.variant % printerView.stamps.length];
+    const randomized = printerView.randomDots;
+    ensurePrinterStamps(
+      mark.color || status.carbonColor,
+      printerDarknessMultiplier(),
+      printerDotSizeRatio(),
+      randomized,
+      geometry.pitch
+    );
+    const variant = randomized ? (Number(mark.variant) || 0) : 0;
+    const stamp = printerView.stamps[variant % printerView.stamps.length];
+    const jitterX = Number.isFinite(mark.jitterX)
+      ? mark.jitterX
+      : Number.isFinite(mark.dx) ? Math.max(-1, Math.min(1, mark.dx / 0.13)) : 0;
+    const jitterY = Number.isFinite(mark.jitterY)
+      ? mark.jitterY
+      : Number.isFinite(mark.dy) ? Math.max(-1, Math.min(1, mark.dy / 0.12)) : 0;
+    const randomOffset = printerRandomOffsetRatio();
+    const dx = jitterX * randomOffset;
+    const dy = jitterY * randomOffset;
     const ctx = printerView.fullContext;
-    const x = ((geometry.leftMarginDots + status.paperShiftX + mark.x + mark.dx) * geometry.pitch) - stamp.width / 2;
-    const y = ((geometry.topMarginDots + status.paperShiftY + mark.y + mark.dy) * geometry.pitch) - stamp.height / 2;
+    const x = ((geometry.leftMarginDots + status.paperShiftX + mark.x + dx) * geometry.pitch) - stamp.width / 2;
+    const y = ((geometry.topMarginDots + status.paperShiftY + mark.y + dy) * geometry.pitch) - stamp.height / 2;
     ctx.save();
-    ctx.globalAlpha = mark.opacity || 0.84;
+    ctx.globalAlpha = randomized ? (mark.opacity || 0.88) : 1;
     ctx.drawImage(stamp, x, y);
     ctx.restore();
   }
@@ -241,6 +293,11 @@
     byId('printerSpeed').value = String(printer.speedFactor);
     byId('printerDarkness').value = String(printerView.darkness);
     byId('printerDarknessValue').textContent = `${printerView.darkness}%`;
+    byId('printerDotSize').value = String(printerView.dotSize);
+    byId('printerDotSizeValue').textContent = `${printerView.dotSize}%`;
+    byId('printerRandomOffset').value = String(printerView.randomOffset);
+    byId('printerRandomOffsetValue').textContent = `±${printerView.randomOffset}%`;
+    byId('printerRandomDots').checked = printerView.randomDots;
     syncPrinterPreview(printer);
   }
 
@@ -1254,6 +1311,37 @@
       setNotice(`BT-100 speed set to ${speed}× of the base mechanical delay.`);
     });
 
+    byId('printerDarkness').addEventListener('input', event => {
+      printerView.darkness = Math.max(40, Math.min(100, Number(event.target.value) || 75));
+      localStorage.setItem(PRINTER_DARKNESS_STORAGE_KEY, String(printerView.darkness));
+      invalidatePrinterPreview();
+      renderPrinterPanel();
+    });
+
+    byId('printerDotSize').addEventListener('input', event => {
+      printerView.dotSize = Math.max(40, Math.min(260, Number(event.target.value) || 220));
+      localStorage.setItem(PRINTER_DOT_SIZE_STORAGE_KEY, String(printerView.dotSize));
+      invalidatePrinterPreview();
+      renderPrinterPanel();
+    });
+
+    byId('printerRandomOffset').addEventListener('input', event => {
+      printerView.randomOffset = Math.max(0, Math.min(50, Number(event.target.value) || 0));
+      localStorage.setItem(PRINTER_RANDOM_OFFSET_STORAGE_KEY, String(printerView.randomOffset));
+      invalidatePrinterPreview();
+      renderPrinterPanel();
+    });
+
+    byId('printerRandomDots').addEventListener('change', event => {
+      printerView.randomDots = event.target.checked;
+      localStorage.setItem(PRINTER_RANDOM_DOTS_STORAGE_KEY, printerView.randomDots ? '1' : '0');
+      invalidatePrinterPreview();
+      renderPrinterPanel();
+      setNotice(printerView.randomDots
+        ? 'BT-100 randomized dot shapes enabled.'
+        : 'BT-100 dots set to uniform rounded shapes.');
+    });
+
     byId('printerNewPage').addEventListener('click', () => {
       emulator.newPrinterPage();
       renderPrinterPanel();
@@ -1314,6 +1402,13 @@
       const printerSpeed = PRINTER_SPEED_OPTIONS.includes(storedPrinterSpeed) ? storedPrinterSpeed : 1;
       const printerColor = localStorage.getItem(PRINTER_COLOR_STORAGE_KEY) === 'blue' ? 'blue' : 'black';
       const printerDarkness = Math.max(40, Math.min(100, Number(localStorage.getItem(PRINTER_DARKNESS_STORAGE_KEY)) || 75));
+      const printerDotSize = Math.max(40, Math.min(260, Number(localStorage.getItem(PRINTER_DOT_SIZE_STORAGE_KEY)) || 220));
+      const storedRandomOffsetValue = localStorage.getItem(PRINTER_RANDOM_OFFSET_STORAGE_KEY);
+      const storedRandomOffset = storedRandomOffsetValue === null ? NaN : Number(storedRandomOffsetValue);
+      const printerRandomOffset = Number.isFinite(storedRandomOffset)
+        ? Math.max(0, Math.min(50, storedRandomOffset)) : 13;
+      const storedRandomDots = localStorage.getItem(PRINTER_RANDOM_DOTS_STORAGE_KEY);
+      const printerRandomDots = storedRandomDots === null ? true : storedRandomDots === '1';
       mouseSensitivity = Math.max(25, Math.min(300, Number(localStorage.getItem(MOUSE_SENSITIVITY_STORAGE_KEY)) || 100));
       byId('machineSelect').value = machineId;
       byId('melodikControl').checked = melodikEnabled;
@@ -1321,10 +1416,18 @@
       byId('printerColor').value = printerColor;
       byId('printerDarkness').value = String(printerDarkness);
       byId('printerDarknessValue').textContent = `${printerDarkness}%`;
+      byId('printerDotSize').value = String(printerDotSize);
+      byId('printerDotSizeValue').textContent = `${printerDotSize}%`;
+      byId('printerRandomOffset').value = String(printerRandomOffset);
+      byId('printerRandomOffsetValue').textContent = `±${printerRandomOffset}%`;
+      byId('printerRandomDots').checked = printerRandomDots;
       byId('mouseEnabled').checked = false;
       byId('mouseSensitivity').value = String(mouseSensitivity);
       byId('mouseSensitivityValue').textContent = `${mouseSensitivity}%`;
       printerView.darkness = printerDarkness;
+      printerView.dotSize = printerDotSize;
+      printerView.randomOffset = printerRandomOffset;
+      printerView.randomDots = printerRandomDots;
       emulator = await window.createDidaktikD80({
         driveAUrl: 'disks/036-KOMPAKT.d80',
         machineId,

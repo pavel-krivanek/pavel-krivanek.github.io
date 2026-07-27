@@ -133,7 +133,7 @@ The parser and UI are isolated in [`tap-browser.js`](tap-browser.js). Small QAOP
 
 ## BT-100 printer tab
 
-The BT-100 mechanical and 8255 peripheral model is isolated in [`bt100-printer.js`](bt100-printer.js). `didaktik-d80.js` only wires that device into the common I/O bus. Rendering controls such as white paper, carbon color and dot darkness remain in the UI.
+The BT-100 mechanical and 8255 peripheral model is isolated in [`bt100-printer.js`](bt100-printer.js). `didaktik-d80.js` only wires that device into the common I/O bus. Visual rendering remains in the standalone UI, including carbon colour, darkness, dot diameter, positional jitter and irregular-versus-rounded dot shape.
 
 The new **BT-100** tab emulates the optional Didaktik 8255 parallel path as a dedicated BT-100 printer:
 
@@ -142,7 +142,9 @@ The new **BT-100** tab emulates the optional Didaktik 8255 parallel path as a de
 - PA5 reports every carriage-gear notch, PA6 reports the deeper notch at each twentieth position, and PA7 is the left/home detector;
 - head motion is bidirectional and the rendered dots include a small left/right positional bias that mimics the notch-width asymmetry of the real carriage encoder;
 - a large A4-like page preview is rendered with 480 printable dot columns, visible margins and slightly irregular carbon-paper dots;
-- the tab provides paper change, manual head reset, paper shifting, carbon-paper colour selection, speed selection and browser printing / PDF export.
+- the tab provides paper change, manual head reset, paper shifting, carbon-paper colour selection, speed selection and browser printing / PDF export;
+- dot darkness, size and maximum random offset are adjustable and redraw the complete current page immediately;
+- dot size is expressed relative to the nominal 480-column pixel pitch (`100%` equals one pitch), and randomized irregular dots are enabled by default but can be replaced with uniform rounded dots.
 - **Print / save as PDF** opens a self-contained Blob preview, waits for the A4 image to decode, and then opens the browser print dialog; it no longer leaves an unusable `about:blank` tab.
 
 The **1× authentic** setting is calibrated from the selected machine clock so a complete 480-position carriage pass takes six seconds. The selector intentionally offers only **1×**, **10×**, and **100×**. Faster settings shorten only the printer-side mechanical delay; the original Z80 driver and its encoder polling still impose a practical upper limit.

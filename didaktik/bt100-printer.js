@@ -265,14 +265,22 @@
       const x = Math.max(0, Math.min(maxX, this.headPosition + reverseCellCorrection));
       const y = Math.max(0, Math.min(maxY, this.headY));
       const variant = Math.floor(Math.random() * 20) % 20;
+      const jitterX = Math.random() * 2 - 1;
+      const jitterY = Math.random() * 2 - 1;
       this.printedDots.push({
         x,
         y,
         dir: this.lastDirection,
         variant,
         color: this.carbonColor,
-        dx: (Math.random() - 0.5) * 0.26,
-        dy: (Math.random() - 0.5) * 0.24,
+        // Store normalized random samples. The standalone renderer applies
+        // the currently selected offset ratio, so already printed dots react
+        // immediately when the visual setting changes.
+        jitterX,
+        jitterY,
+        // Legacy fields preserve compatibility with older page renderers.
+        dx: jitterX * 0.13,
+        dy: jitterY * 0.12,
         opacity: 0.78 + Math.random() * 0.17
       });
       this.dotCount = this.printedDots.length;

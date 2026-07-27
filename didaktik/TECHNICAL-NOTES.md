@@ -215,6 +215,8 @@ The optional 8255 path is now modeled as a simple PPI at:
 
 The BT-100 tab uses that interface directly. The bundled `BT1`/`BT2` software configures the PPI with control word `90h`, which matches the observed traffic: port A is read as printer status and port B is written as printer control. The `97h`/`99h` isolation writes are still accepted because MDOS issues them during setup and shutdown, but the browser BT-100 model keeps the PPI logically attached so the printer programs can talk to it without extra switching.
 
+The printer mechanism stores each strike at a mechanical raster coordinate plus normalized random samples. Dot darkness, diameter, positional offset and shape are applied only by the page renderer. Changing one of these controls invalidates and redraws the whole retained page, so existing marks update immediately without altering the emulated 8255 traffic or carriage timing. `100%` dot size means a diameter equal to one nominal raster pitch; the default `220%` preserves the visibly spread carbon-paper impression used by the earlier renderer. The default random offset is `±13%` of one pitch, matching the former fixed jitter.
+
 
 ### BT-100 V1.1 handshake and end-of-line regression
 

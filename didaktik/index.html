@@ -235,6 +235,25 @@
 <output for="printerDarkness" id="printerDarknessValue">75%</output>
 </div>
 </label>
+<label>Dot size
+            <div class="printer-range-row">
+<input id="printerDotSize" max="260" min="40" step="5" type="range" value="220"/>
+<output for="printerDotSize" id="printerDotSizeValue">220%</output>
+</div>
+<span class="printer-control-help">100% equals one nominal BT-100 pixel pitch.</span>
+</label>
+<label>Random offset
+            <div class="printer-range-row">
+<input id="printerRandomOffset" max="50" min="0" step="1" type="range" value="13"/>
+<output for="printerRandomOffset" id="printerRandomOffsetValue">±13%</output>
+</div>
+<span class="printer-control-help">Maximum displacement relative to one pixel pitch.</span>
+</label>
+<label class="printer-check-control"><span>Dot shape</span>
+<input checked id="printerRandomDots" type="checkbox"/>
+<strong>Use randomized dots</strong>
+<small>Disable for uniform, perfectly rounded dots.</small>
+</label>
 <div class="printer-status-box"><span>Head</span><strong id="printerHead">0, 0</strong></div>
 <div class="printer-status-box"><span>Dots</span><strong id="printerDots">0</strong></div>
 <div class="printer-status-box"><span>Port A / B / CTRL</span><strong id="printerPorts">$0000 / $0000 / $0000</strong></div>

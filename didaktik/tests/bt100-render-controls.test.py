@@ -1,0 +1,152 @@
+#!/usr/bin/env python3
+"""Focused Chromium test for live BT-100 dot-rendering controls."""
+
+from pathlib import Path
+import mimetypes
+
+try:
+    from playwright.sync_api import sync_playwright
+except ImportError:
+    print('SKIP: Python Playwright is not installed.')
+    raise SystemExit(0)
+
+ROOT = Path(__file__).resolve().parents[1]
+MOCK_STORAGE = r'''<script>
+const __ls = new Map();
+Object.defineProperty(window, 'localStorage', { value: {
+  getItem: key => __ls.get(key) ?? null,
+  setItem: (key, value) => __ls.set(key, String(value)),
+  removeItem: key => __ls.delete(key), clear: () => __ls.clear(),
+  key: index => Array.from(__ls.keys())[index] ?? null,
+  get length() { return __ls.size; }
+}});
+const __records = [];
+const __request = value => { const request = {}; queueMicrotask(() => {
+  request.result = value; request.onsuccess?.({ target: request });
+}); return request; };
+const __store = { getAll: () => __request(__records), put: value => {
+  __records.push(value); return __request(value);
+}, delete: () => __request(undefined) };
+const __db = { transaction: () => { const tx = { objectStore: () => __store };
+  queueMicrotask(() => tx.oncomplete?.()); return tx;
+}, createObjectStore: () => __store };
+Object.defineProperty(window, 'indexedDB', { value: { open: () => __request(__db) }});
+</script>'''
+
+with sync_playwright() as playwright:
+    executable = Path('/usr/bin/chromium')
+    if not executable.exists():
+        print('SKIP: /usr/bin/chromium is not available.')
+        raise SystemExit(0)
+
+    browser = playwright.chromium.launch(
+        headless=True,
+        executable_path=str(executable),
+        args=['--no-sandbox'],
+    )
+    page = browser.new_page(viewport={'width': 1400, 'height': 1000})
+    page_errors = []
+    console_errors = []
+    page.on('pageerror', lambda error: page_errors.append(str(error)))
+    page.on('console', lambda message: console_errors.append(message.text) if message.type == 'error' else None)
+
+    def serve(route):
+        url = route.request.url
+        if not url.startswith('https://d80.test/'):
+            return route.abort()
+        relative = url[len('https://d80.test/'):].split('?', 1)[0].split('#', 1)[0] or 'index.html'
+        path = (ROOT / relative).resolve()
+        try:
+            path.relative_to(ROOT.resolve())
+        except ValueError:
+            return route.abort()
+        if path.is_dir():
+            path = path / 'index.html'
+        if not path.exists():
+            return route.fulfill(status=404, body='not found')
+        return route.fulfill(
+            status=200,
+            body=path.read_bytes(),
+            content_type=mimetypes.guess_type(str(path))[0] or 'application/octet-stream',
+        )
+
+    page.route('https://d80.test/**', serve)
+    html = (ROOT / 'index.html').read_text(encoding='utf-8').replace(
+        '<head>', '<head><base href="https://d80.test/">' + MOCK_STORAGE, 1
+    )
+    page.set_content(html, wait_until='domcontentloaded', timeout=30_000)
+    page.wait_for_function(
+        "window.didaktikD80 && document.getElementById('printerPreview')",
+        timeout=30_000,
+    )
+
+    initial = page.evaluate("""async () => {
+      didaktikD80.printer.fireDot();
+      const dot = didaktikD80.printer.printedDots[0];
+      dot.jitterX = 1;
+      dot.jitterY = 1;
+      dot.opacity = 0.9;
+      didaktikD80.scheduleNotify();
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      return {
+        image: document.getElementById('printerPreview').toDataURL(),
+        randomDots: document.getElementById('printerRandomDots').checked,
+        dotSize: document.getElementById('printerDotSizeValue').textContent,
+        randomOffset: document.getElementById('printerRandomOffsetValue').textContent,
+        darkness: document.getElementById('printerDarknessValue').textContent
+      };
+    }""")
+    assert initial['randomDots'] is True
+    assert initial['dotSize'] == '220%'
+    assert initial['randomOffset'] == '±13%'
+    assert initial['darkness'] == '75%'
+
+    result = page.evaluate("""async initialImage => {
+      const changeRange = async (id, value) => {
+        const input = document.getElementById(id);
+        input.value = String(value);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        return document.getElementById('printerPreview').toDataURL();
+      };
+      const darknessImage = await changeRange('printerDarkness', 40);
+      const sizeImage = await changeRange('printerDotSize', 100);
+      const offsetImage = await changeRange('printerRandomOffset', 50);
+      const randomDots = document.getElementById('printerRandomDots');
+      randomDots.checked = false;
+      randomDots.dispatchEvent(new Event('change', { bubbles: true }));
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const roundedImage = document.getElementById('printerPreview').toDataURL();
+      return {
+        darknessImageChanged: darknessImage !== initialImage,
+        sizeImageChanged: sizeImage !== darknessImage,
+        offsetImageChanged: offsetImage !== sizeImage,
+        roundedImageChanged: roundedImage !== offsetImage,
+        darknessValue: document.getElementById('printerDarknessValue').textContent,
+        sizeValue: document.getElementById('printerDotSizeValue').textContent,
+        offsetValue: document.getElementById('printerRandomOffsetValue').textContent,
+        randomDotsChecked: randomDots.checked,
+        storedDarkness: localStorage.getItem('didaktik-d80.bt100-darkness'),
+        storedSize: localStorage.getItem('didaktik-d80.bt100-dot-size'),
+        storedOffset: localStorage.getItem('didaktik-d80.bt100-random-offset'),
+        storedRandomDots: localStorage.getItem('didaktik-d80.bt100-random-dots')
+      };
+    }""", initial['image'])
+
+    assert result['darknessImageChanged']
+    assert result['sizeImageChanged']
+    assert result['offsetImageChanged']
+    assert result['roundedImageChanged']
+    assert result['darknessValue'] == '40%'
+    assert result['sizeValue'] == '100%'
+    assert result['offsetValue'] == '±50%'
+    assert result['randomDotsChecked'] is False
+    assert result['storedDarkness'] == '40'
+    assert result['storedSize'] == '100'
+    assert result['storedOffset'] == '50'
+    assert result['storedRandomDots'] == '0'
+    assert not page_errors, page_errors
+    assert not console_errors, console_errors
+
+    browser.close()
+    print('Focused Chromium BT-100 rendering-controls test passed.')

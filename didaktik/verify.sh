@@ -14,6 +14,7 @@ node --check app.js
 node tests/controller.test.js
 node tests/keyboard-layout.test.js
 python3 tests/keyboard-browser.test.py
+python3 tests/bt100-render-controls.test.py
 node tests/tap-browser.test.js
 node tests/hex-viewer.test.js
 python3 tests/dom-bindings.test.py

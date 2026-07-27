@@ -1049,3 +1049,39 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* BT-100 dot rendering controls */
+.printer-control-help {
+  color: #7f8b87;
+  font-size: 9px;
+  line-height: 1.35;
+}
+.printer-controls-grid .printer-check-control {
+  grid-template-columns: auto 1fr;
+  align-content: center;
+  column-gap: 9px;
+  row-gap: 3px;
+}
+.printer-check-control > span {
+  grid-column: 1 / -1;
+  color: #9aa4a0;
+}
+.printer-check-control input[type="checkbox"] {
+  align-self: center;
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: var(--green);
+}
+.printer-check-control strong {
+  align-self: center;
+  color: #e0e8e3;
+  font-size: 11px;
+  font-weight: 650;
+}
+.printer-check-control small {
+  grid-column: 1 / -1;
+  color: #7f8b87;
+  font-size: 9px;
+  line-height: 1.35;
+}

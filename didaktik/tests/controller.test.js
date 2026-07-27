@@ -460,6 +460,53 @@ function readBytes(controller, count) {
   printer.writePortB(0x0f, rawTime());       // finish/stop
 })();
 
+(function bt100C2ReturnToHomeCompletesTheFinalEncoderCycle() {
+  const printer = new context.DidaktikD80Internals.BT100Printer(() => {});
+  printer.setConnectionProfile('ur4-c');
+  printer.setSpeedFactor(100);
+  const frame = printer.frameCycles;
+  let elapsed = 0;
+
+  function rawTime() {
+    return elapsed % frame;
+  }
+
+  function readStatus() {
+    elapsed += 128;
+    return printer.readPortC(rawTime());
+  }
+
+  function waitStable(mask, asserted, label) {
+    let consecutive = 0;
+    for (let polls = 0; polls < 2000; polls += 1) {
+      const active = (readStatus() & mask) !== 0;
+      consecutive = active === asserted ? consecutive + 1 : 0;
+      if (consecutive === 2) return;
+    }
+    assert.fail(`BT-100 C-2 return timed out waiting for ${label}`);
+  }
+
+  // BT-BCS uses C-2 and its return-side pixel synchronizer waits for the
+  // current PC7 pulse to fall and then rise again. Near x=0 that complete
+  // cycle necessarily extends into the non-printing left run-out.
+  printer.headPosition = 0.30;
+  printer.headX = 0.30;
+  printer.resetMechanicalClock();
+  printer.writeControl(0x9a, rawTime());
+  printer.writePortC(0xf7, rawTime());       // carriage toward home (PC3 low)
+  assert.equal(readStatus() & 0x80, 0x80, 'C-2 fine input starts asserted');
+  waitStable(0x80, false, 'PC7 final falling edge');
+  waitStable(0x80, true, 'PC7 next rising edge');
+
+  assert.ok(printer.headPosition < 0,
+    `return-side encoder did not enter left run-out: x=${printer.headPosition}`);
+  assert.equal(printer.buildPortCValue() & 0x20, 0x20,
+    'C-2 home input remains asserted throughout left run-out');
+  printer.writePortC(0xff, rawTime());
+  assert.equal(printer.headDirection, 0, 'C-2 carriage stops after the final cycle');
+  assert.equal(printer.getStatus().headX, 0, 'UI coordinate remains at logical origin');
+})();
+
 (function bt100ClockContinuesAcrossQaopFrameWrap() {
   const printer = new context.DidaktikD80Internals.BT100Printer(() => {});
   printer.setSpeedFactor(1);

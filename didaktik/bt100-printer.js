@@ -126,9 +126,13 @@
       // every twentieth pitch also asserts PA6 while PA5 remains active.
       this.finePulseWidth = 0.42;
       this.coarseMarkerInterval = 20;
-      // Desktop transmits an initial sync cycle and then 480 pixel cycles.
-      // The carriage therefore needs enough run-out beyond x=480 for the
-      // trailing edge of the last pulse to pass the sensor.
+      // Desktop transmits an initial sync cycle and then 480 pixel cycles,
+      // while BT-BCS completes one final encoder cycle as it returns through
+      // x=0. The optical encoder therefore continues beyond both logical
+      // raster edges.
+      // The optical encoder continues for one non-printing pitch beyond both
+      // logical raster edges. Software may wait for the trailing edge of the
+      // final encoder pulse before it stops or reverses the carriage.
       this.carriageRunout = 1;
       this.syntheticTime = 0;
       this.lastStatusReadTime = 0;
@@ -318,9 +322,10 @@
         // x=480, so the carriage must continue through its falling edge. A
         // clamp at exactly 480 leaves PA5 permanently high and the Z80 loop
         // hangs at the end of the first full-width row.
+        const leftStop = -this.carriageRunout;
         const rightStop = this.pageWidthDots + this.carriageRunout;
-        this.headPosition = Math.max(0, Math.min(rightStop, next));
-        this.headX = this.headPosition;
+        this.headPosition = Math.max(leftStop, Math.min(rightStop, next));
+        this.headX = Math.max(0, Math.min(this.pageWidthDots, this.headPosition));
       }
 
       if (this.paperMotorActive) {
@@ -368,7 +373,8 @@
     }
 
     homeSignal() {
-      // OUT1 is the start-of-line/left-end optical stop and has finite width.
+      // OUT1 is the start-of-line/left-end optical stop. It remains active
+      // through the short non-printing run-out up to the mechanical stop.
       return this.headPosition <= 0.34;
     }
 
@@ -523,7 +529,9 @@
         pageHeightDots: this.pageHeightDots,
         pageSerial: this.pageSerial,
         dotCount: this.dotCount,
-        headX: Math.round(this.headPosition),
+        // Keep the public/UI coordinate on the printable raster. The internal
+        // mechanical coordinate may briefly enter the non-printing run-out.
+        headX: Math.round(Math.max(0, Math.min(this.pageWidthDots, this.headPosition))),
         headY: this.headY,
         direction: this.lastDirection,
         motorDirection: this.headDirection,

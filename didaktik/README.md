@@ -169,7 +169,7 @@ A Spectrum `LLIST` is deliberately not aligned like a direct `LPRINT` string. Th
 
 `LPRINT "I"` is used as the carriage-registration test. Its top and bottom bars contain six adjacent dots, while four middle rows contain a two-dot vertical stem and alternate carriage direction. The raw V1.1 return scan numbers encoder intervals in reverse order: a strike made while travelling toward home in interval `N` belongs to visual microcolumn `N-1`. Earlier builds rendered the raw carriage coordinate and therefore shifted every return raster by almost one complete dot pitch. The standalone printer module now applies this interval-to-column conversion and leaves the finite-notch timing itself untouched. Opposite-direction rows retain an approximately half-pitch physical registration difference, but no whole-column jump.
 
-The printer software waits for both edges of every encoder pulse. Desktop's full-width path performs one initial `PA5|PA6` synchronization cycle and then 480 complete PA5 cycles, one per raster bit. The emulator therefore preserves a minimum pulse width at accelerated settings and allows non-printing carriage run-out beyond position 480. Clamping the head at exactly `480.0` leaves the last pulse high forever and hangs Desktop at the end of its first 60-byte row.
+The printer software waits for both edges of every encoder pulse. Desktop's full-width path performs one initial `PA5|PA6` synchronization cycle and then 480 complete PA5 cycles, one per raster bit. The BT-BCS C-2 alignment test also waits for a complete `PC7` fine-encoder cycle while returning through logical position zero. The emulator therefore preserves a minimum pulse width at accelerated settings and allows one non-printing carriage pitch beyond both raster edges. Clamping at exactly `480.0` hangs Desktop on the final right-side falling edge; clamping at exactly `0.0` leaves PC7 permanently high and hangs BT-BCS on the return to origin. The visible head coordinate remains limited to `0..480` while the internal mechanical coordinate traverses the run-out.
 
 PA6 is not a right-edge latch. The attached Desktop source explicitly waits for a complete `PA5|PA6` pulse, and the printer mechanism reports the deeper gear notch every twentieth position through PA6. The emulation now generates that finite marker pulse while keeping the visual dot registration independent of PA6.
 
@@ -213,7 +213,7 @@ Run the portable checks with:
 ./verify.sh
 ```
 
-This validates JavaScript syntax, controller behavior, Kempston mouse port decoding and wrapping counters, MDOS directory/FAT parsing, file extraction, TAP block parsing, bundled media hashes, and a source-grounded Desktop BT-100 handshake that completes all 480 pixel cycles of a 60-byte row.
+This validates JavaScript syntax, controller behavior, Kempston mouse port decoding and wrapping counters, MDOS directory/FAT parsing, file extraction, TAP block parsing, bundled media hashes, the source-grounded Desktop BT-100 handshake that completes all 480 pixel cycles of a 60-byte row, and the BT-BCS C-2 return-to-origin encoder cycle.
 
 A focused Playwright regression uses the real V1.1 driver and `LPRINT "I"` at authentic printer speed:
 

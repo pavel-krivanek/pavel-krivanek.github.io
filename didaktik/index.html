@@ -216,6 +216,16 @@
 </div>
 </div>
 <div class="printer-controls-grid">
+<label>Connection
+            <select id="printerConnection">
+<option value="didaktik-ab">BT-100 A,B — status A, control B</option>
+<option value="bt100-cb">BT-100 C,B — status C, control B</option>
+<option value="bt100-c1">BT-100 C-1 — lower C control, upper C status</option>
+<option value="ur4-c">BT-100 C-2 / UR-4 — split port C</option>
+<option value="bt100-c3">BT-100 C-3 — upper C control, lower C status</option>
+</select>
+<span class="printer-control-help" id="printerConnectionHelp">PA4 paper, PA5 fine, PA6 coarse, PA7 home; PB0–PB3 control.</span>
+</label>
 <label>Carbon paper color
             <select id="printerColor">
 <option value="black">Black</option>
@@ -256,7 +266,7 @@
 </label>
 <div class="printer-status-box"><span>Head</span><strong id="printerHead">0, 0</strong></div>
 <div class="printer-status-box"><span>Dots</span><strong id="printerDots">0</strong></div>
-<div class="printer-status-box"><span>Port A / B / CTRL</span><strong id="printerPorts">$0000 / $0000 / $0000</strong></div>
+<div class="printer-status-box"><span>Ports A / B / C / CTRL</span><strong id="printerPorts">$0000 / $0000 / $0000 / $0000</strong></div>
 <div class="printer-status-box"><span>Limit switches</span><strong id="printerLimits">none</strong></div>
 </div>
 <div class="printer-shift-box">
@@ -271,7 +281,7 @@
 <div class="printer-preview-wrap">
 <canvas aria-label="BT-100 paper preview" id="printerPreview"></canvas>
 </div>
-<p class="screen-help">The emulation uses the Didaktik optional 8255 path on ports <code>1Fh</code>, <code>3Fh</code>, <code>5Fh</code> and <code>7Fh</code>. The BT-100 model applies a small left/right raster bias so the same pixel column lands slightly differently when scanned in opposite directions.</p>
+<p class="screen-help">The 8255 is addressed at <code>1Fh</code> (A), <code>3Fh</code> (B), <code>5Fh</code> (C) and <code>7Fh</code> (control). Choose the wiring expected by the printer driver: the Didaktik connection reads status on A and writes control on B; the UR-4 connection shares port C, with its lower nibble driving the printer and upper nibble returning sensors.</p>
 </section>
 <section aria-labelledby="mouseTab" class="storage-tab-panel mouse-panel" hidden="" id="mousePanel" role="tabpanel">
 <div class="mouse-toolbar">

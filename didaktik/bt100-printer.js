@@ -1,6 +1,81 @@
 (function (global) {
   'use strict';
 
+  // DESKTOP preserved five BT-100/8255 connection profiles. They all drive
+  // the same printer mechanics, but differ in the PPI port used for status and
+  // control and, for the C-only variants, in the bit order inside port C.
+  //
+  // The profile constants follow the reconstructed DESKTOP front ends:
+  //   A,B  initializer 90h
+  //   C,B  initializer 98h
+  //   C-1  initializer 9Ah
+  //   C-2  initializer 9Ah (the UR-4 wiring documented by TextMachine)
+  //   C-3  initializer 93h
+  const BT100_CONNECTIONS = Object.freeze({
+    'didaktik-ab': Object.freeze({
+      id: 'didaktik-ab',
+      label: 'BT-100 A,B',
+      shortLabel: 'A status · B control',
+      description: 'PA4 paper, PA5 fine, PA6 coarse, PA7 home; PB0 paper, PB1 needle, PB2/PB3 carriage',
+      statusPort: 'A',
+      controlPort: 'B',
+      controlWord: 0x90,
+      // Keep the needle line low in the internal quiescent state. The real
+      // driver writes its own finish command as soon as it initializes.
+      idleValue: 0x0d,
+      statusBits: Object.freeze({ paper: 4, fine: 5, coarse: 6, home: 7 }),
+      controlBits: Object.freeze({ paper: 0, needle: 1, towardHome: 2, awayFromHome: 3 })
+    }),
+    'bt100-cb': Object.freeze({
+      id: 'bt100-cb',
+      label: 'BT-100 C,B',
+      shortLabel: 'C status · B control',
+      description: 'PC4 paper, PC5 fine, PC6 coarse, PC7 home; PB0 paper, PB1 needle, PB2/PB3 carriage',
+      statusPort: 'C',
+      controlPort: 'B',
+      controlWord: 0x98,
+      idleValue: 0x0d,
+      statusBits: Object.freeze({ paper: 4, fine: 5, coarse: 6, home: 7 }),
+      controlBits: Object.freeze({ paper: 0, needle: 1, towardHome: 2, awayFromHome: 3 })
+    }),
+    'bt100-c1': Object.freeze({
+      id: 'bt100-c1',
+      label: 'BT-100 C-1',
+      shortLabel: 'C lower control · C upper status',
+      description: 'PC4 paper, PC5 fine, PC6 coarse, PC7 home; PC0 paper, PC1 needle, PC2/PC3 carriage',
+      statusPort: 'C',
+      controlPort: 'C',
+      controlWord: 0x9a,
+      idleValue: 0x0d,
+      statusBits: Object.freeze({ paper: 4, fine: 5, coarse: 6, home: 7 }),
+      controlBits: Object.freeze({ paper: 0, needle: 1, towardHome: 2, awayFromHome: 3 })
+    }),
+    'ur4-c': Object.freeze({
+      id: 'ur4-c',
+      label: 'BT-100 C-2 (UR-4)',
+      shortLabel: 'UR-4 split port C',
+      description: 'PC4 paper, PC5 home, PC6 coarse, PC7 fine; PC0 needle, PC1/PC3 carriage, PC2 paper',
+      statusPort: 'C',
+      controlPort: 'C',
+      controlWord: 0x9a,
+      idleValue: 0x0e,
+      statusBits: Object.freeze({ paper: 4, home: 5, coarse: 6, fine: 7 }),
+      controlBits: Object.freeze({ needle: 0, towardHome: 1, paper: 2, awayFromHome: 3 })
+    }),
+    'bt100-c3': Object.freeze({
+      id: 'bt100-c3',
+      label: 'BT-100 C-3',
+      shortLabel: 'C upper control · C lower status',
+      description: 'PC0 fine, PC1 paper, PC2 coarse, PC3 home; PC4 paper, PC5/PC6 carriage, PC7 needle',
+      statusPort: 'C',
+      controlPort: 'C',
+      controlWord: 0x93,
+      idleValue: 0x70,
+      statusBits: Object.freeze({ fine: 0, paper: 1, coarse: 2, home: 3 }),
+      controlBits: Object.freeze({ paper: 4, awayFromHome: 5, towardHome: 6, needle: 7 })
+    })
+  });
+
   class BT100Printer {
     constructor(notify) {
       this.notify = notify || (() => {});
@@ -20,11 +95,16 @@
       this.paperShiftX = 0;
       this.paperShiftY = 0;
 
-      // BT1 sets 8255 mode 0: port A input, ports B/C output.
-      this.controlWord = 0x90;
+      // The bundled Kompakt BT1 driver uses the Didaktik A/B profile. Keep
+      // that as the power-on default; changing wiring profiles does not alter
+      // the retained page or the common printer mechanics.
+      this.connectionId = 'didaktik-ab';
+      this.controlWord = BT100_CONNECTIONS[this.connectionId].controlWord;
       this.portAInput = 0;
-      this.portBOutput = 0x0d;
+      this.portAOutput = 0;
+      this.portBOutput = 0;
       this.portC = 0;
+      this.resetPortOutputs();
 
       // Continuous mechanical coordinates. One head unit is one of the 480
       // fine encoder periods across A4. The real DC motor is not a stepper;
@@ -87,6 +167,48 @@
       return this.getStatus();
     }
 
+    getConnectionProfile() {
+      return BT100_CONNECTIONS[this.connectionId] || BT100_CONNECTIONS['didaktik-ab'];
+    }
+
+    resetPortOutputs() {
+      this.portAOutput = 0;
+      this.portBOutput = 0;
+      this.portC = 0;
+      const profile = this.getConnectionProfile();
+      if (profile.controlPort === 'A') this.portAOutput = profile.idleValue;
+      else if (profile.controlPort === 'B') this.portBOutput = profile.idleValue;
+      else this.portC = profile.idleValue;
+      this.headDirection = 0;
+      this.lastFireBit = 0;
+    }
+
+    setConnectionProfile(id) {
+      const profile = BT100_CONNECTIONS[id] || BT100_CONNECTIONS['didaktik-ab'];
+      if (profile.id === this.connectionId) return this.getStatus();
+      this.connectionId = profile.id;
+      this.controlWord = profile.controlWord;
+      this.resetPortOutputs();
+      this.paperSignal = false;
+      this.resetMechanicalClock();
+      this.notify();
+      return this.getStatus();
+    }
+
+    controlOutputValue(profile = this.getConnectionProfile()) {
+      if (profile.controlPort === 'A') return this.portAOutput & 0xff;
+      if (profile.controlPort === 'B') return this.portBOutput & 0xff;
+      return this.portC & 0xff;
+    }
+
+    setRawPortOutput(port, value) {
+      value &= 0xff;
+      if (port === 'A') this.portAOutput = value;
+      else if (port === 'B') this.portBOutput = value;
+      else this.portC = value;
+      return value;
+    }
+
     resetMechanicalClock() {
       this.lastMechanicalTime = null;
       this.lastRawTime = null;
@@ -112,8 +234,7 @@
       this.paperTravel = 0;
       this.paperEncoderPhase = 0.58;
       this.paperSignal = false;
-      this.portBOutput = 0x0d;
-      this.lastFireBit = 0;
+      this.resetPortOutputs();
       this.resetMechanicalClock();
       this.pageSerial += 1;
       this.notify();
@@ -125,8 +246,7 @@
       this.headX = 0;
       this.headDirection = 0;
       this.lastDirection = 1;
-      this.portBOutput = (this.portBOutput & 0xf0) | 0x0d;
-      this.lastFireBit = 0;
+      this.resetPortOutputs();
       this.resetMechanicalClock();
       this.notify();
       return this.getStatus();
@@ -141,14 +261,16 @@
     }
 
     get paperMotorActive() {
-      // PB0 -> BT-100 IN6, active low. 0Ch feeds paper, 0Dh stops it.
-      return (this.portBOutput & 0x01) === 0;
+      const profile = this.getConnectionProfile();
+      const value = this.controlOutputValue(profile);
+      // IN6 is active low in both documented connections.
+      return (value & (1 << profile.controlBits.paper)) === 0;
     }
 
-    decodeHeadDirection(value = this.portBOutput) {
-      // PB2/PB3 drive the two opposite ends of the carriage motor.
-      const towardHome = !!(value & 0x04); // PB2 -> IN1
-      const awayFromHome = !!(value & 0x08); // PB3 -> IN4
+    decodeHeadDirection(value = this.controlOutputValue(), profile = this.getConnectionProfile()) {
+      // IN1 and IN4 drive the two opposite ends of the carriage motor.
+      const towardHome = !!(value & (1 << profile.controlBits.towardHome));
+      const awayFromHome = !!(value & (1 << profile.controlBits.awayFromHome));
       if (towardHome === awayFromHome) return 0;
       return awayFromHome ? 1 : -1;
     }
@@ -292,65 +414,107 @@
       value &= 0xff;
       if (value & 0x80) {
         this.controlWord = value;
-        this.portBOutput = 0x0d;
-        this.portC = 0;
-        this.headDirection = 0;
-        this.lastFireBit = 0;
+        this.resetPortOutputs();
       } else {
         // 8255 BSR mode. Didaktik Gama bank switching is PC0 reset/set via
-        // OUT 7Fh,0/1; it must not destroy the 90h PPI mode configuration.
+        // OUT 7Fh,0/1; it must not destroy the selected PPI mode word.
         const bit = (value >> 1) & 7;
         const mask = 1 << bit;
         if (value & 1) this.portC |= mask;
         else this.portC &= ~mask;
+        if (this.getConnectionProfile().controlPort === 'C') {
+          this.applyControlOutput(this.portC);
+        }
       }
       return this.controlWord;
     }
 
-    writePortB(value, time) {
-      this.advanceMechanics(time);
-      value &= 0xff;
+    applyControlOutput(value, profile = this.getConnectionProfile()) {
       const previousFire = this.lastFireBit;
-      this.portBOutput = value;
-      this.headDirection = this.decodeHeadDirection(value);
+      this.headDirection = this.decodeHeadDirection(value, profile);
       if (this.headDirection) this.lastDirection = this.headDirection;
 
-      const fireBit = value & 0x02;
+      const fireBit = value & (1 << profile.controlBits.needle);
       if (!previousFire && fireBit) this.fireDot();
       this.lastFireBit = fireBit;
       if (!this.paperMotorActive) this.paperSignal = false;
-      return this.portBOutput;
     }
 
-    buildPortAValue() {
-      let value = this.portAInput & 0x0f;
-      if (this.paperSignal) value |= 0x10; // PA4 <- OUT3: paper encoder
-      if (this.fineEncoderSignal()) value |= 0x20; // PA5 <- OUT7: fine head encoder
-      if (this.coarseMarkerSignal()) value |= 0x40; // PA6 <- OUT6: deeper every-20th notch
-      if (this.homeSignal()) value |= 0x80; // PA7 <- OUT1: home stop
+    writePort(port, value, time) {
+      this.advanceMechanics(time);
+      value = this.setRawPortOutput(port, value);
+      const profile = this.getConnectionProfile();
+      if (profile.controlPort === port) this.applyControlOutput(value, profile);
+      return value;
+    }
+
+    writePortA(value, time) {
+      return this.writePort('A', value, time);
+    }
+
+    writePortB(value, time) {
+      return this.writePort('B', value, time);
+    }
+
+    signalStatusValue(profile = this.getConnectionProfile()) {
+      let value = 0;
+      if (this.paperSignal) value |= 1 << profile.statusBits.paper;
+      if (this.fineEncoderSignal()) value |= 1 << profile.statusBits.fine;
+      if (this.coarseMarkerSignal()) value |= 1 << profile.statusBits.coarse;
+      if (this.homeSignal()) value |= 1 << profile.statusBits.home;
       return value & 0xff;
     }
 
-    readPortA(time) {
-      this.advanceMechanics(time);
-      this.lastStatusReadTime = Number.isFinite(time) ? time : this.syntheticTime;
-      return this.buildPortAValue();
-    }
-
-    readPortB(time) {
-      this.advanceMechanics(time);
-      return this.portBOutput & 0xff;
-    }
-
-    readPortC(time) {
-      this.advanceMechanics(time);
+    rawPortValue(port) {
+      if (port === 'A') return this.portAOutput & 0xff;
+      if (port === 'B') return this.portBOutput & 0xff;
       return this.portC & 0xff;
     }
 
-    writePortC(value, time) {
+    buildPortValue(port) {
+      const profile = this.getConnectionProfile();
+      if (profile.statusPort !== port) return this.rawPortValue(port);
+      const statusMask = Object.values(profile.statusBits)
+        .reduce((mask, bit) => mask | (1 << bit), 0);
+      const base = port === 'A' ? this.portAInput : this.rawPortValue(port);
+      return ((base & ~statusMask) | this.signalStatusValue(profile)) & 0xff;
+    }
+
+    // Retain the old named helper: existing A/B tests and third-party probes use it.
+    buildPortAValue() {
+      return this.buildPortValue('A');
+    }
+
+    buildPortBValue() {
+      return this.buildPortValue('B');
+    }
+
+    buildPortCValue() {
+      return this.buildPortValue('C');
+    }
+
+    readPort(port, time) {
       this.advanceMechanics(time);
-      this.portC = value & 0xff;
-      return this.portC;
+      if (this.getConnectionProfile().statusPort === port) {
+        this.lastStatusReadTime = Number.isFinite(time) ? time : this.syntheticTime;
+      }
+      return this.buildPortValue(port);
+    }
+
+    readPortA(time) {
+      return this.readPort('A', time);
+    }
+
+    readPortB(time) {
+      return this.readPort('B', time);
+    }
+
+    readPortC(time) {
+      return this.readPort('C', time);
+    }
+
+    writePortC(value, time) {
+      return this.writePort('C', value, time);
     }
 
     getStatus() {
@@ -367,10 +531,16 @@
         paperShiftY: this.paperShiftY,
         carbonColor: this.carbonColor,
         speedFactor: this.speedFactor,
+        connectionId: this.connectionId,
+        connectionLabel: this.getConnectionProfile().label,
+        connectionDescription: this.getConnectionProfile().description,
+        connectionShortLabel: this.getConnectionProfile().shortLabel,
         controlWord: this.controlWord,
         portAInput: this.buildPortAValue(),
-        portBOutput: this.portBOutput,
-        portC: this.portC,
+        portA: this.buildPortAValue(),
+        portBOutput: this.buildPortBValue(),
+        portB: this.buildPortBValue(),
+        portC: this.buildPortCValue(),
         leftLimit: this.homeSignal(),
         rightLimit: this.rightLimitSignal(),
         fineSignal: this.fineEncoderSignal(),
@@ -382,5 +552,5 @@
   }
 
   global.BT100Printer = BT100Printer;
-  global.DidaktikBT100Internals = Object.freeze({ BT100Printer });
+  global.DidaktikBT100Internals = Object.freeze({ BT100Printer, BT100_CONNECTIONS });
 })(window);

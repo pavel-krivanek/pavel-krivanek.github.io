@@ -215,6 +215,49 @@ The optional 8255 path is now modeled as a simple PPI at:
 
 The BT-100 tab uses that interface directly. The bundled `BT1`/`BT2` software configures the PPI with control word `90h`, which matches the observed traffic: port A is read as printer status and port B is written as printer control. The `97h`/`99h` isolation writes are still accepted because MDOS issues them during setup and shutdown, but the browser BT-100 model keeps the PPI logically attached so the printer programs can talk to it without extra switching.
 
+### BT-100 connection profiles
+
+The preserved DESKTOP installer contains five BT-100 connection records. Its reconstructed profile sources identify the exact status port, control port, status masks, command bytes and 8255 initializer for each connection:
+
+```text
+profile  status       control      initializer
+A,B      A upper      B lower      90h
+C,B      C upper      B lower      98h
+C-1      C upper      C lower      9Ah
+C-2      C upper      C lower      9Ah
+C-3      C lower      C upper      93h
+```
+
+`C-1` and `C-2` use the same half-port directions but different bit assignments. The TextMachine and ScreenMachine manuals identify the UR-4 wiring with the `C-2` assignment:
+
+```text
+PC0  needle output       PC4  paper encoder input
+PC1  carriage output     PC5  home detector input
+PC2  paper-motor output  PC6  coarse marker input
+PC3  carriage output     PC7  fine encoder input
+```
+
+The complete emulated profiles are:
+
+```text
+A,B:   PA4 paper, PA5 fine, PA6 coarse, PA7 home
+       PB0 paper, PB1 needle, PB2/PB3 carriage
+
+C,B:   PC4 paper, PC5 fine, PC6 coarse, PC7 home
+       PB0 paper, PB1 needle, PB2/PB3 carriage
+
+C-1:   PC4 paper, PC5 fine, PC6 coarse, PC7 home
+       PC0 paper, PC1 needle, PC2/PC3 carriage
+
+C-2:   PC4 paper, PC5 home, PC6 coarse, PC7 fine
+       PC0 needle, PC1/PC3 carriage, PC2 paper
+
+C-3:   PC0 fine, PC1 paper, PC2 coarse, PC3 home
+       PC4 paper, PC5/PC6 carriage, PC7 needle
+```
+
+For a shared port-C profile, a read combines the latched output half with live sensor bits on the input half. Writes affect only the selected profile's logical control signals. The UI stores the profile independently from the printed page and defaults to `A,B`; changing it stops both motors and resets the interface latch without clearing the page or moving the head.
+
 The printer mechanism stores each strike at a mechanical raster coordinate plus normalized random samples. Dot darkness, diameter, positional offset and shape are applied only by the page renderer. Changing one of these controls invalidates and redraws the whole retained page, so existing marks update immediately without altering the emulated 8255 traffic or carriage timing. `100%` dot size means a diameter equal to one nominal raster pitch; the default `220%` preserves the visibly spread carbon-paper impression used by the earlier renderer. The default random offset is `±13%` of one pitch, matching the former fixed jitter.
 
 
@@ -436,6 +479,7 @@ The optional browser smoke test additionally:
 - Kempston mouse 8-bit wrapping counters and standard button mapping: https://sinclair.wiki.zxnet.co.uk/wiki/Kempston_Mouse
 - BT-100 mechanism overview, one slotted wheel per motor and 480 carriage positions: https://dexovo.cz/specifika-socialistickej-tlace.php
 - BT-100 overview and approximate 150-dot/s specification: https://pmd85.borik.net/wiki/BT-100
+- Reconstructed DESKTOP BT-100 profile sources (`ab`, `cb`, `c1`, `c2`, `c3`): https://github.com/oldcompcz/Desktop/tree/master/src/desktop/editor/output/devices/bt100/profiles
 - Supplied `mdos20.lst`, used to identify the exact MDOS 2.x controller protocol and verify the ROM bytes.
 
 ## Desktop full-width row termination

@@ -10,8 +10,10 @@
   const PRINTER_DOT_SIZE_STORAGE_KEY = 'didaktik-d80.bt100-dot-size';
   const PRINTER_RANDOM_OFFSET_STORAGE_KEY = 'didaktik-d80.bt100-random-offset';
   const PRINTER_RANDOM_DOTS_STORAGE_KEY = 'didaktik-d80.bt100-random-dots';
+  const PRINTER_CONNECTION_STORAGE_KEY = 'didaktik-d80.bt100-connection';
   const MOUSE_SENSITIVITY_STORAGE_KEY = 'didaktik-d80.kempston-mouse-sensitivity';
   const PRINTER_SPEED_OPTIONS = [1, 10, 100];
+  const PRINTER_CONNECTION_OPTIONS = ['didaktik-ab', 'bt100-cb', 'bt100-c1', 'ur4-c', 'bt100-c3'];
   let emulator = null;
   let paused = false;
   let machineReady = false;
@@ -286,9 +288,11 @@
     const printer = status?.printer || emulator.getStatus().printer;
     byId('printerSummary').textContent = `${printer.dotCount.toLocaleString()} dots on page · head ${printer.headX},${printer.headY} · ${printer.direction >= 0 ? 'left → right' : 'right ← left'}`;
     byId('printerHead').textContent = `${printer.headX}, ${printer.headY}`;
-    byId('printerPorts').textContent = `${hexadecimal(printer.portAInput)} / ${hexadecimal(printer.portBOutput)} / ${hexadecimal(printer.controlWord)}`;
+    byId('printerPorts').textContent = `${hexadecimal(printer.portA)} / ${hexadecimal(printer.portB)} / ${hexadecimal(printer.portC)} / ${hexadecimal(printer.controlWord)}`;
     byId('printerLimits').textContent = `${printer.leftLimit ? 'left ' : ''}${printer.rightLimit ? 'right' : ''}`.trim() || 'none';
     byId('printerDots').textContent = printer.dotCount.toLocaleString();
+    byId('printerConnection').value = printer.connectionId;
+    byId('printerConnectionHelp').textContent = printer.connectionDescription;
     byId('printerColor').value = printer.carbonColor;
     byId('printerSpeed').value = String(printer.speedFactor);
     byId('printerDarkness').value = String(printerView.darkness);
@@ -1293,6 +1297,15 @@
       }
     });
 
+    byId('printerConnection').addEventListener('change', event => {
+      const requested = event.target.value;
+      const connection = PRINTER_CONNECTION_OPTIONS.includes(requested) ? requested : 'didaktik-ab';
+      const printer = emulator.setPrinterConnectionProfile(connection);
+      localStorage.setItem(PRINTER_CONNECTION_STORAGE_KEY, connection);
+      renderPrinterPanel();
+      setNotice(`BT-100 connection set to ${printer.connectionLabel} (${printer.connectionShortLabel}).`);
+    });
+
     byId('printerColor').addEventListener('change', event => {
       const color = event.target.value === 'blue' ? 'blue' : 'black';
       emulator.setPrinterCarbonColor(color);
@@ -1409,9 +1422,13 @@
         ? Math.max(0, Math.min(50, storedRandomOffset)) : 13;
       const storedRandomDots = localStorage.getItem(PRINTER_RANDOM_DOTS_STORAGE_KEY);
       const printerRandomDots = storedRandomDots === null ? true : storedRandomDots === '1';
+      const storedPrinterConnection = localStorage.getItem(PRINTER_CONNECTION_STORAGE_KEY);
+      const printerConnection = PRINTER_CONNECTION_OPTIONS.includes(storedPrinterConnection)
+        ? storedPrinterConnection : 'didaktik-ab';
       mouseSensitivity = Math.max(25, Math.min(300, Number(localStorage.getItem(MOUSE_SENSITIVITY_STORAGE_KEY)) || 100));
       byId('machineSelect').value = machineId;
       byId('melodikControl').checked = melodikEnabled;
+      byId('printerConnection').value = printerConnection;
       byId('printerSpeed').value = String(printerSpeed);
       byId('printerColor').value = printerColor;
       byId('printerDarkness').value = String(printerDarkness);
@@ -1438,6 +1455,7 @@
       window.qaop.set({ crt: false });
       emulator.setKempstonMouseEnabled(false);
       mouseEnabled = false;
+      emulator.setPrinterConnectionProfile(printerConnection);
       emulator.setPrinterSpeedFactor(printerSpeed);
       emulator.setPrinterCarbonColor(printerColor);
       emulator.onChange(render);

@@ -324,6 +324,90 @@ function readBytes(controller, count) {
   assert.equal(printer.buildPortAValue() & 0x40, 0x00);
 })();
 
+(function bt100DocumentedConnectionProfiles() {
+  const variants = [
+    {
+      id: 'didaktik-ab', controlWord: 0x90, statusPort: 'A', controlPort: 'B',
+      homeMask: 0x80, fineMask: 0x20, move: 0x09, strike: 0x0b, paper: 0x0c
+    },
+    {
+      id: 'bt100-cb', controlWord: 0x98, statusPort: 'C', controlPort: 'B',
+      homeMask: 0x80, fineMask: 0x20, move: 0x09, strike: 0x0b, paper: 0x0c
+    },
+    {
+      id: 'bt100-c1', controlWord: 0x9a, statusPort: 'C', controlPort: 'C',
+      homeMask: 0x80, fineMask: 0x20, move: 0x09, strike: 0x0b, paper: 0x0c
+    },
+    {
+      id: 'ur4-c', controlWord: 0x9a, statusPort: 'C', controlPort: 'C',
+      homeMask: 0x20, fineMask: 0x80, move: 0x0c, strike: 0x0d, paper: 0x0a
+    },
+    {
+      id: 'bt100-c3', controlWord: 0x93, statusPort: 'C', controlPort: 'C',
+      homeMask: 0x08, fineMask: 0x01, move: 0x30, strike: 0xb0, paper: 0x60
+    }
+  ];
+
+  for (const variant of variants) {
+    const printer = new context.DidaktikD80Internals.BT100Printer(() => {});
+    printer.setConnectionProfile(variant.id);
+    printer.setSpeedFactor(10);
+    const status = printer.getStatus();
+    assert.equal(status.connectionId, variant.id);
+    assert.equal(status.controlWord, variant.controlWord, `${variant.id} initializer`);
+
+    const readStatus = time => variant.statusPort === 'A'
+      ? printer.readPortA(time)
+      : printer.readPortC(time);
+    const writeControlPort = (value, time) => variant.controlPort === 'B'
+      ? printer.writePortB(value, time)
+      : printer.writePortC(value, time);
+
+    assert.equal(readStatus() & variant.homeMask, variant.homeMask, `${variant.id} home input`);
+    assert.equal(readStatus() & variant.fineMask, variant.fineMask, `${variant.id} fine encoder input`);
+    if (variant.statusPort !== 'A') {
+      assert.equal(printer.readPortA() & 0xf0, 0, `${variant.id} leaves A status unused`);
+    }
+
+    printer.writeControl(variant.controlWord, 0);
+    writeControlPort(variant.move, 100);
+    readStatus(9100);
+    assert.equal(printer.headPosition > 0, true, `${variant.id} carriage output`);
+    assert.equal(readStatus(9200) & variant.homeMask, 0, `${variant.id} home releases`);
+
+    writeControlPort(variant.strike, 9300);
+    assert.equal(printer.printedDots.length, 1, `${variant.id} needle output`);
+
+    writeControlPort(variant.paper, 9400);
+    readStatus(18400);
+    assert.equal(printer.headY > 0, true, `${variant.id} paper output`);
+  }
+
+  const printer = new context.DidaktikD80Internals.BT100Printer(() => {});
+  printer.setConnectionProfile('unknown-profile');
+  assert.equal(printer.getStatus().connectionId, 'didaktik-ab', 'unknown ids must safely fall back to default');
+})();
+
+(function bt100ConnectionProfilesAreWiredThroughThePeripheralBus() {
+  const runtime = {
+    getMachineBankState() { return { profile: 'spectrum48', bank: null, upperPages: null }; },
+    rebuildBusHandlers() {}, resetMachine() {}, cpuCore: { nmi() {} }
+  };
+  const emulator = new DidaktikD80(runtime, new Uint8Array(0x3800), {
+    machineId: 'spectrum48', machineRoms: {}
+  });
+  emulator.device.edge_out = () => {};
+  emulator.device.edge_in = () => 0xff;
+  emulator.setPrinterConnectionProfile('ur4-c');
+  emulator.printer.setSpeedFactor(10);
+  emulator.device.out(0x7f, 0x9a, 0);
+  emulator.device.out(0x5f, 0x0c, 100);
+  emulator.device.in(0x5f, 9100);
+  assert.equal(emulator.printer.headPosition > 0, true);
+  assert.equal(emulator.device.in(0x1f, 9200) & 0xf0, 0, 'A is not the UR-4 status port');
+  assert.equal(emulator.device.in(0x5f, 9300) & 0x20, 0, 'C carries UR-4 home status');
+})();
+
 (function bt100DesktopFullWidthRowReachesFinalFallingEdge() {
   const printer = new context.DidaktikD80Internals.BT100Printer(() => {});
   printer.setSpeedFactor(100);

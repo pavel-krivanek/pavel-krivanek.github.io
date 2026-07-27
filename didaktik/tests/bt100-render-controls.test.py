@@ -93,13 +93,19 @@ with sync_playwright() as playwright:
         randomDots: document.getElementById('printerRandomDots').checked,
         dotSize: document.getElementById('printerDotSizeValue').textContent,
         randomOffset: document.getElementById('printerRandomOffsetValue').textContent,
-        darkness: document.getElementById('printerDarknessValue').textContent
+        darkness: document.getElementById('printerDarknessValue').textContent,
+        connection: document.getElementById('printerConnection').value,
+        connectionHelp: document.getElementById('printerConnectionHelp').textContent,
+        connectionOptions: document.getElementById('printerConnection').options.length
       };
     }""")
     assert initial['randomDots'] is True
     assert initial['dotSize'] == '220%'
     assert initial['randomOffset'] == '±13%'
     assert initial['darkness'] == '75%'
+    assert initial['connection'] == 'didaktik-ab'
+    assert initial['connectionOptions'] == 5
+    assert 'PA4' in initial['connectionHelp'] and 'PB0' in initial['connectionHelp']
 
     result = page.evaluate("""async initialImage => {
       const changeRange = async (id, value) => {
@@ -117,6 +123,11 @@ with sync_playwright() as playwright:
       randomDots.dispatchEvent(new Event('change', { bubbles: true }));
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       const roundedImage = document.getElementById('printerPreview').toDataURL();
+      const connection = document.getElementById('printerConnection');
+      connection.value = 'ur4-c';
+      connection.dispatchEvent(new Event('change', { bubbles: true }));
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const connectionStatus = didaktikD80.getStatus().printer;
       return {
         darknessImageChanged: darknessImage !== initialImage,
         sizeImageChanged: sizeImage !== darknessImage,
@@ -129,7 +140,12 @@ with sync_playwright() as playwright:
         storedDarkness: localStorage.getItem('didaktik-d80.bt100-darkness'),
         storedSize: localStorage.getItem('didaktik-d80.bt100-dot-size'),
         storedOffset: localStorage.getItem('didaktik-d80.bt100-random-offset'),
-        storedRandomDots: localStorage.getItem('didaktik-d80.bt100-random-dots')
+        storedRandomDots: localStorage.getItem('didaktik-d80.bt100-random-dots'),
+        connectionValue: connection.value,
+        connectionHelp: document.getElementById('printerConnectionHelp').textContent,
+        connectionStatusId: connectionStatus.connectionId,
+        connectionControlWord: connectionStatus.controlWord,
+        storedConnection: localStorage.getItem('didaktik-d80.bt100-connection')
       };
     }""", initial['image'])
 
@@ -145,6 +161,11 @@ with sync_playwright() as playwright:
     assert result['storedSize'] == '100'
     assert result['storedOffset'] == '50'
     assert result['storedRandomDots'] == '0'
+    assert result['connectionValue'] == 'ur4-c'
+    assert 'PC0' in result['connectionHelp'] and 'PC7' in result['connectionHelp']
+    assert result['connectionStatusId'] == 'ur4-c'
+    assert result['connectionControlWord'] == 0x9A
+    assert result['storedConnection'] == 'ur4-c'
     assert not page_errors, page_errors
     assert not console_errors, console_errors
 

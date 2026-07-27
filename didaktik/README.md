@@ -138,6 +138,7 @@ The BT-100 mechanical and 8255 peripheral model is isolated in [`bt100-printer.j
 The new **BT-100** tab emulates the optional Didaktik 8255 parallel path as a dedicated BT-100 printer:
 
 - 8255 ports are exposed at `1Fh`, `3Fh`, `5Fh` and `7Fh`;
+- the **Connection** selector covers the five preserved DESKTOP BT-100 profiles (`A,B`, `C,B`, `C-1`, `C-2`, and `C-3`), remembers the selection, and keeps `A,B` as the default;
 - the BT-100 handshake follows the real software on the supplied Kompakt disk (`BT1`/`BT2`);
 - PA5 reports every carriage-gear notch, PA6 reports the deeper notch at each twentieth position, and PA7 is the left/home detector;
 - head motion is bidirectional and the rendered dots include a small left/right positional bias that mimics the notch-width asymmetry of the real carriage encoder;
@@ -146,6 +147,18 @@ The new **BT-100** tab emulates the optional Didaktik 8255 parallel path as a de
 - dot darkness, size and maximum random offset are adjustable and redraw the complete current page immediately;
 - dot size is expressed relative to the nominal 480-column pixel pitch (`100%` equals one pitch), and randomized irregular dots are enabled by default but can be replaced with uniform rounded dots.
 - **Print / save as PDF** opens a self-contained Blob preview, waits for the A4 image to decode, and then opens the browser print dialog; it no longer leaves an unusable `about:blank` tab.
+
+The five connection choices are wiring profiles rather than different printer mechanisms:
+
+| Profile | Status inputs | Control outputs | 8255 initializer |
+|---|---|---|---:|
+| **A,B** (default) | port A, upper nibble | port B, lower nibble | `90h` |
+| **C,B** | port C, upper nibble | port B, lower nibble | `98h` |
+| **C-1** | port C, upper nibble | port C, lower nibble; standard A/B bit order | `9Ah` |
+| **C-2 / UR-4** | PC4 paper, PC5 home, PC6 coarse, PC7 fine | PC0 needle, PC1/PC3 carriage, PC2 paper | `9Ah` |
+| **C-3** | port C, lower nibble | port C, upper nibble | `93h` |
+
+Changing the profile stops the emulated motors and resets the PPI output latch, but preserves the current paper, dots, head position and visual settings. Software must use a driver built for the selected wiring.
 
 The **1× authentic** setting is calibrated from the selected machine clock so a complete 480-position carriage pass takes six seconds. The selector intentionally offers only **1×**, **10×**, and **100×**. Faster settings shorten only the printer-side mechanical delay; the original Z80 driver and its encoder polling still impose a practical upper limit.
 

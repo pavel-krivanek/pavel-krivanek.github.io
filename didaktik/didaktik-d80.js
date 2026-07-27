@@ -859,6 +859,7 @@
           const low = port & 0xff;
           if (low === PORT_DATA) self.controller.writeData(value);
           else if (low === PORT_OPERATION) self.controller.writeOperation(value);
+          else if (low === PORT_8255_PORT_A) self.printer.writePortA(value, time);
           else if (low === PORT_8255_PORT_B) self.printer.writePortB(value, time);
           else if (low === PORT_8255_PORT_C) self.printer.writePortC(value, time);
           else if (low === PORT_8255_CONTROL) self.printer.writeControl(value, time);
@@ -949,6 +950,10 @@
 
     setPrinterCarbonColor(color) {
       return this.printer.setCarbonColor(color);
+    }
+
+    setPrinterConnectionProfile(id) {
+      return this.printer.setConnectionProfile(id);
     }
 
     advancePrinterPaper(dx = 0, dy = 0) {

@@ -7,7 +7,9 @@
   const PRINTER_SPEED_STORAGE_KEY = 'didaktik-d80.bt100-speed';
   const PRINTER_COLOR_STORAGE_KEY = 'didaktik-d80.bt100-color';
   const PRINTER_DARKNESS_STORAGE_KEY = 'didaktik-d80.bt100-darkness';
+  const PRINTER_DARKNESS_VARIABILITY_STORAGE_KEY = 'didaktik-d80.bt100-darkness-variability';
   const PRINTER_DOT_SIZE_STORAGE_KEY = 'didaktik-d80.bt100-dot-size';
+  const PRINTER_NOTCH_SIZE_STORAGE_KEY = 'didaktik-d80.bt100-notch-size';
   const PRINTER_RANDOM_OFFSET_STORAGE_KEY = 'didaktik-d80.bt100-random-offset';
   const PRINTER_RANDOM_DOTS_STORAGE_KEY = 'didaktik-d80.bt100-random-dots';
   const PRINTER_CONNECTION_STORAGE_KEY = 'didaktik-d80.bt100-connection';
@@ -36,8 +38,10 @@
     stampKey: '',
     stamps: [],
     darkness: 75,
-    dotSize: 220,
-    randomOffset: 13,
+    darknessVariability: 33,
+    dotSize: 185,
+    notchSize: 20,
+    randomOffset: 11,
     randomDots: true
   };
 
@@ -108,8 +112,16 @@
     return Math.max(0.4, Math.min(1, printerView.darkness / 100));
   }
 
+  function printerDotDarknessVariabilityRatio() {
+    return Math.max(0, Math.min(1, printerView.darknessVariability / 100));
+  }
+
   function printerDotSizeRatio() {
     return Math.max(0.4, Math.min(2.6, printerView.dotSize / 100));
+  }
+
+  function printerNotchSizeRatio() {
+    return Math.max(0, Math.min(1, printerView.notchSize / 100));
   }
 
   function printerRandomOffsetRatio() {
@@ -143,11 +155,16 @@
     return { geometry, previewContext: preview.getContext('2d') };
   }
 
-  function createDotStamp(index, color, darkness, dotSize, randomized, pitch) {
+  function createDotStamp(index, color, darkness, darknessVariability, dotSize, randomized, pitch) {
     const palette = printerPalette(color);
     const [r, g, b] = palette.fill;
     const [er, eg, eb] = palette.edge;
     const seed = index + 1;
+    // Use a deterministic per-stamp sample so existing printed dots react
+    // immediately when the variability slider changes. The random mark
+    // variant selects one of these darkness levels independently per strike.
+    const darknessSample = (((seed * 73) % 101) / 50) - 1;
+    const dotDarkness = Math.max(0.04, Math.min(1, darkness * (1 + darknessSample * darknessVariability)));
     const nominalDiameter = pitch * dotSize;
     const sizeVariation = randomized ? 0.94 + (seed % 7) * 0.018 : 1;
     const radius = nominalDiameter * sizeVariation / 2;
@@ -161,7 +178,7 @@
     ctx.translate(center, center);
 
     if (randomized) ctx.rotate((seed % 11) * 0.11);
-    ctx.shadowColor = `rgba(${er}, ${eg}, ${eb}, ${0.12 + darkness * 0.12})`;
+    ctx.shadowColor = `rgba(${er}, ${eg}, ${eb}, ${0.12 + dotDarkness * 0.12})`;
     ctx.shadowBlur = randomized ? 0.7 + (seed % 3) * 0.25 : 0.55;
     ctx.beginPath();
     if (randomized) {
@@ -181,31 +198,30 @@
       ctx.arc(0, 0, radius, 0, Math.PI * 2);
     }
 
-    const shapeOpacity = randomized ? 0.84 + (seed % 6) * 0.027 : 1;
-    const fillAlpha = Math.min(1, darkness * shapeOpacity);
+    const fillAlpha = dotDarkness;
     ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${fillAlpha})`;
     ctx.fill();
     ctx.lineWidth = Math.max(0.4, nominalDiameter * 0.055);
-    ctx.strokeStyle = `rgba(${er}, ${eg}, ${eb}, ${Math.min(0.72, 0.16 + darkness * 0.42)})`;
+    ctx.strokeStyle = `rgba(${er}, ${eg}, ${eb}, ${Math.min(0.72, 0.16 + dotDarkness * 0.42)})`;
     ctx.stroke();
     ctx.shadowBlur = 0;
 
     if (randomized) {
       ctx.beginPath();
       ctx.arc(-radius * 0.22, -radius * 0.24, Math.max(0.45, radius * 0.22), 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(255,255,255,${0.025 + (1 - darkness) * 0.04 + (seed % 4) * 0.006})`;
+      ctx.fillStyle = `rgba(255,255,255,${0.025 + (1 - dotDarkness) * 0.04 + (seed % 4) * 0.006})`;
       ctx.fill();
     }
     return stamp;
   }
 
-  function ensurePrinterStamps(color, darkness, dotSize, randomized, pitch) {
-    const count = randomized ? 20 : 1;
-    const key = `${color}:${darkness}:${dotSize}:${randomized ? 1 : 0}:${pitch}`;
+  function ensurePrinterStamps(color, darkness, darknessVariability, dotSize, randomized, pitch) {
+    const count = randomized || darknessVariability > 0 ? 20 : 1;
+    const key = `${color}:${darkness}:${darknessVariability}:${dotSize}:${randomized ? 1 : 0}:${pitch}`;
     if (printerView.stampKey === key && printerView.stamps.length === count) return;
     printerView.stamps = Array.from(
       { length: count },
-      (_, index) => createDotStamp(index, color, darkness, dotSize, randomized, pitch)
+      (_, index) => createDotStamp(index, color, darkness, darknessVariability, dotSize, randomized, pitch)
     );
     printerView.stampKey = key;
   }
@@ -228,11 +244,13 @@
     ensurePrinterStamps(
       mark.color || status.carbonColor,
       printerDarknessMultiplier(),
+      printerDotDarknessVariabilityRatio(),
       printerDotSizeRatio(),
       randomized,
       geometry.pitch
     );
-    const variant = randomized ? (Number(mark.variant) || 0) : 0;
+    const varyingStamp = randomized || printerView.darknessVariability > 0;
+    const variant = varyingStamp ? (Number(mark.variant) || 0) : 0;
     const stamp = printerView.stamps[variant % printerView.stamps.length];
     const jitterX = Number.isFinite(mark.jitterX)
       ? mark.jitterX
@@ -241,13 +259,17 @@
       ? mark.jitterY
       : Number.isFinite(mark.dy) ? Math.max(-1, Math.min(1, mark.dy / 0.12)) : 0;
     const randomOffset = printerRandomOffsetRatio();
-    const dx = jitterX * randomOffset;
+    const direction = Number(mark.dir) < 0 ? -1 : 1;
+    // The notch value is the total registration difference between opposite
+    // carriage directions, expressed as a fraction of one printer pitch.
+    const notchOffset = direction * printerNotchSizeRatio() * 0.5;
+    const dx = jitterX * randomOffset + notchOffset;
     const dy = jitterY * randomOffset;
     const ctx = printerView.fullContext;
     const x = ((geometry.leftMarginDots + status.paperShiftX + mark.x + dx) * geometry.pitch) - stamp.width / 2;
     const y = ((geometry.topMarginDots + status.paperShiftY + mark.y + dy) * geometry.pitch) - stamp.height / 2;
     ctx.save();
-    ctx.globalAlpha = randomized ? (mark.opacity || 0.88) : 1;
+    ctx.globalAlpha = 1;
     ctx.drawImage(stamp, x, y);
     ctx.restore();
   }
@@ -297,8 +319,12 @@
     byId('printerSpeed').value = String(printer.speedFactor);
     byId('printerDarkness').value = String(printerView.darkness);
     byId('printerDarknessValue').textContent = `${printerView.darkness}%`;
+    byId('printerDarknessVariability').value = String(printerView.darknessVariability);
+    byId('printerDarknessVariabilityValue').textContent = `${printerView.darknessVariability}%`;
     byId('printerDotSize').value = String(printerView.dotSize);
     byId('printerDotSizeValue').textContent = `${printerView.dotSize}%`;
+    byId('printerNotchSize').value = String(printerView.notchSize);
+    byId('printerNotchSizeValue').textContent = `${printerView.notchSize}%`;
     byId('printerRandomOffset').value = String(printerView.randomOffset);
     byId('printerRandomOffsetValue').textContent = `±${printerView.randomOffset}%`;
     byId('printerRandomDots').checked = printerView.randomDots;
@@ -1331,9 +1357,23 @@
       renderPrinterPanel();
     });
 
+    byId('printerDarknessVariability').addEventListener('input', event => {
+      printerView.darknessVariability = Math.max(0, Math.min(100, Number(event.target.value) || 0));
+      localStorage.setItem(PRINTER_DARKNESS_VARIABILITY_STORAGE_KEY, String(printerView.darknessVariability));
+      invalidatePrinterPreview();
+      renderPrinterPanel();
+    });
+
     byId('printerDotSize').addEventListener('input', event => {
-      printerView.dotSize = Math.max(40, Math.min(260, Number(event.target.value) || 220));
+      printerView.dotSize = Math.max(40, Math.min(260, Number(event.target.value) || 185));
       localStorage.setItem(PRINTER_DOT_SIZE_STORAGE_KEY, String(printerView.dotSize));
+      invalidatePrinterPreview();
+      renderPrinterPanel();
+    });
+
+    byId('printerNotchSize').addEventListener('input', event => {
+      printerView.notchSize = Math.max(0, Math.min(100, Number(event.target.value) || 0));
+      localStorage.setItem(PRINTER_NOTCH_SIZE_STORAGE_KEY, String(printerView.notchSize));
       invalidatePrinterPreview();
       renderPrinterPanel();
     });
@@ -1415,11 +1455,19 @@
       const printerSpeed = PRINTER_SPEED_OPTIONS.includes(storedPrinterSpeed) ? storedPrinterSpeed : 1;
       const printerColor = localStorage.getItem(PRINTER_COLOR_STORAGE_KEY) === 'blue' ? 'blue' : 'black';
       const printerDarkness = Math.max(40, Math.min(100, Number(localStorage.getItem(PRINTER_DARKNESS_STORAGE_KEY)) || 75));
-      const printerDotSize = Math.max(40, Math.min(260, Number(localStorage.getItem(PRINTER_DOT_SIZE_STORAGE_KEY)) || 220));
+      const storedDarknessVariabilityValue = localStorage.getItem(PRINTER_DARKNESS_VARIABILITY_STORAGE_KEY);
+      const storedDarknessVariability = storedDarknessVariabilityValue === null ? NaN : Number(storedDarknessVariabilityValue);
+      const printerDarknessVariability = Number.isFinite(storedDarknessVariability)
+        ? Math.max(0, Math.min(100, storedDarknessVariability)) : 33;
+      const printerDotSize = Math.max(40, Math.min(260, Number(localStorage.getItem(PRINTER_DOT_SIZE_STORAGE_KEY)) || 185));
+      const storedNotchSizeValue = localStorage.getItem(PRINTER_NOTCH_SIZE_STORAGE_KEY);
+      const storedNotchSize = storedNotchSizeValue === null ? NaN : Number(storedNotchSizeValue);
+      const printerNotchSize = Number.isFinite(storedNotchSize)
+        ? Math.max(0, Math.min(100, storedNotchSize)) : 20;
       const storedRandomOffsetValue = localStorage.getItem(PRINTER_RANDOM_OFFSET_STORAGE_KEY);
       const storedRandomOffset = storedRandomOffsetValue === null ? NaN : Number(storedRandomOffsetValue);
       const printerRandomOffset = Number.isFinite(storedRandomOffset)
-        ? Math.max(0, Math.min(50, storedRandomOffset)) : 13;
+        ? Math.max(0, Math.min(50, storedRandomOffset)) : 11;
       const storedRandomDots = localStorage.getItem(PRINTER_RANDOM_DOTS_STORAGE_KEY);
       const printerRandomDots = storedRandomDots === null ? true : storedRandomDots === '1';
       const storedPrinterConnection = localStorage.getItem(PRINTER_CONNECTION_STORAGE_KEY);
@@ -1433,8 +1481,12 @@
       byId('printerColor').value = printerColor;
       byId('printerDarkness').value = String(printerDarkness);
       byId('printerDarknessValue').textContent = `${printerDarkness}%`;
+      byId('printerDarknessVariability').value = String(printerDarknessVariability);
+      byId('printerDarknessVariabilityValue').textContent = `${printerDarknessVariability}%`;
       byId('printerDotSize').value = String(printerDotSize);
       byId('printerDotSizeValue').textContent = `${printerDotSize}%`;
+      byId('printerNotchSize').value = String(printerNotchSize);
+      byId('printerNotchSizeValue').textContent = `${printerNotchSize}%`;
       byId('printerRandomOffset').value = String(printerRandomOffset);
       byId('printerRandomOffsetValue').textContent = `±${printerRandomOffset}%`;
       byId('printerRandomDots').checked = printerRandomDots;
@@ -1442,7 +1494,9 @@
       byId('mouseSensitivity').value = String(mouseSensitivity);
       byId('mouseSensitivityValue').textContent = `${mouseSensitivity}%`;
       printerView.darkness = printerDarkness;
+      printerView.darknessVariability = printerDarknessVariability;
       printerView.dotSize = printerDotSize;
+      printerView.notchSize = printerNotchSize;
       printerView.randomOffset = printerRandomOffset;
       printerView.randomDots = printerRandomDots;
       emulator = await window.createDidaktikD80({

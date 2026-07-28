@@ -246,3 +246,8 @@ D80_BROWSER_TEST=1 ./verify.sh
 ## Screen scaling
 
 The emulator display uses browser resampling rather than nearest-neighbour scaling. QAOP renders the 272 logical screen rows in a 544-row backing canvas; resampling combines each pair cleanly and avoids prominent uneven scanlines at non-integer window sizes. The optional QAOP CRT distortion is disabled for this standalone application.
+
+
+### BT-100 paper rendering
+
+The retained printer page has live controls for dot darkness, individual-dot darkness variability, dot size, bidirectional notch registration, random positional offset, and randomized versus uniform rounded dot shapes. The defaults are 75%, 33%, 185%, 20%, ±11%, and randomized dots enabled.

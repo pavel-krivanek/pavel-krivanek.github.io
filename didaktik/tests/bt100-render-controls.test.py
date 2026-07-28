@@ -91,7 +91,9 @@ with sync_playwright() as playwright:
       return {
         image: document.getElementById('printerPreview').toDataURL(),
         randomDots: document.getElementById('printerRandomDots').checked,
+        darknessVariability: document.getElementById('printerDarknessVariabilityValue').textContent,
         dotSize: document.getElementById('printerDotSizeValue').textContent,
+        notchSize: document.getElementById('printerNotchSizeValue').textContent,
         randomOffset: document.getElementById('printerRandomOffsetValue').textContent,
         darkness: document.getElementById('printerDarknessValue').textContent,
         connection: document.getElementById('printerConnection').value,
@@ -100,9 +102,11 @@ with sync_playwright() as playwright:
       };
     }""")
     assert initial['randomDots'] is True
-    assert initial['dotSize'] == '220%'
-    assert initial['randomOffset'] == '±13%'
     assert initial['darkness'] == '75%'
+    assert initial['darknessVariability'] == '33%'
+    assert initial['dotSize'] == '185%'
+    assert initial['notchSize'] == '20%'
+    assert initial['randomOffset'] == '±11%'
     assert initial['connection'] == 'didaktik-ab'
     assert initial['connectionOptions'] == 5
     assert 'PA4' in initial['connectionHelp'] and 'PB0' in initial['connectionHelp']
@@ -116,13 +120,16 @@ with sync_playwright() as playwright:
         return document.getElementById('printerPreview').toDataURL();
       };
       const darknessImage = await changeRange('printerDarkness', 40);
+      const variabilityImage = await changeRange('printerDarknessVariability', 80);
       const sizeImage = await changeRange('printerDotSize', 100);
+      const notchImage = await changeRange('printerNotchSize', 60);
       const offsetImage = await changeRange('printerRandomOffset', 50);
       const randomDots = document.getElementById('printerRandomDots');
       randomDots.checked = false;
       randomDots.dispatchEvent(new Event('change', { bubbles: true }));
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       const roundedImage = document.getElementById('printerPreview').toDataURL();
+      const uniformRoundedImage = await changeRange('printerDarknessVariability', 0);
       const connection = document.getElementById('printerConnection');
       connection.value = 'ur4-c';
       connection.dispatchEvent(new Event('change', { bubbles: true }));
@@ -130,15 +137,22 @@ with sync_playwright() as playwright:
       const connectionStatus = didaktikD80.getStatus().printer;
       return {
         darknessImageChanged: darknessImage !== initialImage,
-        sizeImageChanged: sizeImage !== darknessImage,
-        offsetImageChanged: offsetImage !== sizeImage,
+        variabilityImageChanged: variabilityImage !== darknessImage,
+        sizeImageChanged: sizeImage !== variabilityImage,
+        notchImageChanged: notchImage !== sizeImage,
+        offsetImageChanged: offsetImage !== notchImage,
         roundedImageChanged: roundedImage !== offsetImage,
+        roundedVariabilityChanged: uniformRoundedImage !== roundedImage,
         darknessValue: document.getElementById('printerDarknessValue').textContent,
+        variabilityValue: document.getElementById('printerDarknessVariabilityValue').textContent,
         sizeValue: document.getElementById('printerDotSizeValue').textContent,
+        notchValue: document.getElementById('printerNotchSizeValue').textContent,
         offsetValue: document.getElementById('printerRandomOffsetValue').textContent,
         randomDotsChecked: randomDots.checked,
         storedDarkness: localStorage.getItem('didaktik-d80.bt100-darkness'),
+        storedVariability: localStorage.getItem('didaktik-d80.bt100-darkness-variability'),
         storedSize: localStorage.getItem('didaktik-d80.bt100-dot-size'),
+        storedNotch: localStorage.getItem('didaktik-d80.bt100-notch-size'),
         storedOffset: localStorage.getItem('didaktik-d80.bt100-random-offset'),
         storedRandomDots: localStorage.getItem('didaktik-d80.bt100-random-dots'),
         connectionValue: connection.value,
@@ -150,15 +164,22 @@ with sync_playwright() as playwright:
     }""", initial['image'])
 
     assert result['darknessImageChanged']
+    assert result['variabilityImageChanged']
     assert result['sizeImageChanged']
+    assert result['notchImageChanged']
     assert result['offsetImageChanged']
     assert result['roundedImageChanged']
+    assert result['roundedVariabilityChanged']
     assert result['darknessValue'] == '40%'
+    assert result['variabilityValue'] == '0%'
     assert result['sizeValue'] == '100%'
+    assert result['notchValue'] == '60%'
     assert result['offsetValue'] == '±50%'
     assert result['randomDotsChecked'] is False
     assert result['storedDarkness'] == '40'
+    assert result['storedVariability'] == '0'
     assert result['storedSize'] == '100'
+    assert result['storedNotch'] == '60'
     assert result['storedOffset'] == '50'
     assert result['storedRandomDots'] == '0'
     assert result['connectionValue'] == 'ur4-c'

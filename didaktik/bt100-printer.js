@@ -395,6 +395,7 @@
       const variant = Math.floor(Math.random() * 20) % 20;
       const jitterX = Math.random() * 2 - 1;
       const jitterY = Math.random() * 2 - 1;
+      const darknessJitter = Math.random() * 2 - 1;
       this.printedDots.push({
         x,
         y,
@@ -406,6 +407,7 @@
         // immediately when the visual setting changes.
         jitterX,
         jitterY,
+        darknessJitter,
         // Legacy fields preserve compatibility with older page renderers.
         dx: jitterX * 0.13,
         dy: jitterY * 0.12,

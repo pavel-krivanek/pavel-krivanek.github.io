@@ -470,16 +470,17 @@ with sync_playwright() as playwright:
     assert bt100['printer']['headX'] == 0
     assert bt100['printer']['motorDirection'] == 0
     assert bt100['printer']['portBOutput'] & 0x0f == 0x0d
-    expected_row_sizes = {'2': 6, '4': 2, '6': 2, '8': 2, '10': 2, '12': 6}
+    expected_row_sizes = {'1': 6, '2': 2, '3': 2, '4': 2, '5': 2, '6': 6}
     assert {key: len(value) for key, value in bt100['rows'].items()} == expected_row_sizes
     # Adjacent dots within one raster row remain one encoder pitch apart.
     for values in bt100['rows'].values():
         for left, right in zip(values, values[1:]):
             assert 0.90 < right - left < 1.10
-    # Opposite-direction rows retain the real finite-notch offset, around half
-    # a pitch, but must never jump by a whole microcolumn.
-    for first, second in [('2', '12'), ('4', '6'), ('8', '10')]:
+    # Opposite directions observe opposite edges of the mechanical notch.
+    # Their registration difference follows the configured notch width.
+    expected_offset = bt100['printer']['notchSize'] / 100.0
+    for first, second in [('1', '6'), ('2', '3'), ('4', '5')]:
         for left, right in zip(bt100['rows'][first], bt100['rows'][second]):
-            assert 0.35 < abs(left - right) < 0.65
+            assert abs(abs(left - right) - expected_offset) < 0.20
     assert not page_errors and not console_errors
     browser.close()

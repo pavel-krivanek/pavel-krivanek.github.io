@@ -948,6 +948,10 @@
       return this.printer.setSpeedFactor(value);
     }
 
+    setPrinterNotchSize(value) {
+      return this.printer.setNotchSize(value);
+    }
+
     setPrinterCarbonColor(color) {
       return this.printer.setCarbonColor(color);
     }

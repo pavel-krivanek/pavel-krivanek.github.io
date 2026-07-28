@@ -316,12 +316,39 @@ function readBytes(controller, count) {
   assert.equal(printer.buildPortAValue() & 0x40, 0x00);
   printer.headPosition = 20.1;
   assert.equal(printer.buildPortAValue() & 0x40, 0x40);
-  printer.headPosition = 20.5;
+  printer.headPosition = 20.9;
   assert.equal(printer.buildPortAValue() & 0x40, 0x00);
   printer.headPosition = 40.1;
   assert.equal(printer.buildPortAValue() & 0x40, 0x40);
   printer.headPosition = 41.1;
   assert.equal(printer.buildPortAValue() & 0x40, 0x00);
+})();
+
+
+(function bt100HighResolutionMechanicalGridPreservesLongTimedMoves() {
+  const printer = new context.DidaktikD80Internals.BT100Printer(() => {});
+  assert.equal(printer.internalStepsPerPitch, 65536);
+  assert.equal(printer.pageWidthDots, 512);
+  assert.equal(printer.legacyRasterWidthDots, 480);
+  assert.equal(printer.carriageRunout, 16);
+
+  printer.headPosition = 12.345678;
+  assert.ok(Math.abs(printer.headPosition - 12.345678) <= 1 / printer.internalStepsPerPitch);
+  assert.equal(printer.headSubsteps, Math.round(12.345678 * 65536));
+
+  printer.resetHead();
+  printer.setSpeedFactor(1);
+  const period = printer.effectiveSpeedProfile().headPeriodCycles;
+  printer.writePortB(0x09, 0); // establish carriage-right motor output
+  printer.readPortA(period * 1.75);
+  assert.ok(Math.abs(printer.headPosition - 1.75) <= 1 / printer.internalStepsPerPitch,
+    `full elapsed interval was not integrated: ${printer.headPosition}`);
+
+  const initialized = new context.DidaktikD80Internals.BT100Printer(() => {});
+  initialized.setConnectionProfile('ur4-c');
+  initialized.writeControl(0x9a, 0);
+  initialized.writePortC(0xff, 100); // BT-BCS idle output after PPI initialization
+  assert.equal(initialized.dotCount, 0, 'initial idle level must not create a needle strike');
 })();
 
 (function bt100DocumentedConnectionProfiles() {
@@ -525,7 +552,7 @@ function readBytes(controller, count) {
   for (const frameCycles of [69888, 70908]) {
     printer.setFrameCycles(frameCycles);
     const profile = printer.effectiveSpeedProfile();
-    const seconds = profile.headPeriodCycles * printer.pageWidthDots / (frameCycles * 50);
+    const seconds = profile.headPeriodCycles * printer.legacyRasterWidthDots / (frameCycles * 50);
     assert.ok(Math.abs(seconds - 6) < 1e-9, `full-row time ${seconds} differs from 6 seconds`);
   }
   printer.setSpeedFactor(2);
@@ -534,6 +561,30 @@ function readBytes(controller, count) {
   assert.equal(printer.speedFactor, 10);
   printer.setSpeedFactor(100);
   assert.equal(printer.speedFactor, 100);
+})();
+
+
+(function bt100NotchSizeIsMechanicalAndDoesNotMoveRetainedDots() {
+  const printer = new context.DidaktikD80Internals.BT100Printer(() => {});
+  assert.equal(printer.getStatus().notchSize, 20);
+  assert.equal(printer.finePulseWidth, 0.80);
+
+  printer.headPosition = 0.50;
+  assert.equal(printer.fineEncoderSignal(), true,
+    '50% phase is in the asserted interval with a 20% optical notch');
+  printer.lastDirection = 1;
+  printer.fireDot();
+  const retainedX = printer.printedDots[0].x;
+
+  printer.setNotchSize(60);
+  assert.equal(printer.fineEncoderSignal(), false,
+    '50% phase is in the cut-out interval with a 60% optical notch');
+  assert.equal(printer.printedDots[0].x, retainedX,
+    'changing notch width must not move an existing strike');
+  assert.equal(printer.getStatus().notchSize, 60);
+  assert.equal(printer.getStatus().finePulseWidth, 0.40);
+  assert.equal(printer.setNotchSize(0).notchSize, 1);
+  assert.equal(printer.setNotchSize(100).notchSize, 99);
 })();
 
 console.log('Controller and machine-profile tests passed.');

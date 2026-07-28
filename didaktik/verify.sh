@@ -17,6 +17,11 @@ python3 tests/keyboard-browser.test.py
 python3 tests/bt100-render-controls.test.py
 python3 tests/bt100-c2-return-browser.test.py
 python3 tests/bt100-i-registration.py
+if [ "${D80_BUSY_TEST:-0}" = "1" ]; then
+  python3 tests/bt100-busy-soft-browser.test.py
+else
+  echo 'Busy soft timing test skipped; run D80_BUSY_TEST=1 ./verify.sh to enable it.'
+fi
 node tests/tap-browser.test.js
 node tests/hex-viewer.test.js
 python3 tests/dom-bindings.test.py

@@ -139,7 +139,10 @@ with sync_playwright() as playwright:
       const darknessImage = await changeRange('printerDarkness', 40);
       const variabilityImage = await changeRange('printerDarknessVariability', 80);
       const sizeImage = await changeRange('printerDotSize', 100);
+      const beforeNotchX = didaktikD80.printer.printedDots[0].x;
       const notchImage = await changeRange('printerNotchSize', 60);
+      const afterNotchX = didaktikD80.printer.printedDots[0].x;
+      const notchStatus = didaktikD80.getStatus().printer;
       const offsetImage = await changeRange('printerRandomOffset', 50);
       const randomDots = document.getElementById('printerRandomDots');
       randomDots.checked = false;
@@ -158,7 +161,10 @@ with sync_playwright() as playwright:
         darknessImageChanged: darknessImage !== inkImage,
         variabilityImageChanged: variabilityImage !== darknessImage,
         sizeImageChanged: sizeImage !== variabilityImage,
-        notchImageChanged: notchImage !== sizeImage,
+        notchImageUnchanged: notchImage === sizeImage,
+        existingDotUnchanged: beforeNotchX === afterNotchX,
+        notchStatusSize: notchStatus.notchSize,
+        notchStatusWidth: notchStatus.finePulseWidth,
         offsetImageChanged: offsetImage !== notchImage,
         roundedImageChanged: roundedImage !== offsetImage,
         roundedVariabilityChanged: uniformRoundedImage !== roundedImage,
@@ -191,7 +197,10 @@ with sync_playwright() as playwright:
     assert result['darknessImageChanged']
     assert result['variabilityImageChanged']
     assert result['sizeImageChanged']
-    assert result['notchImageChanged']
+    assert result['notchImageUnchanged']
+    assert result['existingDotUnchanged']
+    assert result['notchStatusSize'] == 60
+    assert abs(result['notchStatusWidth'] - 0.40) < 1e-9
     assert result['offsetImageChanged']
     assert result['roundedImageChanged']
     assert result['roundedVariabilityChanged']

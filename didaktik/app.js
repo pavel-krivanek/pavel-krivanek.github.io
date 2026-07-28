@@ -138,10 +138,6 @@
     return Math.max(0.4, Math.min(2.6, printerView.dotSize / 100));
   }
 
-  function printerNotchSizeRatio() {
-    return Math.max(0, Math.min(1, printerView.notchSize / 100));
-  }
-
   function printerRandomOffsetRatio() {
     return Math.max(0, Math.min(0.5, printerView.randomOffset / 100));
   }
@@ -277,11 +273,9 @@
       ? mark.jitterY
       : Number.isFinite(mark.dy) ? Math.max(-1, Math.min(1, mark.dy / 0.12)) : 0;
     const randomOffset = printerRandomOffsetRatio();
-    const direction = Number(mark.dir) < 0 ? -1 : 1;
-    // The notch value is the total registration difference between opposite
-    // carriage directions, expressed as a fraction of one printer pitch.
-    const notchOffset = direction * printerNotchSizeRatio() * 0.5;
-    const dx = jitterX * randomOffset + notchOffset;
+    // Mechanical notch geometry is already reflected in mark.x at strike
+    // time. The renderer must never move retained dots when the setting changes.
+    const dx = jitterX * randomOffset;
     const dy = jitterY * randomOffset;
     const ctx = printerView.fullContext;
     const x = ((geometry.leftMarginDots + status.paperShiftX + mark.x + dx) * geometry.pitch) - stamp.width / 2;
@@ -344,6 +338,7 @@
     byId('printerDarknessVariabilityValue').textContent = `${printerView.darknessVariability}%`;
     byId('printerDotSize').value = String(printerView.dotSize);
     byId('printerDotSizeValue').textContent = `${printerView.dotSize}%`;
+    if (Number.isFinite(printer.notchSize)) printerView.notchSize = printer.notchSize;
     byId('printerNotchSize').value = String(printerView.notchSize);
     byId('printerNotchSizeValue').textContent = `${printerView.notchSize}%`;
     byId('printerRandomOffset').value = String(printerView.randomOffset);
@@ -1400,9 +1395,11 @@
     });
 
     byId('printerNotchSize').addEventListener('input', event => {
-      printerView.notchSize = Math.max(0, Math.min(100, Number(event.target.value) || 0));
+      printerView.notchSize = Math.max(1, Math.min(99, Number(event.target.value) || 20));
       localStorage.setItem(PRINTER_NOTCH_SIZE_STORAGE_KEY, String(printerView.notchSize));
-      invalidatePrinterPreview();
+      emulator.setPrinterNotchSize(printerView.notchSize);
+      // Existing marks retain their recorded mechanical positions. Only
+      // subsequent encoder transitions and strikes use the new notch width.
       renderPrinterPanel();
     });
 
@@ -1494,7 +1491,7 @@
       const storedNotchSizeValue = localStorage.getItem(PRINTER_NOTCH_SIZE_STORAGE_KEY);
       const storedNotchSize = storedNotchSizeValue === null ? NaN : Number(storedNotchSizeValue);
       const printerNotchSize = Number.isFinite(storedNotchSize)
-        ? Math.max(0, Math.min(100, storedNotchSize)) : 20;
+        ? Math.max(1, Math.min(99, storedNotchSize)) : 20;
       const storedRandomOffsetValue = localStorage.getItem(PRINTER_RANDOM_OFFSET_STORAGE_KEY);
       const storedRandomOffset = storedRandomOffsetValue === null ? NaN : Number(storedRandomOffsetValue);
       const printerRandomOffset = Number.isFinite(storedRandomOffset)
@@ -1547,6 +1544,7 @@
       mouseEnabled = false;
       emulator.setPrinterConnectionProfile(printerConnection);
       emulator.setPrinterSpeedFactor(printerSpeed);
+      emulator.setPrinterNotchSize(printerNotchSize);
       emulator.setPrinterCarbonColor(legacyPrinterColor);
       emulator.onChange(render);
       setSnapEnabled(false);

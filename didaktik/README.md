@@ -141,11 +141,11 @@ The new **BT-100** tab emulates the optional Didaktik 8255 parallel path as a de
 - the **Connection** selector covers the five preserved DESKTOP BT-100 profiles (`A,B`, `C,B`, `C-1`, `C-2`, and `C-3`), remembers the selection, and keeps `A,B` as the default;
 - the BT-100 handshake follows the real software on the supplied Kompakt disk (`BT1`/`BT2`);
 - PA5 reports every carriage-gear notch, PA6 reports the deeper notch at each twentieth position, and PA7 is the left/home detector;
-- head motion is bidirectional and the rendered dots include a small left/right positional bias that mimics the notch-width asymmetry of the real carriage encoder;
-- a large A4-like page preview is rendered with 480 printable dot columns, visible margins and slightly irregular carbon-paper dots;
+- head motion is bidirectional and the configurable carriage-notch width changes the fine-encoder pulse geometry used by printer software;
+- a large A4-like page preview is rendered with a 512-column high-resolution surface; the original 480-position raster remains the mechanical timing reference;
 - the tab provides paper change, manual head reset, paper shifting, carbon-paper colour selection, speed selection and browser printing / PDF export;
 - dot darkness, size and maximum random offset are adjustable and redraw the complete current page immediately;
-- dot size is expressed relative to the nominal 480-column pixel pitch (`100%` equals one pitch), and randomized irregular dots are enabled by default but can be replaced with uniform rounded dots.
+- dot size is expressed relative to one nominal optical pitch (`100%` equals one pitch), and randomized irregular dots are enabled by default but can be replaced with uniform rounded dots.
 - **Print / save as PDF** opens a self-contained Blob preview, waits for the A4 image to decode, and then opens the browser print dialog; it no longer leaves an unusable `about:blank` tab.
 
 The five connection choices are wiring profiles rather than different printer mechanisms:
@@ -167,11 +167,14 @@ The page bitmap exported as PNG is borderless. The on-screen preview still has a
 A Spectrum `LLIST` is deliberately not aligned like a direct `LPRINT` string. The ROM formatter reserves a line-number field before each listed BASIC line. Thus a listed `10 PRINT "ahoj"` starts to the right of a later direct `LPRINT "10 PRINT ""ahoj"""`; this is formatter output, not lost encoder pulses.
 
 
-`LPRINT "I"` is used as the carriage-registration test. Its top and bottom bars contain six adjacent dots, while four middle rows contain a two-dot vertical stem and alternate carriage direction. The raw V1.1 return scan numbers encoder intervals in reverse order: a strike made while travelling toward home in interval `N` belongs to visual microcolumn `N-1`. Earlier builds rendered the raw carriage coordinate and therefore shifted every return raster by almost one complete dot pitch. The standalone printer module now applies this interval-to-column conversion and leaves the finite-notch timing itself untouched. Opposite-direction rows retain an approximately half-pitch physical registration difference, but no whole-column jump.
+`LPRINT "I"` is used as the standard A/B carriage-registration test. Its top and bottom bars contain six adjacent dots, while four middle rows contain a two-dot vertical stem and alternate carriage direction. The BT1/Desktop driver family numbers the return optical interval as visual column `N-1`; the C-2/UR-4 Busy soft family uses the opposite convention, with `N-1` on the outward scan and `N` on return. The printer model applies the convention belonging to the selected connection/driver profile. This preserves the established BT1 output while preventing the approximately two-dot alternating-row split in Busy soft's 512/1024-dot routines.
 
-The printer software waits for both edges of every encoder pulse. Desktop's full-width path performs one initial `PA5|PA6` synchronization cycle and then 480 complete PA5 cycles, one per raster bit. The BT-BCS C-2 alignment test also waits for a complete `PC7` fine-encoder cycle while returning through logical position zero. The emulator therefore preserves a minimum pulse width at accelerated settings and allows one non-printing carriage pitch beyond both raster edges. Clamping at exactly `480.0` hangs Desktop on the final right-side falling edge; clamping at exactly `0.0` leaves PC7 permanently high and hangs BT-BCS on the return to origin. The visible head coordinate remains limited to `0..480` while the internal mechanical coordinate traverses the run-out.
+The printer software waits for both edges of every encoder pulse. Desktop's full-width path performs one initial `PA5|PA6` synchronization cycle and then 480 complete PA5 cycles, one per raster bit. The BT-BCS C-2 alignment test also waits for a complete `PC7` fine-encoder cycle while returning through logical position zero. The emulator therefore preserves a minimum pulse width at accelerated settings and allows sixteen non-printing carriage pitches beyond both raster edges. Clamping at exactly `480.0` hangs Desktop on the final right-side falling edge; clamping at exactly `0.0` leaves PC7 permanently high and hangs BT-BCS on the return to origin. The visible page is 512 columns wide, while the standard Desktop/BT1 timing remains based on 480 optical pitches and the independent internal encoder coordinate traverses the run-out.
 
 PA6 is not a right-edge latch. The attached Desktop source explicitly waits for a complete `PA5|PA6` pulse, and the printer mechanism reports the deeper gear notch every twentieth position through PA6. The emulation now generates that finite marker pulse while keeping the visual dot registration independent of PA6.
+
+
+The mechanical coordinate is represented on a fixed-point grid with **65,536 internal microsteps per optical pitch**. Needle strikes therefore retain the exact sub-pitch position produced by Z80 delay loops, including the half- and quarter-pitch timing used by advanced BT-100 software. Long intervals are integrated in full; no elapsed emulated time is discarded. The first output value after an 8255 mode-set only establishes the electrical state and cannot create a spurious dot.
 
 QAOP reports I/O timestamps as cycle positions inside the current video frame. The BT-100 clock unwraps those values into a continuous mechanical timeline. This is necessary even at authentic speed: otherwise a video-frame boundary between an encoder edge and a needle pulse discards part of the carriage travel and can shift an isolated dot or raster row.
 
@@ -250,4 +253,9 @@ The emulator display uses browser resampling rather than nearest-neighbour scali
 
 ### BT-100 paper rendering
 
-The retained printer page has live controls for arbitrary RGB paper and ink colours, dot darkness, individual-dot darkness variability, dot size, bidirectional notch registration, random positional offset, and randomized versus uniform rounded dot shapes. The defaults are white paper, dark carbon ink, 75% darkness, 33% darkness variability, 110% dot size, 20% notch size, ±11% random offset, and randomized dots enabled.
+The retained printer page has live controls for arbitrary RGB paper and ink colours, dot darkness, individual-dot darkness variability, dot size, mechanical carriage-notch width, random positional offset, and randomized versus uniform rounded dot shapes. The defaults are white paper, dark carbon ink, 75% darkness, 33% darkness variability, 110% dot size, 20% mechanical notch width, ±11% random offset, and randomized dots enabled.
+
+
+### Mechanical notch setting
+
+The notch control now changes the width of the BT-100 carriage encoder pulse itself. Printer drivers therefore observe different fine-encoder edge positions on future carriage passes. Stored strikes retain the physical X coordinate recorded when they were fired; changing the control never repositions an existing dot. The meaningful range is 1–99% of one optical pitch.

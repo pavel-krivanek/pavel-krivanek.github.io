@@ -128,10 +128,16 @@ def main() -> None:
             assert 0.90 < right - left < 1.10, values
 
     offsets: list[float] = []
+    # Opposite directions observe opposite edges of the finite optical
+    # cut-out. Their registration difference follows the configured notch
+    # width rather than a renderer-added displacement.
+    expected_offset = result['status']['notchSize'] / 100.0
     for first, second in [('1', '6'), ('2', '3'), ('4', '5')]:
         for left, right in zip(result['rows'][first], result['rows'][second]):
             offset = abs(left - right)
-            assert 0.35 < offset < 0.65, (first, second, left, right)
+            assert abs(offset - expected_offset) < 0.20, (
+                first, second, left, right, expected_offset
+            )
             offsets.append(offset)
 
     assert block['count'] == 48

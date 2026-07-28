@@ -133,7 +133,7 @@ The parser and UI are isolated in [`tap-browser.js`](tap-browser.js). Small QAOP
 
 ## BT-100 printer tab
 
-The BT-100 mechanical and 8255 peripheral model is isolated in [`bt100-printer.js`](bt100-printer.js). `didaktik-d80.js` only wires that device into the common I/O bus. Visual rendering remains in the standalone UI, including carbon colour, darkness, dot diameter, positional jitter and irregular-versus-rounded dot shape.
+The BT-100 mechanical and 8255 peripheral model is isolated in [`bt100-printer.js`](bt100-printer.js). `didaktik-d80.js` only wires that device into the common I/O bus. Visual rendering remains in the standalone UI, including arbitrary paper and ink colours, darkness, dot diameter, positional jitter and irregular-versus-rounded dot shape.
 
 The new **BT-100** tab emulates the optional Didaktik 8255 parallel path as a dedicated BT-100 printer:
 
@@ -250,4 +250,4 @@ The emulator display uses browser resampling rather than nearest-neighbour scali
 
 ### BT-100 paper rendering
 
-The retained printer page has live controls for dot darkness, individual-dot darkness variability, dot size, bidirectional notch registration, random positional offset, and randomized versus uniform rounded dot shapes. The defaults are 75%, 33%, 185%, 20%, ±11%, and randomized dots enabled.
+The retained printer page has live controls for arbitrary RGB paper and ink colours, dot darkness, individual-dot darkness variability, dot size, bidirectional notch registration, random positional offset, and randomized versus uniform rounded dot shapes. The defaults are white paper, dark carbon ink, 75% darkness, 33% darkness variability, 110% dot size, 20% notch size, ±11% random offset, and randomized dots enabled.

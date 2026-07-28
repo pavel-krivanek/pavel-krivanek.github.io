@@ -93,6 +93,10 @@ with sync_playwright() as playwright:
         randomDots: document.getElementById('printerRandomDots').checked,
         darknessVariability: document.getElementById('printerDarknessVariabilityValue').textContent,
         dotSize: document.getElementById('printerDotSizeValue').textContent,
+        paperColor: document.getElementById('printerPaperColor').value,
+        paperColorText: document.getElementById('printerPaperColorValue').textContent,
+        inkColor: document.getElementById('printerInkColor').value,
+        inkColorText: document.getElementById('printerInkColorValue').textContent,
         notchSize: document.getElementById('printerNotchSizeValue').textContent,
         randomOffset: document.getElementById('printerRandomOffsetValue').textContent,
         darkness: document.getElementById('printerDarknessValue').textContent,
@@ -104,7 +108,11 @@ with sync_playwright() as playwright:
     assert initial['randomDots'] is True
     assert initial['darkness'] == '75%'
     assert initial['darknessVariability'] == '33%'
-    assert initial['dotSize'] == '185%'
+    assert initial['dotSize'] == '110%'
+    assert initial['paperColor'] == '#ffffff'
+    assert initial['paperColorText'] == '#FFFFFF'
+    assert initial['inkColor'] == '#3f3936'
+    assert initial['inkColorText'] == '#3F3936'
     assert initial['notchSize'] == '20%'
     assert initial['randomOffset'] == '±11%'
     assert initial['connection'] == 'didaktik-ab'
@@ -119,6 +127,15 @@ with sync_playwright() as playwright:
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         return document.getElementById('printerPreview').toDataURL();
       };
+      const changeColor = async (id, value) => {
+        const input = document.getElementById(id);
+        input.value = value;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        return document.getElementById('printerPreview').toDataURL();
+      };
+      const paperImage = await changeColor('printerPaperColor', '#f0d090');
+      const inkImage = await changeColor('printerInkColor', '#c02080');
       const darknessImage = await changeRange('printerDarkness', 40);
       const variabilityImage = await changeRange('printerDarknessVariability', 80);
       const sizeImage = await changeRange('printerDotSize', 100);
@@ -136,19 +153,25 @@ with sync_playwright() as playwright:
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       const connectionStatus = didaktikD80.getStatus().printer;
       return {
-        darknessImageChanged: darknessImage !== initialImage,
+        paperImageChanged: paperImage !== initialImage,
+        inkImageChanged: inkImage !== paperImage,
+        darknessImageChanged: darknessImage !== inkImage,
         variabilityImageChanged: variabilityImage !== darknessImage,
         sizeImageChanged: sizeImage !== variabilityImage,
         notchImageChanged: notchImage !== sizeImage,
         offsetImageChanged: offsetImage !== notchImage,
         roundedImageChanged: roundedImage !== offsetImage,
         roundedVariabilityChanged: uniformRoundedImage !== roundedImage,
+        paperColor: document.getElementById('printerPaperColor').value,
+        inkColor: document.getElementById('printerInkColor').value,
         darknessValue: document.getElementById('printerDarknessValue').textContent,
         variabilityValue: document.getElementById('printerDarknessVariabilityValue').textContent,
         sizeValue: document.getElementById('printerDotSizeValue').textContent,
         notchValue: document.getElementById('printerNotchSizeValue').textContent,
         offsetValue: document.getElementById('printerRandomOffsetValue').textContent,
         randomDotsChecked: randomDots.checked,
+        storedPaperColor: localStorage.getItem('didaktik-d80.bt100-paper-color'),
+        storedInkColor: localStorage.getItem('didaktik-d80.bt100-ink-color'),
         storedDarkness: localStorage.getItem('didaktik-d80.bt100-darkness'),
         storedVariability: localStorage.getItem('didaktik-d80.bt100-darkness-variability'),
         storedSize: localStorage.getItem('didaktik-d80.bt100-dot-size'),
@@ -163,6 +186,8 @@ with sync_playwright() as playwright:
       };
     }""", initial['image'])
 
+    assert result['paperImageChanged']
+    assert result['inkImageChanged']
     assert result['darknessImageChanged']
     assert result['variabilityImageChanged']
     assert result['sizeImageChanged']
@@ -170,12 +195,16 @@ with sync_playwright() as playwright:
     assert result['offsetImageChanged']
     assert result['roundedImageChanged']
     assert result['roundedVariabilityChanged']
+    assert result['paperColor'] == '#f0d090'
+    assert result['inkColor'] == '#c02080'
     assert result['darknessValue'] == '40%'
     assert result['variabilityValue'] == '0%'
     assert result['sizeValue'] == '100%'
     assert result['notchValue'] == '60%'
     assert result['offsetValue'] == '±50%'
     assert result['randomDotsChecked'] is False
+    assert result['storedPaperColor'] == '#f0d090'
+    assert result['storedInkColor'] == '#c02080'
     assert result['storedDarkness'] == '40'
     assert result['storedVariability'] == '0'
     assert result['storedSize'] == '100'

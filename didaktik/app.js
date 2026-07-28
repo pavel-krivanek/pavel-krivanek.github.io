@@ -5,7 +5,9 @@
   const MACHINE_STORAGE_KEY = 'didaktik-d80.machine';
   const MELODIK_STORAGE_KEY = 'didaktik-d80.melodik';
   const PRINTER_SPEED_STORAGE_KEY = 'didaktik-d80.bt100-speed';
-  const PRINTER_COLOR_STORAGE_KEY = 'didaktik-d80.bt100-color';
+  const LEGACY_PRINTER_COLOR_STORAGE_KEY = 'didaktik-d80.bt100-color';
+  const PRINTER_PAPER_COLOR_STORAGE_KEY = 'didaktik-d80.bt100-paper-color';
+  const PRINTER_INK_COLOR_STORAGE_KEY = 'didaktik-d80.bt100-ink-color';
   const PRINTER_DARKNESS_STORAGE_KEY = 'didaktik-d80.bt100-darkness';
   const PRINTER_DARKNESS_VARIABILITY_STORAGE_KEY = 'didaktik-d80.bt100-darkness-variability';
   const PRINTER_DOT_SIZE_STORAGE_KEY = 'didaktik-d80.bt100-dot-size';
@@ -37,9 +39,11 @@
     pageSerial: -1,
     stampKey: '',
     stamps: [],
+    paperColor: '#ffffff',
+    inkColor: '#3f3936',
     darkness: 75,
     darknessVariability: 33,
-    dotSize: 185,
+    dotSize: 110,
     notchSize: 20,
     randomOffset: 11,
     randomDots: true
@@ -101,10 +105,24 @@
     };
   }
 
-  function printerPalette(color) {
-    return color === 'blue'
-      ? { fill: [38, 58, 122], edge: [22, 36, 84], paper: '#ffffff' }
-      : { fill: [63, 57, 54], edge: [39, 35, 33], paper: '#ffffff' };
+  function normalizePrinterColor(value, fallback) {
+    const color = String(value || '').trim();
+    return /^#[0-9a-f]{6}$/i.test(color) ? color.toLowerCase() : fallback;
+  }
+
+  function printerRgb(color) {
+    const normalized = normalizePrinterColor(color, '#000000');
+    return [
+      Number.parseInt(normalized.slice(1, 3), 16),
+      Number.parseInt(normalized.slice(3, 5), 16),
+      Number.parseInt(normalized.slice(5, 7), 16)
+    ];
+  }
+
+  function printerPalette(color = printerView.inkColor) {
+    const fill = printerRgb(color);
+    const edge = fill.map(component => Math.round(component * 0.62));
+    return { fill, edge, paper: printerView.paperColor };
   }
 
 
@@ -231,9 +249,9 @@
     if (!surface) return null;
     const { geometry } = surface;
     const ctx = printerView.fullContext;
-    const palette = printerPalette(status.carbonColor);
+    const palette = printerPalette(printerView.inkColor);
     ctx.save();
-    ctx.fillStyle = palette.paper;
+    ctx.fillStyle = printerView.paperColor;
     ctx.fillRect(0, 0, geometry.width, geometry.height);
     ctx.restore();
     return surface;
@@ -242,7 +260,7 @@
   function drawPrintedDot(mark, status, geometry) {
     const randomized = printerView.randomDots;
     ensurePrinterStamps(
-      mark.color || status.carbonColor,
+      printerView.inkColor,
       printerDarknessMultiplier(),
       printerDotDarknessVariabilityRatio(),
       printerDotSizeRatio(),
@@ -315,7 +333,10 @@
     byId('printerDots').textContent = printer.dotCount.toLocaleString();
     byId('printerConnection').value = printer.connectionId;
     byId('printerConnectionHelp').textContent = printer.connectionDescription;
-    byId('printerColor').value = printer.carbonColor;
+    byId('printerPaperColor').value = printerView.paperColor;
+    byId('printerPaperColorValue').textContent = printerView.paperColor.toUpperCase();
+    byId('printerInkColor').value = printerView.inkColor;
+    byId('printerInkColorValue').textContent = printerView.inkColor.toUpperCase();
     byId('printerSpeed').value = String(printer.speedFactor);
     byId('printerDarkness').value = String(printerView.darkness);
     byId('printerDarknessValue').textContent = `${printerView.darkness}%`;
@@ -1332,13 +1353,20 @@
       setNotice(`BT-100 connection set to ${printer.connectionLabel} (${printer.connectionShortLabel}).`);
     });
 
-    byId('printerColor').addEventListener('change', event => {
-      const color = event.target.value === 'blue' ? 'blue' : 'black';
-      emulator.setPrinterCarbonColor(color);
-      localStorage.setItem(PRINTER_COLOR_STORAGE_KEY, color);
+    byId('printerPaperColor').addEventListener('input', event => {
+      printerView.paperColor = normalizePrinterColor(event.target.value, '#ffffff');
+      localStorage.setItem(PRINTER_PAPER_COLOR_STORAGE_KEY, printerView.paperColor);
       invalidatePrinterPreview();
       renderPrinterPanel();
-      setNotice(`BT-100 carbon paper color set to ${color}.`);
+      setNotice(`BT-100 paper color set to ${printerView.paperColor.toUpperCase()}.`);
+    });
+
+    byId('printerInkColor').addEventListener('input', event => {
+      printerView.inkColor = normalizePrinterColor(event.target.value, '#3f3936');
+      localStorage.setItem(PRINTER_INK_COLOR_STORAGE_KEY, printerView.inkColor);
+      invalidatePrinterPreview();
+      renderPrinterPanel();
+      setNotice(`BT-100 ink color set to ${printerView.inkColor.toUpperCase()}.`);
     });
 
     byId('printerSpeed').addEventListener('change', event => {
@@ -1365,7 +1393,7 @@
     });
 
     byId('printerDotSize').addEventListener('input', event => {
-      printerView.dotSize = Math.max(40, Math.min(260, Number(event.target.value) || 185));
+      printerView.dotSize = Math.max(40, Math.min(260, Number(event.target.value) || 110));
       localStorage.setItem(PRINTER_DOT_SIZE_STORAGE_KEY, String(printerView.dotSize));
       invalidatePrinterPreview();
       renderPrinterPanel();
@@ -1453,13 +1481,16 @@
       const melodikEnabled = localStorage.getItem(MELODIK_STORAGE_KEY) === '1';
       const storedPrinterSpeed = Number(localStorage.getItem(PRINTER_SPEED_STORAGE_KEY));
       const printerSpeed = PRINTER_SPEED_OPTIONS.includes(storedPrinterSpeed) ? storedPrinterSpeed : 1;
-      const printerColor = localStorage.getItem(PRINTER_COLOR_STORAGE_KEY) === 'blue' ? 'blue' : 'black';
+      const legacyPrinterColor = localStorage.getItem(LEGACY_PRINTER_COLOR_STORAGE_KEY) === 'blue' ? 'blue' : 'black';
+      const defaultInkColor = legacyPrinterColor === 'blue' ? '#263a7a' : '#3f3936';
+      const printerPaperColor = normalizePrinterColor(localStorage.getItem(PRINTER_PAPER_COLOR_STORAGE_KEY), '#ffffff');
+      const printerInkColor = normalizePrinterColor(localStorage.getItem(PRINTER_INK_COLOR_STORAGE_KEY), defaultInkColor);
       const printerDarkness = Math.max(40, Math.min(100, Number(localStorage.getItem(PRINTER_DARKNESS_STORAGE_KEY)) || 75));
       const storedDarknessVariabilityValue = localStorage.getItem(PRINTER_DARKNESS_VARIABILITY_STORAGE_KEY);
       const storedDarknessVariability = storedDarknessVariabilityValue === null ? NaN : Number(storedDarknessVariabilityValue);
       const printerDarknessVariability = Number.isFinite(storedDarknessVariability)
         ? Math.max(0, Math.min(100, storedDarknessVariability)) : 33;
-      const printerDotSize = Math.max(40, Math.min(260, Number(localStorage.getItem(PRINTER_DOT_SIZE_STORAGE_KEY)) || 185));
+      const printerDotSize = Math.max(40, Math.min(260, Number(localStorage.getItem(PRINTER_DOT_SIZE_STORAGE_KEY)) || 110));
       const storedNotchSizeValue = localStorage.getItem(PRINTER_NOTCH_SIZE_STORAGE_KEY);
       const storedNotchSize = storedNotchSizeValue === null ? NaN : Number(storedNotchSizeValue);
       const printerNotchSize = Number.isFinite(storedNotchSize)
@@ -1478,7 +1509,10 @@
       byId('melodikControl').checked = melodikEnabled;
       byId('printerConnection').value = printerConnection;
       byId('printerSpeed').value = String(printerSpeed);
-      byId('printerColor').value = printerColor;
+      byId('printerPaperColor').value = printerPaperColor;
+      byId('printerPaperColorValue').textContent = printerPaperColor.toUpperCase();
+      byId('printerInkColor').value = printerInkColor;
+      byId('printerInkColorValue').textContent = printerInkColor.toUpperCase();
       byId('printerDarkness').value = String(printerDarkness);
       byId('printerDarknessValue').textContent = `${printerDarkness}%`;
       byId('printerDarknessVariability').value = String(printerDarknessVariability);
@@ -1493,6 +1527,8 @@
       byId('mouseEnabled').checked = false;
       byId('mouseSensitivity').value = String(mouseSensitivity);
       byId('mouseSensitivityValue').textContent = `${mouseSensitivity}%`;
+      printerView.paperColor = printerPaperColor;
+      printerView.inkColor = printerInkColor;
       printerView.darkness = printerDarkness;
       printerView.darknessVariability = printerDarknessVariability;
       printerView.dotSize = printerDotSize;
@@ -1511,7 +1547,7 @@
       mouseEnabled = false;
       emulator.setPrinterConnectionProfile(printerConnection);
       emulator.setPrinterSpeedFactor(printerSpeed);
-      emulator.setPrinterCarbonColor(printerColor);
+      emulator.setPrinterCarbonColor(legacyPrinterColor);
       emulator.onChange(render);
       setSnapEnabled(false);
       setNotice('MDOS is initializing the two-drive subsystem…');

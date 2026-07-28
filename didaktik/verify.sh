@@ -16,6 +16,7 @@ node tests/keyboard-layout.test.js
 python3 tests/keyboard-browser.test.py
 python3 tests/bt100-render-controls.test.py
 python3 tests/bt100-c2-return-browser.test.py
+python3 tests/bt100-i-registration.py
 node tests/tap-browser.test.js
 node tests/hex-viewer.test.js
 python3 tests/dom-bindings.test.py

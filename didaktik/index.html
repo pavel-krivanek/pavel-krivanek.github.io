@@ -226,11 +226,19 @@
 </select>
 <span class="printer-control-help" id="printerConnectionHelp">PA4 paper, PA5 fine, PA6 coarse, PA7 home; PB0–PB3 control.</span>
 </label>
-<label>Carbon paper color
-            <select id="printerColor">
-<option value="black">Black</option>
-<option value="blue">Blue</option>
-</select>
+<label>Paper color
+            <div class="printer-color-row">
+<input id="printerPaperColor" type="color" value="#ffffff" aria-label="BT-100 paper color"/>
+<output for="printerPaperColor" id="printerPaperColorValue">#FFFFFF</output>
+</div>
+<span class="printer-control-help">Any RGB paper color may be selected.</span>
+</label>
+<label>Ink color
+            <div class="printer-color-row">
+<input id="printerInkColor" type="color" value="#3f3936" aria-label="BT-100 ink color"/>
+<output for="printerInkColor" id="printerInkColorValue">#3F3936</output>
+</div>
+<span class="printer-control-help">Any RGB ink color may be selected.</span>
 </label>
 <label>Mechanical speed
             <select id="printerSpeed">
@@ -254,8 +262,8 @@
 </label>
 <label>Dot size
             <div class="printer-range-row">
-<input id="printerDotSize" max="260" min="40" step="5" type="range" value="185"/>
-<output for="printerDotSize" id="printerDotSizeValue">185%</output>
+<input id="printerDotSize" max="260" min="40" step="5" type="range" value="110"/>
+<output for="printerDotSize" id="printerDotSizeValue">110%</output>
 </div>
 <span class="printer-control-help">100% equals one nominal BT-100 pixel pitch.</span>
 </label>

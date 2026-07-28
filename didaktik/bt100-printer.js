@@ -116,6 +116,12 @@
       this.lastDirection = 1;
       this.paperTravel = 0;
       this.paperEncoderPhase = 0.58;
+      // The paper encoder has two fine periods per printable bitmap-row
+      // pitch. BT1 therefore consumes two paper pulses between successive
+      // raster rows. Keep headY in printable-dot coordinates rather than raw
+      // encoder periods so horizontal and vertical bitmap pixels have the
+      // same visual pitch.
+      this.paperPitchPerEncoderPeriod = 0.5;
       this.paperSignal = false;
       this.lastFireBit = 0;
       this.lastMechanicalTime = null;
@@ -339,8 +345,11 @@
         // Count completed high slots. The driver stops at the falling edge.
         const completed = Math.floor(total) - (oldSignal && !newSignal ? 0 : 0);
         if ((oldSignal && !newSignal) || completed > 0) {
-          const lines = Math.max(1, completed);
-          this.headY = Math.min(this.pageHeightDots - 1, this.headY + lines);
+          const encoderPeriods = Math.max(1, completed);
+          this.headY = Math.min(
+            this.pageHeightDots - 1,
+            this.headY + encoderPeriods * this.paperPitchPerEncoderPeriod
+          );
         }
         this.paperSignal = newSignal;
       }

@@ -94,12 +94,33 @@ def main() -> None:
           for (const values of Object.values(rows)) values.sort((a, b) => a - b);
           return { rows, status: didaktikD80.getStatus().printer };
         }""")
+
+        # Spectrum block-graphics key 7 is character code 135 (128 + 7).
+        # Its occupied 8x8 cell is the user's direct square-pixel regression.
+        page.evaluate("didaktikD80.newPrinterPage()")
+        call(0xfaf2, 135, timeout=30_000)
+        call(0xfaf2, 13, timeout=240_000)
+        block = page.evaluate("""() => {
+          const dots = didaktikD80.printer.printedDots;
+          const xs = dots.map(dot => dot.x);
+          const ys = dots.map(dot => dot.y);
+          return {
+            count: dots.length,
+            minX: Math.min(...xs), maxX: Math.max(...xs),
+            minY: Math.min(...ys), maxY: Math.max(...ys),
+            rows: [...new Set(ys)].sort((a, b) => a - b)
+          };
+        }""")
         browser.close()
 
     assert not errors, errors
     assert result['status']['dotCount'] == 20
     assert result['status']['headX'] == 0
-    expected = {'2': 6, '4': 2, '6': 2, '8': 2, '10': 2, '12': 6}
+    # BT1 advances the paper through two optical encoder periods per
+    # printable raster row. The emulator converts each period to half a
+    # bitmap-dot pitch, so the six glyph rows occupy y=1..6 rather than being
+    # stretched to y=2,4,..12.
+    expected = {'1': 6, '2': 2, '3': 2, '4': 2, '5': 2, '6': 6}
     assert {key: len(value) for key, value in result['rows'].items()} == expected
 
     for values in result['rows'].values():
@@ -107,16 +128,23 @@ def main() -> None:
             assert 0.90 < right - left < 1.10, values
 
     offsets: list[float] = []
-    for first, second in [('2', '12'), ('4', '6'), ('8', '10')]:
+    for first, second in [('1', '6'), ('2', '3'), ('4', '5')]:
         for left, right in zip(result['rows'][first], result['rows'][second]):
             offset = abs(left - right)
             assert 0.35 < offset < 0.65, (first, second, left, right)
             offsets.append(offset)
 
+    assert block['count'] == 48
+    assert block['rows'] == list(range(8))
+    block_width = block['maxX'] - block['minX']
+    block_height = block['maxY'] - block['minY']
+    assert 0.90 < block_height / block_width < 1.10, block
+
     print(
-        'BT-100 LPRINT "I" registration passed: '
-        f'{result["status"]["dotCount"]} dots, '
-        f'opposite-scan offset {min(offsets):.3f}-{max(offsets):.3f} pitch.'
+        'BT-100 registration passed: '
+        f'LPRINT "I" has {result["status"]["dotCount"]} dots and '
+        f'opposite-scan offset {min(offsets):.3f}-{max(offsets):.3f} pitch; '
+        f'graphics key 7 aspect {block_width:.3f} x {block_height:.3f} pitches.'
     )
 
 

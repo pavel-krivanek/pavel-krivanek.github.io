@@ -1,0 +1,3330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Counterfire v062</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080b0c;color:#d8d3aa;font-family:Arial,Helvetica,sans-serif}
+body{display:block}
+#frame{position:fixed;inset:0;width:100vw;height:100vh;background:#315a64;box-shadow:none}
+#frame.local2{width:100vw;height:100vh}
+#game{display:block;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges;background:#315a64}
+#badge{display:none!important}
+#error{display:none;position:fixed;inset:18px;z-index:20;overflow:auto;padding:14px;background:#2b1010;color:#ffd4d4;border:2px solid #bd5555;white-space:pre-wrap;font:13px/1.4 monospace}
+</style>
+</head>
+<body>
+<div id="frame">
+  <canvas id="game" width="480" height="300"></canvas>
+  <div id="badge"></div>
+</div>
+<div id="error"></div>
+<script>
+(function(){
+'use strict';
+
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+const frameEl=document.getElementById('frame');
+const badgeEl=document.getElementById('badge');
+const errorBox=document.getElementById('error');
+if(!ctx) throw new Error('Canvas 2D is not available.');
+ctx.imageSmoothingEnabled=false;
+
+window.addEventListener('error',e=>{
+  errorBox.style.display='block';
+  errorBox.textContent='JavaScript error:\n'+(e.message||e.error||'unknown')+'\n'+(e.filename||'')+':'+(e.lineno||'?')+':'+(e.colno||'?');
+});
+window.addEventListener('unhandledrejection',e=>{
+  errorBox.style.display='block';
+  errorBox.textContent='Unhandled promise error:\n'+String(e.reason||e);
+});
+
+const SCALE=1.5;
+const LW=320,LH=200,LVIEW_H=158,LHUD_Y=158;
+const BASE_W=Math.round(LW*SCALE),BASE_H=Math.round(LH*SCALE),BASE_VIEW_H=Math.round(LVIEW_H*SCALE);
+const HUD_PIXEL_H=BASE_H-BASE_VIEW_H,NEAR=2.5;
+const FOV=63*Math.PI/180;
+let W=BASE_W,H=BASE_H,VIEW_H=BASE_VIEW_H,HUD_Y=BASE_VIEW_H;
+let FOCAL=(W*0.5)/Math.tan(FOV*0.5);
+let frame=null,pixels=null,zbuf=null;
+const keys=Object.create(null);
+let gameMode=null; // null = mode menu, 'single' = player vs AI, 'local2' = two humans
+// CPU reinforcement pressure is independent from the per-side handicaps.
+// KEY 7 changes how many computer vehicles may be active simultaneously.
+const CPU_MAX_ACTIVE_OPTIONS=[1,2,3,4];
+let cpuMaxActiveOptionIndex=0;
+function cpuMaxActive(){return CPU_MAX_ACTIVE_OPTIONS[cpuMaxActiveOptionIndex];}
+function cycleCpuMaxActive(dir=1){
+  const n=CPU_MAX_ACTIVE_OPTIONS.length;cpuMaxActiveOptionIndex=(cpuMaxActiveOptionIndex+dir+n)%n;
+}
+const CPU_SPAWN_DELAY=20;
+let cpuSpawnTimer=0,cpuFirstSpawn=true,cpuSpawnSerial=0;
+
+// Per-side handicap controls. Vulnerability is the fraction of incoming vehicle
+// damage applied. Vehicle sets define how many complete Tank/Helicopter/ASV/Jeep
+// sets are available to that side; Infinity keeps the classic unlimited-pool option.
+const VULNERABILITY_OPTIONS=[.20,.50,1.00];
+const VEHICLE_SET_OPTIONS=[1,2,4,Infinity];
+const vulnerabilityOptionIndex=[2,2];
+const vehicleSetOptionIndex=[1,1];
+function teamVulnerability(team){return VULNERABILITY_OPTIONS[vulnerabilityOptionIndex[team]??2];}
+function configuredVehicleStock(team){return VEHICLE_SET_OPTIONS[vehicleSetOptionIndex[team]??1];}
+function cycleTeamVulnerability(team,dir=1){
+  const n=VULNERABILITY_OPTIONS.length;vulnerabilityOptionIndex[team]=(vulnerabilityOptionIndex[team]+dir+n)%n;
+}
+function cycleTeamVehicleSets(team,dir=1){
+  const n=VEHICLE_SET_OPTIONS.length;vehicleSetOptionIndex[team]=(vehicleSetOptionIndex[team]+dir+n)%n;
+}
+function vulnerabilityLabel(team){return Math.round(teamVulnerability(team)*100)+'%';}
+function vehicleSetsLabel(team){const n=configuredVehicleStock(team);return Number.isFinite(n)?String(n):'UNLIMITED';}
+
+// ---------------------------------------------------------------------------
+// Keyboard/browser-shortcut protection
+// ---------------------------------------------------------------------------
+// Browser-reserved shortcuts cannot be guaranteed from ordinary page JS.  We
+// therefore combine three layers: preventDefault on every game-control chord,
+// Keyboard Lock when Chromium exposes it, and a beforeunload guard so Ctrl+W
+// becomes a confirmation rather than an instant lost match.
+const GAME_KEY_CODES=new Set([
+  'KeyW','KeyA','KeyS','KeyD','KeyQ','KeyE','KeyC','KeyZ','KeyX','KeyR',
+  'ControlLeft','ControlRight','ShiftLeft','ShiftRight','Space','Tab','Enter',
+  'Backspace','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Comma','Period',
+  'Slash','Quote','Semicolon','NumpadEnter','Numpad8','Numpad2','Numpad5','Numpad1'
+]);
+function suppressBrowserShortcut(e){
+  if(gameMode===null)return;
+  if(GAME_KEY_CODES.has(e.code)||e.ctrlKey||e.metaKey){
+    e.preventDefault();
+    e.stopPropagation();
+  }
+}
+async function tryKeyboardLock(){
+  if(gameMode!=='local2'||!navigator.keyboard||!navigator.keyboard.lock)return;
+  try{
+    await navigator.keyboard.lock(Array.from(GAME_KEY_CODES).concat(['Escape']));
+  }catch(_){ /* fallback layers above remain active */ }
+}
+async function enterGameFullscreenAndLock(){
+  // Local two-player is where Ctrl+W is a natural key chord (ground fire + W).
+  // Fullscreen gives Keyboard Lock the best chance to capture it.
+  if(gameMode!=='local2'){return;}
+  try{
+    if(!document.fullscreenElement&&document.documentElement.requestFullscreen){
+      await document.documentElement.requestFullscreen({navigationUI:'hide'});
+    }
+  }catch(_){ /* fullscreen may be denied, continue with beforeunload guard */ }
+  await tryKeyboardLock();
+}
+function releaseKeyboardLock(){
+  try{if(navigator.keyboard&&navigator.keyboard.unlock)navigator.keyboard.unlock();}catch(_){}
+}
+window.addEventListener('beforeunload',e=>{
+  if(gameMode===null)return;
+  e.preventDefault();
+  e.returnValue='';
+});
+document.addEventListener('fullscreenchange',()=>{if(document.fullscreenElement)tryKeyboardLock();});
+
+// ---------------------------------------------------------------------------
+// Procedural Web Audio: no external files, suitable for file:// execution.
+// ---------------------------------------------------------------------------
+const audio={ctx:null,master:null,sfx:null,music:null,compressor:null,noiseBuffer:null,voices:[null,null],lastExplosion:-99};
+function audioPanForX(x){return clamp((x/world.width)*1.35-.675,-.72,.72);}
+function teamPan(team){return gameMode==='local2'?(team===0?-.38:.38):(team===0?-.12:.18);}
+function ensureAudio(){
+  if(audio.ctx){if(audio.ctx.state==='suspended')audio.ctx.resume().catch(()=>{});return audio.ctx;}
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;
+  const ac=new AC();audio.ctx=ac;
+  // Engines/music stay moderate, while combat effects get a hotter dedicated bus.
+  // A compressor catches the peaks so cannon shots/explosions can have real weight
+  // without hard-clipping the browser output.
+  audio.compressor=ac.createDynamicsCompressor();
+  audio.compressor.threshold.value=-14;
+  audio.compressor.knee.value=8;
+  audio.compressor.ratio.value=5.5;
+  audio.compressor.attack.value=.0015;
+  audio.compressor.release.value=.24;
+  audio.compressor.connect(ac.destination);
+  audio.master=ac.createGain();audio.master.gain.value=.90;audio.master.connect(audio.compressor);
+  audio.sfx=ac.createGain();audio.sfx.gain.value=1.42;audio.sfx.connect(audio.master);
+  audio.music=ac.createGain();audio.music.gain.value=.58;audio.music.connect(audio.master);
+  const len=Math.max(1,Math.floor(ac.sampleRate*1.5));
+  audio.noiseBuffer=ac.createBuffer(1,len,ac.sampleRate);
+  const d=audio.noiseBuffer.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
+  return ac;
+}
+function makeStereoPan(pan,dest){
+  const ac=audio.ctx;if(!ac)return null;
+  if(ac.createStereoPanner){const p=ac.createStereoPanner();p.pan.value=clamp(pan,-1,1);p.connect(dest);return p;}
+  return dest;
+}
+function playTone(freq,dur=.12,gain=.08,type='sine',pan=0,when=0,endFreq=null,dest=null){
+  const ac=ensureAudio();if(!ac)return;
+  const t=ac.currentTime+Math.max(0,when),o=ac.createOscillator(),g=ac.createGain();
+  o.type=type;o.frequency.setValueAtTime(Math.max(20,freq),t);
+  if(endFreq)o.frequency.exponentialRampToValueAtTime(Math.max(20,endFreq),t+dur);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0002,gain),t+.008);
+  g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  const out=makeStereoPan(pan,dest||audio.sfx);o.connect(g);g.connect(out||dest||audio.sfx);o.start(t);o.stop(t+dur+.03);
+}
+function playNoise(dur=.15,gain=.08,filterHz=700,pan=0,when=0,dest=null){
+  const ac=ensureAudio();if(!ac||!audio.noiseBuffer)return;
+  const t=ac.currentTime+Math.max(0,when),src=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();
+  src.buffer=audio.noiseBuffer;src.loop=true;f.type='lowpass';f.frequency.value=filterHz;
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0002,gain),t+.006);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  const out=makeStereoPan(pan,dest||audio.sfx);src.connect(f);f.connect(g);g.connect(out||dest||audio.sfx);src.start(t);src.stop(t+dur+.03);
+}
+function playFilteredNoise(dur=.15,gain=.10,freq=1000,type='bandpass',q=1.0,pan=0,when=0){
+  const ac=ensureAudio();if(!ac||!audio.noiseBuffer)return;
+  const t=ac.currentTime+Math.max(0,when),src=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();
+  src.buffer=audio.noiseBuffer;src.loop=true;f.type=type;f.frequency.value=freq;f.Q.value=q;
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0002,gain),t+.0025);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  const out=makeStereoPan(pan,audio.sfx);src.connect(f);f.connect(g);g.connect(out||audio.sfx);src.start(t);src.stop(t+dur+.025);
+}
+function playCombatTone(freq,dur,gain,type='sine',pan=0,when=0,endFreq=null){
+  const ac=ensureAudio();if(!ac)return;
+  const t=ac.currentTime+Math.max(0,when),o=ac.createOscillator(),g=ac.createGain(),sh=ac.createWaveShaper();
+  const curve=new Float32Array(257);for(let i=0;i<curve.length;i++){const x=i/(curve.length-1)*2-1;curve[i]=Math.tanh(x*2.4);}
+  sh.curve=curve;sh.oversample='2x';o.type=type;o.frequency.setValueAtTime(Math.max(20,freq),t);
+  if(endFreq)o.frequency.exponentialRampToValueAtTime(Math.max(20,endFreq),t+dur);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(Math.max(.0002,gain),t+.0025);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  const out=makeStereoPan(pan,audio.sfx);o.connect(sh);sh.connect(g);g.connect(out||audio.sfx);o.start(t);o.stop(t+dur+.03);
+}
+function playMelody(kind,team=0,x=null){
+  const ac=ensureAudio();if(!ac)return;
+  const pan=x===null?teamPan(team):audioPanForX(x);
+  const tunes={
+    reveal:[[392,.12],[523,.12],[659,.18]],
+    pickup:[[523,.09],[659,.09],[784,.10],[1047,.18]],
+    capture:[[523,.13],[659,.13],[784,.13],[1047,.18],[1319,.28]],
+    resupply:[[659,.09],[880,.15]],
+    deploy:[[220,.07],[330,.09],[440,.12]],
+    return:[[440,.08],[330,.08],[220,.12]]
+  };
+  let t=0;for(const [f,d] of (tunes[kind]||[])){playTone(f,d,.055,'triangle',pan,t,null,audio.music);t+=d*.82;}
+}
+function playPoolSound(team,kind){
+  const pan=teamPan(team);playNoise(.38,.045,420,pan,0);playTone(kind==='return'?120:85,.34,.05,'sawtooth',pan,0,kind==='return'?70:150);
+  playMelody(kind,team);
+}
+function playWeaponSound(v,mode){
+  const pan=teamPan(v.team);
+  if(v.type==='tank'){
+    // Cannon: hard supersonic crack + mid-pressure blast + short sub-bass recoil.
+    playFilteredNoise(.035,.48,3600,'bandpass',1.35,pan,0);
+    playFilteredNoise(.115,.33,950,'bandpass',.75,pan,.004);
+    playFilteredNoise(.20,.22,310,'lowpass',.7,pan,.012);
+    playCombatTone(112,.22,.34,'sine',pan,0,43);
+    playCombatTone(55,.31,.24,'triangle',pan,.006,25);
+  }else if(v.type==='asv'){
+    // Rocket launch: ignition crack followed by a broad, lower roaring exhaust.
+    playFilteredNoise(.045,.34,2900,'bandpass',1.0,pan,0);
+    playFilteredNoise(.34,.28,760,'lowpass',.65,pan,.006);
+    playFilteredNoise(.23,.20,1550,'bandpass',.8,pan,.018);
+    playCombatTone(125,.27,.22,'sawtooth',pan,0,58);
+    playCombatTone(49,.34,.17,'sine',pan,.012,27);
+  }else if(v.type==='helicopter'){
+    if(v.selectedWeapon==='rocket'){
+      playFilteredNoise(.04,.29,3100,'bandpass',1.0,pan,0);
+      playFilteredNoise(.27,.24,980,'lowpass',.7,pan,.006);
+      playCombatTone(145,.22,.18,'sawtooth',pan,0,62);
+    }else{
+      playFilteredNoise(.026,.30,4300,'bandpass',1.55,pan,0);
+      playFilteredNoise(.075,.17,1200,'bandpass',.9,pan,.002);
+      playCombatTone(170,.09,.13,'triangle',pan,0,72);
+    }
+  }else if(v.type==='jeep'){
+    // Grenade launcher: compact mechanical thump rather than a tiny click.
+    playFilteredNoise(.035,.24,2200,'bandpass',1.2,pan,0);
+    playFilteredNoise(.11,.17,620,'lowpass',.7,pan,.004);
+    playCombatTone(105,.13,.18,'triangle',pan,0,48);
+  }
+  if(mode==='air')playTone(760,.06,.035,'sine',pan,.012,1040);
+}
+function playExplosionSound(x,power=1,water=false){
+  const ac=ensureAudio();if(!ac)return;
+  const now=ac.currentTime;if(now-audio.lastExplosion<.025&&power<1.05)return;audio.lastExplosion=now;
+  const pan=audioPanForX(x),p=clamp(power,.60,2.0);
+  const scale=.78+.38*p;
+  // 1) extremely short high/mid pressure crack
+  playFilteredNoise(.026+.012*p,.48*scale,water?2100:4200,'bandpass',1.4,pan,0);
+  playFilteredNoise(.070+.020*p,.32*scale,water?1050:2100,'bandpass',.85,pan,.004);
+  // 2) dense blast body: broad low-passed noise, not merely a click
+  playFilteredNoise(.34+.16*p,.39*scale,water?390:720,'lowpass',.65,pan,.008);
+  playFilteredNoise(.58+.22*p,.25*scale,water?180:330,'lowpass',.70,pan,.018);
+  // 3) pressure-wave pitch sweeps.  These are deliberately strong; the
+  // compressor limits peaks while preserving a much deeper perceived impact.
+  playCombatTone(water?92:104,.36+.13*p,.43*scale,'sine',pan,0,water?31:34);
+  playCombatTone(water?54:62,.62+.18*p,.34*scale,'triangle',pan,.008,22);
+  playCombatTone(34,.82+.18*p,.25*scale,'sine',pan,.018,20);
+  // 4) delayed debris/ground slap and long rumble for major detonations
+  playFilteredNoise(.12+.035*p,.22*scale,1450,'bandpass',.65,pan,.085);
+  if(p>1.05){
+    playFilteredNoise(.85+.20*p,.20*scale,145,'lowpass',.8,pan,.055);
+    playCombatTone(27,.95+.22*p,.19*scale,'triangle',pan,.05,20);
+  }
+  if(p>1.35){
+    playFilteredNoise(.055,.25*scale,3300,'bandpass',1.0,pan,.14);
+    playFilteredNoise(.16,.18*scale,800,'bandpass',.8,pan,.18);
+  }
+}
+function playImpactSound(x){const pan=audioPanForX(x);playFilteredNoise(.032,.095,2800,'bandpass',1.1,pan);playFilteredNoise(.07,.055,620,'lowpass',.7,pan,.003);}
+function playMineSound(v){const pan=teamPan(v.team);playTone(480,.04,.04,'square',pan);playTone(180,.08,.03,'triangle',pan,.04);}
+function playDrownSound(v){const pan=teamPan(v.team);playNoise(.55,.065,500,pan);playTone(145,.55,.055,'sine',pan,0,48);}
+function playTowerSound(t){const pan=audioPanForX(t.x);playFilteredNoise(.025,.19,3900,'bandpass',1.5,pan);playFilteredNoise(.065,.10,980,'bandpass',.9,pan,.002);playCombatTone(155,.075,.09,'triangle',pan,0,72);}
+function stopEngineVoice(team){
+  const v=audio.voices[team];if(!v)return;const ac=audio.ctx;
+  if(ac)v.gain.gain.setTargetAtTime(.0001,ac.currentTime,.04);
+  setTimeout(()=>{for(const n of v.sources){try{n.stop();}catch(_){}}},180);audio.voices[team]=null;
+}
+function createEngineVoice(type,team){
+  const ac=ensureAudio();if(!ac)return null;
+  const pan=makeStereoPan(teamPan(team),audio.master),gain=ac.createGain(),filter=ac.createBiquadFilter();
+  gain.gain.value=.0001;filter.type='lowpass';filter.frequency.value=900;gain.connect(filter);filter.connect(pan||audio.master);
+  const o1=ac.createOscillator(),o2=ac.createOscillator();o1.connect(gain);o2.connect(gain);o1.start();o2.start();
+  const noise=ac.createBufferSource(),ng=ac.createGain(),nf=ac.createBiquadFilter();noise.buffer=audio.noiseBuffer;noise.loop=true;nf.type='lowpass';noise.connect(nf);nf.connect(ng);ng.connect(filter);noise.start();
+  let lfo=null,lfoDepth=null;
+  if(type==='helicopter'){
+    lfo=ac.createOscillator();lfoDepth=ac.createGain();lfo.type='square';lfo.frequency.value=13;lfoDepth.gain.value=.018;lfo.connect(lfoDepth);lfoDepth.connect(ng.gain);lfo.start();
+  }
+  const voice={type,team,gain,filter,o1,o2,noise,ng,nf,lfo,lfoDepth,sources:[o1,o2,noise].concat(lfo?[lfo]:[])};
+  audio.voices[team]=voice;return voice;
+}
+function updateEngineVoice(v,team){
+  if(!audio.ctx)return;
+  const poolState=team===0?pool.mode:cpuPool.mode;
+  const audible=gameMode!==null&&v.alive&&(poolState==='active'||poolState==='deploying'||poolState==='returning');
+  if(!audible){if(audio.voices[team])audio.voices[team].gain.gain.setTargetAtTime(.0001,audio.ctx.currentTime,.08);return;}
+  let voice=audio.voices[team];if(!voice||voice.type!==v.type){stopEngineVoice(team);voice=createEngineVoice(v.type,team);if(!voice)return;}
+  const ac=audio.ctx,t=ac.currentTime;
+  const max=Math.max(1,v.maxForward||1),rpm=clamp(Math.abs(v.speed||0)/max,0,1);
+  let f1=55,f2=28,level=.055,noise=.018,cut=700;
+  if(v.type==='tank'){f1=47+rpm*30;f2=23+rpm*17;level=.067+rpm*.028;noise=.020+rpm*.018;cut=420+rpm*260;voice.o1.type='sawtooth';voice.o2.type='square';}
+  else if(v.type==='asv'){f1=41+rpm*36;f2=82+rpm*50;level=.062+rpm*.032;noise=.022+rpm*.020;cut=500+rpm*330;voice.o1.type='sawtooth';voice.o2.type='triangle';}
+  else if(v.type==='jeep'){f1=82+rpm*92;f2=164+rpm*120;level=.045+rpm*.035;noise=.012+rpm*.014;cut=800+rpm*520;voice.o1.type='sawtooth';voice.o2.type='triangle';}
+  else {f1=88+rpm*24;f2=176+rpm*40;level=.052+rpm*.018;noise=.035+rpm*.018;cut=1100+rpm*550;voice.o1.type='triangle';voice.o2.type='sawtooth';if(voice.lfo)voice.lfo.frequency.setTargetAtTime(12.5+rpm*4.5,t,.06);}
+  voice.o1.frequency.setTargetAtTime(f1,t,.05);voice.o2.frequency.setTargetAtTime(f2,t,.05);
+  voice.ng.gain.setTargetAtTime(noise,t,.06);voice.nf.frequency.setTargetAtTime(cut,t,.08);voice.filter.frequency.setTargetAtTime(cut*1.25,t,.08);
+  voice.gain.gain.setTargetAtTime(level,t,.08);
+}
+function updateAudio(){
+  if(!audio.ctx)return;
+  updateEngineVoice(player,0);
+  updateEngineVoice(cpu,1);
+  if(gameMode===null){for(let i=0;i<2;i++)if(audio.voices[i])audio.voices[i].gain.gain.setTargetAtTime(.0001,audio.ctx.currentTime,.05);}
+}
+function rebuildRenderBuffers(){
+  frame=ctx.createImageData(W,VIEW_H);
+  pixels=frame.data;
+  zbuf=new Float64Array(W*VIEW_H);
+}
+function desiredViewportSize(){
+  const cssW=Math.max(320,window.innerWidth||BASE_W);
+  const cssH=Math.max(200,window.innerHeight||BASE_H);
+  const split=gameMode==='local2';
+  const perViewAspect=(split?cssW*.5:cssW)/cssH;
+  const baseAspect=BASE_W/BASE_H;
+  let w=BASE_W,h=BASE_H;
+  // Never shrink the original software-rendered viewport. Expand one dimension
+  // so the backing canvas has the same aspect ratio as its CSS display area.
+  // CSS can then fill the browser without geometrically stretching the image.
+  if(perViewAspect>=baseAspect)w=Math.max(BASE_W,Math.round(BASE_H*perViewAspect));
+  else h=Math.max(BASE_H,Math.round(BASE_W/perViewAspect));
+  return {w,h};
+}
+function applyCanvasLayout(){
+  const split=gameMode==='local2';
+  const size=desiredViewportSize();
+  const changed=W!==size.w||H!==size.h;
+  W=size.w;H=size.h;VIEW_H=Math.max(1,H-HUD_PIXEL_H);HUD_Y=VIEW_H;
+  FOCAL=(W*0.5)/Math.tan(FOV*0.5);
+  const targetW=split?W*2:W,targetH=H;
+  if(canvas.width!==targetW||canvas.height!==targetH){canvas.width=targetW;canvas.height=targetH;ctx.imageSmoothingEnabled=false;}
+  if(changed||!frame)rebuildRenderBuffers();
+  frameEl.classList.toggle('local2',split);
+}
+addEventListener('resize',()=>applyCanvasLayout());
+function startGameMode(mode){
+  gameMode=mode;
+  ensureAudio();
+  if(mode==='local2')enterGameFullscreenAndLock();
+  badgeEl.style.display='none';
+  player.label='P1';
+  cpu.label=mode==='local2'?'P2':'CPU';
+  applyCanvasLayout();
+  reset();
+}
+function returnToModeMenu(){
+  releaseKeyboardLock();
+  if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(()=>{});
+  gameMode=null;
+  badgeEl.style.display='block';
+  applyCanvasLayout();
+  reset();
+}
+addEventListener('keydown',e=>{
+  suppressBrowserShortcut(e);
+  ensureAudio();
+  keys[e.code]=true;
+  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Backspace','NumpadEnter','Tab'].includes(e.code))e.preventDefault();
+  if(pool.mode==='active'&&player.type==='helicopter'&&
+     ((gameMode==='single'&&(e.code==='KeyA'||e.code==='KeyD'))||
+      (gameMode==='local2'&&(e.code==='KeyQ'||e.code==='KeyE'))))e.preventDefault();
+
+  if(gameMode===null){
+    if(e.code==='ArrowLeft'){e.preventDefault();cycleBattlefield(-1);return;}
+    if(e.code==='ArrowRight'||e.code==='KeyM'){e.preventDefault();cycleBattlefield(1);return;}
+    if(e.code==='Digit3'||e.code==='Numpad3'){cycleTeamVulnerability(0);return;}
+    if(e.code==='Digit4'||e.code==='Numpad4'){cycleTeamVehicleSets(0);return;}
+    if(e.code==='Digit5'||e.code==='Numpad5'){cycleTeamVulnerability(1);return;}
+    if(e.code==='Digit6'||e.code==='Numpad6'){cycleTeamVehicleSets(1);return;}
+    if(e.code==='Digit7'||e.code==='Numpad7'){cycleCpuMaxActive();return;}
+    if(e.code==='Digit1'||e.code==='Numpad1'){startGameMode('single');return;}
+    if(e.code==='Digit2'||e.code==='Numpad2'){startGameMode('local2');return;}
+    return;
+  }
+  if(e.code==='Escape'){returnToModeMenu();return;}
+  if(e.code==='KeyR'){ reset(); return; }
+
+  // Motor-pool selection follows each mode's movement keys.
+  if(pool.mode==='select'){
+    const p1Up=gameMode==='single'?(e.code==='ArrowUp'||e.code==='Numpad8'):e.code==='KeyW';
+    const p1Down=gameMode==='single'?(e.code==='ArrowDown'||e.code==='Numpad2'):e.code==='KeyS';
+    if(p1Up){if(!e.repeat)movePoolSelection(0,-1);return;}
+    if(p1Down){if(!e.repeat)movePoolSelection(0,1);return;}
+    const selectFire=gameMode==='local2'?e.code==='ControlLeft':e.code==='Space';
+    if(selectFire){deploySelectedVehicle(0);return;}
+  }
+  if(gameMode==='local2'&&cpuPool.mode==='select'){
+    if(e.code==='ArrowUp'||e.code==='Numpad8'){if(!e.repeat)movePoolSelection(1,-1);return;}
+    if(e.code==='ArrowDown'||e.code==='Numpad2'){if(!e.repeat)movePoolSelection(1,1);return;}
+    if(e.code==='ControlRight'){deploySelectedVehicle(1);return;}
+  }
+
+  if(gameMode==='local2'){
+    if(e.code==='Tab' && pool.mode==='active')tryReturnToPool();
+    if(e.code==='ControlLeft' && pool.mode==='active')fire(player,0,'ground');
+    if(e.code==='ShiftLeft' && pool.mode==='active')fire(player,0,'air');
+    if(e.code==='KeyZ' && pool.mode==='active')layMine(player);
+  }else{
+    if(e.code==='Enter' && pool.mode==='active')tryReturnToPool();
+    if(e.code==='Space' && pool.mode==='active')fire(player,0,'ground');
+    if((e.code==='KeyX'||e.code==='ShiftLeft') && pool.mode==='active')fire(player,0,'air');
+    if(e.code==='KeyS' && pool.mode==='active')layMine(player);
+  }
+  if(e.code==='KeyC' && pool.mode==='active' && player.type==='helicopter')player.selectedWeapon=player.selectedWeapon==='shell'?'rocket':'shell';
+
+  if(gameMode!=='local2')return;
+  if((e.code==='Backspace'||e.code==='NumpadEnter') && cpuPool.mode==='active')tryP2ReturnToPool();
+  if(e.code==='ControlRight' && cpuPool.mode==='active')fire(cpu,1,'ground');
+  if(e.code==='ShiftRight' && cpuPool.mode==='active')fire(cpu,1,'air');
+  if((e.code==='Quote'||e.code==='Numpad5') && cpuPool.mode==='active' && cpu.type==='helicopter')cpu.selectedWeapon=cpu.selectedWeapon==='shell'?'rocket':'shell';
+  if((e.code==='Semicolon'||e.code==='Numpad1') && cpuPool.mode==='active')layMine(cpu);
+});
+addEventListener('keyup',e=>keys[e.code]=false);
+
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+function norm3(v){const d=Math.hypot(v.x,v.y,v.z)||1;return{x:v.x/d,y:v.y/d,z:v.z/d};}
+function sub3(a,b){return{x:a.x-b.x,y:a.y-b.y,z:a.z-b.z};}
+function dot3(a,b){return a.x*b.x+a.y*b.y+a.z*b.z;}
+function cross3(a,b){return{x:a.y*b.z-a.z*b.y,y:a.z*b.x-a.x*b.z,z:a.x*b.y-a.y*b.x};}
+function avg3(a,b,c){return{x:(a.x+b.x+c.x)/3,y:(a.y+b.y+c.y)/3,z:(a.z+b.z+c.z)/3};}
+
+// ---------------------------------------------------------------------------
+// Battlefields
+// ---------------------------------------------------------------------------
+// Maps are deliberately described in world coordinates instead of being one
+// fixed hard-coded arena.  Classic is retained, while the three larger maps
+// add woods, neutral wall corridors and wider flanking routes.
+const MAPS=[
+  {
+    name:'CLASSIC',width:2400,depth:1700,
+    land:[[1200,850,1080,720],[430,1240,360,270],[1980,500,330,260]],landRects:[],
+    lakes:[[1210,850,375,360]],waterRects:[],
+    bridges:[{x:1150,z:470,w:120,d:760}],bridge:{x:1150,z:470,w:120,d:760},
+    roads:[[390,1320,840,1085],[840,1085,1085,930],[1335,775,1660,610],[1660,610,1980,365]],
+    grass:[[420,420,330,205],[1860,1245,420,245],[470,1325,300,165],[2000,560,250,150]],
+    bases:[[400,1325],[1980,360]],trapdoors:[[400,1218],[1980,500]],
+    depots:[[690,1175,690,1100,-1],[1700,565,1700,640,1]],
+    palms:[[255,320,1],[315,360,.85],[520,520,1.05],[650,420,.9],[1880,1280,1],[1960,1335,.9],[2070,1190,1.1],[2150,940,.9],[700,1450,.95],[2100,650,.85]],
+    rocks:[[760,750,24],[1700,1020,30],[620,980,20]],woods:[],walls:[],fortWalls:[],towers:[]
+  },
+  {
+    // Two separate defended shores joined by two tactical crossings.  This is
+    // intentionally not a central-lake island: the broad river cuts the map in
+    // half and each bridgehead can be attacked, defended or bypassed by air.
+    name:'BORDER WOODS',width:3400,depth:2300,
+    land:[],landRects:[[1700,1150,1460,920]],
+    lakes:[],waterRects:[[1700,1120,1460,150]],
+    bridges:[{x:840,z:940,w:120,d:360},{x:2390,z:940,w:120,d:360}],bridge:{x:840,z:940,w:120,d:360},
+    roads:[
+      [520,1900,900,1320],[900,1320,900,900],[900,900,2860,430],
+      [520,1900,2450,1320],[2450,1320,2450,900],[2450,900,2860,430]
+    ],
+    grass:[[620,1660,420,250],[1150,1740,410,260],[2230,560,460,270],[2830,710,330,230],[1650,1820,420,220]],
+    bases:[[520,1900],[2860,400]],trapdoors:[[520,1715],[2860,585]],
+    depots:[[820,1710,820,1625,-1],[2570,595,2570,680,1]],
+    woods:[[520,560,6,5,72],[970,650,5,5,72],[720,1510,5,4,74],[2640,1580,6,5,72],[2860,1330,5,5,72],[2220,520,5,4,72],[1510,1830,5,3,72]],
+    rocks:[[1190,760,25],[2040,1510,28],[2740,890,24],[1450,1640,22]],palms:[],
+    // Fortified bridgeheads leave a clear 130px vehicle gate aligned with each bridge.
+    walls:[
+      [700,1340,820,1340],[980,1340,1100,1340],[700,900,820,900],[980,900,1100,900],
+      [2250,1340,2370,1340],[2530,1340,2650,1340],[2250,900,2370,900],[2530,900,2650,900]
+    ],
+    fortWalls:[
+      [700,1340,700,1450,0],[1100,1340,1100,1450,0],[2250,1340,2250,1450,0],[2650,1340,2650,1450,0],
+      [700,790,700,900,1],[1100,790,1100,900,1],[2250,790,2250,900,1],[2650,790,2650,900,1]
+    ],
+    towers:[[760,1365,0],[1040,1365,0],[2310,1365,0],[2590,1365,0],[760,875,1],[1040,875,1],[2310,875,1],[2590,875,1]]
+  },
+  {
+    // Dry stone country cut by two long water trenches. Four horizontal bridges
+    // and offset wall gates create a true passage/maze battlefield.
+    name:'STONE PASSAGES',width:3600,depth:2500,
+    land:[],landRects:[[1800,1250,1600,1050]],
+    lakes:[],waterRects:[[1260,1250,115,820],[2350,1250,115,820]],
+    bridges:[
+      {x:1110,z:720,w:300,d:110},{x:1110,z:1640,w:300,d:110},
+      {x:2200,z:790,w:300,d:110},{x:2200,z:1580,w:300,d:110}
+    ],bridge:{x:1110,z:720,w:300,d:110},
+    roads:[
+      [520,2100,1000,1695],[1000,1695,1420,1695],[1420,1695,1810,1450],[1810,1450,2500,1635],[2500,1635,3080,420],
+      [520,2100,1000,775],[1000,775,1420,775],[1420,775,1810,1010],[1810,1010,2500,845],[2500,845,3080,420]
+    ],
+    grass:[[600,1940,350,230],[780,520,430,250],[1790,2020,430,230],[2890,630,360,230],[2970,1830,360,230]],
+    bases:[[520,2100],[3080,400]],trapdoors:[[600,1915],[3000,585]],
+    depots:[[820,1900,820,1815,-1],[2780,600,2780,685,1]],
+    woods:[[610,570,4,4,76],[2940,1850,4,4,76],[1710,2050,4,3,76]],
+    rocks:[[960,1120,26],[1600,620,26],[1990,1880,30],[2780,1320,26],[3200,980,24]],palms:[],
+    // Offset gates force a zig-zag route through the central stone works.
+    walls:[
+      [1460,930,1720,930],[1880,930,2160,930],
+      [1460,1240,1590,1240],[1750,1240,2160,1240],
+      [1460,1540,1810,1540],[1970,1540,2160,1540],
+      [970,1060,1130,1060],[1390,1060,1510,1060],
+      [2090,1410,2210,1410],[2490,1410,2660,1410]
+    ],
+    fortWalls:[
+      [1030,650,1030,850,1],[1490,650,1490,850,1],[1030,1570,1030,1770,0],[1490,1570,1490,1770,0],
+      [2120,720,2120,920,1],[2580,720,2580,920,1],[2120,1510,2120,1710,0],[2580,1510,2580,1710,0]
+    ],
+    towers:[[1060,690,1],[1450,690,1],[1060,1730,0],[1450,1730,0],[2160,760,1],[2540,760,1],[2160,1670,0],[2540,1670,0]]
+  },
+  {
+    // Three long land columns separated by deep channels. Four bridges make a
+    // choice of northern/southern routes; dense woods make the direct paths
+    // destructible and the center island becomes a contested staging area.
+    name:'FOREST RUN',width:3800,depth:2600,
+    land:[],landRects:[[900,1300,650,1000],[1900,1300,250,700],[2900,1300,650,1000]],
+    lakes:[],waterRects:[],
+    bridges:[
+      {x:1520,z:820,w:160,d:110},{x:1520,z:1690,w:160,d:110},
+      {x:2120,z:820,w:160,d:110},{x:2120,z:1690,w:160,d:110}
+    ],bridge:{x:1520,z:820,w:160,d:110},
+    roads:[
+      [520,2140,1250,1745],[1250,1745,1600,1745],[1600,1745,1900,1745],[1900,1745,2200,1745],[2200,1745,3070,430],
+      [520,2140,1250,875],[1250,875,1600,875],[1600,875,1900,875],[1900,875,2200,875],[2200,875,3070,430]
+    ],
+    grass:[[600,1950,380,230],[760,650,430,260],[1230,1320,260,360],[1900,1300,220,560],[2600,1780,420,280],[3070,690,360,230]],
+    bases:[[520,2140],[3070,420]],trapdoors:[[520,1955],[3070,605]],
+    depots:[[820,1930,820,1845,-1],[2780,620,2780,705,1]],
+    woods:[[650,600,6,5,72],[930,900,5,6,70],[1040,1540,5,5,72],[1720,1120,4,5,68],[2080,1460,4,5,68],[2660,1700,6,5,72],[3060,1450,5,5,72],[2940,720,5,4,72]],
+    rocks:[[1320,620,24],[1180,1880,28],[1870,650,22],[1960,1980,24],[2470,1100,28],[3250,1770,24]],palms:[],
+    walls:[
+      [1280,760,1500,760],[1700,760,1780,760],[2020,760,2100,760],[2300,760,2520,760],
+      [1280,1840,1500,1840],[1700,1840,1780,1840],[2020,1840,2100,1840],[2300,1840,2520,1840]
+    ],
+    fortWalls:[
+      [1280,760,1280,980,1],[1780,760,1780,980,1],[2020,760,2020,980,1],[2520,760,2520,980,1],
+      [1280,1620,1280,1840,0],[1780,1620,1780,1840,0],[2020,1620,2020,1840,0],[2520,1620,2520,1840,0]
+    ],
+    towers:[[1340,800,1],[1740,800,1],[2060,800,1],[2460,800,1],[1340,1800,0],[1740,1800,0],[2060,1800,0],[2460,1800,0]]
+  }
+];
+let activeMapIndex=0;
+let activeMap=MAPS[activeMapIndex];
+const world={width:activeMap.width,depth:activeMap.depth,lake:{x:0,z:0,w:0,d:0},bridge:{...activeMap.bridge}};
+// The visual map is built from 70x70 large terrain blocks; sand/grass then get
+// split into four 35x35 texture patches. Water depth deliberately follows the
+// large-block grid so the shoreline rule is visually unambiguous.
+const MAP_BLOCK=70;
+const MAP_ORIGIN_X=80,MAP_ORIGIN_Z=80;
+const OUTER_WATER_BLOCKS=4;
+const OUTER_WORLD_MARGIN=MAP_BLOCK*OUTER_WATER_BLOCKS;
+let MAP_GROUND_MAX_X=world.width-80,MAP_GROUND_MAX_Z=world.depth-80;
+let OUTER_MIN_X=MAP_ORIGIN_X-OUTER_WORLD_MARGIN,OUTER_MAX_X=MAP_GROUND_MAX_X+OUTER_WORLD_MARGIN;
+let OUTER_MIN_Z=MAP_ORIGIN_Z-OUTER_WORLD_MARGIN,OUTER_MAX_Z=MAP_GROUND_MAX_Z+OUTER_WORLD_MARGIN;
+function refreshMapBounds(){
+  MAP_GROUND_MAX_X=world.width-80;MAP_GROUND_MAX_Z=world.depth-80;
+  OUTER_MIN_X=MAP_ORIGIN_X-OUTER_WORLD_MARGIN;OUTER_MAX_X=MAP_GROUND_MAX_X+OUTER_WORLD_MARGIN;
+  OUTER_MIN_Z=MAP_ORIGIN_Z-OUTER_WORLD_MARGIN;OUTER_MAX_Z=MAP_GROUND_MAX_Z+OUTER_WORLD_MARGIN;
+  const l=(activeMap.lakes&&activeMap.lakes[0])||null;
+  world.lake=l?{x:l[0]-l[2],z:l[1]-l[3],w:l[2]*2,d:l[3]*2}:{x:0,z:0,w:0,d:0};
+  const firstBridge=(activeMap.bridges&&activeMap.bridges[0])||activeMap.bridge;
+  world.bridge={...firstBridge};
+}
+refreshMapBounds();
+
+// Shared combat-distance ceiling. No direct-fire weapon may travel farther
+// than the defensive towers can engage.
+const MAX_FIRE_RANGE=500;
+const MINE_ARM_DELAY=1.0;
+const AIR_COMBAT_Y=72; // helicopter fuselage / airborne target height
+const DEPOT_RESUPPLY_TIME=1.25;
+const DEPOT_STOP_SPEED=22;
+
+const VEHICLE_TYPES={
+  // Fire cadence is intentionally slower than the early prototypes. Ammunition
+  // is finite and a motor-pool visit fully resupplies the selected vehicle.
+  tank:{name:'M60 TANK',short:'TANK',color:'#596f46',health:115,maxForward:160,maxReverse:60,accel:165,brake:225,friction:90,turnRate:1.42,radius:27,weapon:'shell',groundWeapon:'shell',airWeapon:'shell',fireDelay:.85,projectileSpeed:520,damage:34,maxAmmoPrimary:36},
+  helicopter:{name:'HELICOPTER',short:'HELI',color:'#667151',health:58,maxForward:235,maxReverse:165,maxStrafe:46,accel:130,brake:165,friction:0,turnRate:1.70,radius:24,weapon:'shell',groundWeapon:'shell',airWeapon:'shell',fireDelay:.36,projectileSpeed:620,damage:18,airborne:true,maxAmmoPrimary:48,maxAmmoSecondary:14},
+  asv:{name:'ARMOURED SUPPORT VEHICLE',short:'ASV',color:'#62684d',health:180,maxForward:130,maxReverse:45,accel:110,brake:170,friction:76,turnRate:.96,radius:31,weapon:'rocket',groundWeapon:'rocket',airWeapon:'airRocket',fireDelay:1.55,projectileSpeed:375,damage:78,blastRadius:82,maxMines:8,maxAmmoPrimary:18},
+  jeep:{name:'JEEP / HUMVEE',short:'JEEP',color:'#747454',health:50,maxForward:240,maxReverse:90,accel:250,brake:285,friction:120,turnRate:2.08,radius:20,weapon:'grenade',groundWeapon:'grenade',fireDelay:1.00,projectileSpeed:255,damage:30,blastRadius:42,canFloat:true,canCapture:true,maxAmmoPrimary:14}
+};
+const VEHICLE_ORDER=['tank','helicopter','asv','jeep'];
+const vehicleStocks=[{},{}];
+function resetVehicleStocks(){for(let team=0;team<2;team++)for(const type of VEHICLE_ORDER)vehicleStocks[team][type]=configuredVehicleStock(team);}
+function stockCount(team,type){return vehicleStocks[team]?.[type]??0;}
+function takeVehicleFromStock(team,type){
+  const count=stockCount(team,type);if(count<=0)return false;if(Number.isFinite(count))vehicleStocks[team][type]--;return true;
+}
+function returnVehicleToStock(team,type){
+  if(!type)return;const limit=configuredVehicleStock(team);if(!Number.isFinite(limit)){vehicleStocks[team][type]=Infinity;return;}
+  vehicleStocks[team][type]=Math.min(limit,stockCount(team,type)+1);
+}
+function stockLabel(team,type){const n=stockCount(team,type);return Number.isFinite(n)?String(n):'INF';}
+function poolForTeam(team){return team===0?pool:cpuPool;}
+function ensurePoolSelectionAvailable(team){
+  const p=poolForTeam(team);p.selectionIndex=clamp(p.selectionIndex??0,0,VEHICLE_ORDER.length-1);
+  if(stockCount(team,VEHICLE_ORDER[p.selectionIndex])>0)return;
+  for(let i=0;i<VEHICLE_ORDER.length;i++)if(stockCount(team,VEHICLE_ORDER[i])>0){p.selectionIndex=i;return;}
+}
+function movePoolSelection(team,dir){
+  if(audio.ctx)playTone(310+(team*70),.035,.018,'square',teamPan(team));
+  const p=poolForTeam(team);if(!VEHICLE_ORDER.some(type=>stockCount(team,type)>0))return;let i=p.selectionIndex??0;
+  for(let n=0;n<VEHICLE_ORDER.length;n++){i=(i+dir+VEHICLE_ORDER.length)%VEHICLE_ORDER.length;if(stockCount(team,VEHICLE_ORDER[i])>0){p.selectionIndex=i;return;}}
+}
+function selectedVehicleType(team){ensurePoolSelectionAvailable(team);const p=poolForTeam(team),type=VEHICLE_ORDER[p.selectionIndex??0];return stockCount(team,type)>0?type:null;}
+function deploySelectedVehicle(team){const type=selectedVehicleType(team);if(!type)return;if(team===0)deployVehicle(type);else deployP2Vehicle(type);}
+
+function resupplyVehicle(v){
+  v.ammoPrimary=v.maxAmmoPrimary||0;
+  v.ammoSecondary=v.maxAmmoSecondary||0;
+  v.minesLeft=v.maxMines||0;
+}
+function configureVehicle(v,typeKey){
+  const t=VEHICLE_TYPES[typeKey]||VEHICLE_TYPES.tank;
+  Object.assign(v,{type:typeKey,typeDef:t,color:t.color,maxHealth:t.health,health:t.health,maxForward:t.maxForward,maxReverse:t.maxReverse,maxStrafe:t.maxStrafe||t.maxForward,accel:t.accel,brake:t.brake,friction:t.friction,turnRate:t.turnRate,radius:t.radius,weapon:t.weapon,groundWeapon:t.groundWeapon||t.weapon,airWeapon:t.airWeapon||null,fireDelay:t.fireDelay,projectileSpeed:t.projectileSpeed,damage:t.damage,blastRadius:t.blastRadius||0,airborne:!!t.airborne,canFloat:!!t.canFloat,canCapture:!!t.canCapture,maxMines:t.maxMines||0,maxAmmoPrimary:t.maxAmmoPrimary||0,maxAmmoSecondary:t.maxAmmoSecondary||0});
+  // turretAngle is RELATIVE to the hull. 0 = straight ahead with the tank body.
+  v.turretAngle=0;v.bankAngle=0;v.cooldown=0;v.mineCooldown=0;v.strafeSpeed=0;v.renderYOffset=0;v.selectedWeapon='shell';
+  v.resupplyTimer=0;v.resupplyFlash=0;
+  resupplyVehicle(v);
+}
+function vehicle(x,z,angle,color,label,team,typeKey='tank'){
+  const v={x,z,y:0,angle,color,label,team,speed:0,health:100,maxHealth:100,alive:true,drowned:false,cooldown:0,mineCooldown:0,renderYOffset:0};
+  configureVehicle(v,typeKey);return v;
+}
+// Keep the physical body layer explicit. A helicopter must never become a
+// ground collision body even if a transient state accidentally changes the
+// generic airborne flag during deployment/return logic.
+function isAirVehicle(v){
+  return !!v&&(v.type==='helicopter'||v.airborne===true);
+}
+function vehicleCombatActive(v){
+  if(v===player)return pool.mode==='active';
+  if(v===cpu)return cpuPool.mode==='active';
+  if(v&&v.cpuExtra)return v.deployState==='active';
+  return !!(v&&v.alive);
+}
+function vehicleBodiesCollide(a,b){
+  if(!a||!b||!a.alive||!b.alive)return false;
+  if(!vehicleCombatActive(a)||!vehicleCombatActive(b))return false;
+  if(isAirVehicle(a)||isAirVehicle(b))return false;
+  const dx=a.x-b.x,dz=a.z-b.z,rr=a.radius+b.radius;
+  return dx*dx+dz*dz<rr*rr;
+}
+
+function checkHelicopterCrash(){
+  // Every helicopter occupies the same flight layer. Resolve pairwise airframe
+  // overlap as a lethal collision, including CPU reinforcement aircraft.
+  const helis=allVehicles().filter(v=>v.alive&&vehicleCombatActive(v)&&v.type==='helicopter');
+  for(let i=0;i<helis.length;i++)for(let j=i+1;j<helis.length;j++){
+    const a=helis[i],b=helis[j],dx=a.x-b.x,dz=a.z-b.z,rr=(a.radius+b.radius)*.82;
+    if(dx*dx+dz*dz>=rr*rr)continue;
+    a.speed=0;b.speed=0;damage(a,999);damage(b,999);
+  }
+}
+function vehicleOverTrapdoor(v,h){
+  if(!v||!v.alive||!vehicleCombatActive(v))return false;
+  const hx=h.w*.5,hz=h.d*.5;
+  const qx=clamp(v.x,h.x-hx,h.x+hx),qz=clamp(v.z,h.z-hz,h.z+hz);
+  const dx=v.x-qx,dz=v.z-qz;
+  const r=Math.max(10,v.radius*.72);
+  return dx*dx+dz*dz<r*r;
+}
+function crushEnemyOnOpeningTrapdoor(team){
+  const h=trapdoors[team];
+  for(const enemy of allVehicles()){
+    if(enemy.team===team||!vehicleOverTrapdoor(enemy,h))continue;
+    enemy.speed=0;damage(enemy,999);
+  }
+}
+const player=vehicle(activeMap.trapdoors[0][0],activeMap.trapdoors[0][1],Math.PI,'#596f46','P1',0,'tank');
+const cpu=vehicle(activeMap.trapdoors[1][0],activeMap.trapdoors[1][1],0,'#7a4941','CPU',1,'tank');
+const cpuReinforcements=[];
+let cpuExtraHatchOpen=0;
+function enemyVehicles(){return gameMode==='single'?[cpu,...cpuReinforcements]:[cpu];}
+function allVehicles(){return [player,...enemyVehicles()];}
+function cpuConcurrentCount(){
+  let n=(cpu.alive&&(cpuPool.mode==='deploying'||cpuPool.mode==='active'||cpuPool.mode==='returning'))?1:0;
+  for(const v of cpuReinforcements)if(v.alive&&(v.deployState==='deploying'||v.deployState==='active'))n++;
+  return n;
+}
+function activeCpuVehicles(){return enemyVehicles().filter(v=>v.alive&&vehicleCombatActive(v));}
+const projectiles=[];
+const mines=[];
+const explosions=[];
+const smokeEffects=[];
+const trapdoors=[
+  {x:activeMap.trapdoors[0][0],z:activeMap.trapdoors[0][1],w:82,d:92,team:0,angle:0},
+  {x:activeMap.trapdoors[1][0],z:activeMap.trapdoors[1][1],w:82,d:92,team:1,angle:0}
+];
+// Side-specific field ammunition depots. Each depot is now a real,
+// destructible service building with a non-solid refill pad in front of it.
+// Destroying the building disables that side's field resupply.
+const ammoDepots=[];
+function configureMapServicePoints(){
+  for(let team=0;team<2;team++){
+    const t=activeMap.trapdoors[team];trapdoors[team].x=t[0];trapdoors[team].z=t[1];
+  }
+  ammoDepots.length=0;
+  for(let team=0;team<2;team++){
+    const d=activeMap.depots[team];
+    ammoDepots.push({x:d[0],z:d[1],serviceX:d[2],serviceZ:d[3],team,radius:54,color:team===0?'#697a50':'#875248',frontSign:d[4]});
+  }
+}
+configureMapServicePoints();
+const pool={mode:'select',timer:0,hatchOpen:0,deathTimer:0,returnStartX:0,returnStartZ:0,returnStartAngle:0,selectionIndex:0,activeStockType:null};
+const cpuPool={mode:'waiting',timer:0,hatchOpen:0,deathTimer:0,returnStartX:0,returnStartZ:0,returnStartAngle:0,selectionIndex:0,activeStockType:null};
+
+// The opponent still leaves the motor pool through a short deterministic
+// egress leg, but all battlefield navigation after that is generated by A*.
+let CPU_EGRESS={x:trapdoors[1].x,z:trapdoors[1].z+125};
+const NAV_CELL=50;
+const NAV_WATER_MARGIN=6;
+const CPU_MINE_DETECTION_CHANCE=.66;
+const CPU_MINE_DETECTION_RANGE=300;
+const cpuAI={
+  state:'attack',egress:true,avoidSign:1,stuckTimer:0,recoverTimer:0,recoverHeading:0,
+  lastX:cpu.x,lastZ:cpu.z,sortieCount:0,mineSenseEpoch:0,
+  path:[],pathIndex:0,pathTimer:0,pathGoalX:null,pathGoalZ:null,pathFailed:false
+};
+function clearCpuPath(){
+  cpuAI.path.length=0;cpuAI.pathIndex=0;cpuAI.pathTimer=0;
+  cpuAI.pathGoalX=null;cpuAI.pathGoalZ=null;cpuAI.pathFailed=false;
+}
+function setCpuState(state){
+  if(cpuAI.state===state)return;
+  cpuAI.state=state;clearCpuPath();
+}
+function resetCpuAI(full=true){
+  Object.assign(cpuAI,{
+    state:'attack',egress:true,avoidSign:1,stuckTimer:0,recoverTimer:0,
+    recoverHeading:cpu.angle,lastX:cpu.x,lastZ:cpu.z,
+    path:[],pathIndex:0,pathTimer:0,pathGoalX:null,pathGoalZ:null,pathFailed:false
+  });
+  if(full){cpuAI.sortieCount=0;cpuAI.mineSenseEpoch=0;}
+}
+function cpuColorFor(type){
+  return {tank:'#7a4941',helicopter:'#805247',asv:'#71483f',jeep:'#875d49'}[type]||'#7a4941';
+}
+function chooseCpuVehicle(){
+  const available=type=>stockCount(1,type)>0;
+  const playerFlag=flags&&flags[0],ownFlag=flags&&flags[1];
+  if(ownFlag&&ownFlag.state==='carried'&&ownFlag.carrier&&ownFlag.carrier.team===0&&available('helicopter'))return 'helicopter';
+  if(playerFlag&&(playerFlag.state==='exposed'||playerFlag.state==='dropped')&&available('jeep'))return 'jeep';
+  const bridgeBroken=typeof bridgeObjects!=='undefined'&&allBridgeCrossingsBroken();
+  if(bridgeBroken&&available('helicopter'))return 'helicopter';
+  const cycle=['tank','helicopter','asv','jeep'];
+  for(let n=0;n<cycle.length;n++){const type=cycle[(cpuAI.sortieCount+n)%cycle.length];if(available(type)){cpuAI.sortieCount=(cpuAI.sortieCount+n+1)%cycle.length;return type;}}
+  return VEHICLE_ORDER.find(available)||null;
+}
+function prepareCpuSortie(type){
+  resetCpuAI(false);
+  cpuAI.mineSenseEpoch++;
+  const ownFlag=flags[1],playerFlag=flags[0];
+  if(ownFlag.state==='carried'&&ownFlag.carrier&&ownFlag.carrier.team===0)cpuAI.state='intercept';
+  else if(type==='jeep'&&(playerFlag.state==='exposed'||playerFlag.state==='dropped'))cpuAI.state='capture';
+  else cpuAI.state='attack';
+}
+function makeCamera(v){return{x:0,y:760,z:0,tx:0,ty:0,tz:0,focusX:v.x,focusZ:v.z,right:{x:1,y:0,z:0},up:{x:0,y:1,z:0},forward:{x:0,y:0,z:-1}};}
+const cameraP1=makeCamera(player),cameraP2=makeCamera(cpu);
+let camera=cameraP1;
+let triangles=[];
+
+function enterSelection(){
+  const h=trapdoors[0];
+  pool.mode='select';pool.timer=0;pool.hatchOpen=0;pool.deathTimer=0;pool.activeStockType=null;
+  ensurePoolSelectionAvailable(0);
+  Object.assign(player,{x:h.x,z:h.z,angle:Math.PI,speed:0,alive:false,drowned:false,renderYOffset:-30});
+  player.turretAngle=0;
+}
+function deployVehicle(typeKey){
+  if(pool.mode!=='select'||!takeVehicleFromStock(0,typeKey))return;
+  playPoolSound(0,'deploy');
+  const h=trapdoors[0];pool.activeStockType=typeKey;
+  configureVehicle(player,typeKey);
+  Object.assign(player,{x:h.x,z:h.z,angle:Math.PI,speed:0,alive:true,drowned:false,renderYOffset:player.airborne?-88:-30});
+  player.turretAngle=0;
+  pool.mode='deploying';pool.timer=0;pool.hatchOpen=0;pool.deathTimer=0;
+}
+function nearPlayerTrapdoor(v=player,radius=78){
+  const h=trapdoors[0];
+  return Math.hypot(v.x-h.x,v.z-h.z)<radius;
+}
+function tryReturnToPool(){
+  const returnSpeed=Math.abs(player.speed);
+  if(pool.mode!=='active'||!player.alive||player.carryingFlagTeam!==null||returnSpeed>82||!nearPlayerTrapdoor())return;
+  pool.mode='returning';pool.timer=0;playPoolSound(0,'return');
+  pool.returnStartX=player.x;pool.returnStartZ=player.z;pool.returnStartAngle=player.angle;
+  player.speed=0;player.strafeSpeed=0;cpu.speed=0;cpu.strafeSpeed=0;
+}
+function updatePool(dt){
+  if(pool.mode==='select'){pool.hatchOpen=Math.max(0,pool.hatchOpen-dt*2.8);return;}
+  if(pool.mode==='deploying'){
+    pool.timer+=dt;pool.hatchOpen=clamp(pool.timer/.32,0,1);crushEnemyOnOpeningTrapdoor(0);
+    const q=clamp((pool.timer-.28)/.78,0,1);
+    player.renderYOffset=lerp(player.airborne?-88:-30,0,q);
+    if(pool.timer>1.12){pool.mode='active';pool.timer=0;player.renderYOffset=0;}
+    return;
+  }
+  if(pool.mode==='returning'){
+    const h=trapdoors[0];
+    pool.timer+=dt;pool.hatchOpen=clamp(pool.timer/.25,0,1);crushEnemyOnOpeningTrapdoor(0);player.speed=0;player.strafeSpeed=0;
+    const moveQ=clamp(pool.timer/.38,0,1),sm=moveQ*moveQ*(3-2*moveQ);
+    player.x=lerp(pool.returnStartX,h.x,sm);
+    player.z=lerp(pool.returnStartZ,h.z,sm);
+    player.angle=lerp(pool.returnStartAngle,Math.PI,sm);
+    if(player.type==='tank')player.turretAngle=0;
+    const q=clamp((pool.timer-.10)/.76,0,1);player.renderYOffset=-(player.airborne?88:30)*q;
+    if(pool.timer>.95){returnVehicleToStock(0,pool.activeStockType||player.type);enterSelection();}
+    return;
+  }
+  pool.hatchOpen=Math.max(0,pool.hatchOpen-dt*3.2);
+  if(!player.alive){pool.deathTimer+=dt;if(pool.deathTimer>2.0)enterSelection();}
+  else pool.deathTimer=0;
+}
+
+function enterP2Selection(){
+  const h=trapdoors[1];
+  cpuPool.mode='select';cpuPool.timer=0;cpuPool.hatchOpen=0;cpuPool.deathTimer=0;cpuPool.activeStockType=null;
+  ensurePoolSelectionAvailable(1);
+  Object.assign(cpu,{x:h.x,z:h.z,angle:0,speed:0,alive:false,drowned:false,renderYOffset:-30,carryingFlagTeam:null});
+  cpu.turretAngle=0;
+}
+function deployP2Vehicle(typeKey){
+  if(gameMode!=='local2'||cpuPool.mode!=='select'||!takeVehicleFromStock(1,typeKey))return;
+  playPoolSound(1,'deploy');
+  const h=trapdoors[1];cpuPool.activeStockType=typeKey;
+  configureVehicle(cpu,typeKey);
+  cpu.color=cpuColorFor(typeKey);
+  Object.assign(cpu,{x:h.x,z:h.z,angle:0,speed:0,alive:true,drowned:false,renderYOffset:cpu.airborne?-88:-30,carryingFlagTeam:null});
+  cpu.turretAngle=0;
+  cpuPool.mode='deploying';cpuPool.timer=0;cpuPool.hatchOpen=0;cpuPool.deathTimer=0;
+}
+function nearP2Trapdoor(v=cpu,radius=78){
+  const h=trapdoors[1];
+  return Math.hypot(v.x-h.x,v.z-h.z)<radius;
+}
+function tryP2ReturnToPool(){
+  const returnSpeed=Math.abs(cpu.speed);
+  if(gameMode!=='local2'||cpuPool.mode!=='active'||!cpu.alive||cpu.carryingFlagTeam!==null||returnSpeed>82||!nearP2Trapdoor())return;
+  cpuPool.mode='returning';cpuPool.timer=0;playPoolSound(1,'return');
+  cpuPool.returnStartX=cpu.x;cpuPool.returnStartZ=cpu.z;cpuPool.returnStartAngle=cpu.angle;
+  cpu.speed=0;cpu.strafeSpeed=0;
+}
+function updateP2Pool(dt){
+  if(cpuPool.mode==='select'){cpuPool.hatchOpen=Math.max(0,cpuPool.hatchOpen-dt*2.8);return;}
+  if(cpuPool.mode==='deploying'){
+    cpuPool.timer+=dt;cpuPool.hatchOpen=clamp(cpuPool.timer/.32,0,1);crushEnemyOnOpeningTrapdoor(1);
+    const q=clamp((cpuPool.timer-.28)/.78,0,1);
+    cpu.renderYOffset=lerp(cpu.airborne?-88:-30,0,q);
+    if(cpuPool.timer>1.12){cpuPool.mode='active';cpuPool.timer=0;cpu.renderYOffset=0;}
+    return;
+  }
+  if(cpuPool.mode==='returning'){
+    const h=trapdoors[1];
+    cpuPool.timer+=dt;cpuPool.hatchOpen=clamp(cpuPool.timer/.25,0,1);crushEnemyOnOpeningTrapdoor(1);cpu.speed=0;cpu.strafeSpeed=0;
+    const moveQ=clamp(cpuPool.timer/.38,0,1),sm=moveQ*moveQ*(3-2*moveQ);
+    cpu.x=lerp(cpuPool.returnStartX,h.x,sm);cpu.z=lerp(cpuPool.returnStartZ,h.z,sm);
+    cpu.angle=lerp(cpuPool.returnStartAngle,0,sm);if(cpu.type==='tank')cpu.turretAngle=0;
+    const q=clamp((cpuPool.timer-.10)/.76,0,1);cpu.renderYOffset=-(cpu.airborne?88:30)*q;
+    if(cpuPool.timer>.95){returnVehicleToStock(1,cpuPool.activeStockType||cpu.type);enterP2Selection();}
+    return;
+  }
+  cpuPool.hatchOpen=Math.max(0,cpuPool.hatchOpen-dt*3.2);
+  if(!cpu.alive){cpuPool.deathTimer+=dt;if(cpuPool.deathTimer>2.0)enterP2Selection();}
+  else cpuPool.deathTimer=0;
+}
+function startCpuDeployment(typeKey=chooseCpuVehicle()){
+  if(!typeKey||!takeVehicleFromStock(1,typeKey))return false;
+  playPoolSound(1,'deploy');
+  const h=trapdoors[1];cpuPool.activeStockType=typeKey;
+  configureVehicle(cpu,typeKey);
+  cpu.color=cpuColorFor(typeKey);
+  Object.assign(cpu,{x:h.x,z:h.z,angle:0,speed:0,alive:true,drowned:false,cooldown:0,renderYOffset:cpu.airborne?-88:-30,carryingFlagTeam:null});
+  cpu.turretAngle=0;
+  cpuPool.mode='deploying';cpuPool.timer=0;cpuPool.hatchOpen=0;cpuPool.deathTimer=0;
+  prepareCpuSortie(typeKey);
+  return true;
+}
+function resetCpuPool(){
+  const h=trapdoors[1];
+  cpuPool.mode='waiting';cpuPool.timer=0;cpuPool.hatchOpen=0;cpuPool.deathTimer=0;cpuPool.activeStockType=null;
+  Object.assign(cpu,{x:h.x,z:h.z,angle:0,speed:0,alive:false,drowned:false,renderYOffset:-30,carryingFlagTeam:null});
+}
+function requestCpuReturn(){
+  if(cpuPool.mode!=='active'||!cpu.alive)return;
+  cpuPool.mode='returning';cpuPool.timer=0;playPoolSound(1,'return');
+  cpuPool.returnStartX=cpu.x;cpuPool.returnStartZ=cpu.z;cpuPool.returnStartAngle=cpu.angle;
+  cpu.speed=0;cpu.strafeSpeed=0;
+  cpuAI.state='return';
+}
+function updateCpuPool(dt){
+  if(cpuPool.mode==='waiting'){
+    cpuPool.hatchOpen=Math.max(0,cpuPool.hatchOpen-dt*3.0);
+    cpuPool.timer+=dt;
+    return;
+  }
+  if(cpuPool.mode==='deploying'){
+    cpuPool.timer+=dt;cpuPool.hatchOpen=clamp(cpuPool.timer/.32,0,1);crushEnemyOnOpeningTrapdoor(1);
+    const q=clamp((cpuPool.timer-.28)/.78,0,1);
+    cpu.renderYOffset=lerp(cpu.airborne?-88:-30,0,q);
+    if(cpuPool.timer>1.12){cpuPool.mode='active';cpuPool.timer=0;cpu.renderYOffset=0;}
+    return;
+  }
+  if(cpuPool.mode==='returning'){
+    const h=trapdoors[1];
+    cpuPool.timer+=dt;cpuPool.hatchOpen=clamp(cpuPool.timer/.25,0,1);crushEnemyOnOpeningTrapdoor(1);cpu.speed=0;cpu.strafeSpeed=0;
+    const moveQ=clamp(cpuPool.timer/.42,0,1),sm=moveQ*moveQ*(3-2*moveQ);
+    cpu.x=lerp(cpuPool.returnStartX,h.x,sm);cpu.z=lerp(cpuPool.returnStartZ,h.z,sm);
+    cpu.angle=lerp(cpuPool.returnStartAngle,0,sm);if(cpu.type==='tank')cpu.turretAngle=0;
+    const q=clamp((cpuPool.timer-.10)/.76,0,1);cpu.renderYOffset=-(cpu.airborne?88:30)*q;
+    if(cpuPool.timer>.95){returnVehicleToStock(1,cpuPool.activeStockType||cpu.type);cpuPool.activeStockType=null;cpu.alive=false;cpuPool.mode='waiting';cpuPool.timer=0;cpuPool.hatchOpen=1;}
+    return;
+  }
+  cpuPool.hatchOpen=Math.max(0,cpuPool.hatchOpen-dt*3.2);
+  if(!cpu.alive){
+    cpuPool.deathTimer+=dt;
+    if(cpuPool.deathTimer>2.0){cpuPool.mode='waiting';cpuPool.timer=0;cpuPool.deathTimer=0;}
+  }else cpuPool.deathTimer=0;
+}
+function reset(){
+  resetVehicleStocks();pool.selectionIndex=0;cpuPool.selectionIndex=0;pool.activeStockType=null;cpuPool.activeStockType=null;
+  cpuReinforcements.length=0;cpuExtraHatchOpen=0;cpuSpawnTimer=0;cpuFirstSpawn=true;cpuSpawnSerial=0;
+  configureVehicle(player,'tank');
+  configureVehicle(cpu,'tank');
+  resetCpuAI();
+  for(const o of sceneObjects){o.health=o.maxHealth;o.alive=true;if(o.kind==='tower'){o.cooldown=1.05;o.aim=o.team===0?0:Math.PI;}}
+  projectiles.length=0;mines.length=0;explosions.length=0;smokeEffects.length=0;
+  resetFlags();
+  enterSelection();
+  if(gameMode==='local2')enterP2Selection();
+  else if(gameMode==='single'){resetCpuPool();cpu.health=cpu.maxHealth;}
+  else{
+    const h=trapdoors[1];
+    cpuPool.mode='select';cpuPool.timer=0;cpuPool.hatchOpen=0;cpuPool.deathTimer=0;
+    Object.assign(cpu,{x:h.x,z:h.z,angle:0,speed:0,alive:false,drowned:false,renderYOffset:-30,carryingFlagTeam:null});
+  }
+  updateCameras(0,true);
+}
+
+const sceneObjects=[];
+const bridgeObjects=[];
+const baseBuildings={0:[],1:[]};
+const flagBuildings={};
+let nextObjectId=1;
+
+function addObject(o){
+  o.id=nextObjectId++;
+  o.maxHealth=o.health;
+  o.alive=true;
+  o.team=o.team??-1;
+  o.solid=o.solid!==false;
+  o.damageable=o.damageable!==false;
+  sceneObjects.push(o);
+  return o;
+}
+function addBoxObject(kind,x,y,z,sx,sy,sz,yaw,color,health,team=-1,solid=true){
+  return addObject({kind,shape:'rect',x,y,z,sx,sy,sz,yaw,color,health,team,solid,hx:sx*.5,hz:sz*.5});
+}
+function addCircleObject(kind,x,z,r,health,team=-1,extra={}){
+  return addObject({kind,shape:'circle',x,z,r,health,team,...extra});
+}
+function addWallBlock(x,z,team){
+  // AoE-like modular wall: every masonry block is a separate object with
+  // its own collision and health.  Adjacent blocks touch visually, but a
+  // destroyed block opens an actual tank-sized breach.
+  return addBoxObject('wall',x,15,z,24,30,24,0,'#62645d',58,team);
+}
+function addWallLineX(x1,x2,z,team,gateHalfWidth=0){
+  const step=24;
+  const dir=x2>=x1?1:-1;
+  for(let x=x1;dir>0?x<=x2:x>=x2;x+=step*dir){
+    if(gateHalfWidth&&Math.abs(x-(x1+x2)*.5)<gateHalfWidth)continue;
+    addWallBlock(x,z,team);
+  }
+}
+function addWallLineZ(x,z1,z2,team,gateHalfWidth=0){
+  const step=24;
+  const dir=z2>=z1?1:-1;
+  for(let z=z1;dir>0?z<=z2:z>=z2;z+=step*dir){
+    if(gateHalfWidth&&Math.abs(z-(z1+z2)*.5)<gateHalfWidth)continue;
+    addWallBlock(x,z,team);
+  }
+}
+function addBaseObjects(cx,cz,team,color){
+  const b1=addBoxObject('building',cx-72,28,cz-45,90,44,70,0,color,135,team);
+  const b2=addBoxObject('building',cx+65,24,cz-48,78,36,64,0,color,120,team);
+  const command=addBoxObject('building',cx,22,cz+48,76,32,58,0,'#666a63',110,team);
+  baseBuildings[team]=[b1,b2,command];
+  command.flagTeam=team;
+  flagBuildings[team]=command;
+
+  // Proper fortified camp: four walls, with the battlefield-facing wall split
+  // by a wide gate aligned to the motor-pool/trapdoor. The opposite wall is
+  // solid, while the two side walls keep enemy Jeeps from simply slipping in.
+  const hw=158,hd=108,gate=58;
+  const frontZ=team===0?cz-hd:cz+hd;
+  const backZ=team===0?cz+hd:cz-hd;
+  addWallLineZ(cx-hw,cz-hd,cz+hd,team);
+  addWallLineZ(cx+hw,cz-hd,cz+hd,team);
+  addWallLineX(cx-hw,cx+hw,backZ,team,0);
+  addWallLineX(cx-hw,cx+hw,frontZ,team,gate);
+
+  // Four corner towers cover the camp perimeter but leave the central gate
+  // unobstructed for the owner. This doubles the old base tower count.
+  const tx=hw+18,tz=hd+18;
+  addWatchTower(cx-tx,cz-tz,team);
+  addWatchTower(cx+tx,cz-tz,team);
+  addWatchTower(cx-tx,cz+tz,team);
+  addWatchTower(cx+tx,cz+tz,team);
+}
+function addWatchTower(x,z,team){
+  return addObject({kind:'tower',shape:'circle',x,z,r:18,health:90,team,solid:true,range:MAX_FIRE_RANGE,cooldown:1.05,fireInterval:1.65,aim:team===0?0:Math.PI,color:team===0?'#5f744d':'#855047'});
+}
+
+function addNeutralWallSegment(x1,z1,x2,z2){
+  if(Math.abs(x2-x1)>=Math.abs(z2-z1))addWallLineX(x1,x2,z1,-1,0);
+  else addWallLineZ(x1,z1,z2,-1);
+}
+function addWoodCluster(cluster,index){
+  const [cx,cz,cols,rows,spacing]=cluster;
+  const ox=(cols-1)*spacing*.5,oz=(rows-1)*spacing*.5;
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    // Deliberate gaps stop woods from becoming a solid rectangular wall and
+    // create narrow, destructible passages between individual trees.
+    const h=terrainHash(index*97+c*31,r*53+index*17);
+    if(h<.12)continue;
+    const jx=(terrainHash(c+index*13,r+71)-.5)*spacing*.30;
+    const jz=(terrainHash(c+91,r+index*19)-.5)*spacing*.30;
+    const x=cx-ox+c*spacing+jx,z=cz-oz+r*spacing+jz;
+    if(!groundKind(x,z)||Math.hypot(x-trapdoors[0].x,z-trapdoors[0].z)<180||Math.hypot(x-trapdoors[1].x,z-trapdoors[1].z)<180)continue;
+    const scale=.82+terrainHash(c*17+index,r*29+5)*.36;
+    addCircleObject('tree',x,z,11*scale,30,-1,{scale,yaw:h*Math.PI*2});
+  }
+}
+function addBridgeObjects(){
+  bridgeObjects.length=0;
+  const bridges=(activeMap.bridges&&activeMap.bridges.length)?activeMap.bridges:[world.bridge];
+  for(let bridgeIndex=0;bridgeIndex<bridges.length;bridgeIndex++){
+    const br=bridges[bridgeIndex];
+    const alongX=br.w>=br.d;
+    const length=alongX?br.w:br.d;
+    const count=Math.max(3,Math.round(length/95));
+    const seg=length/count;
+    for(let i=0;i<count;i++)bridgeObjects.push(addObject({
+      kind:'bridge',shape:'rect',
+      x:alongX?br.x+seg*(i+.5):br.x+br.w*.5,
+      z:alongX?br.z+br.d*.5:br.z+seg*(i+.5),
+      hx:alongX?seg*.5:br.w*.5,
+      hz:alongX?br.d*.5:seg*.5,
+      health:82,team:-1,solid:false,
+      color:i%2?'#74726b':'#7c7a73',segmentIndex:i,bridgeIndex
+    }));
+  }
+}
+function bridgeCrossingBroken(bridgeIndex){return bridgeObjects.some(o=>o.bridgeIndex===bridgeIndex&&!o.alive);}
+function allBridgeCrossingsBroken(){
+  const bridges=(activeMap.bridges&&activeMap.bridges.length)?activeMap.bridges:[world.bridge];
+  return bridges.length>0&&bridges.every((_,i)=>bridgeCrossingBroken(i));
+}
+function rebuildMapSceneObjects(){
+  sceneObjects.length=0;bridgeObjects.length=0;nextObjectId=1;
+  baseBuildings[0]=[];baseBuildings[1]=[];delete flagBuildings[0];delete flagBuildings[1];
+  for(let i=0;i<(activeMap.palms||[]).length;i++){
+    const q=activeMap.palms[i];addCircleObject('palm',q[0],q[1],9*q[2],22,-1,{scale:q[2]});
+  }
+  for(let i=0;i<(activeMap.rocks||[]).length;i++){
+    const q=activeMap.rocks[i];addCircleObject('rock',q[0],q[1],q[2],50,-1,{yaw:(i*.47)%1-.25});
+  }
+  for(let i=0;i<(activeMap.woods||[]).length;i++)addWoodCluster(activeMap.woods[i],i);
+  for(const w of activeMap.walls||[])addNeutralWallSegment(w[0],w[1],w[2],w[3]);
+  for(const w of activeMap.fortWalls||[]){
+    if(Math.abs(w[2]-w[0])>=Math.abs(w[3]-w[1]))addWallLineX(w[0],w[2],w[1],w[4],0);
+    else addWallLineZ(w[0],w[1],w[3],w[4],0);
+  }
+  for(const t of activeMap.towers||[])addWatchTower(t[0],t[1],t[2]);
+  const b0=activeMap.bases[0],b1=activeMap.bases[1];
+  addBaseObjects(b0[0],b0[1],0,'#536545');addBaseObjects(b1[0],b1[1],1,'#77463f');
+  for(const d of ammoDepots){d.object=addBoxObject('depot',d.x,18,d.z,62,36,50,0,d.color,105,d.team,true);d.object.depot=d;}
+  addBridgeObjects();
+}
+rebuildMapSceneObjects();
+
+// Each side owns one flag, hidden inside its command building until that
+// building is destroyed. The data model is symmetric so a future second human
+// or AI Jeep can use exactly the same capture logic as player one.
+const flags=[0,1].map(team=>({
+  team,state:'hidden',carrier:null,x:flagBuildings[team].x,z:flagBuildings[team].z,
+  homeX:flagBuildings[team].x,homeZ:flagBuildings[team].z,
+  color:team===0?'#4f7fae':'#b95348'
+}));
+let matchWinner=null;
+
+function selectBattlefield(index){
+  activeMapIndex=(index+MAPS.length)%MAPS.length;activeMap=MAPS[activeMapIndex];
+  world.width=activeMap.width;world.depth=activeMap.depth;roadSegments=activeMap.roads;
+  refreshMapBounds();configureMapServicePoints();CPU_EGRESS={x:trapdoors[1].x,z:trapdoors[1].z+125};
+  rebuildMapSceneObjects();
+  // The flags are persistent data objects, so reset() will bind them to the
+  // freshly-created command buildings of the newly selected battlefield.
+  reset();
+}
+function cycleBattlefield(dir){selectBattlefield(activeMapIndex+dir);}
+
+function resetFlags(){
+  matchWinner=null;
+  for(const v of allVehicles())v.carryingFlagTeam=null;
+  for(const f of flags){
+    const b=flagBuildings[f.team];
+    f.state='hidden';f.carrier=null;f.x=b.x;f.z=b.z;f.homeX=b.x;f.homeZ=b.z;
+  }
+}
+function revealFlag(team){
+  const f=flags[team];
+  if(!f||f.state!=='hidden')return;
+  const b=flagBuildings[team];
+  f.state='exposed';f.x=b.x;f.z=b.z;f.carrier=null;
+  spawnExplosionBurst(f.x,7,f.z,.72,false);
+  playMelody('reveal',1-team,f.x);
+}
+function dropFlag(f,x,z){
+  if(!f)return;
+  if(f.carrier)f.carrier.carryingFlagTeam=null;
+  f.carrier=null;f.state='dropped';f.x=x;f.z=z;
+}
+function winMatch(team){
+  if(matchWinner!==null)return;
+  matchWinner=team;
+  const f=flags[1-team];
+  if(f){if(f.carrier)f.carrier.carryingFlagTeam=null;f.carrier=null;f.state='captured';}
+  player.speed=0;player.strafeSpeed=0;
+  spawnExplosionBurst(trapdoors[team].x,10,trapdoors[team].z,1.6,false);
+  playMelody('capture',team,trapdoors[team].x);
+}
+function bunkerDistance(v){
+  const h=trapdoors[v.team];
+  return Math.hypot(v.x-h.x,v.z-h.z);
+}
+function updateFlags(){
+  if(matchWinner!==null)return;
+  for(const f of flags){
+    if(f.state==='carried'){
+      const v=f.carrier;
+      if(!v||!v.alive){dropFlag(f,v?v.x:f.x,v?v.z:f.z);continue;}
+      f.x=v.x;f.z=v.z;
+      if(bunkerDistance(v)<100){winMatch(v.team);return;}
+      continue;
+    }
+    if(f.state!=='exposed'&&f.state!=='dropped')continue;
+    for(const v of allVehicles()){
+      if(!v.alive||!v.canCapture||v.team===f.team||v.carryingFlagTeam!==null)continue;
+      if(v===player&&pool.mode!=='active')continue;
+      if(v===cpu&&cpuPool.mode!=='active')continue;
+      if(v.cpuExtra&&v.deployState!=='active')continue;
+      if(Math.hypot(v.x-f.x,v.z-f.z)<=v.radius+24){
+        f.state='carried';f.carrier=v;v.carryingFlagTeam=f.team;
+        spawnExplosionBurst(f.x,5,f.z,.55,false);
+        playMelody('pickup',v.team,f.x);
+        break;
+      }
+    }
+  }
+}
+// The bridge is a chain of independent deck sections. Destroying one section
+// opens only that part of the crossing instead of deleting the whole bridge.
+// Sections are rebuilt from the selected map by rebuildMapSceneObjects().
+
+function circleRectHit(x,z,r,o){
+  const qx=clamp(x,o.x-o.hx,o.x+o.hx),qz=clamp(z,o.z-o.hz,o.z+o.hz);
+  const dx=x-qx,dz=z-qz;return dx*dx+dz*dz<r*r;
+}
+function objectCircleHit(o,x,z,r){
+  if(!o.alive||!o.solid)return false;
+  if(o.shape==='rect')return circleRectHit(x,z,r,o);
+  const dx=x-o.x,dz=z-o.z,rr=r+o.r;return dx*dx+dz*dz<rr*rr;
+}
+function objectContainsPoint(o,x,z){
+  if(!o.alive||!o.damageable)return false;
+  if(o.shape==='rect')return x>=o.x-o.hx&&x<=o.x+o.hx&&z>=o.z-o.hz&&z<=o.z+o.hz;
+  const dx=x-o.x,dz=z-o.z;return dx*dx+dz*dz<=o.r*o.r;
+}
+function objectTopY(o){
+  switch(o.kind){
+    case 'building':case 'depot':case 'wall': return (o.y||0)+(o.sy||0)*.5;
+    case 'tower': return 55;
+    case 'palm': return 58*(o.scale||1);
+    case 'tree': return 62*(o.scale||1);
+    case 'rock': return 18;
+    case 'bridge': return .8;
+    default: return 20;
+  }
+}
+function groundProjectileHitsObject(o,x,y,z,pad=5){
+  if(!o.alive||!o.damageable)return false;
+  const top=objectTopY(o)+pad;
+  if(y<-3||y>top)return false;
+  if(o.shape==='rect')return x>=o.x-o.hx-pad&&x<=o.x+o.hx+pad&&z>=o.z-o.hz-pad&&z<=o.z+o.hz+pad;
+  const dx=x-o.x,dz=z-o.z,rr=(o.r||10)+pad;return dx*dx+dz*dz<=rr*rr;
+}
+function findGroundProjectileObjectAt(x,y,z){
+  // Bridge sections are terrain/support, not projectile-blocking scenery.
+  // A projectile may hit a vehicle while that vehicle is on the bridge.
+  // Helicopter ground weapons damage the deck only when they actually meet
+  // the bridge surface (handled in updateProjectiles at ground impact).
+  for(const o of sceneObjects){
+    if(o.kind==='bridge')continue;
+    if(groundProjectileHitsObject(o,x,y,z,6))return o;
+  }
+  return null;
+}
+function hitsObstacle(x,z,r){
+  for(const o of sceneObjects)if(objectCircleHit(o,x,z,r))return true;
+  return false;
+}
+function hasRoughDebris(o){
+  // Palm stumps are too small to matter and a destroyed bridge is simply gone.
+  return !o.alive&&(o.kind==='wall'||o.kind==='building'||o.kind==='depot'||o.kind==='tower'||o.kind==='rock'||o.kind==='tree');
+}
+function debrisTouchesCircle(o,x,z,r){
+  if(o.shape==='rect')return circleRectHit(x,z,r,o);
+  const dx=x-o.x,dz=z-o.z,rr=r+(o.r||12)*.85;
+  return dx*dx+dz*dz<rr*rr;
+}
+function debrisSpeedFactorAt(x,z,r){
+  for(const o of sceneObjects)if(hasRoughDebris(o)&&debrisTouchesCircle(o,x,z,r))return .5;
+  return 1;
+}
+function findDamageableObjectAt(x,z,ignoreTeam=null){
+  // Bridge sections deliberately do not participate in ordinary projectile
+  // interception.  They behave like land under the vehicle, not like a wall.
+  for(const o of sceneObjects){
+    if(!o.alive||!o.damageable||o.kind==='bridge')continue;
+    if(ignoreTeam!==null&&o.team===ignoreTeam)continue;
+    if(!objectContainsPoint(o,x,z))continue;
+    return o;
+  }
+  return null;
+}
+function bridgeSegmentAt(x,z){
+  for(const b of bridgeObjects){
+    if(!b.alive)continue;
+    if(x>=b.x-b.hx&&x<=b.x+b.hx&&z>=b.z-b.hz&&z<=b.z+b.hz)return b;
+  }
+  return null;
+}
+function spawnExplosionBurst(x,y,z,power=1,water=false){
+  playExplosionSound(x,power,water);
+  // A destruction event is several short overlapping flashes rather than one
+  // uniformly growing cube.  It remains deliberately chunky at low resolution.
+  explosions.push({x,y,z,t:0,max:.95+power*.18,big:true,size:power,water});
+  const count=power>=1.25?5:3;
+  for(let i=0;i<count;i++){
+    const a=(i/count)*Math.PI*2+power*.37;
+    const d=8+((i*13)%17)*power;
+    explosions.push({
+      x:x+Math.cos(a)*d,y:y+4+(i%2)*7,z:z+Math.sin(a)*d,
+      t:-i*.055,max:.45+.07*(i%3),big:false,size:.8+power*.18,water
+    });
+  }
+}
+function spawnSmoke(x,y,z,seconds=3.2,scale=1){
+  smokeEffects.push({x,y,z,t:0,max:seconds,scale,seed:(x*13.7+z*7.3)%19});
+}
+function damageObject(o,amount,impactX=o.x,impactZ=o.z,canDamageBridge=false){
+  if(!o||!o.alive||!o.damageable)return;
+  // Bridge deck sections are a special tactical target: only helicopter
+  // weapons are allowed to damage them. Ground fire treats the deck as terrain
+  // and passes through its projectile-object collision layer entirely.
+  if(o.kind==='bridge'&&!canDamageBridge)return;
+  o.health=Math.max(0,o.health-amount);
+  playImpactSound(impactX);
+  explosions.push({x:impactX,y:o.kind==='tower'?22:7,z:impactZ,t:0,max:.30,big:false,size:.8});
+  if(o.health<=0){
+    o.alive=false;
+    if(o.flagTeam!==undefined)revealFlag(o.flagTeam);
+    const y=o.kind==='tower'?18:o.kind==='building'?15:8;
+    const power=o.kind==='building'?1.55:o.kind==='depot'?1.35:o.kind==='tower'?1.35:o.kind==='bridge'?1.15:o.kind==='wall'?.95:1.05;
+    spawnExplosionBurst(o.x,y,o.z,power,false);
+    // Smoke is temporary: a few seconds after destruction, then completely gone.
+    const seconds=o.kind==='wall'?2.0:o.kind==='rock'?2.2:o.kind==='palm'?1.8:3.6;
+    spawnSmoke(o.x,y*.55,o.z,seconds,power);
+  }
+}
+function withinWorld(x,z,r){
+  return !(x<30+r||z<30+r||x>world.width-30-r||z>world.depth-30-r);
+}
+function withinVehicleWorld(v,x,z,r){
+  // Helicopters may fly roughly four large map blocks beyond the normal map
+  // rectangle. Jeeps share that outer-water envelope, which gives them enough
+  // accessible deep sea to drown before reaching the hard world boundary.
+  if(isAirVehicle(v)||v?.canFloat){
+    return !(x<OUTER_MIN_X+r||z<OUTER_MIN_Z+r||x>OUTER_MAX_X-r||z>OUTER_MAX_Z-r);
+  }
+  return withinWorld(x,z,r);
+}
+function onBridgePoint(x,z){
+  for(const b of bridgeObjects){
+    if(!b.alive)continue;
+    if(x>=b.x-b.hx&&x<=b.x+b.hx&&z>=b.z-b.hz&&z<=b.z+b.hz)return true;
+  }
+  return false;
+}
+function terrainBlockCoords(x,z){
+  return{c:Math.floor((x-MAP_ORIGIN_X)/MAP_BLOCK),r:Math.floor((z-MAP_ORIGIN_Z)/MAP_BLOCK)};
+}
+function terrainBlockBounds(c,r){
+  const x=MAP_ORIGIN_X+c*MAP_BLOCK,z=MAP_ORIGIN_Z+r*MAP_BLOCK;
+  return{x,z,x2:Math.min(x+MAP_BLOCK,MAP_GROUND_MAX_X),z2:Math.min(z+MAP_BLOCK,MAP_GROUND_MAX_Z)};
+}
+function terrainBlockKind(c,r){
+  const b=terrainBlockBounds(c,r);
+  if(b.x<MAP_ORIGIN_X||b.z<MAP_ORIGIN_Z||b.x>=MAP_GROUND_MAX_X||b.z>=MAP_GROUND_MAX_Z)return null;
+  return groundKind((b.x+b.x2)*.5,(b.z+b.z2)*.5);
+}
+function terrainBlockKindAt(x,z){
+  const q=terrainBlockCoords(x,z);return terrainBlockKind(q.c,q.r);
+}
+function waterBlockIsShallow(c,r){
+  if(terrainBlockKind(c,r))return false;
+  // "Next to land" includes diagonal contact. This avoids single dark corner
+  // blocks touching an otherwise continuous light shoreline.
+  for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+    if(dc===0&&dr===0)continue;
+    if(terrainBlockKind(c+dc,r+dr))return true;
+  }
+  return false;
+}
+function waterPoint(x,z){
+  if(onBridgePoint(x,z))return false;
+  return !terrainBlockKindAt(x,z);
+}
+function waterDepthAt(x,z){
+  if(onBridgePoint(x,z))return null;
+  if(terrainBlockKindAt(x,z))return null;
+  const q=terrainBlockCoords(x,z);
+  return waterBlockIsShallow(q.c,q.r)?'shallow':'deep';
+}
+function footprintTouchesDeepWater(x,z,r){
+  if(waterDepthAt(x,z)==='deep')return true;
+  for(let i=0;i<16;i++){
+    const a=i*Math.PI*2/16;
+    if(waterDepthAt(x+Math.cos(a)*r,z+Math.sin(a)*r)==='deep')return true;
+  }
+  return false;
+}
+function fullyInWater(x,z,r){
+  if(!waterPoint(x,z))return false;
+  for(let i=0;i<12;i++){const a=i*Math.PI*2/12;if(!waterPoint(x+Math.cos(a)*r,z+Math.sin(a)*r))return false;}
+  return true;
+}
+function fullyInDeepWater(x,z,r){
+  if(waterDepthAt(x,z)!=='deep')return false;
+  for(let i=0;i<12;i++){const a=i*Math.PI*2/12;if(waterDepthAt(x+Math.cos(a)*r,z+Math.sin(a)*r)!=='deep')return false;}
+  return true;
+}
+function surfaceKindAt(x,z){
+  if(onBridgePoint(x,z))return 'bridge';
+  const kind=terrainBlockKindAt(x,z);
+  return kind||'water';
+}
+function shadowColorAt(x,z){
+  switch(surfaceKindAt(x,z)){
+    case 'grass': return '#454a31';
+    case 'road': return '#48463f';
+    case 'bridge': return '#4a4943';
+    case 'water': return waterDepthAt(x,z)==='shallow'?'#426a70':'#203a42';
+    default: return '#72613f';
+  }
+}
+function shadowYAt(x,z){return surfaceKindAt(x,z)==='water'?-7.6:.28;}
+
+function footprintTouchesWater(x,z,r){
+  if(waterPoint(x,z))return true;
+  // Use the whole vehicle footprint, not just four cardinal probes. This is
+  // important at shorelines and at the edges of individual bridge sections.
+  for(let i=0;i<16;i++){
+    const a=i*Math.PI*2/16;
+    if(waterPoint(x+Math.cos(a)*r,z+Math.sin(a)*r))return true;
+  }
+  return false;
+}
+function cpuKnowsMine(m){
+  return m.team===1||m.cpuDetectedEpoch===cpuAI.mineSenseEpoch;
+}
+function navMineHazardAt(x,z,v,extra=0){
+  if(v!==cpu||v.airborne)return false;
+  for(const m of mines){
+    if(!m.alive||!m.armed||!cpuKnowsMine(m))continue;
+    const clearance=(m.r||17)+(v.radius||20)*.55+10+extra;
+    const d=Math.hypot(x-m.x,z-m.z);
+    if(d>=clearance)continue;
+    // If a mine becomes visible while the vehicle is already inside the
+    // avoidance envelope, never trap it there: allow motion that increases
+    // the distance from that mine.
+    const current=Math.hypot(v.x-m.x,v.z-m.z);
+    if(current<clearance&&d>current+.5)continue;
+    return true;
+  }
+  return false;
+}
+function updateCpuMineAwareness(){
+  if(!cpu.alive||cpu.airborne)return;
+  let changed=false;
+  for(const m of mines){
+    if(!m.alive||!m.armed)continue;
+    if(m.team===1)continue; // the AI always knows where it laid its own mines
+    if(m.cpuDetectionEpoch===cpuAI.mineSenseEpoch)continue;
+    if(Math.hypot(cpu.x-m.x,cpu.z-m.z)>CPU_MINE_DETECTION_RANGE)continue;
+    m.cpuDetectionEpoch=cpuAI.mineSenseEpoch;
+    if(Math.random()<CPU_MINE_DETECTION_CHANCE){
+      m.cpuDetectedEpoch=cpuAI.mineSenseEpoch;
+      changed=true;
+    }
+  }
+  if(changed)clearCpuPath();
+}
+function navPointPassable(x,z,v,extra=4){
+  if(!withinVehicleWorld(v,x,z,(v.radius||20)+extra))return false;
+  if(!v.airborne){
+    if(v.canFloat){
+      const deepRadius=(v.radius||20)*.72+extra;
+      if(footprintTouchesDeepWater(x,z,deepRadius))return false;
+    }else{
+      const waterRadius=(v.radius||20)+Math.max(extra,NAV_WATER_MARGIN);
+      if(footprintTouchesWater(x,z,waterRadius))return false;
+    }
+    if(hitsObstacle(x,z,(v.radius||20)+extra))return false;
+    if(navMineHazardAt(x,z,v,extra))return false;
+  }
+  return true;
+}
+function navCellCenter(c,r){return{x:(c+.5)*NAV_CELL,z:(r+.5)*NAV_CELL};}
+function navCellOf(x,z){
+  return{c:clamp(Math.floor(x/NAV_CELL),0,Math.ceil(world.width/NAV_CELL)-1),r:clamp(Math.floor(z/NAV_CELL),0,Math.ceil(world.depth/NAV_CELL)-1)};
+}
+function navNearestPassableCell(x,z,v){
+  const cols=Math.ceil(world.width/NAV_CELL),rows=Math.ceil(world.depth/NAV_CELL);
+  const base=navCellOf(x,z);
+  for(let rad=0;rad<=7;rad++){
+    let best=null,bestD=Infinity;
+    for(let dr=-rad;dr<=rad;dr++)for(let dc=-rad;dc<=rad;dc++){
+      if(Math.max(Math.abs(dc),Math.abs(dr))!==rad)continue;
+      const c=base.c+dc,r=base.r+dr;
+      if(c<0||r<0||c>=cols||r>=rows)continue;
+      const q=navCellCenter(c,r);
+      if(!navPointPassable(q.x,q.z,v,3))continue;
+      const d=(q.x-x)*(q.x-x)+(q.z-z)*(q.z-z);
+      if(d<bestD){best={c,r,x:q.x,z:q.z};bestD=d;}
+    }
+    if(best)return best;
+  }
+  return null;
+}
+function navTraversalCost(x,z,v){
+  const kind=surfaceKindAt(x,z);
+  let cost=1;
+  if(kind==='road')cost=.84;
+  else if(kind==='bridge')cost=.90;
+  else if(kind==='grass')cost=1.0;
+  else if(kind==='sand')cost=1.08;
+  else if(kind==='water')cost=v.canFloat?1.85:50;
+  if(!v.airborne&&!v.canFloat){
+    // Even a legal shoreline cell is less attractive than open land. This
+    // gives the steering controller room for its real turning radius.
+    const r=(v.radius||20);
+    if(footprintTouchesWater(x,z,r+20))cost*=1.32;
+    else if(footprintTouchesWater(x,z,r+34))cost*=1.14;
+  }
+  if(debrisSpeedFactorAt(x,z,v.radius)<1)cost*=1.4;
+  return cost;
+}
+function navSegmentClear(a,b,v){
+  const d=Math.hypot(b.x-a.x,b.z-a.z);
+  const steps=Math.max(1,Math.ceil(d/16));
+  for(let i=1;i<=steps;i++){
+    const t=i/steps,x=lerp(a.x,b.x,t),z=lerp(a.z,b.z,t);
+    if(!navPointPassable(x,z,v,4))return false;
+  }
+  return true;
+}
+function smoothNavPath(points,v){
+  if(points.length<=2)return points;
+  const out=[points[0]];
+  let i=0;
+  while(i<points.length-1){
+    let j=points.length-1;
+    for(;j>i+1;j--)if(navSegmentClear(points[i],points[j],v))break;
+    out.push(points[j]);i=j;
+  }
+  return out;
+}
+function findNavPath(sx,sz,gx,gz,v){
+  if(v.airborne)return[{x:sx,z:sz},{x:gx,z:gz}];
+  const cols=Math.ceil(world.width/NAV_CELL),rows=Math.ceil(world.depth/NAV_CELL),total=cols*rows;
+  const start=navNearestPassableCell(sx,sz,v),goal=navNearestPassableCell(gx,gz,v);
+  if(!start||!goal)return[];
+  const idx=(c,r)=>r*cols+c;
+  const sc=idx(start.c,start.r),gc=idx(goal.c,goal.r);
+  const gScore=new Float64Array(total);gScore.fill(Infinity);gScore[sc]=0;
+  const fScore=new Float64Array(total);fScore.fill(Infinity);
+  const came=new Int32Array(total);came.fill(-1);
+  const closed=new Uint8Array(total),passCache=new Int8Array(total);
+  const pass=(c,r)=>{
+    if(c<0||r<0||c>=cols||r>=rows)return false;
+    const k=idx(c,r);if(passCache[k])return passCache[k]===1;
+    const q=navCellCenter(c,r),ok=navPointPassable(q.x,q.z,v,5);
+    passCache[k]=ok?1:2;return ok;
+  };
+  const h=(c,r)=>Math.hypot(c-goal.c,r-goal.r);
+  fScore[sc]=h(start.c,start.r);
+  const open=[sc];
+  const dirs=[[1,0,1],[-1,0,1],[0,1,1],[0,-1,1],[1,1,1.414],[-1,1,1.414],[1,-1,1.414],[-1,-1,1.414]];
+  let found=false,best=sc,bestH=h(start.c,start.r);
+  while(open.length){
+    let bi=0,bf=Infinity;
+    for(let i=0;i<open.length;i++){const k=open[i];if(!closed[k]&&fScore[k]<bf){bf=fScore[k];bi=i;}}
+    const current=open.splice(bi,1)[0];
+    if(closed[current])continue;
+    const cr=Math.floor(current/cols),cc=current-cr*cols;
+    const currentH=h(cc,cr);
+    if(currentH<bestH){bestH=currentH;best=current;}
+    if(current===gc){found=true;best=gc;break;}
+    closed[current]=1;
+    for(const [dc,dr,baseCost] of dirs){
+      const nc=cc+dc,nr=cr+dr;if(!pass(nc,nr))continue;
+      if(dc&&dr&&(!pass(cc+dc,cr)||!pass(cc,cr+dr)))continue;
+      const nk=idx(nc,nr);if(closed[nk])continue;
+      const q=navCellCenter(nc,nr);
+      const tentative=gScore[current]+baseCost*navTraversalCost(q.x,q.z,v);
+      if(tentative>=gScore[nk])continue;
+      came[nk]=current;gScore[nk]=tentative;fScore[nk]=tentative+h(nc,nr);open.push(nk);
+    }
+  }
+  // If the exact goal cell is unreachable (for example a command building
+  // inside a defended compound), keep the best reachable approach cell rather
+  // than returning no path and falling back to dangerous direct steering.
+  const end=found?gc:best;
+  if(end===sc&&!found)return[];
+  const rev=[];let cur=end;
+  while(cur!==-1){const r=Math.floor(cur/cols),c=cur-r*cols,q=navCellCenter(c,r);rev.push(q);if(cur===sc)break;cur=came[cur];}
+  rev.reverse();
+  const points=[{x:sx,z:sz},...rev.slice(1)];
+  if(navPointPassable(gx,gz,v,1)&&navSegmentClear(points[points.length-1],{x:gx,z:gz},v))points.push({x:gx,z:gz});
+  return smoothNavPath(points,v);
+}
+function cpuNavigationTarget(goal,dt){
+  if(cpu.airborne)return goal;
+  cpuAI.pathTimer=Math.max(0,cpuAI.pathTimer-dt);
+  const movedGoal=cpuAI.pathGoalX===null||Math.hypot(goal.x-cpuAI.pathGoalX,goal.z-cpuAI.pathGoalZ)>70;
+  const wp=cpuAI.path[cpuAI.pathIndex];
+  const blocked=wp&&!navPointPassable(wp.x,wp.z,cpu,1);
+  if(!cpuAI.path.length||cpuAI.pathTimer<=0||movedGoal||blocked){
+    cpuAI.path=findNavPath(cpu.x,cpu.z,goal.x,goal.z,cpu);
+    cpuAI.pathIndex=cpuAI.path.length>1?1:0;
+    cpuAI.pathGoalX=goal.x;cpuAI.pathGoalZ=goal.z;
+    cpuAI.pathFailed=cpuAI.path.length===0;
+    cpuAI.pathTimer=cpuAI.state==='intercept'?.38:.92;
+  }
+  while(cpuAI.path.length&&cpuAI.pathIndex<cpuAI.path.length-1){
+    const q=cpuAI.path[cpuAI.pathIndex];
+    if(Math.hypot(cpu.x-q.x,cpu.z-q.z)>34)break;
+    cpuAI.pathIndex++;
+  }
+  return cpuAI.path[cpuAI.pathIndex]||goal;
+}
+function chooseCpuRecoveryHeading(){
+  const from={x:cpu.x,z:cpu.z};
+  const sign=cpuAI.avoidSign;
+  const offsets=[.58*sign,-.58*sign,1.02*sign,-1.02*sign,1.42*sign,-1.42*sign];
+  for(const off of offsets){
+    const h=cpu.angle+off;
+    const to={x:cpu.x+Math.sin(h)*78,z:cpu.z+Math.cos(h)*78};
+    if(navSegmentClear(from,to,cpu))return h;
+  }
+  return cpu.angle+sign*.62;
+}
+function drown(v){
+  if(!v.alive)return;
+  playDrownSound(v);
+  v.alive=false;v.drowned=true;v.health=0;v.speed=0;
+  spawnExplosionBurst(v.x,-2,v.z,1.35,true);
+  spawnSmoke(v.x,0,v.z,2.4,1.0);
+}
+
+function approachZero(v,amount){return Math.abs(v)<=amount?0:v-Math.sign(v)*amount;}
+function updateHelicopterBank(v,input,dt){
+  // Bank follows real lateral cyclic/strafe movement. Positive input is a
+  // movement to the aircraft's right, so roll is negative (right side down).
+  const target=-clamp(input,-1,1)*.34;
+  v.bankAngle+=(target-(v.bankAngle||0))*Math.min(1,dt*8.0);
+  if(Math.abs(v.bankAngle)<.001&&Math.abs(target)<.001)v.bankAngle=0;
+}
+function updateHelicopterMotion(v,throttle,steer,strafe,dt){
+  // Forward speed is persistent as before. Lateral cyclic remains responsive,
+  // but its maximum speed is intentionally only about one quarter of v053 so
+  // side movement is a fine positioning control rather than a second drive axis.
+  if(throttle>0)v.speed=clamp(v.speed+v.accel*dt,-v.maxReverse,v.maxForward);
+  else if(throttle<0)v.speed=clamp(v.speed-v.accel*dt,-v.maxReverse,v.maxForward);
+  else v.speed=approachZero(v.speed,v.friction*dt);
+
+  const targetStrafe=strafe*(v.maxStrafe||0);
+  const lateralResponse=(v.maxStrafe||0)*7.5;
+  const lateralRelease=(v.maxStrafe||0)*5.2;
+  if(strafe!==0){
+    const diff=targetStrafe-(v.strafeSpeed||0);
+    const step=Math.min(Math.abs(diff),lateralResponse*dt);
+    v.strafeSpeed=(v.strafeSpeed||0)+Math.sign(diff)*step;
+  }else v.strafeSpeed=approachZero(v.strafeSpeed||0,lateralRelease*dt);
+
+  v.angle+=steer*v.turnRate*dt;
+  const fx=Math.sin(v.angle),fz=Math.cos(v.angle),rx=Math.cos(v.angle),rz=-Math.sin(v.angle);
+  const ox=v.x,oz=v.z;
+  v.x+=(fx*v.speed+rx*v.strafeSpeed)*dt;
+  v.z+=(fz*v.speed+rz*v.strafeSpeed)*dt;
+  if(!withinVehicleWorld(v,v.x,v.z,v.radius)){
+    v.x=ox;v.z=oz;v.speed=0;v.strafeSpeed=0;
+  }
+  // Bank reacts to the cyclic command immediately, while retaining a little
+  // contribution from actual lateral velocity for a natural return to level.
+  const velocityBank=v.maxStrafe?clamp((v.strafeSpeed||0)/v.maxStrafe,-1,1):0;
+  updateHelicopterBank(v,strafe!==0?strafe:velocityBank,dt);
+}
+function angleDelta(from,to){return Math.atan2(Math.sin(to-from),Math.cos(to-from));}
+function vehicleNeedsDepotResupply(v){
+  if((v.ammoPrimary||0)<(v.maxAmmoPrimary||0))return true;
+  if((v.ammoSecondary||0)<(v.maxAmmoSecondary||0))return true;
+  if((v.minesLeft||0)<(v.maxMines||0))return true;
+  return false;
+}
+function depotForVehicle(v){return ammoDepots[v.team]||null;}
+function depotAvailable(d){return !!(d&&d.object&&d.object.alive);}
+function vehicleInOwnDepot(v,extra=0){
+  const d=depotForVehicle(v);
+  return depotAvailable(d)&&Math.hypot(v.x-d.serviceX,v.z-d.serviceZ)<=d.radius+extra;
+}
+function serviceVehicleAtDepot(v,dt,active){
+  v.resupplyFlash=Math.max(0,(v.resupplyFlash||0)-dt);
+  if(!active||!v.alive||!vehicleNeedsDepotResupply(v)||!vehicleInOwnDepot(v)||Math.abs(v.speed)>DEPOT_STOP_SPEED){
+    v.resupplyTimer=0;return false;
+  }
+  v.resupplyTimer=(v.resupplyTimer||0)+dt;
+  if(v.resupplyTimer>=DEPOT_RESUPPLY_TIME){
+    resupplyVehicle(v);v.resupplyTimer=0;v.resupplyFlash=1.4;
+    playMelody('resupply',v.team,v.x);
+    return true;
+  }
+  return false;
+}
+function updateAmmoDepots(dt){
+  serviceVehicleAtDepot(player,dt,pool.mode==='active'&&matchWinner===null);
+  const cpuFilled=serviceVehicleAtDepot(cpu,dt,cpuPool.mode==='active'&&matchWinner===null);
+  if(gameMode==='single'&&cpuFilled&&cpuAI.state==='resupply'){
+    setCpuState('attack');
+    cpuAI.stuckTimer=0;cpuAI.recoverTimer=0;
+  }
+}
+function cpuShouldVisitDepot(){
+  if(!depotAvailable(depotForVehicle(cpu)))return false;
+  if(cpu.type==='tank')return cpu.ammoPrimary<=8;
+  if(cpu.type==='asv')return cpu.ammoPrimary<=4||cpu.minesLeft<=1;
+  if(cpu.type==='helicopter')return cpu.ammoPrimary<=10&&cpu.ammoSecondary<=3;
+  if(cpu.type==='jeep')return cpu.ammoPrimary<=3;
+  return false;
+}
+function cpuNeedsResupply(){
+  if(cpu.type==='helicopter')return cpu.ammoPrimary<=0&&cpu.ammoSecondary<=0;
+  return cpu.ammoPrimary<=0;
+}
+function cpuCanReturnAcrossMap(){
+  // Multi-crossing maps no longer have a meaningful single 'south of lake'
+  // test. A* is responsible for finding whichever crossing remains available.
+  return true;
+}
+function cpuDesiredStrategy(){
+  const playerFlag=flags[0],ownFlag=flags[1];
+  if(cpu.carryingFlagTeam===0)return 'returnFlag';
+  if(ownFlag.state==='carried'&&ownFlag.carrier&&ownFlag.carrier.team===0)return 'intercept';
+  if(cpu.health<cpu.maxHealth*.30&&cpuCanReturnAcrossMap())return 'return';
+  if(playerFlag.state==='exposed'||playerFlag.state==='dropped'){
+    if(cpu.type==='jeep')return 'capture';
+    if(cpuCanReturnAcrossMap())return 'return';
+    return 'attack';
+  }
+  if(cpuShouldVisitDepot()&&depotAvailable(depotForVehicle(cpu)))return 'resupply';
+  if(cpuNeedsResupply()&&!depotAvailable(depotForVehicle(cpu))&&cpuCanReturnAcrossMap())return 'return';
+  if(allBridgeCrossingsBroken()&&!cpu.airborne&&!cpu.canFloat&&cpuCanReturnAcrossMap())return 'return';
+  return 'attack';
+}
+function cpuStrategicGoal(){
+  const playerFlag=flags[0],ownFlag=flags[1];
+  if(cpuAI.state==='return'||cpuAI.state==='returnFlag')return{x:trapdoors[1].x,z:trapdoors[1].z};
+  if(cpuAI.state==='resupply'){
+    const d=ammoDepots[1];return{x:d.serviceX,z:d.serviceZ};
+  }
+  if(cpuAI.state==='intercept'){
+    const carrier=ownFlag.carrier;
+    if(carrier&&carrier.alive)return{x:carrier.x,z:carrier.z};
+    return{x:ownFlag.x,z:ownFlag.z};
+  }
+  if(cpuAI.state==='capture')return{x:playerFlag.x,z:playerFlag.z};
+  const command=flagBuildings[0];
+  if(command&&command.alive)return{x:command.x,z:command.z};
+  return{x:playerFlag.x,z:playerFlag.z};
+}
+function distancePointToSegment(px,pz,ax,az,bx,bz){
+  const dx=bx-ax,dz=bz-az,len2=dx*dx+dz*dz;
+  if(len2<1e-6)return Math.hypot(px-ax,pz-az);
+  const t=clamp(((px-ax)*dx+(pz-az)*dz)/len2,0,1);
+  return Math.hypot(px-(ax+dx*t),pz-(az+dz*t));
+}
+function neutralWallBlocksCpuRoute(o){
+  if(o.kind!=='wall'||o.team!==-1)return false;
+  const wp=cpuAI.path[cpuAI.pathIndex]||cpuStrategicGoal();
+  if(!wp)return false;
+  const clearance=Math.max(o.hx||12,o.hz||12)+cpu.radius+7;
+  return distancePointToSegment(o.x,o.z,cpu.x,cpu.z,wp.x,wp.z)<=clearance;
+}
+function cpuCombatTarget(){
+  const playerFlag=flags[0];
+  if(cpu.carryingFlagTeam!==null||cpuAI.state==='resupply')return null;
+  if(player.alive){
+    const d=Math.hypot(player.x-cpu.x,player.z-cpu.z);
+    if(cpuAI.state==='intercept'&&d<MAX_FIRE_RANGE*.98)return player;
+    const limit=(cpuAI.state==='capture'&&cpu.type==='jeep')?190:MAX_FIRE_RANGE*.92;
+    if(d<limit)return player;
+  }
+  if(cpuAI.state==='capture'&&cpu.type==='jeep')return null;
+  const command=flagBuildings[0];
+  if(cpuAI.state==='attack'&&command&&command.alive){
+    const d=Math.hypot(command.x-cpu.x,command.z-cpu.z);
+    if(d<MAX_FIRE_RANGE*.90)return command;
+  }
+
+  // Deliberate AI fire is reserved for tactically meaningful objects. Trees,
+  // palms and rocks remain physical/destructible scenery, but are never chosen
+  // as targets merely because they happen to be nearby. They may still be hit
+  // by stray shots and blast damage.
+  let best=null,bestScore=Infinity;
+  for(const o of sceneObjects){
+    if(!o.alive||!o.damageable||o.kind==='bridge'||o.team===1)continue;
+    const meaningfulEnemy=o.team===0&&(o.kind==='tower'||o.kind==='building'||o.kind==='depot'||o.kind==='wall');
+    const blockingNeutralWall=neutralWallBlocksCpuRoute(o);
+    if(!meaningfulEnemy&&!blockingNeutralWall)continue;
+    const d=Math.hypot(o.x-cpu.x,o.z-cpu.z);
+    const limit=meaningfulEnemy?MAX_FIRE_RANGE*.84:190;
+    if(d>=limit)continue;
+    const priority=o.kind==='tower'?0:o.kind==='building'?18:o.kind==='depot'?26:o.kind==='wall'?42:60;
+    const score=d+priority;
+    if(score<bestScore){best=o;bestScore=score;}
+  }
+  return best;
+}
+function cpuAimAndFire(dt){
+  if(!cpu.alive||cpuAI.egress||cpuAI.state==='resupply'||cpuAI.state==='returnFlag')return;
+  const target=cpuCombatTarget();
+  if(!target){
+    if(cpu.type==='tank'){
+      const d=angleDelta(cpu.turretAngle,0);
+      cpu.turretAngle+=clamp(d,-1.6*dt,1.6*dt);
+    }
+    return;
+  }
+  const dx=target.x-cpu.x,dz=target.z-cpu.z,range=Math.hypot(dx,dz);
+  const desiredWorld=Math.atan2(dx,dz);
+  const mode=target.airborne?'air':'ground';
+
+  if(cpu.type==='tank'){
+    const desiredRelative=angleDelta(cpu.angle,desiredWorld);
+    const d=angleDelta(cpu.turretAngle,desiredRelative);
+    cpu.turretAngle+=clamp(d,-2.15*dt,2.15*dt);
+    cpu.turretAngle=Math.atan2(Math.sin(cpu.turretAngle),Math.cos(cpu.turretAngle));
+    if(Math.abs(d)<.075&&range<MAX_FIRE_RANGE*.96)fire(cpu,1,mode);
+    return;
+  }
+
+  const facing=Math.abs(angleDelta(cpu.angle,desiredWorld));
+  if(facing>.105||range>MAX_FIRE_RANGE*.94)return;
+  if(cpu.type==='helicopter'){
+    if(mode==='ground')cpu.selectedWeapon=cpu.ammoSecondary>0?'rocket':'shell';
+    else cpu.selectedWeapon='shell';
+  }
+  fire(cpu,1,mode);
+}
+function updateCPU(dt){
+  cpu.cooldown=Math.max(0,cpu.cooldown-dt);
+  cpu.mineCooldown=Math.max(0,cpu.mineCooldown-dt);
+  if(pool.mode!=='active'||cpuPool.mode!=='active'||matchWinner!==null||!cpu.alive)return;
+  updateCpuMineAwareness();
+
+  // Newly deployed vehicles first clear the hatch in a deterministic straight
+  // line. A* takes over only after the vehicle is safely outside the compound.
+  if(cpuAI.egress){
+    const edx=CPU_EGRESS.x-cpu.x,edz=CPU_EGRESS.z-cpu.z,edist=Math.hypot(edx,edz);
+    if(edist<48){
+      cpuAI.egress=false;cpuAI.stuckTimer=0;cpuAI.recoverTimer=0;clearCpuPath();
+      setCpuState(cpuDesiredStrategy());
+    }
+  }else setCpuState(cpuDesiredStrategy());
+
+  const goal=cpuAI.egress?CPU_EGRESS:cpuStrategicGoal();
+  const target=cpuAI.egress?goal:cpuNavigationTarget(goal,dt);
+  let dx=target.x-cpu.x,dz=target.z-cpu.z,dist=Math.hypot(dx,dz);
+
+  if(cpuAI.state==='return'&&Math.hypot(cpu.x-trapdoors[1].x,cpu.z-trapdoors[1].z)<72){
+    requestCpuReturn();return;
+  }
+
+  let desired=Math.atan2(dx,dz);
+  const combat=(cpuAI.egress||cpuAI.state==='resupply'||cpuAI.state==='returnFlag')?null:cpuCombatTarget();
+  if(combat&&cpu.type!=='tank'&&cpu.carryingFlagTeam===null){
+    const cd=Math.hypot(combat.x-cpu.x,combat.z-cpu.z);
+    const directCombatLine=cpu.airborne||navSegmentClear({x:cpu.x,z:cpu.z},{x:combat.x,z:combat.z},cpu);
+    if(cd<MAX_FIRE_RANGE*.72&&directCombatLine)desired=Math.atan2(combat.x-cpu.x,combat.z-cpu.z);
+  }
+
+  const recovering=cpuAI.recoverTimer>0&&!cpu.airborne;
+  if(recovering){
+    cpuAI.recoverTimer=Math.max(0,cpuAI.recoverTimer-dt);
+    if(cpuAI.recoverTimer>.34)desired=cpu.angle;
+    else desired=cpuAI.recoverHeading;
+  }
+  const ad=angleDelta(cpu.angle,desired);
+  cpu.angle+=clamp(ad,-cpu.turnRate*dt,cpu.turnRate*dt);
+
+  const turnPenalty=clamp(1-Math.abs(ad)/1.45,.28,1);
+  let desiredSpeed;
+  const atResupplyDepot=cpuAI.state==='resupply'&&vehicleInOwnDepot(cpu,-8);
+  if(atResupplyDepot){
+    desiredSpeed=0;
+  }else if(recovering){
+    desiredSpeed=cpuAI.recoverTimer>.34?-cpu.maxReverse*.48:cpu.maxForward*.22;
+  }else if(cpuAI.egress){
+    desiredSpeed=cpu.maxForward*.34*turnPenalty;
+  }else{
+    const urgent=cpuAI.state==='returnFlag'||cpuAI.state==='intercept';
+    desiredSpeed=cpu.maxForward*(urgent?.64:.54)*turnPenalty;
+    if(combat&&cpu.type!=='tank'&&cpu.carryingFlagTeam===null&&Math.hypot(combat.x-cpu.x,combat.z-cpu.z)<MAX_FIRE_RANGE*.70)desiredSpeed*=.40;
+    if(cpuAI.pathFailed&&!cpu.airborne)desiredSpeed*=.55;
+  }
+  if(cpu.speed<desiredSpeed)cpu.speed=Math.min(desiredSpeed,cpu.speed+cpu.accel*dt);
+  else cpu.speed=Math.max(desiredSpeed,cpu.speed-cpu.brake*.55*dt);
+
+  let roughFactor=cpu.airborne?1:debrisSpeedFactorAt(cpu.x,cpu.z,cpu.radius);
+  let waterFactor=1;
+  if(cpu.canFloat&&surfaceKindAt(cpu.x,cpu.z)==='water')waterFactor=waterDepthAt(cpu.x,cpu.z)==='deep'?.42:.58;
+  const speedFactor=Math.min(roughFactor,waterFactor);
+  cpu.speed=clamp(cpu.speed,-cpu.maxReverse*speedFactor,cpu.maxForward*speedFactor);
+  const ox=cpu.x,oz=cpu.z;
+  cpu.x+=Math.sin(cpu.angle)*cpu.speed*dt;
+  cpu.z+=Math.cos(cpu.angle)*cpu.speed*dt;
+
+  const dp=player.alive?Math.hypot(cpu.x-player.x,cpu.z-player.z):Infinity;
+  const hitPlayer=vehicleBodiesCollide(cpu,player);
+  const hitAlly=cpuReinforcements.some(v=>vehicleBodiesCollide(cpu,v));
+  const invalid=cpu.airborne
+    ?!withinVehicleWorld(cpu,cpu.x,cpu.z,cpu.radius)
+    :(!navPointPassable(cpu.x,cpu.z,cpu,0)||hitPlayer||hitAlly);
+  if(invalid){
+    cpu.x=ox;cpu.z=oz;
+    if(!cpu.airborne){
+      cpu.speed=0;
+      if(cpuAI.recoverTimer<=0){
+        cpuAI.avoidSign*=-1;
+        cpuAI.recoverHeading=chooseCpuRecoveryHeading();
+      }
+      cpuAI.recoverTimer=.72;cpuAI.stuckTimer=0;cpuAI.pathTimer=0;
+    }else cpu.speed=0;
+  }else if(!cpu.airborne){
+    roughFactor=debrisSpeedFactorAt(cpu.x,cpu.z,cpu.radius);
+    waterFactor=(cpu.canFloat&&surfaceKindAt(cpu.x,cpu.z)==='water')?(waterDepthAt(cpu.x,cpu.z)==='deep'?.42:.58):1;
+    const afterFactor=Math.min(roughFactor,waterFactor);
+    cpu.speed=clamp(cpu.speed,-cpu.maxReverse*afterFactor,cpu.maxForward*afterFactor);
+    if(surfaceKindAt(cpu.x,cpu.z)==='water'){
+      if(cpu.canFloat)cpu.speed*=Math.pow(.72,dt);
+      else cpu.speed*=Math.pow(.28,dt);
+    }
+    if(cpu.canFloat&&fullyInDeepWater(cpu.x,cpu.z,cpu.radius*.72))drown(cpu);
+    else if(!cpu.canFloat&&fullyInWater(cpu.x,cpu.z,cpu.radius))drown(cpu);
+  }
+
+  const moved=Math.hypot(cpu.x-cpuAI.lastX,cpu.z-cpuAI.lastZ);
+  if(!cpu.airborne){
+    if(cpuAI.recoverTimer>0)cpuAI.stuckTimer=0;
+    else{
+      cpuAI.stuckTimer=moved<1.0?cpuAI.stuckTimer+dt:Math.max(0,cpuAI.stuckTimer-dt*2);
+      if(cpuAI.stuckTimer>1.0){
+        cpuAI.avoidSign*=-1;
+        cpuAI.recoverHeading=chooseCpuRecoveryHeading();
+        cpuAI.recoverTimer=.72;cpuAI.stuckTimer=0;cpuAI.pathTimer=0;
+      }
+    }
+  }
+  cpuAI.lastX=cpu.x;cpuAI.lastZ=cpu.z;
+
+  if(cpu.type==='asv'&&cpu.minesLeft>0&&!isAirVehicle(player)&&player.alive&&cpuAI.state!=='returnFlag'){
+    const pd=Math.hypot(player.x-cpu.x,player.z-cpu.z);
+    if(pd<145&&cpu.mineCooldown<=0)layMine(cpu);
+  }
+  cpuAimAndFire(dt);
+}
+// ---------------------------------------------------------------------------
+// Single-player CPU reinforcement manager
+// ---------------------------------------------------------------------------
+function cpuSpawnType(){
+  const playerFlag=flags[0],ownFlag=flags[1];
+  const active=activeCpuVehicles(),available=type=>stockCount(1,type)>0;
+  if(playerFlag&&(playerFlag.state==='exposed'||playerFlag.state==='dropped')&&!active.some(v=>v.type==='jeep')&&available('jeep'))return 'jeep';
+  if(ownFlag&&ownFlag.state==='carried'&&ownFlag.carrier&&ownFlag.carrier.team===0&&!active.some(v=>v.type==='helicopter')&&available('helicopter'))return 'helicopter';
+  const cycle=['tank','helicopter','asv','jeep'];
+  for(let n=0;n<cycle.length;n++){
+    const type=cycle[(cpuSpawnSerial+n)%cycle.length];
+    if(available(type)&&!active.some(v=>v.type===type)){cpuSpawnSerial=(cpuSpawnSerial+n+1)%cycle.length;return type;}
+  }
+  for(let n=0;n<cycle.length;n++){
+    const type=cycle[(cpuSpawnSerial+n)%cycle.length];
+    if(available(type)){cpuSpawnSerial=(cpuSpawnSerial+n+1)%cycle.length;return type;}
+  }
+  return null;
+}
+function newExtraAI(v){
+  return{egress:true,path:[],pathIndex:0,pathTimer:0,pathGoalX:null,pathGoalZ:null,pathFailed:false,
+    stuckTimer:0,lastX:v.x,lastZ:v.z,avoidSign:Math.random()<.5?-1:1,recoverTimer:0,recoverHeading:v.angle};
+}
+function spawnCpuReinforcement(typeKey){
+  if(!typeKey||!takeVehicleFromStock(1,typeKey))return null;
+  const h=trapdoors[1];
+  const v=vehicle(h.x,h.z,0,cpuColorFor(typeKey),'CPU',1,typeKey);
+  v.cpuExtra=true;v.deployState='deploying';v.deployTimer=0;v.deathTimer=0;v.carryingFlagTeam=null;
+  v.renderYOffset=v.airborne?-88:-30;v.ai=newExtraAI(v);
+  cpuReinforcements.push(v);playPoolSound(1,'deploy');return v;
+}
+function cpuSpawnDoorBusy(){
+  if(cpuPool.mode==='deploying'||cpuPool.mode==='returning')return true;
+  return cpuReinforcements.some(v=>v.alive&&v.deployState==='deploying');
+}
+function updateCpuSpawnManager(dt){
+  if(gameMode!=='single'||matchWinner!==null||pool.mode!=='active')return;
+  const limit=cpuMaxActive();
+  if(cpuConcurrentCount()>=limit){cpuSpawnTimer=0;return;}
+  cpuSpawnTimer+=dt;
+  const wait=cpuFirstSpawn?1.0:CPU_SPAWN_DELAY;
+  if(cpuSpawnTimer<wait||cpuSpawnDoorBusy())return;
+  const type=cpuSpawnType();
+  if(!type){cpuSpawnTimer=0;return;}
+  const spawned=cpuPool.mode==='waiting'&&!cpu.alive?startCpuDeployment(type):!!spawnCpuReinforcement(type);
+  if(spawned){cpuFirstSpawn=false;cpuSpawnTimer=0;}
+}
+function extraStrategicGoal(v){
+  const playerFlag=flags[0],ownFlag=flags[1];
+  if(v.carryingFlagTeam===0)return{x:trapdoors[1].x,z:trapdoors[1].z};
+  if(ownFlag.state==='carried'&&ownFlag.carrier&&ownFlag.carrier.team===0)return{x:ownFlag.carrier.x,z:ownFlag.carrier.z};
+  if(v.type==='jeep'&&(playerFlag.state==='exposed'||playerFlag.state==='dropped'))return{x:playerFlag.x,z:playerFlag.z};
+  const command=flagBuildings[0];
+  if(command&&command.alive)return{x:command.x,z:command.z};
+  if(player.alive)return{x:player.x,z:player.z};
+  return{x:playerFlag.x,z:playerFlag.z};
+}
+function extraNavigationTarget(v,goal,dt){
+  if(v.airborne)return goal;
+  const ai=v.ai;ai.pathTimer=Math.max(0,ai.pathTimer-dt);
+  const movedGoal=ai.pathGoalX===null||Math.hypot(goal.x-ai.pathGoalX,goal.z-ai.pathGoalZ)>80;
+  const wp=ai.path[ai.pathIndex],blocked=wp&&!navPointPassable(wp.x,wp.z,v,1);
+  if(!ai.path.length||ai.pathTimer<=0||movedGoal||blocked){
+    ai.path=findNavPath(v.x,v.z,goal.x,goal.z,v);ai.pathIndex=ai.path.length>1?1:0;
+    ai.pathGoalX=goal.x;ai.pathGoalZ=goal.z;ai.pathFailed=ai.path.length===0;ai.pathTimer=1.05;
+  }
+  while(ai.path.length&&ai.pathIndex<ai.path.length-1){const q=ai.path[ai.pathIndex];if(Math.hypot(v.x-q.x,v.z-q.z)>34)break;ai.pathIndex++;}
+  return ai.path[ai.pathIndex]||goal;
+}
+function extraCombatTarget(v){
+  if(v.carryingFlagTeam!==null)return null;
+  if(player.alive&&pool.mode==='active'){
+    const d=Math.hypot(player.x-v.x,player.z-v.z);
+    if(d<MAX_FIRE_RANGE*.92)return player;
+  }
+  const command=flagBuildings[0];
+  if(command&&command.alive&&Math.hypot(command.x-v.x,command.z-v.z)<MAX_FIRE_RANGE*.88)return command;
+  let best=null,bestScore=Infinity;
+  for(const o of sceneObjects){
+    if(!o.alive||!o.damageable||o.kind==='bridge'||o.team===1)continue;
+    if(!(o.team===0&&(o.kind==='tower'||o.kind==='building'||o.kind==='depot'||o.kind==='wall')))continue;
+    const d=Math.hypot(o.x-v.x,o.z-v.z);if(d>MAX_FIRE_RANGE*.80)continue;
+    const score=d+(o.kind==='tower'?0:o.kind==='building'?18:o.kind==='depot'?28:44);
+    if(score<bestScore){best=o;bestScore=score;}
+  }
+  return best;
+}
+function extraAimAndFire(v,dt,target){
+  if(!target||!v.alive||v.deployState!=='active')return;
+  const dx=target.x-v.x,dz=target.z-v.z,range=Math.hypot(dx,dz),desiredWorld=Math.atan2(dx,dz);
+  const mode=target.airborne?'air':'ground';
+  if(v.type==='tank'){
+    const desiredRelative=angleDelta(v.angle,desiredWorld),d=angleDelta(v.turretAngle,desiredRelative);
+    v.turretAngle+=clamp(d,-2.15*dt,2.15*dt);v.turretAngle=Math.atan2(Math.sin(v.turretAngle),Math.cos(v.turretAngle));
+    if(Math.abs(d)<.08&&range<MAX_FIRE_RANGE*.95)fire(v,1,mode);return;
+  }
+  const facing=Math.abs(angleDelta(v.angle,desiredWorld));if(facing>.11||range>MAX_FIRE_RANGE*.93)return;
+  if(v.type==='helicopter')v.selectedWeapon=mode==='ground'&&v.ammoSecondary>0?'rocket':'shell';
+  fire(v,1,mode);
+}
+function updateCpuExtraVehicle(v,dt){
+  v.cooldown=Math.max(0,v.cooldown-dt);v.mineCooldown=Math.max(0,v.mineCooldown-dt);
+  if(!v.alive)return;
+  const ai=v.ai;
+  if(ai.egress){
+    const gx=CPU_EGRESS.x+(v.extraLane||0),gz=CPU_EGRESS.z;
+    if(Math.hypot(v.x-gx,v.z-gz)<46){ai.egress=false;ai.path.length=0;ai.pathTimer=0;}
+  }
+  const strategic=extraStrategicGoal(v);
+  const baseGoal=ai.egress?{x:CPU_EGRESS.x+(v.extraLane||0),z:CPU_EGRESS.z}:strategic;
+  const target=extraNavigationTarget(v,baseGoal,dt);
+  let desired=Math.atan2(target.x-v.x,target.z-v.z);
+  const combat=ai.egress?null:extraCombatTarget(v);
+  if(combat&&v.type!=='tank'&&v.carryingFlagTeam===null){
+    const cd=Math.hypot(combat.x-v.x,combat.z-v.z),clear=v.airborne||navSegmentClear({x:v.x,z:v.z},{x:combat.x,z:combat.z},v);
+    if(cd<MAX_FIRE_RANGE*.70&&clear)desired=Math.atan2(combat.x-v.x,combat.z-v.z);
+  }
+  const ad=angleDelta(v.angle,desired);v.angle+=clamp(ad,-v.turnRate*dt,v.turnRate*dt);
+  const turnPenalty=clamp(1-Math.abs(ad)/1.45,.28,1);
+  let desiredSpeed=v.maxForward*(ai.egress?.34:.50)*turnPenalty;
+  if(combat&&v.type!=='tank'&&Math.hypot(combat.x-v.x,combat.z-v.z)<MAX_FIRE_RANGE*.68)desiredSpeed*=.42;
+  if(v.speed<desiredSpeed)v.speed=Math.min(desiredSpeed,v.speed+v.accel*dt);else v.speed=Math.max(desiredSpeed,v.speed-v.brake*.55*dt);
+  let rough=v.airborne?1:debrisSpeedFactorAt(v.x,v.z,v.radius),water=1;
+  if(v.canFloat&&surfaceKindAt(v.x,v.z)==='water')water=waterDepthAt(v.x,v.z)==='deep'?.42:.58;
+  const factor=Math.min(rough,water);v.speed=clamp(v.speed,-v.maxReverse*factor,v.maxForward*factor);
+  const ox=v.x,oz=v.z;v.x+=Math.sin(v.angle)*v.speed*dt;v.z+=Math.cos(v.angle)*v.speed*dt;
+  const bodyHit=allVehicles().some(o=>o!==v&&o.alive&&vehicleCombatActive(o)&&vehicleBodiesCollide(v,o));
+  const invalid=v.airborne?!withinVehicleWorld(v,v.x,v.z,v.radius):(!navPointPassable(v.x,v.z,v,0)||bodyHit);
+  if(invalid){v.x=ox;v.z=oz;v.speed=0;ai.pathTimer=0;ai.avoidSign*=-1;v.angle+=ai.avoidSign*.28;}
+  else if(!v.airborne){
+    if(surfaceKindAt(v.x,v.z)==='water'){if(v.canFloat)v.speed*=Math.pow(.72,dt);else v.speed*=Math.pow(.28,dt);}
+    if(v.canFloat&&fullyInDeepWater(v.x,v.z,v.radius*.72))drown(v);else if(!v.canFloat&&fullyInWater(v.x,v.z,v.radius))drown(v);
+  }
+  if(v.type==='asv'&&v.minesLeft>0&&player.alive&&!isAirVehicle(player)&&Math.hypot(player.x-v.x,player.z-v.z)<145&&v.mineCooldown<=0)layMine(v);
+  extraAimAndFire(v,dt,combat);
+}
+function updateCpuReinforcements(dt){
+  cpuExtraHatchOpen=Math.max(0,cpuExtraHatchOpen-dt*3.0);
+  for(let i=cpuReinforcements.length-1;i>=0;i--){
+    const v=cpuReinforcements[i];
+    if(!v.alive){v.deathTimer=(v.deathTimer||0)+dt;if(v.deathTimer>2.0)cpuReinforcements.splice(i,1);continue;}
+    if(v.deployState==='deploying'){
+      v.deployTimer+=dt;cpuExtraHatchOpen=Math.max(cpuExtraHatchOpen,clamp(v.deployTimer/.32,0,1));crushEnemyOnOpeningTrapdoor(1);
+      const q=clamp((v.deployTimer-.28)/.78,0,1);v.renderYOffset=lerp(v.airborne?-88:-30,0,q);
+      if(v.deployTimer>1.12){v.deployState='active';v.renderYOffset=0;v.ai.egress=true;v.extraLane=((i%3)-1)*20;}
+      continue;
+    }
+    if(pool.mode!=='active'||matchWinner!==null)continue;
+    updateCpuExtraVehicle(v,dt);
+  }
+}
+
+function updatePlayer(dt){
+  player.cooldown=Math.max(0,player.cooldown-dt);
+  player.mineCooldown=Math.max(0,player.mineCooldown-dt);
+  if(pool.mode!=='active'||!player.alive||matchWinner!==null)return;
+
+  const turret=gameMode==='single'
+    ?(keys.KeyA?1:0)-(keys.KeyD?1:0)
+    :(keys.KeyQ?1:0)-(keys.KeyE?1:0);
+  if(player.type==='tank'){
+    // Single-player uses A/D for the turret; local P1 keeps Q/E.
+    // The turret remains relative to the hull, so turning the hull carries it with the tank.
+    player.turretAngle+=turret*2.25*dt;
+    player.turretAngle=Math.atan2(Math.sin(player.turretAngle),Math.cos(player.turretAngle));
+  }
+
+  if(player.airborne){
+    // Single-player uses the cursor cluster for primary flight: UP/DOWN speed,
+    // LEFT/RIGHT yaw, with A/D reserved for the slow lateral cyclic axis.
+    // Local two-player P1 keeps the left-side keyboard layout: W/S speed,
+    // A/D yaw, Q/E lateral cyclic.
+    const single=gameMode==='single';
+    const throttle=single
+      ?((keys.ArrowUp||keys.Numpad8)?1:0)-((keys.ArrowDown||keys.Numpad2)?1:0)
+      :(keys.KeyW?1:0)-(keys.KeyS?1:0);
+    const steer=single
+      ?((keys.ArrowLeft||keys.Numpad4)?1:0)-((keys.ArrowRight||keys.Numpad6)?1:0)
+      :(keys.KeyA?1:0)-(keys.KeyD?1:0);
+    const strafe=single
+      ?(keys.KeyD?1:0)-(keys.KeyA?1:0)
+      :(keys.KeyQ?1:0)-(keys.KeyE?1:0);
+    updateHelicopterMotion(player,throttle,steer,strafe,dt);
+    return;
+  }
+
+  const single=gameMode==='single';
+  const throttle=single
+    ?((keys.ArrowUp||keys.Numpad8)?1:0)-((keys.ArrowDown||keys.Numpad2)?1:0)
+    :(keys.KeyW?1:0)-(keys.KeyS?1:0);
+  const steer=single
+    ?((keys.ArrowLeft||keys.Numpad4)?1:0)-((keys.ArrowRight||keys.Numpad6)?1:0)
+    :(keys.KeyA?1:0)-(keys.KeyD?1:0);
+  if(throttle>0)player.speed+=player.accel*dt;
+  else if(throttle<0)player.speed-=player.brake*dt;
+  else player.speed=approachZero(player.speed,player.friction*dt);
+
+  let roughFactor=debrisSpeedFactorAt(player.x,player.z,player.radius);
+  let waterFactor=1;
+  if(player.canFloat&&surfaceKindAt(player.x,player.z)==='water')waterFactor=waterDepthAt(player.x,player.z)==='deep'?.42:.58;
+  const speedFactor=Math.min(roughFactor,waterFactor);
+  player.speed=clamp(player.speed,-player.maxReverse*speedFactor,player.maxForward*speedFactor);
+  const steerGrip=clamp(Math.abs(player.speed)/70,0,1);
+  if(steerGrip>.01)player.angle+=steer*player.turnRate*steerGrip*(player.speed>=0?1:-1)*dt;
+
+  const ox=player.x,oz=player.z;
+  player.x+=Math.sin(player.angle)*player.speed*dt;
+  player.z+=Math.cos(player.angle)*player.speed*dt;
+  const hitCpu=enemyVehicles().some(v=>vehicleBodiesCollide(player,v));
+  if(!withinVehicleWorld(player,player.x,player.z,player.radius)||hitsObstacle(player.x,player.z,player.radius)||hitCpu){
+    player.x=ox;player.z=oz;player.speed*=-.22;
+  }else{
+    roughFactor=debrisSpeedFactorAt(player.x,player.z,player.radius);
+    waterFactor=(player.canFloat&&surfaceKindAt(player.x,player.z)==='water')?(waterDepthAt(player.x,player.z)==='deep'?.42:.58):1;
+    const afterFactor=Math.min(roughFactor,waterFactor);
+    player.speed=clamp(player.speed,-player.maxReverse*afterFactor,player.maxForward*afterFactor);
+    if(surfaceKindAt(player.x,player.z)==='water'){
+      if(player.canFloat)player.speed*=Math.pow(.72,dt);
+      else player.speed*=Math.pow(.28,dt);
+    }
+    if(player.canFloat&&fullyInDeepWater(player.x,player.z,player.radius*.72))drown(player);
+    else if(!player.canFloat&&fullyInWater(player.x,player.z,player.radius))drown(player);
+  }
+}
+
+
+function updatePlayer2(dt){
+  if(gameMode!=='local2')return;
+  cpu.cooldown=Math.max(0,cpu.cooldown-dt);
+  cpu.mineCooldown=Math.max(0,cpu.mineCooldown-dt);
+  if(cpuPool.mode!=='active'||!cpu.alive||matchWinner!==null)return;
+
+  const turret=((keys.Comma||keys.Numpad4)?1:0)-((keys.Period||keys.Numpad6)?1:0);
+  if(cpu.type==='tank'){
+    cpu.turretAngle+=turret*2.25*dt;
+    cpu.turretAngle=Math.atan2(Math.sin(cpu.turretAngle),Math.cos(cpu.turretAngle));
+  }
+
+  const up=keys.ArrowUp||keys.Numpad8,down=keys.ArrowDown||keys.Numpad2;
+  const left=keys.ArrowLeft||keys.Numpad4,right=keys.ArrowRight||keys.Numpad6;
+  if(cpu.airborne){
+    const throttle=(up?1:0)-(down?1:0),steer=(left?1:0)-(right?1:0);
+    const strafe=(keys.Period?1:0)-(keys.Comma?1:0);
+    updateHelicopterMotion(cpu,throttle,steer,strafe,dt);
+    return;
+  }
+
+  const throttle=(up?1:0)-(down?1:0),steer=(left?1:0)-(right?1:0);
+  if(throttle>0)cpu.speed+=cpu.accel*dt;
+  else if(throttle<0)cpu.speed-=cpu.brake*dt;
+  else cpu.speed=approachZero(cpu.speed,cpu.friction*dt);
+
+  let roughFactor=debrisSpeedFactorAt(cpu.x,cpu.z,cpu.radius),waterFactor=1;
+  if(cpu.canFloat&&surfaceKindAt(cpu.x,cpu.z)==='water')waterFactor=waterDepthAt(cpu.x,cpu.z)==='deep'?.42:.58;
+  let speedFactor=Math.min(roughFactor,waterFactor);
+  cpu.speed=clamp(cpu.speed,-cpu.maxReverse*speedFactor,cpu.maxForward*speedFactor);
+  const steerGrip=clamp(Math.abs(cpu.speed)/70,0,1);
+  if(steerGrip>.01)cpu.angle+=steer*cpu.turnRate*steerGrip*(cpu.speed>=0?1:-1)*dt;
+
+  const ox=cpu.x,oz=cpu.z;
+  cpu.x+=Math.sin(cpu.angle)*cpu.speed*dt;cpu.z+=Math.cos(cpu.angle)*cpu.speed*dt;
+  const hitP1=vehicleBodiesCollide(cpu,player);
+  if(!withinVehicleWorld(cpu,cpu.x,cpu.z,cpu.radius)||hitsObstacle(cpu.x,cpu.z,cpu.radius)||hitP1){
+    cpu.x=ox;cpu.z=oz;cpu.speed*=-.22;
+  }else{
+    roughFactor=debrisSpeedFactorAt(cpu.x,cpu.z,cpu.radius);
+    waterFactor=(cpu.canFloat&&surfaceKindAt(cpu.x,cpu.z)==='water')?(waterDepthAt(cpu.x,cpu.z)==='deep'?.42:.58):1;
+    speedFactor=Math.min(roughFactor,waterFactor);
+    cpu.speed=clamp(cpu.speed,-cpu.maxReverse*speedFactor,cpu.maxForward*speedFactor);
+    if(surfaceKindAt(cpu.x,cpu.z)==='water'){
+      if(cpu.canFloat)cpu.speed*=Math.pow(.72,dt);else cpu.speed*=Math.pow(.28,dt);
+    }
+    if(cpu.canFloat&&fullyInDeepWater(cpu.x,cpu.z,cpu.radius*.72))drown(cpu);
+    else if(!cpu.canFloat&&fullyInWater(cpu.x,cpu.z,cpu.radius))drown(cpu);
+  }
+}
+
+function weaponDirection(v){
+  const a=v.type==='tank'?v.angle+v.turretAngle:v.angle;
+  return{a,fx:Math.sin(a),fz:Math.cos(a)};
+}
+function ammoSlotForShot(v){
+  if(v.type==='helicopter')return v.selectedWeapon==='rocket'?'ammoSecondary':'ammoPrimary';
+  return 'ammoPrimary';
+}
+function currentAmmo(v){
+  const slot=ammoSlotForShot(v);return {slot,value:v[slot]||0,max:slot==='ammoSecondary'?(v.maxAmmoSecondary||0):(v.maxAmmoPrimary||0)};
+}
+function spendAmmo(v){
+  const slot=ammoSlotForShot(v);
+  if((v[slot]||0)<=0)return false;
+  v[slot]--;return true;
+}
+function fire(v,team,mode='ground'){
+  if(!v.alive||v.cooldown>0)return;
+  if(v===player&&pool.mode!=='active')return;
+  if(v===cpu&&cpuPool.mode!=='active')return;
+  if(v.cpuExtra&&v.deployState!=='active')return;
+  const d=weaponDirection(v);
+
+  // Jeep: a real lobbed grenade.  Horizontal range is about one third of
+  // the previous v013 grenade range and the projectile can pass over low obstacles.
+  if(v.type==='jeep'){
+    if(mode!=='ground'||!spendAmmo(v))return;
+    playWeaponSound(v,mode);
+    v.cooldown=v.fireDelay;
+    projectiles.push({
+      x:v.x+d.fx*24,y:13,z:v.z+d.fz*24,
+      vx:d.fx*128,vy:195,vz:d.fz*128,gravity:-340,groundImpact:true,
+      life:2.0,team,damage:v.damage,source:'vehicle',type:'grenade',
+      blastRadius:v.blastRadius||42,targetLayer:'ground',clearMines:true
+    });
+    return;
+  }
+
+  // Helicopter keeps the original control idea: one control fires at the
+  // ground, another fires forward at airborne targets.  C switches shell/rocket.
+  if(v.type==='helicopter'){
+    const rocket=v.selectedWeapon==='rocket';
+    const type=rocket?'heliRocket':'heliShell';
+    const damage=rocket?52:18;
+    const blastRadius=rocket?58:0;
+    if(!spendAmmo(v))return;
+    playWeaponSound(v,mode);
+    v.cooldown=rocket?1.00:.36;
+
+    if(mode==='ground'){
+      projectiles.push({
+        x:v.x+d.fx*24,y:77,z:v.z+d.fz*24,
+        vx:d.fx*(rocket?195:216),vy:rocket?-38:-48,vz:d.fz*(rocket?195:216),
+        gravity:rocket?-95:-110,groundImpact:true,life:1.5,
+        team,damage,source:'vehicle',type,blastRadius,targetLayer:'ground',
+        clearMines:rocket
+      });
+    }else{
+      projectiles.push({
+        x:v.x+d.fx*34,y:AIR_COMBAT_Y,z:v.z+d.fz*34,
+        vx:d.fx*(rocket?470:650),vy:0,vz:d.fz*(rocket?470:650),
+        life:rocket?2.1:1.5,team,damage,source:'vehicle',type,
+        blastRadius:rocket?42:0,targetLayer:'air'
+      });
+    }
+    return;
+  }
+
+  const weapon=mode==='air'?v.airWeapon:v.groundWeapon;
+  if(!weapon||!spendAmmo(v))return;
+  playWeaponSound(v,mode);
+  v.cooldown=v.fireDelay;
+  const isRocket=weapon==='rocket'||weapon==='airRocket';
+
+  // Direct-fire rounds start at the physical weapon muzzle.  In particular,
+  // Tank X/air fire no longer appears at helicopter altitude above the hull:
+  // it leaves the turret barrel and climbs to the airborne combat layer.
+  let muzzleDistance=42,muzzleY=13;
+  if(v.type==='tank'){muzzleDistance=46;muzzleY=18;}
+  else if(v.type==='asv'){muzzleDistance=26;muzzleY=30;}
+
+  projectiles.push({
+    x:v.x+d.fx*muzzleDistance,y:muzzleY,z:v.z+d.fz*muzzleDistance,
+    vx:d.fx*v.projectileSpeed,vy:0,vz:d.fz*v.projectileSpeed,
+    climbToY:mode==='air'?AIR_COMBAT_Y:null,
+    climbRate:mode==='air'?155:0,
+    life:isRocket?2.4:1.8,team,damage:v.damage,source:'vehicle',type:weapon,
+    blastRadius:isRocket?(v.blastRadius||65):0,targetLayer:mode
+  });
+}
+function layMine(v){
+  if(!v.alive||v.type!=='asv'||v.mineCooldown>0||v.minesLeft<=0)return;
+  if(v===player&&pool.mode!=='active')return;
+  if(v===cpu&&cpuPool.mode!=='active')return;
+  if(v.cpuExtra&&v.deployState!=='active')return;
+  const fx=Math.sin(v.angle),fz=Math.cos(v.angle);
+  playMineSound(v);
+  mines.push({x:v.x-fx*38,z:v.z-fz*38,team:v.team,r:17,alive:true,armDelay:MINE_ARM_DELAY,armed:false,cpuDetectionEpoch:-1,cpuDetectedEpoch:v.team===1?cpuAI.mineSenseEpoch:-1});
+  v.minesLeft--;v.mineCooldown=.75;
+}
+function blastAt(x,z,damageAmount,radius,team,targetLayer='ground',canDamageBridge=false){
+  spawnExplosionBurst(x,8,z,clamp(radius/55,.8,1.6),surfaceKindAt(x,z)==='water');
+  if(targetLayer!=='air'){
+    for(const o of sceneObjects){
+      if(!o.alive||!o.damageable)continue;
+      const d=Math.hypot(o.x-x,o.z-z);if(d>radius+(o.r||Math.max(o.hx||0,o.hz||0)))continue;
+      const amount=damageAmount*clamp(1-d/(radius*1.35),.28,1);
+      damageObject(o,amount,x,z,canDamageBridge);
+    }
+  }
+  for(const v of allVehicles()){
+    if(!v.alive||!vehicleCombatActive(v)||v.team===team)continue;
+    if(targetLayer==='ground'&&isAirVehicle(v))continue;
+    if(targetLayer==='air'&&!isAirVehicle(v))continue;
+    const d=Math.hypot(v.x-x,v.z-z);if(d<radius+v.radius)damage(v,damageAmount*clamp(1-d/(radius*1.4),.35,1));
+  }
+}
+function clearMinesNear(x,z,radius){
+  for(const m of mines){
+    if(!m.alive)continue;
+    if(Math.hypot(m.x-x,m.z-z)<=radius){
+      m.alive=false;
+      spawnExplosionBurst(m.x,3,m.z,.72,false);
+    }
+  }
+}
+
+function damage(v,amount){
+  if(!v.alive)return;
+  // 999 is used internally for a nominally lethal combat hit. Convert it to
+  // one full health bar before applying vulnerability so the handicap remains
+  // meaningful for mines, collisions and trapdoor crushes as well as gunfire.
+  const baseAmount=amount>=999?v.maxHealth:amount;
+  amount=baseAmount*teamVulnerability(v.team);
+  v.health=Math.max(0,v.health-amount);
+  explosions.push({x:v.x,y:10,z:v.z,t:0,max:.55,big:false});
+  if(v.health<=0){v.alive=false;v.speed=0;spawnExplosionBurst(v.x,12,v.z,1.45,false);spawnSmoke(v.x,7,v.z,3.2,1.25);}
+}
+
+function fireTower(t,target){
+  const dx=target.x-t.x,dz=target.z-t.z,d=Math.hypot(dx,dz)||1;
+  const lead=clamp(d/360,0,.9);
+  const tx=target.x+Math.sin(target.angle)*target.speed*lead;
+  const tz=target.z+Math.cos(target.angle)*target.speed*lead;
+  const ax=tx-t.x,az=tz-t.z,ad=Math.hypot(ax,az)||1;
+  t.aim=Math.atan2(ax,az);
+  playTowerSound(t);
+  projectiles.push({x:t.x+ax/ad*22,y:27,z:t.z+az/ad*22,vx:ax/ad*365,vy:0,vz:az/ad*365,life:1.7,team:t.team,damage:9,source:'tower'});
+  t.cooldown=t.fireInterval||1.65;
+}
+function updateTowers(dt){
+  for(const t of sceneObjects){
+    if(t.kind!=='tower'||!t.alive)continue;
+    t.cooldown=Math.max(0,t.cooldown-dt);
+    let target=null,best=Infinity;
+    for(const v of allVehicles()){
+      if(!v.alive||!vehicleCombatActive(v)||v.team===t.team)continue;
+      const d=Math.hypot(v.x-t.x,v.z-t.z);
+      if(d<t.range&&d<best){best=d;target=v;}
+    }
+    if(!target)continue;
+    t.aim=Math.atan2(target.x-t.x,target.z-t.z);
+    if(t.cooldown<=0)fireTower(t,target);
+  }
+}
+
+function updateMines(dt){
+  for(let i=mines.length-1;i>=0;i--){
+    const m=mines[i];if(!m.alive){mines.splice(i,1);continue;}
+
+    // Newly laid mines are inert for a short moment so the deploying ASV can
+    // clear them. Once armed they are deliberately indiscriminate: friendly
+    // ground vehicles trigger them just as enemy ground vehicles do.
+    m.armDelay=Math.max(0,(m.armDelay??0)-dt);
+    m.armed=m.armDelay<=0;
+    if(!m.armed)continue;
+
+    for(const v of allVehicles()){
+      if(!v.alive||!vehicleCombatActive(v)||isAirVehicle(v))continue;
+      const d=Math.hypot(v.x-m.x,v.z-m.z);
+      if(d<m.r+v.radius*.72){
+        spawnExplosionBurst(m.x,5,m.z,1.35,false);
+        // A mine is lethal to any ground vehicle in the immediate blast area,
+        // not only to the vehicle that happened to trip the proximity check.
+        for(const hit of allVehicles()){
+          if(!hit.alive||!vehicleCombatActive(hit)||isAirVehicle(hit))continue;
+          if(Math.hypot(hit.x-m.x,hit.z-m.z)<m.r+hit.radius+16)damage(hit,999);
+        }
+        m.alive=false;break;
+      }
+    }
+    if(!m.alive)mines.splice(i,1);
+  }
+}
+function isHelicopterProjectile(p){
+  return p.type==='heliShell'||p.type==='heliRocket';
+}
+function updateProjectiles(dt){
+  for(let i=projectiles.length-1;i>=0;i--){
+    const p=projectiles[i];
+    if(p.startX===undefined){p.startX=p.x;p.startZ=p.z;}
+
+    p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;
+    if(p.gravity)p.vy+=p.gravity*dt;
+    // Air-target rounds fired by ground vehicles rise from their real launcher
+    // position, then level off at helicopter fuselage height.
+    if(p.climbToY!==null&&p.climbToY!==undefined&&p.y<p.climbToY){
+      p.y=Math.min(p.climbToY,p.y+(p.climbRate||155)*dt);
+    }
+    p.life-=dt;
+
+    // Hard horizontal range limit shared with the watchtowers. Clamp the last
+    // step to the boundary so even a fast shell cannot visibly overshoot it.
+    let rangeExpired=false;
+    const range=Math.hypot(p.x-p.startX,p.z-p.startZ);
+    if(range>MAX_FIRE_RANGE){
+      const s=MAX_FIRE_RANGE/range;
+      p.x=p.startX+(p.x-p.startX)*s;
+      p.z=p.startZ+(p.z-p.startZ)*s;
+      rangeExpired=true;
+    }
+
+    let remove=rangeExpired||p.life<=0||p.x<OUTER_MIN_X||p.z<OUTER_MIN_Z||p.x>OUTER_MAX_X||p.z>OUTER_MAX_Z;
+    let detonate=remove&&p.blastRadius>0;
+    let groundImpact=false;
+
+    // Lobbed grenades and helicopter ground fire resolve only when they meet
+    // the terrain, so they can visibly arc over walls and other low scenery.
+    if(!remove&&p.groundImpact){
+      // Descending helicopter/grenade rounds can now strike the actual 3D
+      // volume of a wall, tower, building, rock, palm or bridge section.
+      // Previously they only tested objects after reaching terrain height,
+      // which made visually obvious hits pass through roofs and towers.
+      const objectHit=findGroundProjectileObjectAt(p.x,p.y,p.z);
+      if(objectHit){
+        groundImpact=true;remove=true;
+        if(p.blastRadius>0)detonate=true;
+        else damageObject(objectHit,p.damage,p.x,p.z,isHelicopterProjectile(p));
+      }else{
+        const gy=surfaceKindAt(p.x,p.z)==='water'?-7.4:.65;
+        if(p.y<=gy){
+          p.y=gy+1;groundImpact=true;remove=true;
+          const heliShot=isHelicopterProjectile(p);
+          const bridgeHit=bridgeSegmentAt(p.x,p.z);
+          if(p.blastRadius>0)detonate=true;
+          else{
+            const hit=findDamageableObjectAt(p.x,p.z,null);
+            if(hit)damageObject(hit,p.damage,p.x,p.z,heliShot);
+            // Vehicles have priority over the terrain beneath them.  This is
+            // especially important on bridges: the deck must never shield a
+            // tank/Jeep/ASV from an otherwise valid hit.
+            let vehicleHit=false;
+            for(const v of allVehicles()){
+              if(!v.alive||!vehicleCombatActive(v)||v.team===p.team||isAirVehicle(v))continue;
+              if(Math.hypot(v.x-p.x,v.z-p.z)<v.radius+18){damage(v,p.damage);vehicleHit=true;}
+            }
+            // Only helicopter ground fire can damage an intact bridge section,
+            // and only when no vehicle/object absorbed the direct shell.
+            if(!vehicleHit&&!hit&&heliShot&&bridgeHit)damageObject(bridgeHit,p.damage,p.x,p.z,true);
+          }
+        }
+      }
+    }
+
+    if(!remove&&!p.groundImpact&&p.targetLayer!=='air'){
+      const hit=findDamageableObjectAt(p.x,p.z,p.source==='tower'?p.team:null);
+      if(hit){
+        if(p.blastRadius>0)detonate=true;
+        else damageObject(hit,p.damage,p.x,p.z,isHelicopterProjectile(p));
+        remove=true;
+      }
+    }
+
+    if(!remove&&!p.groundImpact){
+      for(const v of allVehicles()){
+        if(!v.alive||!vehicleCombatActive(v)||v.team===p.team)continue;
+        if(p.targetLayer==='ground'&&isAirVehicle(v))continue;
+        if(p.targetLayer==='air'&&!isAirVehicle(v))continue;
+        const dx=p.x-v.x,dz=p.z-v.z;
+        if(dx*dx+dz*dz<v.radius*v.radius){
+          if(p.blastRadius>0)detonate=true;else damage(v,p.damage);
+          remove=true;break;
+        }
+      }
+    }
+
+    if(detonate){
+      blastAt(p.x,p.z,p.damage,p.blastRadius,p.team,p.targetLayer||'ground',isHelicopterProjectile(p));
+      if(p.clearMines)clearMinesNear(p.x,p.z,p.blastRadius+22);
+    }else if(groundImpact&&p.clearMines){
+      clearMinesNear(p.x,p.z,34);
+    }
+    if(remove)projectiles.splice(i,1);
+  }
+  // Remove mines destroyed by helicopter rockets.
+  for(let i=mines.length-1;i>=0;i--)if(!mines[i].alive)mines.splice(i,1);
+  for(let i=explosions.length-1;i>=0;i--){explosions[i].t+=dt;if(explosions[i].t>explosions[i].max)explosions.splice(i,1);}
+  for(let i=smokeEffects.length-1;i>=0;i--){smokeEffects[i].t+=dt;if(smokeEffects[i].t>smokeEffects[i].max)smokeEffects.splice(i,1);}
+}
+
+function updateCameraFor(cam,v,dt,snap){
+  // Each human player gets an independent fixed-world camera. In local two-player
+  // mode this function is run once for P1 and once for P2; neither camera reacts
+  // to the other player's position.
+  const fx=Math.sin(v.angle),fz=Math.cos(v.angle);
+  let desiredX=v.x+fx*65,desiredZ=v.z+fz*65;
+  if(isAirVehicle(v)||v.canFloat){
+    desiredX=clamp(desiredX,OUTER_MIN_X+150,OUTER_MAX_X-150);
+    desiredZ=clamp(desiredZ,OUTER_MIN_Z+150,OUTER_MAX_Z-150);
+  }else{
+    // Preserve the Classic camera edge margins, but derive the far limits from
+    // the currently selected battlefield. Hard-coding 2080/1460 traps cameras
+    // inside the old 2400x1700 map when larger maps are selected.
+    const minCamX=MAP_ORIGIN_X+240;
+    const maxCamX=Math.max(minCamX,world.width-320);
+    const minCamZ=MAP_ORIGIN_Z+160;
+    const maxCamZ=Math.max(minCamZ,world.depth-240);
+    desiredX=clamp(desiredX,minCamX,maxCamX);
+    desiredZ=clamp(desiredZ,minCamZ,maxCamZ);
+  }
+  const follow=snap?1:(1-Math.exp(-2.25*Math.max(0,dt)));
+  cam.focusX=lerp(cam.focusX,desiredX,follow);cam.focusZ=lerp(cam.focusZ,desiredZ,follow);
+  if(gameMode==='local2'){
+    cam.x=cam.focusX-145;cam.y=440;cam.z=cam.focusZ+515;
+    cam.tx=cam.focusX+10;cam.ty=0;cam.tz=cam.focusZ-40;
+  }else{
+    cam.x=cam.focusX-255;cam.y=760;cam.z=cam.focusZ+885;
+    cam.tx=cam.focusX+20;cam.ty=0;cam.tz=cam.focusZ-55;
+  }
+  cam.forward=norm3({x:cam.tx-cam.x,y:cam.ty-cam.y,z:cam.tz-cam.z});
+  cam.right=norm3(cross3(cam.forward,{x:0,y:1,z:0}));
+  cam.up=norm3(cross3(cam.right,cam.forward));
+}
+function updateCameras(dt,snap){
+  updateCameraFor(cameraP1,player,dt,snap);
+  if(gameMode==='local2')updateCameraFor(cameraP2,cpu,dt,snap);
+  camera=cameraP1;
+}
+function toCam(p){
+  const r={x:p.x-camera.x,y:p.y-camera.y,z:p.z-camera.z};
+  return{x:dot3(r,camera.right),y:dot3(r,camera.up),z:dot3(r,camera.forward)};
+}
+function clipNear(vs){
+  const out=[];
+  for(let i=0;i<vs.length;i++){
+    const a=vs[(i+vs.length-1)%vs.length],b=vs[i];
+    const ina=a.z>=NEAR,inb=b.z>=NEAR;
+    if(ina!==inb){const t=(NEAR-a.z)/(b.z-a.z);out.push({x:lerp(a.x,b.x,t),y:lerp(a.y,b.y,t),z:NEAR});}
+    if(inb)out.push(b);
+  }
+  return out;
+}
+function projectCam(v){return{x:W*.5+v.x*FOCAL/v.z,y:VIEW_H*.47-v.y*FOCAL/v.z};}
+function shadeRGB(hex,f){
+  const n=parseInt(hex.slice(1),16);
+  return [
+    clamp(Math.round(((n>>16)&255)*f),0,255),
+    clamp(Math.round(((n>>8)&255)*f),0,255),
+    clamp(Math.round((n&255)*f),0,255)
+  ];
+}
+function healthColor(o,base){
+  if(!o||!o.maxHealth||o.health>=o.maxHealth)return base;
+  const ratio=clamp(o.health/o.maxHealth,0,1);
+  // Damage is intentionally readable at the low game resolution: surviving
+  // objects become progressively darker and slightly browner/sootier.
+  const n=parseInt(base.slice(1),16);
+  const r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  const f=.58+.42*ratio;
+  const soot=(1-ratio)*18;
+  const rr=clamp(Math.round(r*f+soot),0,255);
+  const gg=clamp(Math.round(g*f+soot*.55),0,255);
+  const bb=clamp(Math.round(b*f+soot*.32),0,255);
+  return '#'+rr.toString(16).padStart(2,'0')+gg.toString(16).padStart(2,'0')+bb.toString(16).padStart(2,'0');
+}
+const light=norm3({x:-.4,y:.9,z:-.25});
+
+function submitPoly(worldVerts,color,twoSided){
+  if(worldVerts.length<3)return;
+
+  let brightness=1;
+  if(!twoSided){
+    const a=worldVerts[0],b=worldVerts[1],c=worldVerts[2];
+    let n=norm3(cross3(sub3(b,a),sub3(c,a)));
+    const ctr=avg3(a,b,c),toEye={x:camera.x-ctr.x,y:camera.y-ctr.y,z:camera.z-ctr.z};
+    // Do not discard back faces.  Incorrect/mixed winding in small hand-built
+    // meshes must never make geometry vanish; instead orient the normal toward
+    // the camera for stable flat shading.
+    if(dot3(n,toEye)<0)n={x:-n.x,y:-n.y,z:-n.z};
+    brightness=.60+.42*Math.max(0,dot3(n,light));
+  }
+
+  let cv=clipNear(worldVerts.map(toCam));
+  if(cv.length<3)return;
+  const rgb=shadeRGB(color,brightness);
+
+  // Triangulate the clipped polygon.  Visibility is resolved later by the
+  // per-pixel Z buffer, not by painter sorting.
+  for(let i=1;i<cv.length-1;i++){
+    const a=cv[0],b=cv[i],c=cv[i+1];
+    const pa=projectCam(a),pb=projectCam(b),pc=projectCam(c);
+    triangles.push({
+      a:{x:pa.x,y:pa.y,iz:1/a.z},
+      b:{x:pb.x,y:pb.y,iz:1/b.z},
+      c:{x:pc.x,y:pc.y,iz:1/c.z},
+      rgb
+    });
+  }
+}
+
+function rotPoint(cx,cy,cz,lx,ly,lz,yaw){
+  const c=Math.cos(yaw),s=Math.sin(yaw);
+  return{x:cx+lx*c+lz*s,y:cy+ly,z:cz-lx*s+lz*c};
+}
+function addBox(cx,cy,cz,sx,sy,sz,yaw,color){
+  const x=sx/2,y=sy/2,z=sz/2;
+  const lv=[[-x,-y,-z],[x,-y,-z],[x,-y,z],[-x,-y,z],[-x,y,-z],[x,y,-z],[x,y,z],[-x,y,z]];
+  const v=lv.map(q=>rotPoint(cx,cy,cz,q[0],q[1],q[2],yaw));
+  const faces=[[0,1,2,3],[4,7,6,5],[0,4,5,1],[1,5,6,2],[2,6,7,3],[3,7,4,0]];
+  for(const f of faces)submitPoly(f.map(i=>v[i]),color,false);
+}
+function aircraftPoint(cx,cy,cz,lx,ly,lz,yaw,roll){
+  // Roll around the vehicle's local forward axis first, then yaw into world space.
+  const cr=Math.cos(roll),sr=Math.sin(roll);
+  const bx=lx*cr-ly*sr,by=lx*sr+ly*cr,bz=lz;
+  const c=Math.cos(yaw),s=Math.sin(yaw);
+  return{x:cx+bx*c+bz*s,y:cy+by,z:cz-bx*s+bz*c};
+}
+function addAircraftBox(cx,cy,cz,ox,oy,oz,sx,sy,sz,yaw,roll,localYaw,color){
+  const x=sx/2,y=sy/2,z=sz/2,c=Math.cos(localYaw||0),sn=Math.sin(localYaw||0);
+  const lv=[[-x,-y,-z],[x,-y,-z],[x,-y,z],[-x,-y,z],[-x,y,-z],[x,y,-z],[x,y,z],[-x,y,z]];
+  const v=lv.map(q=>{
+    const qx=q[0]*c+q[2]*sn,qz=-q[0]*sn+q[2]*c;
+    return aircraftPoint(cx,cy,cz,ox+qx,oy+q[1],oz+qz,yaw,roll);
+  });
+  const faces=[[0,1,2,3],[4,7,6,5],[0,4,5,1],[1,5,6,2],[2,6,7,3],[3,7,4,0]];
+  for(const f of faces)submitPoly(f.map(i=>v[i]),color,false);
+}
+function addGroundDisc(cx,cz,rx,rz,y,color,n){
+  n=n||12;const c={x:cx,y,z:cz};
+  for(let i=0;i<n;i++){
+    const a=i*Math.PI*2/n,b=(i+1)*Math.PI*2/n;
+    submitPoly([c,{x:cx+Math.cos(a)*rx,y,z:cz+Math.sin(a)*rz},{x:cx+Math.cos(b)*rx,y,z:cz+Math.sin(b)*rz}],color,true);
+  }
+}
+function addStrip(x1,z1,x2,z2,width,y,color){
+  const dx=x2-x1,dz=z2-z1,l=Math.hypot(dx,dz)||1,nx=-dz/l*width*.5,nz=dx/l*width*.5;
+  submitPoly([{x:x1+nx,y,z:z1+nz},{x:x2+nx,y,z:z2+nz},{x:x2-nx,y,z:z2-nz},{x:x1-nx,y,z:z1-nz}],color,true);
+}
+function addAmmoDepot(d){
+  // The refill area is a low, non-solid apron in front of the building.
+  // It remains after destruction as a clear visual reminder that the service
+  // point existed, but vehicleInOwnDepot() disables it with the building.
+  const x=d.serviceX,z=d.serviceZ,live=depotAvailable(d);
+  addBox(x,1.25,z,94,2.5,68,0,live?'#50524d':'#444540');
+  addBox(x-44,2.1,z,5,1.8,68,0,d.team===0?'#75885a':'#91584e');
+  addBox(x+44,2.1,z,5,1.8,68,0,d.team===0?'#75885a':'#91584e');
+  // Two ammunition-crate markers at the rear corners of the pad.
+  addBox(x-30,5,z-d.frontSign*22,20,7,17,.06,live?d.color:'#4d4b43');
+  addBox(x+30,5,z-d.frontSign*22,20,7,17,-.06,live?d.color:'#4d4b43');
+}
+function addPalm(x,z,s,damageRatio=1){
+  const fake={health:damageRatio,maxHealth:1};
+  addBox(x,13*s,z,5*s,26*s,5*s,.12,healthColor(fake,'#6f5132'));
+  const y=28*s,green=healthColor(fake,'#4d6538');
+  for(let i=0;i<5;i++){
+    const a=i*Math.PI*2/5+.25,dx=Math.cos(a)*22*s,dz=Math.sin(a)*22*s;
+    submitPoly([{x,y:y+3*s,z},{x:x+dx,y:y-1*s,z:z+dz},{x:x+Math.cos(a+.45)*12*s,y:y-5*s,z:z+Math.sin(a+.45)*12*s}],green,true);
+  }
+}
+function addTree(x,z,s,damageRatio=1,yaw=0){
+  const fake={health:damageRatio,maxHealth:1};
+  addBox(x,12*s,z,5*s,24*s,5*s,yaw,healthColor(fake,'#5a4630'));
+  // Three staggered low-poly foliage masses read as a compact conifer/woodland
+  // tree while remaining cheap enough for large clusters.
+  addBox(x,27*s,z,24*s,14*s,24*s,yaw+.18,healthColor(fake,'#3f5938'));
+  addBox(x,38*s,z,19*s,13*s,19*s,yaw-.14,healthColor(fake,'#49633f'));
+  addBox(x,48*s,z,13*s,11*s,13*s,yaw+.31,healthColor(fake,'#567047'));
+}
+function addTower(o){
+  // Low-poly guard tower: concrete pedestal, narrow shaft, armored head and a visible gun barrel.
+  const c=healthColor(o,o.color);
+  addBox(o.x,5,o.z,30,10,30,0,'#555951');
+  addBox(o.x,18,o.z,12,26,12,0,'#646860');
+  addBox(o.x,34,o.z,34,14,34,0,c);
+  const fx=Math.sin(o.aim),fz=Math.cos(o.aim);
+  addBox(o.x+fx*20,35,o.z+fz*20,6,5,28,o.aim,'#343733');
+}
+function addRubble(o){
+  if(o.kind==='bridge')return;
+  if(o.kind==='palm'||o.kind==='tree'){
+    addBox(o.x,2.5,o.z,6,5,6,o.yaw||.1,'#4c3c2a');
+    return;
+  }
+  const sx=o.sx||Math.max(12,(o.r||12)*1.25),sz=o.sz||Math.max(12,(o.r||12)*1.25);
+  // Low broken footprint plus a few uneven chunks.  This same footprint is
+  // used by debrisSpeedFactorAt(), so visible rubble really is rough terrain.
+  addBox(o.x,1.6,o.z,sx*.78,3.2,sz*.78,o.yaw||0,'#4b4a43');
+  const c=o.kind==='wall'?3:o.kind==='building'?5:4;
+  for(let i=0;i<c;i++){
+    const a=i*2.17+(o.id||0)*.41;
+    const dx=Math.cos(a)*sx*.22,dz=Math.sin(a)*sz*.22;
+    addBox(o.x+dx,3.2+(i%2),o.z+dz,Math.max(5,sx*.18),5+(i%2)*2,Math.max(5,sz*.16),a,'#56544b');
+  }
+}
+function renderSceneObjects(){
+  for(const o of sceneObjects){
+    if(!o.alive){addRubble(o);continue;}
+    switch(o.kind){
+      case 'building':
+        addBox(o.x,o.y,o.z,o.sx,o.sy,o.sz,o.yaw,healthColor(o,o.color));break;
+      case 'depot': {
+        const d=o.depot,body=healthColor(o,o.color),front=d?d.frontSign:1;
+        addBox(o.x,o.y,o.z,o.sx,o.sy,o.sz,o.yaw,body);
+        addBox(o.x,o.y+o.sy*.5+2,o.z,o.sx+6,4,o.sz+6,0,healthColor(o,'#555951'));
+        // Dark service door and small AMMO canopy face the refill apron.
+        addBox(o.x,11,o.z+front*(o.sz*.5+1),26,22,3,0,'#292d2a');
+        addBox(o.x,24,o.z+front*(o.sz*.5+5),38,5,9,0,healthColor(o,d?d.color:o.color));
+        break;
+      }
+      case 'wall': {
+        // A compact stone block with a slightly wider cap makes individual
+        // wall units legible, similar to classic RTS wall segments.
+        const body=healthColor(o,o.color);
+        addBox(o.x,o.y-2,o.z,o.sx,o.sy-4,o.sz,o.yaw,body);
+        addBox(o.x,o.y+o.sy*.5-2.5,o.z,o.sx+4,5,o.sz+4,o.yaw,healthColor(o,'#777970'));
+        break;
+      }
+      case 'palm':
+        addPalm(o.x,o.z,o.scale,o.health/o.maxHealth);break;
+      case 'tree':
+        addTree(o.x,o.z,o.scale,o.health/o.maxHealth,o.yaw||0);break;
+      case 'rock':
+        addBox(o.x,8,o.z,o.r*1.6,16,o.r*1.35,o.yaw||0,healthColor(o,'#746c5e'));break;
+      case 'tower':
+        addTower(o);break;
+      case 'bridge': {
+        const by=.14,x1=o.x-o.hx,x2=o.x+o.hx,z1=o.z-o.hz,z2=o.z+o.hz;
+        submitPoly([{x:x1,y:by,z:z1},{x:x2,y:by,z:z1},{x:x2,y:by,z:z2},{x:x1,y:by,z:z2}],healthColor(o,o.color),true);
+        // Slightly raised dark seam makes the individual destructible sections legible.
+        if(o.segmentIndex>0)submitPoly([{x:x1,y:by+.025,z:z1},{x:x2,y:by+.025,z:z1},{x:x2,y:by+.025,z:z1+2},{x:x1,y:by+.025,z:z1+2}],'#4f4e49',true);
+        break;
+      }
+    }
+  }
+}
+function addVehicleShadow(v,rx,rz){
+  const sy=shadowYAt(v.x,v.z),shadow=shadowColorAt(v.x,v.z);
+  const fx=Math.sin(v.angle),fz=Math.cos(v.angle),rightX=Math.cos(v.angle),rightZ=-Math.sin(v.angle);
+  submitPoly([
+    {x:v.x+rightX*rx+fx*rz,y:sy,z:v.z+rightZ*rx+fz*rz},
+    {x:v.x-rightX*rx+fx*rz,y:sy,z:v.z-rightZ*rx+fz*rz},
+    {x:v.x-rightX*rx-fx*rz,y:sy,z:v.z-rightZ*rx-fz*rz},
+    {x:v.x+rightX*rx-fx*rz,y:sy,z:v.z+rightZ*rx-fz*rz}
+  ],shadow,true);
+}
+function helicopterShadowColorAt(x,z){
+  switch(surfaceKindAt(x,z)){
+    case 'grass': return '#303426';
+    case 'road': return '#30302d';
+    case 'bridge': return '#353531';
+    case 'water': return '#28474d';
+    default: return '#68583c';
+  }
+}
+function addHelicopterShadow(v){
+  // Project the airborne silhouette away from the light instead of drawing
+  // the old solid rectangular patch directly underneath the aircraft.
+  const fx=Math.sin(v.angle),fz=Math.cos(v.angle),rx=Math.cos(v.angle),rz=-Math.sin(v.angle);
+  const sx=v.x+36,sz=v.z+26,sy=shadowYAt(sx,sz),shadow=helicopterShadowColorAt(sx,sz);
+  addGroundDisc(sx+fx*2,sz+fz*2,11,15,sy,shadow,10);
+  addStrip(sx-fx*38,sz-fz*38,sx+fx*17,sz+fz*17,7,sy+.01,shadow);
+  addStrip(sx-rx*31,sz-rz*31,sx+rx*31,sz+rz*31,3.2,sy+.015,shadow);
+  addStrip(sx-fx*31,sz-fz*31,sx+fx*31,sz+fz*31,3.2,sy+.018,shadow);
+}
+function addTank(v,selected){
+  if(!v.alive){if(v.drowned)return;addBox(v.x,4,v.z,42,8,56,v.angle,'#292923');return;}
+  const oy=v.renderYOffset||0;
+  const rx=Math.cos(v.angle),rz=-Math.sin(v.angle);
+  addVehicleShadow(v,24,28);
+  addBox(v.x-rx*20,5+oy,v.z-rz*20,11,9,58,v.angle,'#2a2d28');
+  addBox(v.x+rx*20,5+oy,v.z+rz*20,11,9,58,v.angle,'#2a2d28');
+  addBox(v.x,9+oy,v.z,38,13,56,v.angle,v.color);
+  const turretWorld=v.angle+v.turretAngle;
+  addBox(v.x,17+oy,v.z,30,10,31,turretWorld,v.color);
+  const tx=Math.sin(turretWorld),tz=Math.cos(turretWorld);
+  addBox(v.x+tx*25,18+oy,v.z+tz*25,6,5,42,turretWorld,'#343831');
+}
+function addHelicopter(v,selected){
+  if(!v.alive){if(v.drowned)return;return;}
+  const oy=72+(v.renderYOffset||0),bank=v.bankAngle||0;
+  addHelicopterShadow(v);
+  // All airframe parts share the same parent roll. The roll follows actual
+  // lateral cyclic/strafe velocity, so the aircraft leans into side movement.
+  addAircraftBox(v.x,oy,v.z,0,0,0,24,12,50,v.angle,bank,0,v.color);
+  addAircraftBox(v.x,oy,v.z,0,4,17,20,10,22,v.angle,bank,0,'#657d76');
+  addAircraftBox(v.x,oy,v.z,0,2,-31,7,7,45,v.angle,bank,0,'#4f5946');
+  addAircraftBox(v.x,oy,v.z,0,5,-52,22,4,5,v.angle,bank,0,'#3e443b');
+  // Main rotor spins in the helicopter's local plane and banks with the aircraft.
+  const rotorAngle=animTime*14.0;
+  addAircraftBox(v.x,oy,v.z,0,11,0,82,2.6,6,v.angle,bank,rotorAngle,'#30352f');
+  addAircraftBox(v.x,oy,v.z,0,11,0,82,2.6,6,v.angle,bank,rotorAngle+Math.PI/2,'#363b34');
+  addAircraftBox(v.x,oy,v.z,0,11.8,0,8,3.4,8,v.angle,bank,0,'#222720');
+}
+function addASV(v,selected){
+  if(!v.alive){if(v.drowned)return;addBox(v.x,4,v.z,48,9,62,v.angle,'#292923');return;}
+  const oy=v.renderYOffset||0,rx=Math.cos(v.angle),rz=-Math.sin(v.angle),fx=Math.sin(v.angle),fz=Math.cos(v.angle);
+  addVehicleShadow(v,27,32);
+  addBox(v.x-rx*22,5+oy,v.z-rz*22,12,10,64,v.angle,'#292d28');
+  addBox(v.x+rx*22,5+oy,v.z+rz*22,12,10,64,v.angle,'#292d28');
+  addBox(v.x,10+oy,v.z,43,15,60,v.angle,v.color);
+  addBox(v.x-fx*7,22+oy,v.z-fz*7,40,18,39,v.angle,'#555c47');
+  // MLRS-like rectangular rocket cassette.
+  addBox(v.x+fx*4,30+oy,v.z+fz*4,36,17,35,v.angle,'#484e40');
+}
+function addJeep(v,selected){
+  if(!v.alive){if(v.drowned)return;addBox(v.x,3,v.z,30,6,40,v.angle,'#292923');return;}
+  const oy=v.renderYOffset||0,rx=Math.cos(v.angle),rz=-Math.sin(v.angle),fx=Math.sin(v.angle),fz=Math.cos(v.angle);
+  addVehicleShadow(v,19,23);
+  for(const side of [-1,1])for(const fore of [-1,1])addBox(v.x+rx*side*17+fx*fore*14,4+oy,v.z+rz*side*17+fz*fore*14,7,8,12,v.angle,'#282b27');
+  addBox(v.x,8+oy,v.z,31,9,43,v.angle,v.color);
+  addBox(v.x-fx*3,15+oy,v.z-fz*3,27,12,20,v.angle,'#5e684f');
+}
+function addVehicle(v,selected){
+  switch(v.type){
+    case 'helicopter':addHelicopter(v,selected);break;
+    case 'asv':addASV(v,selected);break;
+    case 'jeep':addJeep(v,selected);break;
+    default:addTank(v,selected);break;
+  }
+}
+function addTrapdoor(h,open){
+  const y=.34,half=h.w*.5,panelW=h.w*.5-2,slide=open*(panelW*.92);
+  submitPoly([{x:h.x-half-3,y,z:h.z-h.d*.5-3},{x:h.x+half+3,y,z:h.z-h.d*.5-3},{x:h.x+half+3,y,z:h.z+h.d*.5+3},{x:h.x-half-3,y,z:h.z+h.d*.5+3}],'#484b46',true);
+  submitPoly([{x:h.x-half+4,y:y+.02,z:h.z-h.d*.5+4},{x:h.x+half-4,y:y+.02,z:h.z-h.d*.5+4},{x:h.x+half-4,y:y+.02,z:h.z+h.d*.5-4},{x:h.x-half+4,y:y+.02,z:h.z+h.d*.5-4}],'#171b19',true);
+  addBox(h.x-panelW*.5-slide,y+1.5,h.z,panelW,3,h.d-10,0,h.team===0?'#596356':'#6d4a45');
+  addBox(h.x+panelW*.5+slide,y+1.5,h.z,panelW,3,h.d-10,0,h.team===0?'#596356':'#6d4a45');
+}
+function addMine(m){
+  addGroundDisc(m.x,m.z,10,10,.46,m.armed?'#2f342d':'#605f4b',10);
+  addBox(m.x,1.3,m.z,13,2.2,13,0,m.armed?'#474b3d':'#797459');
+}
+function addProjectileShadow(p){
+  // All visible shots get a projected ground shadow.  Color/type must not decide
+  // whether a shadow exists: Tank ground/air fire are both type 'shell'.
+  const groundY=surfaceKindAt(p.x,p.z)==='water'?-7.4:.65;
+  const altitude=Math.max(0,p.y-groundY);
+  const sx=p.x+altitude*.38,sz=p.z+altitude*.27;
+  const sy=shadowYAt(sx,sz)+.055;
+  const speed=Math.hypot(p.vx||0,p.vz||0);
+  const a=speed>1?Math.atan2(p.vx,p.vz):0,fx=Math.sin(a),fz=Math.cos(a);
+  const size=p.type==='grenade'?5.5:6.5;
+  const length=p.type==='grenade'?6:9;
+  addGroundDisc(sx,sz,size,size*.68,sy,'#20211d',10);
+  if(speed>1)addStrip(sx-fx*length,sz-fz*length,sx+fx*length,sz+fz*length,size*.78,sy+.007,'#20211d');
+}
+function addProjectile(p){
+  const air=(p.targetLayer||'ground')==='air';
+  const missile=p.type==='rocket'||p.type==='airRocket'||p.type==='heliRocket';
+  const grenade=p.type==='grenade';
+
+  addProjectileShadow(p);
+
+  const a=Math.atan2(p.vx||0,p.vz||1),fx=Math.sin(a),fz=Math.cos(a);
+  // Target layer is the visual contract: Space/ground = yellow,
+  // X/air = orange, independent of projectile implementation type.
+  const body=air?'#ff7a18':'#ffd51f';
+  const bright=air?'#ffd3a3':'#fff4a8';
+  const trail=air?'#ff9b39':'#ffe866';
+
+  if(missile){
+    addBox(p.x-fx*8,p.y,p.z-fz*8,3.8,3.8,16,a,trail);
+    addBox(p.x,p.y,p.z,7.5,6.2,15,a,body);
+    addBox(p.x+fx*6,p.y,p.z+fz*6,5,4.3,4,a,bright);
+  }else if(grenade){
+    addBox(p.x,p.y,p.z,8,8,8,0,'#596142');
+  }else{
+    // Keep shells compact, but retain the target-layer color distinction.
+    addBox(p.x-fx*3.5,p.y,p.z-fz*3.5,3.2,3.2,7,a,trail);
+    addBox(p.x,p.y,p.z,6.2,5.5,8,a,body);
+    addBox(p.x+fx*3,p.y,p.z+fz*3,4.2,4.2,3,a,bright);
+  }
+}
+function addFlag(f){
+  if(f.state==='hidden'||f.state==='captured')return;
+  let x=f.x,z=f.z,baseY=surfaceKindAt(x,z)==='water'?-6.7:.65;
+  if(f.state==='carried'&&f.carrier){
+    const v=f.carrier,fx=Math.sin(v.angle),fz=Math.cos(v.angle),rx=Math.cos(v.angle),rz=-Math.sin(v.angle);
+    x=v.x-rx*15-fx*5;z=v.z-rz*15-fz*5;baseY=7;
+  }
+  addBox(x,baseY+18,z,3,36,3,0,'#d2caa3');
+  submitPoly([
+    {x:x+1.5,y:baseY+34,z},{x:x+1.5,y:baseY+24,z},
+    {x:x+22,y:baseY+28,z},{x:x+15,y:baseY+34,z}
+  ],f.color,true);
+}
+
+function addExplosion(e){
+  if(e.t<0)return;
+  const q=clamp(e.t/e.max,0,1),size=e.size||1;
+  const r=(e.big?26:13)*size*(0.25+q*1.4),y=e.y+(e.big?14:6)*q;
+  const color=e.water?(q<.5?'#9bc6c5':'#477782'):(q<.28?'#f2b14d':q<.55?'#d46f3d':q<.78?'#7b4d3b':'#423f3a');
+  addBox(e.x,y,e.z,r,r,r,q*.4,color);
+}
+function addSmoke(s){
+  const q=clamp(s.t/s.max,0,1);
+  if(q>=1)return;
+  const scale=s.scale||1;
+  // Three coarse puffs drift upward and apart.  There is intentionally no
+  // persistent smoke state: the entire plume expires after s.max seconds.
+  for(let i=0;i<3;i++){
+    const phase=clamp(q*1.45-i*.18,0,1);
+    if(phase<=0)continue;
+    const a=s.seed+i*2.1;
+    const drift=10+phase*18;
+    const x=s.x+Math.sin(a)*drift*phase;
+    const z=s.z+Math.cos(a*.83)*drift*.55*phase;
+    const y=s.y+8+i*11+phase*42;
+    const r=(10+i*3+phase*12)*scale*(1-q*.45);
+    const color=q<.45?'#55534d':q<.75?'#62605a':'#74716a';
+    addBox(x,y,z,r,r*.82,r,phase*.25,color);
+  }
+}
+
+function pointSegDist(px,pz,x1,z1,x2,z2){
+  const vx=x2-x1,vz=z2-z1,wx=px-x1,wz=pz-z1;
+  const vv=vx*vx+vz*vz||1;
+  const t=clamp((wx*vx+wz*vz)/vv,0,1);
+  return Math.hypot(px-(x1+vx*t),pz-(z1+vz*t));
+}
+function ellipse(x,z,cx,cz,rx,rz){
+  const dx=(x-cx)/rx,dz=(z-cz)/rz;
+  return dx*dx+dz*dz<=1;
+}
+function rectInside(x,z,r){return Math.abs(x-r[0])<=r[2]&&Math.abs(z-r[1])<=r[3];}
+function islandInside(x,z){
+  for(const e of activeMap.land||[])if(ellipse(x,z,e[0],e[1],e[2],e[3]))return true;
+  for(const r of activeMap.landRects||[])if(rectInside(x,z,r))return true;
+  return false;
+}
+function lakeInside(x,z){
+  for(const e of activeMap.lakes||[])if(ellipse(x,z,e[0],e[1],e[2],e[3]))return true;
+  for(const r of activeMap.waterRects||[])if(rectInside(x,z,r))return true;
+  return false;
+}
+let roadSegments=activeMap.roads;
+function groundKind(x,z){
+  if(!islandInside(x,z)||lakeInside(x,z))return null;
+  for(const r of roadSegments)if(pointSegDist(x,z,r[0],r[1],r[2],r[3])<52)return 'road';
+  for(const e of activeMap.grass||[])if(ellipse(x,z,e[0],e[1],e[2],e[3]))return 'grass';
+  return 'sand';
+}
+function terrainHash(x,z){
+  // Stable integer hash: terrain texture never shimmers or changes between frames.
+  let n=(Math.imul((x|0),374761393)+Math.imul((z|0),668265263))|0;
+  n=Math.imul(n^(n>>>13),1274126177);
+  return ((n^(n>>>16))>>>0)/4294967295;
+}
+function terrainNoiseColor(base,x,z,amount){
+  const f=1+(terrainHash(x,z)-.5)*2*amount;
+  const rgb=shadeRGB(base,f);
+  return '#'+rgb[0].toString(16).padStart(2,'0')+rgb[1].toString(16).padStart(2,'0')+rgb[2].toString(16).padStart(2,'0');
+}
+function addTerrainMesh(){
+  // Ground remains mutually exclusive, but sand/grass cells are split into four
+  // low-contrast patches.  This is geometry-level "texture" rather than a
+  // bitmap, keeping the whole game self-contained and avoiding coplanar decals.
+  const step=MAP_BLOCK,sub=step*.5;
+  const colors={sand:'#b39a67',grass:'#727b51',road:'#777469'};
+  for(let z=80;z<world.depth-80;z+=step){
+    for(let x=80;x<world.width-80;x+=step){
+      const x2=Math.min(x+step,world.width-80),z2=Math.min(z+step,world.depth-80);
+      const q=terrainBlockCoords(x+.1,z+.1),kind=terrainBlockKind(q.c,q.r);
+      if(!kind)continue;
+      const y=.12;
+      if(kind==='sand'||kind==='grass'){
+        const noise=kind==='sand'?.0325:.0425;
+        for(let zz=z;zz<z2;zz+=sub){
+          for(let xx=x;xx<x2;xx+=sub){
+            const xx2=Math.min(xx+sub,x2),zz2=Math.min(zz+sub,z2);
+            const color=terrainNoiseColor(colors[kind],Math.round(xx/sub),Math.round(zz/sub),noise);
+            submitPoly([{x:xx,y,z:zz},{x:xx2,y,z:zz},{x:xx2,y,z:zz2},{x:xx,y,z:zz2}],color,true);
+          }
+        }
+      }else{
+        submitPoly([{x,y,z},{x:x2,y,z},{x:x2,y,z:z2},{x,y,z:z2}],colors[kind],true);
+      }
+    }
+  }
+}
+
+function addWaterDepthMesh(){
+  const shallow='#6aa0a6';
+  const minC=Math.floor((OUTER_MIN_X-MAP_ORIGIN_X)/MAP_BLOCK)-1;
+  const maxC=Math.ceil((OUTER_MAX_X-MAP_ORIGIN_X)/MAP_BLOCK)+1;
+  const minR=Math.floor((OUTER_MIN_Z-MAP_ORIGIN_Z)/MAP_BLOCK)-1;
+  const maxR=Math.ceil((OUTER_MAX_Z-MAP_ORIGIN_Z)/MAP_BLOCK)+1;
+  // The deep sea is one continuous base plane. Only complete large water
+  // blocks touching a land block get a light shallow overlay.
+  for(let r=minR;r<=maxR;r++)for(let c=minC;c<=maxC;c++){
+    if(!waterBlockIsShallow(c,r))continue;
+    const x=MAP_ORIGIN_X+c*MAP_BLOCK,z=MAP_ORIGIN_Z+r*MAP_BLOCK;
+    submitPoly([{x,y:-7.88,z},{x:x+MAP_BLOCK,y:-7.88,z},{x:x+MAP_BLOCK,y:-7.88,z:z+MAP_BLOCK},{x,y:-7.88,z:z+MAP_BLOCK}],shallow,true);
+  }
+}
+function buildScene(){
+  triangles=[];
+  // Deep base extends beyond the four-block helicopter/Jeep movement margin.
+  submitPoly([{x:OUTER_MIN_X-1200,y:-8,z:OUTER_MIN_Z-1200},{x:OUTER_MAX_X+1200,y:-8,z:OUTER_MIN_Z-1200},{x:OUTER_MAX_X+1200,y:-8,z:OUTER_MAX_Z+1200},{x:OUTER_MIN_X-1200,y:-8,z:OUTER_MAX_Z+1200}],'#315b66',true);
+  addWaterDepthMesh();
+  addTerrainMesh();
+  addTrapdoor(trapdoors[0],pool.hatchOpen);
+  addTrapdoor(trapdoors[1],Math.max(cpuPool.hatchOpen,cpuExtraHatchOpen));
+  for(const d of ammoDepots)addAmmoDepot(d);
+  // All discrete scenery is represented by destructible scene objects.
+  renderSceneObjects();
+  for(const m of mines)if(m.alive)addMine(m);
+  for(const p of projectiles)addProjectile(p);
+  for(const e of explosions)addExplosion(e);
+  for(const s of smokeEffects)addSmoke(s);
+  if(cpu.alive||cpuPool.mode==='active')addVehicle(cpu,false);
+  for(const v of cpuReinforcements)if(v.alive)addVehicle(v,false);
+  if(player.alive)addVehicle(player,pool.mode==='active');
+  for(const f of flags)addFlag(f);
+}
+
+function edge(ax,ay,bx,by,px,py){return (px-ax)*(by-ay)-(py-ay)*(bx-ax);}
+function rasterTriangle(t){
+  const a=t.a,b=t.b,c=t.c;
+  let area=edge(a.x,a.y,b.x,b.y,c.x,c.y);
+  if(Math.abs(area)<1e-6)return;
+  const minX=clamp(Math.floor(Math.min(a.x,b.x,c.x)),0,W-1);
+  const maxX=clamp(Math.ceil(Math.max(a.x,b.x,c.x)),0,W-1);
+  const minY=clamp(Math.floor(Math.min(a.y,b.y,c.y)),0,VIEW_H-1);
+  const maxY=clamp(Math.ceil(Math.max(a.y,b.y,c.y)),0,VIEW_H-1);
+  if(maxX<minX||maxY<minY)return;
+  const invArea=1/area;
+  const positive=area>0;
+  const r=t.rgb[0],g=t.rgb[1],bl=t.rgb[2];
+  for(let y=minY;y<=maxY;y++){
+    const py=y+.5;
+    for(let x=minX;x<=maxX;x++){
+      const px=x+.5;
+      const e0=edge(b.x,b.y,c.x,c.y,px,py);
+      const e1=edge(c.x,c.y,a.x,a.y,px,py);
+      const e2=edge(a.x,a.y,b.x,b.y,px,py);
+      if(positive ? (e0<0||e1<0||e2<0) : (e0>0||e1>0||e2>0))continue;
+      const w0=e0*invArea,w1=e1*invArea,w2=e2*invArea;
+      const iz=w0*a.iz+w1*b.iz+w2*c.iz;
+      if(iz<=0)continue;
+      // Reciprocal camera-space Z is linear after projection.  Reconstructing
+      // Z here and storing nearest depth makes the comparison explicit and,
+      // with Float64 storage, avoids the tiny precision losses seen in v004.
+      const depth=1/iz;
+      const idx=y*W+x;
+      if(depth>=zbuf[idx]-1e-7)continue;
+      zbuf[idx]=depth;
+      const p=idx*4;pixels[p]=r;pixels[p+1]=g;pixels[p+2]=bl;pixels[p+3]=255;
+    }
+  }
+}
+function rasterize(xOffset=0,yOffset=0){
+  zbuf.fill(Infinity);
+  // Sky/background.  Filling the small 480x237 framebuffer explicitly keeps
+  // the whole 3D pass deterministic and independent of Canvas draw ordering.
+  for(let i=0;i<W*VIEW_H;i++){
+    const p=i*4;pixels[p]=49;pixels[p+1]=94;pixels[p+2]=104;pixels[p+3]=255;
+  }
+  for(const t of triangles)rasterTriangle(t);
+  ctx.putImageData(frame,xOffset,yOffset);
+}
+
+function drawPoolSelectionScreen(team,xOffset=0,yOffset=0){
+  const p=team===0?pool:cpuPool;if(p.mode!=='select')return;ensurePoolSelectionAvailable(team);
+  const panelW=Math.min(360,W-30),panelH=190,x=Math.round(xOffset+(W-panelW)/2),y=Math.round(yOffset+Math.max(16,(VIEW_H-panelH)/2));
+  ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='rgba(18,22,20,.95)';ctx.fillRect(x,y,panelW,panelH);ctx.strokeStyle='#777b70';ctx.strokeRect(x+.5,y+.5,panelW-1,panelH-1);
+  ctx.fillStyle=team===0?'#c8d07c':'#d68a78';ctx.font='bold 13px monospace';ctx.textBaseline='top';ctx.fillText((team===0?'P1':'P2')+' MOTOR POOL',x+18,y+12);
+  ctx.fillStyle='#8f9276';ctx.font='10px monospace';ctx.fillText('UP / DOWN   ·   FIRE TO DEPLOY',x+18,y+31);
+  const desc={tank:'BALANCED',helicopter:'AIRBORNE',asv:'ROCKETS / MINES',jeep:'FLAG / AMPHIBIOUS'};
+  for(let i=0;i<VEHICLE_ORDER.length;i++){const type=VEHICLE_ORDER[i],count=stockCount(team,type),selected=i===(p.selectionIndex??0),ry=y+52+i*29;
+    ctx.fillStyle=selected?'#4a5044':(i%2?'#292e29':'#252a26');ctx.fillRect(x+14,ry,panelW-28,24);ctx.strokeStyle=selected?(team===0?'#c8d07c':'#d68a78'):'#4e554d';ctx.strokeRect(x+14.5,ry+.5,panelW-29,23);
+    ctx.fillStyle=count>0?'#ddd7aa':'#66685f';ctx.font=selected?'bold 12px monospace':'12px monospace';ctx.fillText(VEHICLE_TYPES[type].short,x+24,ry+5);
+    ctx.font='10px monospace';ctx.fillStyle=count>0?'#9fa081':'#5e6058';ctx.fillText(desc[type],x+108,ry+6);ctx.fillStyle=count>0?'#d8d2a5':'#6d6f66';ctx.fillText('x'+stockLabel(team,type),x+panelW-58,ry+6);
+  }
+  if(!VEHICLE_ORDER.some(type=>stockCount(team,type)>0)){ctx.fillStyle='#d36c5c';ctx.font='bold 12px monospace';ctx.fillText('NO VEHICLES REMAIN',x+104,y+171);}
+  ctx.restore();
+}
+function drawVehicleSelection(){drawPoolSelectionScreen(0,0,0);}
+
+function drawControlTable(x,y,w,h){
+  // One matrix makes mode differences directly comparable: operations are rows,
+  // while each playable control scheme owns a fixed column.
+  const rows=[
+    ['MOVE / SPEED',       'UP / DOWN',      'W / S',          'UP / DOWN'],
+    ['STEER / YAW',        'LEFT / RIGHT',   'A / D',          'LEFT / RIGHT'],
+    ['TANK TURRET',        'A / D',          'Q / E',          ', / .'],
+    ['HELI STRAFE',        'A / D',          'Q / E',          ', / .'],
+    ['GROUND FIRE',        'SPACE',          'LCTRL',          'RCTRL'],
+    ['AIR FIRE',           'LSHIFT / X',     'LSHIFT',         'RSHIFT'],
+    ['HELI WEAPON',        'C',              'C',              "'"],
+    ['LAY MINE',           'S',              'Z',              ';'],
+    ['MOTOR POOL',         'ENTER',          'TAB',            'BACKSPACE'],
+    ['POOL SELECT',        'UP / DOWN',      'W / S',          'UP / DOWN'],
+    ['DEPLOY',             'SPACE',          'LCTRL',          'RCTRL']
+  ];
+  const headers=['OPERATION','SINGLE PLAYER','PLAYER 1','PLAYER 2'];
+  const opW=Math.min(142,Math.max(116,Math.round(w*.29)));
+  const playerW=(w-opW)/3;
+  const cols=[x,x+opW,x+opW+playerW,x+opW+playerW*2,x+w];
+  const headerH=20;
+  const rowH=Math.max(12,Math.min(20,(h-headerH)/rows.length));
+  const usedH=headerH+rowH*rows.length;
+
+  ctx.fillStyle='rgba(18,22,20,.95)';ctx.fillRect(x,y,w,usedH);
+  ctx.strokeStyle='#6d746b';ctx.strokeRect(x+.5,y+.5,w-1,usedH-1);
+
+  // Header band.
+  ctx.fillStyle='#303731';ctx.fillRect(x+1,y+1,w-2,headerH-1);
+  ctx.textBaseline='middle';ctx.textAlign='center';ctx.font='bold 9px monospace';
+  for(let c=0;c<4;c++){
+    ctx.fillStyle=c===0?'#d6d09f':c===1?'#d6d09f':c===2?'#c8d07c':'#e3a18f';
+    ctx.fillText(headers[c],(cols[c]+cols[c+1])/2,y+headerH*.52);
+  }
+
+  const fontSize=rowH>=17?10:9;
+  for(let r=0;r<rows.length;r++){
+    const ry=y+headerH+r*rowH;
+    ctx.fillStyle=r%2?'rgba(33,38,34,.94)':'rgba(39,44,40,.94)';
+    ctx.fillRect(x+1,ry,w-2,rowH);
+    ctx.strokeStyle='#4d544d';ctx.beginPath();ctx.moveTo(x,ry+.5);ctx.lineTo(x+w,ry+.5);ctx.stroke();
+
+    ctx.font=`${fontSize}px monospace`;ctx.textBaseline='middle';
+    for(let c=0;c<4;c++){
+      const cx0=cols[c],cx1=cols[c+1];
+      ctx.textAlign=c===0?'left':'center';
+      ctx.fillStyle=c===0?'#aaa98f':c===1?'#d6d09f':c===2?'#c8d07c':'#e3a18f';
+      ctx.fillText(rows[r][c],c===0?cx0+8:(cx0+cx1)/2,ry+rowH*.52);
+    }
+  }
+
+  // Strong vertical separators keep every key visually attached to its header.
+  ctx.strokeStyle='#697168';
+  for(let c=1;c<4;c++){
+    ctx.beginPath();ctx.moveTo(cols[c]+.5,y);ctx.lineTo(cols[c]+.5,y+usedH);ctx.stroke();
+  }
+  ctx.textAlign='left';ctx.textBaseline='top';
+}
+function drawModeSelection(){
+  ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.textBaseline='top';
+  const margin=8,gap=7;
+
+  // Compact setup panel: battlefield on the left and independent per-side
+  // handicaps on the right, plus CPU simultaneous-force pressure on KEY 7.
+  const mainW=Math.min(470,W-margin*2),mainH=128;
+  const mainX=Math.round((W-mainW)/2),mainY=8;
+  ctx.fillStyle='rgba(18,22,20,.96)';ctx.fillRect(mainX,mainY,mainW,mainH);
+  ctx.strokeStyle='#777b70';ctx.strokeRect(mainX+.5,mainY+.5,mainW-1,mainH-1);
+
+  ctx.fillStyle='#ddd7aa';ctx.font='bold 14px monospace';
+  const title='COUNTERFIRE';ctx.fillText(title,mainX+Math.round((mainW-ctx.measureText(title).width)/2),mainY+8);
+  ctx.font='11px monospace';ctx.fillStyle='#c9c48f';
+  ctx.fillText('1  ONE PLAYER vs CPU',mainX+20,mainY+29);
+  ctx.fillText('2  TWO PLAYERS - ONE KEYBOARD',mainX+20,mainY+45);
+
+  ctx.fillStyle='#d6b56f';ctx.font='bold 10px monospace';ctx.fillText('MAP  '+activeMap.name,mainX+20,mainY+67);
+  ctx.fillStyle='#8f9276';ctx.font='8px monospace';ctx.fillText('MAP: LEFT/RIGHT or M',mainX+20,mainY+84);
+
+  const hx=mainX+Math.min(260,Math.round(mainW*.56));
+  ctx.fillStyle='#c8d07c';ctx.font='bold 9px monospace';ctx.fillText('P1/SINGLE',hx,mainY+67);
+  ctx.fillStyle='#aaa98f';ctx.font='8px monospace';ctx.fillText('KEY 3: VULN '+vulnerabilityLabel(0)+'   KEY 4: SETS '+vehicleSetsLabel(0),hx,mainY+79);
+  ctx.fillStyle='#e3a18f';ctx.font='bold 9px monospace';ctx.fillText('P2/COMPUTER',hx,mainY+91);
+  ctx.fillStyle='#aaa98f';ctx.font='8px monospace';ctx.fillText('KEY 5: VULN '+vulnerabilityLabel(1)+'   KEY 6: SETS '+vehicleSetsLabel(1),hx,mainY+103);
+  ctx.fillStyle='#d2c77a';ctx.font='8px monospace';ctx.fillText('KEY 7: CPU VEHICLES AT ONCE '+cpuMaxActive(),hx,mainY+115);
+
+  const tableY=mainY+mainH+gap;
+  const tableW=Math.min(470,W-margin*2);
+  const tableX=Math.round((W-tableW)/2);
+  const tableH=Math.max(120,H-tableY-margin);
+  drawControlTable(tableX,tableY,tableW,tableH);
+  ctx.restore();
+}
+function localStatusText(v,p){
+  if(p.mode==='select')return 'SELECT';if(p.mode==='deploying')return 'DEPLOY';if(p.mode==='returning')return 'STOW';if(!v.alive)return 'DOWN';
+  return 'S'+Math.round(Math.abs(v.speed));
+}
+function healthRatio(v){return v&&v.alive&&v.maxHealth?clamp(v.health/v.maxHealth,0,1):0;}
+function ammoRatio(v){const a=currentAmmo(v);return a.max>0?clamp(a.value/a.max,0,1):0;}
+function drawHudBar(x,y,w,ratio,kind='health'){
+  ratio=clamp(ratio,0,1);
+  ctx.fillStyle='#3b403a';ctx.fillRect(x,y,w,4);
+  ctx.strokeStyle='#686d61';ctx.strokeRect(x+.5,y+.5,w-1,3);
+  if(ratio<=0)return;
+  if(kind==='ammo')ctx.fillStyle=ratio>.25?'#c5b85f':'#b86a50';
+  else ctx.fillStyle=ratio>.5?'#a7aa70':ratio>.2?'#c5a15a':'#b85a50';
+  ctx.fillRect(x+1,y+1,(w-2)*ratio,2);
+}
+function drawSplitPlayerHud(team,xOffset,yOffset=0){
+  const v=team===0?player:cpu,p=team===0?pool:cpuPool,other=team===0?cpu:player;
+  const uiX=Math.round((W-BASE_W)*.5);
+  const hudShift=H-BASE_H;
+  // The HUD remains the original 480px-wide pixel-art panel, centered when a
+  // viewport becomes wider. Its bar is anchored to the actual bottom edge.
+  ctx.save();ctx.setTransform(1,0,0,1,0,0);
+  ctx.fillStyle='#303431';ctx.fillRect(xOffset,yOffset+VIEW_H,W,HUD_PIXEL_H);
+  ctx.fillStyle='#555952';ctx.fillRect(xOffset,yOffset+VIEW_H,W,3);
+  ctx.restore();
+  ctx.save();ctx.setTransform(SCALE,0,0,SCALE,xOffset+uiX,yOffset+hudShift);
+  ctx.fillStyle='#202522';ctx.fillRect(6,164,103,30);ctx.fillRect(116,164,73,30);ctx.fillRect(196,164,118,30);
+  ctx.strokeStyle='#777b70';ctx.strokeRect(6.5,164.5,102,29);ctx.strokeRect(116.5,164.5,72,29);ctx.strokeRect(196.5,164.5,117,29);
+  ctx.font='7px monospace';ctx.textBaseline='top';
+  ctx.fillStyle=team===0?'#c8d07c':'#d68a78';
+  const localState=localStatusText(v,p),flagSuffix=v.carryingFlagTeam!==null?' F':'';
+  ctx.fillText((team===0?'P1 ':'P2 ')+(v.typeDef?.short||'TANK')+' '+localState+flagSuffix,11,168);
+  ctx.fillStyle='#9e9a78';ctx.fillText('ARM',11,178);drawHudBar(31,178,69,healthRatio(v),'health');
+  ctx.fillStyle='#9e9a78';ctx.fillText('AM',11,187);drawHudBar(31,187,69,ammoRatio(v),'ammo');
+  ctx.fillStyle='#d8d2a5';ctx.fillText('RADAR',130,168);ctx.fillStyle='#14251f';ctx.fillRect(124,176,57,14);ctx.strokeStyle='#416556';ctx.strokeRect(124.5,176.5,56,13);
+  const dot=(o,color)=>{const x=124+clamp(o.x/world.width,0,1)*57,y=176+clamp(o.z/world.depth,0,1)*14;ctx.fillStyle=color;ctx.fillRect(x|0,y|0,2,2);};
+  if(player.alive)dot(player,'#c8d07c');if(cpu.alive)dot(cpu,'#d68a78');for(const v of cpuReinforcements)if(v.alive)dot(v,'#d68a78');for(const f of flags)if(f.state!=='hidden'&&f.state!=='captured')dot(f,f.team===0?'#78a5cf':'#d16a5f');
+  const ammo=currentAmmo(v);let weapon=(v.weapon||'--').toUpperCase();
+  if(v.type==='tank')weapon='SHELL G/A';else if(v.type==='helicopter')weapon=(v.selectedWeapon==='rocket'?'RKT':'SHELL')+' G/A';else if(v.type==='asv')weapon='RKT G/A';else if(v.type==='jeep')weapon='GRENADE';
+  ctx.fillStyle='#d8d2a5';ctx.fillText(weapon,201,168);
+  ctx.fillStyle='#9e9a78';ctx.fillText(other.alive?'ENEMY':'ENEMY DOWN',201,178);
+  if(other.alive)drawHudBar(242,178,63,healthRatio(other),'health');
+  const enemyFlag=flags[1-team];let st='FLAG '+enemyFlag.state.toUpperCase();
+  if(v.carryingFlagTeam===1-team)st='RETURN FLAG HOME';else if(enemyFlag.state==='exposed'&&v.type!=='jeep')st='FLAG EXPOSED - NEED JEEP';
+  ctx.fillText(st,201,187);
+  ctx.restore();
+
+  // Selection/win overlays belong to the 3D view, not to the bottom-anchored HUD.
+  ctx.save();ctx.setTransform(SCALE,0,0,SCALE,xOffset+uiX,yOffset);
+  if(matchWinner!==null){
+    ctx.fillStyle='rgba(15,18,16,.90)';ctx.fillRect(67,63,186,38);ctx.strokeStyle='#c7bd77';ctx.strokeRect(67.5,63.5,185,37);
+    ctx.fillStyle='#e4dda2';ctx.font='11px monospace';ctx.fillText(matchWinner===team?'YOU CAPTURED THE FLAG':'OPPONENT CAPTURED FLAG',82,73);
+    ctx.font='7px monospace';ctx.fillStyle='#aaa57f';ctx.fillText('R: REMATCH   ESC: MODE MENU',93,88);
+  }
+  ctx.restore();
+  if(matchWinner===null&&p.mode==='select')drawPoolSelectionScreen(team,xOffset,yOffset);
+}
+function drawHud(){
+  const uiX=Math.round((W-BASE_W)*.5),hudShift=H-BASE_H;
+  if(gameMode===null){drawModeSelection();return;}
+  ctx.save();ctx.setTransform(1,0,0,1,0,0);
+  ctx.fillStyle='#303431';ctx.fillRect(0,VIEW_H,W,HUD_PIXEL_H);
+  ctx.fillStyle='#555952';ctx.fillRect(0,VIEW_H,W,3);
+  ctx.restore();
+  ctx.save();ctx.setTransform(SCALE,0,0,SCALE,uiX,hudShift);
+  ctx.fillStyle='#202522';ctx.fillRect(7,164,86,30);ctx.fillRect(101,164,75,30);ctx.fillRect(184,164,129,30);
+  ctx.strokeStyle='#777b70';ctx.strokeRect(7.5,164.5,85,29);ctx.strokeRect(101.5,164.5,74,29);ctx.strokeRect(184.5,164.5,128,29);
+  ctx.fillStyle='#d8d2a5';ctx.font='7px monospace';ctx.textBaseline='top';
+  const td=player.typeDef||VEHICLE_TYPES.tank;
+  const displaySpeed=Math.abs(player.speed);
+  ctx.fillText(td.short+' 01',12,168);
+  ctx.fillText('SPD '+String(Math.round(displaySpeed)).padStart(3,'0')+(!player.airborne&&debrisSpeedFactorAt(player.x,player.z,player.radius)<1?' RUBBLE':''),12,178);
+  ctx.fillText('ARM',12,187);
+  const hpRatio=player.maxHealth?clamp(player.health/player.maxHealth,0,1):0;
+  ctx.fillStyle='#545a4c';ctx.fillRect(31,187,54,4);ctx.fillStyle=hpRatio>.5?'#a7aa70':hpRatio>.2?'#c5a15a':'#b85a50';ctx.fillRect(31,187,54*hpRatio,4);
+
+  ctx.fillStyle='#d8d2a5';ctx.fillText('RADAR',106,168);
+  ctx.fillStyle='#14251f';ctx.fillRect(115,176,47,14);ctx.strokeStyle='#416556';ctx.strokeRect(115.5,176.5,46,13);
+  const rx=115+clamp(player.x/world.width,0,1)*47,ry=176+clamp(player.z/world.depth,0,1)*14;
+  const ex=115+clamp(cpu.x/world.width,0,1)*47,ey=176+clamp(cpu.z/world.depth,0,1)*14;
+  if(pool.mode!=='select'){ctx.fillStyle='#c8d07c';ctx.fillRect(rx|0,ry|0,2,2);}if(cpu.alive){ctx.fillStyle='#c97062';ctx.fillRect(ex|0,ey|0,2,2);}
+  for(const f of flags){
+    if(f.state==='hidden'||f.state==='captured')continue;
+    const fx=115+clamp(f.x/world.width,0,1)*47,fy=176+clamp(f.z/world.depth,0,1)*14;
+    ctx.fillStyle=f.team===0?'#78a5cf':'#d16a5f';ctx.fillRect(fx|0,fy|0,2,2);
+  }
+  for(const d of ammoDepots){
+    const dx=115+clamp(d.x/world.width,0,1)*47,dy=176+clamp(d.z/world.depth,0,1)*14;
+    ctx.fillStyle=depotAvailable(d)?(d.team===0?'#9ab16f':'#b87969'):'#55534b';ctx.fillRect(dx|0,dy|0,2,1);
+  }
+
+  let weaponLabel=(player.weapon||'--').toUpperCase();
+  if(player.type==='helicopter')weaponLabel=(player.selectedWeapon==='rocket'?'RKT':'SHELL')+' G/A';
+  else if(player.type==='tank')weaponLabel='SHELL G/A';
+  else if(player.type==='asv')weaponLabel='RKT G/A';
+  else if(player.type==='jeep')weaponLabel='GRENADE';
+  ctx.fillStyle='#d8d2a5';ctx.fillText(weaponLabel,190,168);
+  const ammo=currentAmmo(player);
+  ctx.fillStyle='#9e9a78';ctx.fillText('AM',190,178);drawHudBar(207,178,62,ammoRatio(player),'ammo');
+  let weaponState=pool.mode==='select'?'SELECT':pool.mode==='deploying'?'DEPLOY':pool.mode==='returning'?'STOW':ammo.value<=0?'EMPTY':player.cooldown<=0?'READY':'RELOAD';
+  ctx.fillText(weaponState,275,178);
+  if(gameMode==='single'){
+    const targets=activeCpuVehicles();
+    let target=null,best=Infinity;for(const v of targets){const q=Math.hypot(v.x-player.x,v.z-player.z);if(q<best){best=q;target=v;}}
+    ctx.fillStyle='#d8d2a5';ctx.fillText('CPU '+cpuConcurrentCount()+'/'+cpuMaxActive(),250,168);
+    if(target){ctx.fillStyle='#9e9a78';ctx.fillText('TGT',275,187);drawHudBar(294,187,16,healthRatio(target),'health');}
+  }else{
+    ctx.fillStyle='#d8d2a5';ctx.fillText(cpu.alive?'TARGET':'TARGET DOWN',240,178);
+    if(cpu.alive){drawHudBar(275,178,34,healthRatio(cpu),'health');ctx.fillStyle='#9e9a78';ctx.fillText('P2 '+cpu.type.toUpperCase(),218,187);}
+  }
+  if(player.type==='asv'){ctx.fillStyle='#9e9a78';ctx.fillText('M '+player.minesLeft,291,168);}
+
+  const enemyTowers=sceneObjects.filter(o=>o.kind==='tower'&&o.team===1&&o.alive).length;
+  const returnSpeed=Math.abs(player.speed);
+  const enemyFlag=flags[1];
+  let flagText='FLAG '+enemyFlag.state.toUpperCase();
+  if(player.carryingFlagTeam===1)flagText='FLAG: RETURN HOME';
+  if(enemyFlag.state==='exposed'&&player.type!=='jeep')flagText='FLAG EXPOSED - NEED JEEP';
+  ctx.fillStyle='#9e9a78';
+  const inDepot=pool.mode==='active'&&vehicleInOwnDepot(player);
+  if(inDepot&&vehicleNeedsDepotResupply(player)&&Math.abs(player.speed)<=DEPOT_STOP_SPEED){
+    const pct=Math.round(clamp((player.resupplyTimer||0)/DEPOT_RESUPPLY_TIME,0,1)*100);
+    ctx.fillText('AMMO DEPOT '+pct+'%',190,188);
+  }else if((player.resupplyFlash||0)>0)ctx.fillText('AMMUNITION REFILLED',190,188);
+  else if(inDepot&&!vehicleNeedsDepotResupply(player))ctx.fillText('AMMO DEPOT - FULL',190,188);
+  else if(pool.mode==='active'&&nearPlayerTrapdoor()&&returnSpeed<=82&&player.carryingFlagTeam===null)ctx.fillText('MOTOR POOL READY',190,188);
+  else ctx.fillText(flagText+'  T:'+enemyTowers,190,188);
+
+  if(matchWinner!==null){
+    ctx.fillStyle='rgba(15,18,16,.88)';ctx.fillRect(68,63,184,38);ctx.strokeStyle='#c7bd77';ctx.strokeRect(68.5,63.5,183,37);
+    ctx.fillStyle='#e4dda2';ctx.font='11px monospace';ctx.fillText(matchWinner===0?'FLAG CAPTURED - YOU WIN':'FLAG LOST - CPU WINS',87,73);
+    ctx.font='7px monospace';ctx.fillStyle='#aaa57f';ctx.fillText('PRESS R TO START A NEW MATCH',91,88);
+  }else if(pool.mode==='deploying'||pool.mode==='returning'){
+    ctx.fillStyle='rgba(20,24,21,.78)';ctx.fillRect(102,67,116,24);ctx.strokeStyle='#777b70';ctx.strokeRect(102.5,67.5,115,23);
+    ctx.fillStyle='#d8d2a5';ctx.font='8px monospace';ctx.fillText(pool.mode==='deploying'?'DEPLOYING '+td.name:'RETURNING TO BASE',112,75);
+  }
+  ctx.restore();
+  if(matchWinner===null&&pool.mode==='select')drawPoolSelectionScreen(0,0,0);
+}
+
+function render(){
+  if(gameMode==='local2'){
+    camera=cameraP1;buildScene();rasterize(0,0);drawSplitPlayerHud(0,0,0);
+    camera=cameraP2;buildScene();rasterize(W,0);drawSplitPlayerHud(1,W,0);
+    ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#0a0d0c';ctx.fillRect(W-2,0,4,H);ctx.strokeStyle='#777b70';ctx.beginPath();ctx.moveTo(W+.5,0);ctx.lineTo(W+.5,H);ctx.stroke();ctx.restore();
+    camera=cameraP1;return;
+  }
+  camera=cameraP1;buildScene();rasterize(0,0);drawHud();
+}
+
+let animTime=0;
+let prev=performance.now();
+function tick(now){
+  const dt=Math.min((now-prev)/1000,.05);prev=now;animTime+=dt;
+  updatePool(dt);
+  if(gameMode==='local2')updateP2Pool(dt);else if(gameMode==='single'){updateCpuPool(dt);updateCpuSpawnManager(dt);}
+  updatePlayer(dt);
+  if(gameMode==='local2')updatePlayer2(dt);else if(gameMode==='single'){updateCPU(dt);updateCpuReinforcements(dt);}
+  checkHelicopterCrash();
+  updateAmmoDepots(dt);updateTowers(dt);updateProjectiles(dt);updateMines(dt);updateFlags();updateCameras(dt,false);updateAudio();render();
+  requestAnimationFrame(tick);
+}
+
+badgeEl.style.display='block';applyCanvasLayout();reset();render();requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

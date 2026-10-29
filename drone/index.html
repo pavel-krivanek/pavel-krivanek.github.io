@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#10141e">
+  <meta name="description" content="Offline just-intonation scale drones and a live microphone pitch tuner.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Pitch & Drone">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <title>Microphone Pitch → Just-Intonation Drone & Live Tuner</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 20px;
+           background: #10141e; color: #edf2fa; }
+    main { width: min(100%, 730px); border: 1px solid #353d4d; border-radius: 18px;
+           background: #1b2230; padding: clamp(22px, 5vw, 34px); box-shadow: 0 16px 40px #0004; }
+    h1 { font-size: clamp(1.4rem, 4vw, 1.8rem); font-weight: 680; letter-spacing: -.03em; margin: 0 0 10px; }
+    .intro { color: #b1bfd3; line-height: 1.5; font-size: .94rem; margin: 0 0 24px; }
+    .buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+    button { font: inherit; cursor: pointer; min-height: 44px; border-radius: 10px; border: 1px solid #657181;
+             background: #313d50; color: #fff; padding: 10px 16px; font-weight: 600; }
+    button.primary { background: #5b83ed; border-color: #5b83ed; color: #080f1b; }
+    button:hover:not(:disabled) { filter: brightness(1.12); }
+    button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #a9c1ff; outline-offset: 3px; }
+    button:disabled { cursor: not-allowed; opacity: .45; }
+    .meter { height: 8px; overflow: hidden; border-radius: 99px; background: #3b4557; margin: 20px 0 10px; }
+    .meter > div { width: 0%; height: 100%; background: #79acff; transition: width 60ms linear; }
+    #status { color: #becadd; font-size: .9rem; min-height: 2.6em; line-height: 1.4; margin: 0; }
+    .result { margin-top: 22px; background: #111824; border: 1px solid #343e50; padding: 22px;
+              border-radius: 12px; }
+    .eyebrow { font-size: .75rem; font-weight: 650; text-transform: uppercase; letter-spacing: .09em; color: #a8bad7; }
+    .frequency { margin-top: 5px; font-size: clamp(2.6rem, 9vw, 4.1rem); line-height: 1.25;
+                 letter-spacing: -.055em; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .unit { font-size: 1.15rem; letter-spacing: 0; font-weight: 500; color: #bac8da; }
+    #note { margin-top: 5px; color: #b8d1ff; }
+    #details { margin-top: 12px; color: #9faec3; font-size: .83rem; line-height: 1.4; }
+    .volume { margin-top: 22px; display: flex; gap: 16px; align-items: center; }
+    .volume label { white-space: nowrap; color: #c5cfe0; font-size: .9rem; }
+    .volume input { width: 100%; accent-color: #81a7ff; }
+    .tip { margin: 22px 0 0; font-size: .8rem; line-height: 1.5; color: #9eaec6; }
+    .controls { display: grid; grid-template-columns: 1.6fr 1fr; gap: 15px; margin-top: 24px; }
+    .field { display: grid; gap: 7px; }
+    .field label { font-size: .85rem; color: #c7d3e6; font-weight: 600; }
+    select { width: 100%; background: #313d50; border: 1px solid #68758b;
+             border-radius: 9px; color: #fff; padding: 10px; min-height: 44px; font: inherit; }
+    .scale-section { margin-top: 25px; }
+    .section-title { font-size: 1.05rem; font-weight: 650; margin: 0 0 7px; }
+    .section-help { color: #aabbd3; font-size: .84rem; line-height: 1.5; margin: 0 0 14px; }
+    .degree-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    button.degree { min-width: 0; text-align: left; padding: 10px 12px; display: grid;
+                    align-content: center; gap: 3px; border: 1px solid #596a84; background: #263347; }
+    button.degree[aria-pressed="true"] { background: #315b9b; border-color: #a3c4ff; }
+    .degree-number { font-size: 1rem; font-weight: 700; }
+    .degree-ratio { color: #bed2f1; font-size: .83rem; font-weight: 450; }
+    .degree-hz { color: #e5efff; font-size: .82rem; font-variant-numeric: tabular-nums; font-weight: 550; }
+    .drone-output { background: #111824; border: 1px solid #343e50; border-radius: 12px;
+                    padding: 15px 18px; margin-top: 16px; }
+    .drone-value { font-size: clamp(1.5rem, 5vw, 2rem); font-variant-numeric: tabular-nums;
+                   font-weight: 700; margin-top: 2px; }
+    .drone-description { color: #b8c8e1; font-size: .85rem; margin-top: 5px; }
+    .checkbox-line { display: flex; gap: 9px; align-items: center; font-size: .87rem;
+                     margin-top: 17px; color: #d6dfef; }
+    .checkbox-line input { accent-color: #81a7ff; width: 17px; height: 17px; }
+    .tuner-section { margin-top: 28px; }
+    .tuner-output { margin-top: 15px; padding: 20px; border-radius: 12px;
+                    background: #111824; border: 1px solid #343e50; }
+    .tuner-hz { font-size: clamp(1.8rem, 6vw, 2.6rem); font-weight: 700;
+                font-variant-numeric: tabular-nums; letter-spacing: -.025em; }
+    .tuner-reading { font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums;
+                     margin-top: 8px; }
+    .tuner-match { color: #b5c6df; font-size: .87rem; margin-top: 7px; min-height: 2.5em; }
+    .tuner-meter { position: relative; margin-top: 23px; height: 43px; border-radius: 9px;
+                   background: linear-gradient(90deg, #4a3245, #364961 25%, #27644e 48%, #27644e 52%, #364961 75%, #4a3245);
+                   border: 1px solid #59718a; }
+    .tuner-meter::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0;
+                           border-left: 2px solid #d6e6f6; opacity: .7; }
+    .tuner-needle { position: absolute; left: 50%; top: -7px; bottom: -7px; width: 4px;
+                    transform: translateX(-50%); border-radius: 4px; background: #ffcf75;
+                    box-shadow: 0 0 0 1px #0009, 0 0 12px #0007;
+                    transition: left 110ms ease-out; }
+    .tuner-needle.in-tune { background: #9bf1bc; }
+    .tuner-needle.hidden { display: none; }
+    .tuner-labels { display: flex; justify-content: space-between; gap: 4px; color: #b4c2d6;
+                    font-size: .76rem; margin-top: 8px; font-variant-numeric: tabular-nums; }
+    .tuner-info { color: #b7c8de; font-size: .83rem; margin-left: 8px; }
+    @media (prefers-reduced-motion: reduce) { .tuner-needle { transition: none; } }
+    @media (max-width: 510px) {
+      body { padding: 10px; }
+      main { padding: 20px 16px; }
+      .controls { grid-template-columns: 1fr 1fr; gap: 9px; }
+      .degree-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (min-width: 601px) {
+      .record-details > summary { display:none; }
+    }
+    /* Portrait phone: a single, touch-friendly practice surface. Smaller
+       screens may scroll as a fallback rather than clipping any controls. */
+    @media (max-width: 600px) {
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        display: block; min-height: 100dvh; margin: 0;
+        padding: calc(5px + env(safe-area-inset-top))
+                 calc(7px + env(safe-area-inset-right))
+                 calc(5px + env(safe-area-inset-bottom))
+                 calc(7px + env(safe-area-inset-left));
+      }
+      main {
+        display: flex; flex-direction: column; width: 100%; max-width: 100%;
+        margin: 0; gap: 6px; padding: 8px 10px 9px;
+        border-radius: 13px; box-shadow: none;
+      }
+      h1 { order: 0; margin: 0; font-size: 1rem; line-height: 1.25; letter-spacing: -.025em; }
+      .intro, .tip, .scale-section .section-help,
+      .tuner-section .section-help, .tuner-section .section-title { display: none; }
+      .main-actions { order: 1; display: grid; grid-template-columns: 1fr 1fr 1.15fr; gap: 5px; }
+      .main-actions button { padding: 5px 3px; min-height: 42px; font-size: .77rem; border-radius: 8px; }
+      .main-actions #tuner-toggle[aria-pressed="true"] { border-color: #92edb6; background: #255f48; }
+      .main-actions #play[aria-pressed="true"] { background: #365f9f; color: #fff; }
+      .meter { order: 2; margin: 0; height: 3px; background: transparent; }
+      #status { order: 8; margin: 0; min-height: 1.15em; max-height: 1.15em;
+                overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+                line-height: 1.15; color: #a9b9cf; font-size: .72rem; }
+      .tuner-section { order: 3; margin: 0; }
+      .tuner-info { display: block; margin: 0 0 3px; font-size: .69rem; min-height: 1em; color: #a9c9eb; }
+      .tuner-output {
+        display: grid; grid-template-columns: 1fr 1fr;
+        grid-template-areas: "pitch cents" "match match" "needle needle" "labels labels";
+        align-items: center; gap: 3px 6px;
+        margin: 0; padding: 7px 10px 6px; border-radius: 10px;
+      }
+      .tuner-output .eyebrow { display: none; }
+      .tuner-hz { grid-area: pitch; margin: 0; font-size: 1.55rem; line-height: 1.15; }
+      .tuner-hz .unit { font-size: .74rem; }
+      .tuner-reading { grid-area: cents; text-align: right; margin: 0; font-size: 0; line-height: 1.15; }
+      .tuner-reading::after { content: attr(data-compact); font-size: 1.5rem; }
+      .tuner-match { grid-area: match; margin: 0; min-height: 0; white-space: nowrap;
+                     overflow: hidden; text-overflow: ellipsis; font-size: 0; line-height: 1.25; }
+      .tuner-match::after { content: attr(data-compact); font-size: .72rem; }
+      .tuner-meter { grid-area: needle; height: 29px; margin: 3px 0 0; border-radius: 6px; }
+      .tuner-needle { top: -4px; bottom: -4px; width: 3px; }
+      .tuner-labels { grid-area: labels; margin: 0; font-size: .63rem; }
+      .tuner-labels span:nth-child(2), .tuner-labels span:nth-child(4) { display:none; }
+      .controls { order: 4; margin: 0; grid-template-columns: 1fr 1fr; gap: 5px 7px; }
+      .field { min-width: 0; gap: 2px; }
+      .field label { font-size: .67rem; line-height: 1.15; white-space: nowrap; }
+      select { min-width: 0; min-height: 37px; height: 37px; padding: 4px 22px 4px 7px;
+               border-radius: 7px; font-size: 16px; overflow: hidden; text-overflow: ellipsis; }
+      .scale-section { order: 5; display: flex; flex-direction: column; margin: 0; gap: 5px; }
+      .scale-section .section-title { margin: 0; font-size: .78rem; line-height: 1.1; }
+      .degree-grid { order: 1; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+      button.degree { padding: 3px 3px; min-height: 44px; text-align: center; gap: 0;
+                      border-radius: 7px; justify-items: center; align-content: center; }
+      .degree-number { font-size: 0; line-height: 1.15; }
+      .degree-number::after { content: attr(data-mobile); font-size: 1.02rem; }
+      .degree-hz { font-size: .61rem; white-space: nowrap; line-height: 1.15; }
+      .degree-ratio { display: none; }
+      .drone-output { order: 2; display: flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline;
+                      margin: 0; padding: 3px 8px; border-radius: 7px; }
+      .drone-output .eyebrow { font-size: .62rem; letter-spacing: .04em; }
+      .drone-value { font-size: 1.12rem; line-height: 1.2; margin: 0; }
+      .drone-description { margin: 0; flex-basis: 100%; font-size: .64rem; white-space: nowrap;
+                           overflow: hidden; text-overflow: ellipsis; line-height: 1.15; }
+      .checkbox-line { order: 3; margin: 0; gap: 6px; font-size: .72rem;
+                       min-height: 25px; line-height: 1.2; }
+      .checkbox-line input { width: 18px; height: 18px; margin: 0; flex-shrink: 0; }
+      .volume { order: 6; margin: 0; gap: 8px; min-height: 26px; }
+      .volume label { font-size: .73rem; }
+      .volume input { min-width: 0; height: 22px; margin: 0; }
+      .record-details { order: 7; min-height: 0; font-size: .71rem; color: #b7c8e1; }
+      .record-details:not(.has-recording) { display:none; }
+      #status:not(.activity) { display:none; }
+      .record-details summary { cursor: pointer; padding: 2px 0; }
+      .record-details .result { margin: 4px 0; padding: 8px 10px; }
+      .record-details .eyebrow { font-size: .6rem; }
+      .record-details .frequency { font-size: 1.4rem; }
+      .record-details .unit { font-size: .75rem; }
+      .record-details #note, .record-details #details { font-size: .72rem; margin: 2px 0; }
+    }
+    @media (max-width: 600px) and (max-height: 690px) {
+      main { gap: 4px; padding: 6px 8px; }
+      .main-actions button { min-height: 39px; }
+      .tuner-output { padding: 5px 8px 4px; gap: 2px 4px; }
+      .tuner-meter { height: 24px; }
+      select { height: 35px; min-height: 35px; }
+      button.degree { min-height: 41px; }
+      .degree-grid { gap: 4px; }
+      .drone-output { padding: 2px 7px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Microphone → just-intonation drone</h1>
+  <p class="intro">Choose a standard scale root or use a note you record yourself. Generate sustained just-intonation drones and compare your playing against the nearest scale tone with the live tuner.</p>
+
+  <div class="buttons main-actions">
+    <button id="record" type="button">Record 3 s</button>
+    <button id="play" class="primary" type="button" aria-pressed="false" disabled>Play drone</button>
+    <button id="tuner-toggle" type="button" aria-pressed="false">Start tuner</button>
+  </div>
+  <div class="meter" aria-hidden="true"><div id="progress"></div></div>
+  <p id="status" role="status" aria-live="polite">Ready. Allow microphone access when prompted.</p>
+
+  <details class="record-details" id="record-details" open>
+    <summary>Recorded reference: <span id="record-summary">—</span></summary>
+    <section class="result" aria-label="Measured pitch">
+      <div class="eyebrow">Average fundamental frequency</div>
+      <div class="frequency"><span id="frequency">—</span><span class="unit"> Hz</span></div>
+      <div id="note">No measurement yet</div>
+      <div id="details">Play a sustained, reasonably steady note for best results.</div>
+    </section>
+  </details>
+
+  <div class="controls">
+    <div class="field">
+      <label for="root">Scale root</label>
+      <select id="root">
+        <option value="recorded">Recorded reference note</option>
+        <option value="0" selected>C</option>
+        <option value="1">C♯ / D♭</option>
+        <option value="2">D</option>
+        <option value="3">D♯ / E♭</option>
+        <option value="4">E</option>
+        <option value="5">F</option>
+        <option value="6">F♯ / G♭</option>
+        <option value="7">G</option>
+        <option value="8">G♯ / A♭</option>
+        <option value="9">A</option>
+        <option value="10">A♯ / B♭</option>
+        <option value="11">B</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="root-octave">Standard root octave</label>
+      <select id="root-octave">
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4" selected>4 (middle C octave)</option>
+        <option value="5">5</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="scale">Scale / tuning</label>
+      <select id="scale">
+        <option value="major">Major (just intonation)</option>
+        <option value="natural-minor">Natural minor (just intonation)</option>
+        <option value="harmonic-minor">Harmonic minor (just intonation)</option>
+        <option value="melodic-minor">Melodic minor ascending (just intonation)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="octave">Drone octave shift</label>
+      <select id="octave">
+        <option value="-2">−2 octaves</option>
+        <option value="-1">−1 octave</option>
+        <option value="0" selected>Original octave</option>
+        <option value="1">+1 octave</option>
+        <option value="2">+2 octaves</option>
+      </select>
+    </div>
+  </div>
+
+  <section class="scale-section" aria-label="Scale degrees">
+    <h2 class="section-title">Scale-degree drones</h2>
+    <p class="section-help">The selected root is the tonic (degree 1). Choose a degree from 1–8; playback switches to that pure interval without stopping.</p>
+    <div class="degree-grid" id="degree-grid"></div>
+    <div class="drone-output" aria-live="polite">
+      <div class="eyebrow">Selected drone</div>
+      <div class="drone-value"><span id="drone-frequency">—</span> Hz</div>
+      <div class="drone-description" id="drone-description">Select a root to activate the drones.</div>
+    </div>
+    <label class="checkbox-line" for="tonic-layer">
+      <input id="tonic-layer" type="checkbox">
+      Add the tonic as a second sustained sine tone
+    </label>
+  </section>
+
+  <section class="tuner-section" aria-label="Live scale tuner">
+    <h2 class="section-title">Live microphone tuner</h2>
+    <p class="section-help">Listen continuously to your instrument, even while the drone plays. The reference is the <strong>nearest note in the selected natural-tuning scale</strong>, across octaves—not necessarily the drone degree.</p>
+    <span id="tuner-state" class="tuner-info" role="status">Microphone off</span>
+    <div class="tuner-output">
+      <div class="eyebrow">Incoming pitch</div>
+      <div class="tuner-hz"><span id="tuner-frequency">—</span> <span class="unit">Hz</span></div>
+      <div class="tuner-reading" id="tuner-cents">— cents</div>
+      <div class="tuner-match" id="tuner-match">Start the tuner and play a sustained note.</div>
+      <div class="tuner-meter" id="tuner-meter" role="img" aria-label="Tuning needle, no measurement">
+        <div class="tuner-needle hidden" id="tuner-needle"></div>
+      </div>
+      <div class="tuner-labels"><span>−50¢ flat</span><span>−25¢</span><span>0¢</span><span>+25¢</span><span>+50¢ sharp</span></div>
+    </div>
+  </section>
+
+  <div class="volume">
+    <label for="volume">Drone volume</label>
+    <input id="volume" type="range" min="0" max="100" value="25" aria-label="Drone volume">
+  </div>
+  <p class="tip">Standard roots use A4 = 440 Hz in equal temperament, then just-intonation ratios for the other degrees. These common 5-limit scales are one of several possible natural-tuning conventions. The 3-second reference capture and live tuner are separate microphone modes; the live tuner does not save audio. <strong>Use headphones while running the drone and tuner together</strong> so the microphone does not detect the drone from your speakers. Microphone access requires HTTPS, localhost, or a browser that permits local HTML files.</p>
+</main>
+<script>
+'use strict';
+
+const recordButton = document.getElementById('record');
+const playButton = document.getElementById('play');
+const statusEl = document.getElementById('status');
+const progressEl = document.getElementById('progress');
+const frequencyEl = document.getElementById('frequency');
+const noteEl = document.getElementById('note');
+const detailsEl = document.getElementById('details');
+const volumeEl = document.getElementById('volume');
+const rootEl = document.getElementById('root');
+const rootOctaveEl = document.getElementById('root-octave');
+const tunerButton = document.getElementById('tuner-toggle');
+const tunerStateEl = document.getElementById('tuner-state');
+const tunerFrequencyEl = document.getElementById('tuner-frequency');
+const tunerCentsEl = document.getElementById('tuner-cents');
+const tunerMatchEl = document.getElementById('tuner-match');
+const tunerNeedleEl = document.getElementById('tuner-needle');
+const tunerMeterEl = document.getElementById('tuner-meter');
+const scaleEl = document.getElementById('scale');
+const octaveEl = document.getElementById('octave');
+const degreeGridEl = document.getElementById('degree-grid');
+const droneFrequencyEl = document.getElementById('drone-frequency');
+const droneDescriptionEl = document.getElementById('drone-description');
+const tonicLayerEl = document.getElementById('tonic-layer');
+
+const RECORD_SECONDS = 3;
+const DISCARD_SECONDS = 0.5;
+const MIN_FREQUENCY = 50;
+const MAX_FREQUENCY = 1700;
+
+let audioContext = null;
+let measuredFrequency = null;
+let toneOscillator = null;
+let toneGain = null;
+let tonicOscillator = null;
+let tonicGain = null;
+let selectedDegree = 0;
+let recording = false;
+let liveTuner = null;
+let tunerStarting = false;
+let tunerSession = 0;
+let lastTunerPitch = null;
+
+// Each pitch uses a simple rational ratio against the selected tonic.
+// Intervals are therefore pure (just intonation), rather than 12-TET.
+// Chromatic offsets are only for displaying relative cents differences.
+const SCALES = {
+  'major': [
+    [1, 1, 0], [9, 8, 2], [5, 4, 4], [4, 3, 5],
+    [3, 2, 7], [5, 3, 9], [15, 8, 11], [2, 1, 12]
+  ],
+  'natural-minor': [
+    [1, 1, 0], [9, 8, 2], [6, 5, 3], [4, 3, 5],
+    [3, 2, 7], [8, 5, 8], [9, 5, 10], [2, 1, 12]
+  ],
+  'harmonic-minor': [
+    [1, 1, 0], [9, 8, 2], [6, 5, 3], [4, 3, 5],
+    [3, 2, 7], [8, 5, 8], [15, 8, 11], [2, 1, 12]
+  ],
+  'melodic-minor': [
+    [1, 1, 0], [9, 8, 2], [6, 5, 3], [4, 3, 5],
+    [3, 2, 7], [5, 3, 9], [15, 8, 11], [2, 1, 12]
+  ]
+};
+const DEGREE_NAMES = ['1 · tonic', '2', '3', '4', '5', '6', '7', '8 · octave'];
+
+function currentScale() { return SCALES[scaleEl.value]; }
+function tonicFrequency() {
+  let reference;
+  if (rootEl.value === 'recorded') {
+    reference = measuredFrequency;
+  } else {
+    const midi = (Number(rootOctaveEl.value) + 1) * 12 + Number(rootEl.value);
+    reference = 440 * Math.pow(2, (midi - 69) / 12);
+  }
+  return reference === null ? null : reference * Math.pow(2, Number(octaveEl.value));
+}
+function currentFrequency() {
+  const tonic = tonicFrequency();
+  if (tonic === null) return null;
+  const [num, den] = currentScale()[selectedDegree];
+  return tonic * num / den;
+}
+
+function updateDegreeUI() {
+  const tonic = tonicFrequency();
+  const degrees = currentScale();
+  [...degreeGridEl.children].forEach((button, i) => {
+    const [num, den, semitones] = degrees[i];
+    const delta = Math.round(1200 * Math.log2(num / den) - semitones * 100);
+    const degreeName = DEGREE_NAMES[i];
+    button.querySelector('.degree-number').textContent = degreeName;
+    button.querySelector('.degree-number').dataset.mobile = String(i + 1);
+    button.querySelector('.degree-ratio').textContent = `${num}/${den} · ${delta >= 0 ? '+' : ''}${delta}¢ vs ET`;
+    button.querySelector('.degree-hz').textContent = tonic === null ? '— Hz' : (tonic * num / den).toFixed(2) + ' Hz';
+    button.disabled = tonic === null || recording;
+    button.setAttribute('aria-pressed', String(i === selectedDegree));
+  });
+  const freq = currentFrequency();
+  droneFrequencyEl.textContent = freq === null ? '—' : freq.toFixed(2);
+  if (freq === null) {
+    droneDescriptionEl.textContent = 'Record a reference note, or select a standard scale root.';
+  } else {
+    const [num, den, semitones] = degrees[selectedDegree];
+    const cents = 1200 * Math.log2(num / den) - semitones * 100;
+    droneDescriptionEl.textContent = `Degree ${selectedDegree + 1} · ${num}/${den} of tonic · ${cents >= 0 ? '+' : ''}${cents.toFixed(1)} cents vs equal temperament · ${musicalNote(freq)}`;
+  }
+  rootOctaveEl.disabled = rootEl.value === 'recorded';
+  playButton.disabled = tonic === null || recording;
+  syncTone();
+  renderTuner(lastTunerPitch);
+}
+
+function initializeDegreeButtons() {
+  for (let i = 0; i < 8; i++) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'degree';
+    button.disabled = true;
+    button.setAttribute('aria-pressed', String(i === selectedDegree));
+    for (const css of ['degree-number', 'degree-ratio', 'degree-hz']) {
+      const child = document.createElement('span');
+      child.className = css;
+      button.appendChild(child);
+    }
+    button.addEventListener('click', () => {
+      selectedDegree = i;
+      updateDegreeUI();
+      if (toneOscillator) setStatus(`Playing degree ${i + 1} at ${currentFrequency().toFixed(2)} Hz.`);
+    });
+    degreeGridEl.appendChild(button);
+  }
+  updateDegreeUI();
+}
+
+function setStatus(message) {
+  statusEl.textContent = message;
+  statusEl.classList.add('activity');
+}
+
+async function getAudioContext() {
+  if (!audioContext || audioContext.state === 'closed') {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioContext.state !== 'running') await audioContext.resume();
+  return audioContext;
+}
+
+// All tone changes are smoothed to avoid clicks while changing scale/degree.
+function fadeAndStop(oscillator, gain) {
+  if (!oscillator || !gain || !audioContext) return;
+  const now = audioContext.currentTime;
+  gain.gain.cancelScheduledValues(now);
+  gain.gain.setTargetAtTime(0, now, 0.008);
+  oscillator.stop(now + 0.06);
+  oscillator.onended = () => { oscillator.disconnect(); gain.disconnect(); };
+}
+
+function stopTone() {
+  fadeAndStop(toneOscillator, toneGain);
+  fadeAndStop(tonicOscillator, tonicGain);
+  toneOscillator = null;
+  toneGain = null;
+  tonicOscillator = null;
+  tonicGain = null;
+  playButton.textContent = 'Play drone';
+  playButton.setAttribute('aria-pressed', 'false');
+}
+
+function volumeGain() {
+  // Conservative output level; square law makes the slider more controllable.
+  const x = Number(volumeEl.value) / 100;
+  return 0.20 * x * x;
+}
+
+function newOscillator(frequency, level) {
+  const osc = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(frequency, audioContext.currentTime);
+  gain.gain.setValueAtTime(0, audioContext.currentTime);
+  gain.gain.setTargetAtTime(level, audioContext.currentTime, 0.012);
+  osc.connect(gain);
+  gain.connect(audioContext.destination);
+  osc.start();
+  return { osc, gain };
+}
+
+function syncTone() {
+  if (!toneOscillator || !audioContext) return;
+  const f = currentFrequency();
+  const tonic = tonicFrequency();
+  if (f === null || tonic === null) { stopTone(); return; }
+  const now = audioContext.currentTime;
+  toneOscillator.frequency.setTargetAtTime(f, now, 0.018);
+  const doubled = tonicLayerEl.checked && selectedDegree !== 0;
+  const level = volumeGain() * (doubled ? 0.67 : 1);
+  toneGain.gain.setTargetAtTime(level, now, 0.015);
+  if (doubled) {
+    if (!tonicOscillator) {
+      const pair = newOscillator(tonic, level);
+      tonicOscillator = pair.osc;
+      tonicGain = pair.gain;
+    } else {
+      tonicOscillator.frequency.setTargetAtTime(tonic, now, 0.018);
+      tonicGain.gain.setTargetAtTime(level, now, 0.015);
+    }
+  } else if (tonicOscillator) {
+    fadeAndStop(tonicOscillator, tonicGain);
+    tonicOscillator = null;
+    tonicGain = null;
+  }
+}
+
+async function toggleTone() {
+  if (toneOscillator) {
+    stopTone();
+    setStatus('Drone stopped.');
+    return;
+  }
+  if (currentFrequency() === null || recording) return;
+  try {
+    await getAudioContext();
+    const pair = newOscillator(currentFrequency(), volumeGain());
+    toneOscillator = pair.osc;
+    toneGain = pair.gain;
+    syncTone();
+    playButton.textContent = 'Stop drone';
+    playButton.setAttribute('aria-pressed', 'true');
+    setStatus(`Playing a continuous ${currentFrequency().toFixed(2)} Hz just-intonation sine drone.`);
+  } catch (error) {
+    stopTone();
+    setStatus('Audio output failed: ' + error.message);
+  }
+}
+
+// Capture PCM through the Web Audio API, all within this HTML file.
+// ScriptProcessorNode is widely supported (though deprecated); its output is
+// connected to a zero-gain node so the microphone is never monitored audibly.
+async function captureThreeSeconds(ctx) {
+  const stream = await navigator.mediaDevices.getUserMedia({
+    audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+  });
+  let source, processor, silent;
+  let timer;
+  try {
+    source = ctx.createMediaStreamSource(stream);
+    processor = ctx.createScriptProcessor(2048, 1, 1);
+    silent = ctx.createGain();
+    silent.gain.value = 0;
+    source.connect(processor);
+    processor.connect(silent);
+    silent.connect(ctx.destination);
+
+    const targetSamples = Math.round(RECORD_SECONDS * ctx.sampleRate);
+    const recordingData = new Float32Array(targetSamples);
+    let written = 0;
+    await new Promise((resolve, reject) => {
+      timer = setTimeout(() => reject(new Error('The microphone stopped delivering audio.')), 8000);
+      processor.onaudioprocess = event => {
+        const input = event.inputBuffer.getChannelData(0);
+        const count = Math.min(input.length, targetSamples - written);
+        if (count <= 0) return;
+        recordingData.set(input.subarray(0, count), written);
+        written += count;
+        progressEl.style.width = (written / targetSamples * 100).toFixed(1) + '%';
+        if (written >= targetSamples) {
+          processor.onaudioprocess = null;
+          resolve();
+        }
+      };
+    });
+    return recordingData;
+  } finally {
+    clearTimeout(timer);
+    if (processor) { processor.onaudioprocess = null; processor.disconnect(); }
+    if (source) source.disconnect();
+    if (silent) silent.disconnect();
+    stream.getTracks().forEach(track => track.stop());
+  }
+}
+
+function downsampleAndHighPass(input, sampleRate) {
+  // Reduce the computation needed for YIN. An averaging filter helps prevent
+  // strong higher harmonics from aliasing into the downsampled signal.
+  const factor = Math.max(1, Math.floor(sampleRate / 12000));
+  const rate = sampleRate / factor;
+  const output = new Float32Array(Math.floor(input.length / factor));
+  const r = Math.exp(-2 * Math.PI * 25 / rate);
+  let previousInput = 0, previousOutput = 0;
+  for (let i = 0, p = 0; i < output.length; i++) {
+    let sum = 0;
+    for (let k = 0; k < factor; k++) sum += input[p++];
+    const x = sum / factor;
+    const y = x - previousInput + r * previousOutput;
+    output[i] = y;
+    previousInput = x;
+    previousOutput = y;
+  }
+  return { samples: output, rate };
+}
+
+// YIN: estimates the fundamental period using a cumulative-mean-normalized
+// difference function. More reliable for instruments with strong harmonics
+// than identifying the tallest FFT peak.
+function yinFrame(samples, start, rate, windowSize, minLag, maxLag) {
+  const length = windowSize - maxLag;
+  let energy = 0;
+  for (let i = 0; i < windowSize; i++) {
+    const v = samples[start + i];
+    energy += v * v;
+  }
+  const rms = Math.sqrt(energy / windowSize);
+  if (rms < 0.0025) return null;
+
+  const differences = new Float64Array(maxLag + 1);
+  for (let lag = 1; lag <= maxLag; lag++) {
+    let difference = 0;
+    for (let i = 0; i < length; i++) {
+      const delta = samples[start + i] - samples[start + i + lag];
+      difference += delta * delta;
+    }
+    differences[lag] = difference;
+  }
+
+  const normalized = new Float64Array(maxLag + 1);
+  let cumulative = 0;
+  normalized[0] = 1;
+  for (let lag = 1; lag <= maxLag; lag++) {
+    cumulative += differences[lag];
+    normalized[lag] = cumulative > 1e-20 ? differences[lag] * lag / cumulative : 1;
+  }
+
+  const threshold = 0.14;
+  let bestLag = -1;
+  for (let lag = minLag; lag < maxLag; lag++) {
+    if (normalized[lag] < threshold) {
+      while (lag + 1 <= maxLag && normalized[lag + 1] < normalized[lag]) lag++;
+      bestLag = lag;
+      break;
+    }
+  }
+  if (bestLag === -1) {
+    let lowest = Infinity;
+    for (let lag = minLag; lag <= maxLag; lag++) {
+      if (normalized[lag] < lowest) {
+        lowest = normalized[lag];
+        bestLag = lag;
+      }
+    }
+    if (lowest > 0.22) return null;
+  }
+  const confidence = 1 - normalized[bestLag];
+  if (confidence < 0.78) return null;
+
+  // Three-point parabolic interpolation gives sub-sample period resolution.
+  let refinedLag = bestLag;
+  if (bestLag > 1 && bestLag < maxLag) {
+    const a = normalized[bestLag - 1];
+    const b = normalized[bestLag];
+    const c = normalized[bestLag + 1];
+    const denominator = a - 2 * b + c;
+    if (Math.abs(denominator) > 1e-12) {
+      refinedLag += Math.max(-1, Math.min(1, 0.5 * (a - c) / denominator));
+    }
+  }
+  const frequency = rate / refinedLag;
+  if (frequency < MIN_FREQUENCY || frequency > MAX_FREQUENCY) return null;
+  return { frequency, confidence };
+}
+
+function estimatePitch(samples, sampleRate) {
+  const afterOnset = samples.subarray(Math.round(DISCARD_SECONDS * sampleRate));
+  const { samples: signal, rate } = downsampleAndHighPass(afterOnset, sampleRate);
+  const windowSize = Math.min(3072, signal.length);
+  const hopSize = Math.round(rate * 0.085);
+  const minLag = Math.max(2, Math.floor(rate / MAX_FREQUENCY));
+  const maxLag = Math.min(windowSize / 3 | 0, Math.ceil(rate / MIN_FREQUENCY));
+  const pitches = [];
+
+  for (let start = 0; start + windowSize <= signal.length; start += hopSize) {
+    const pitch = yinFrame(signal, start, rate, windowSize, minLag, maxLag);
+    if (pitch) pitches.push(pitch.frequency);
+  }
+  if (pitches.length < 3) throw new Error('No stable pitched sound detected. Try a longer, clearer sustained note.');
+
+  // Remove spurious octave jumps or frames containing noise/transients.
+  const sorted = [...pitches].sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)];
+  const accepted = pitches.filter(f => Math.abs(1200 * Math.log2(f / median)) < 100);
+  if (accepted.length < 3) throw new Error('The detected pitch varies too much. Please sustain one note.');
+  const meanHz = accepted.reduce((sum, f) => sum + f, 0) / accepted.length;
+  const deviations = accepted.map(f => 1200 * Math.log2(f / meanHz));
+  const spreadCents = Math.sqrt(deviations.reduce((sum, c) => sum + c * c, 0) / accepted.length);
+  return { frequency: meanHz, valid: accepted.length, total: pitches.length, spreadCents };
+}
+
+function musicalNote(frequency) {
+  const midi = Math.round(69 + 12 * Math.log2(frequency / 440));
+  const names = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+  const name = names[((midi % 12) + 12) % 12] + (Math.floor(midi / 12) - 1);
+  const cents = Math.round(1200 * Math.log2(frequency / (440 * Math.pow(2, (midi - 69) / 12))));
+  return `${name} · ${cents >= 0 ? '+' : ''}${cents} cents from equal temperament (A4 = 440 Hz)`;
+}
+
+async function recordAndAnalyze() {
+  if (recording) return;
+  if (liveTuner || tunerStarting) stopLiveTuner();
+  recording = true;
+  tunerButton.disabled = true;
+  recordButton.disabled = true;
+  playButton.disabled = true;
+  stopTone();
+  measuredFrequency = null;
+  frequencyEl.textContent = '—';
+  document.getElementById('record-summary').textContent = 'Measuring…';
+  noteEl.textContent = 'Measuring…';
+  detailsEl.textContent = '';
+  updateDegreeUI();
+  progressEl.style.width = '0%';
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error('Microphone access is unavailable. Open this page via HTTPS or localhost.');
+    }
+    const ctx = await getAudioContext();
+    setStatus('Requesting microphone access…');
+    // Recording begins after permission is granted.
+    setStatus('Allow microphone permission if prompted. Recording starts immediately afterward.');
+    const data = await captureThreeSeconds(ctx);
+    setStatus('Analyzing the last 2.5 seconds…');
+    // Yield once so the UI can paint before CPU-intensive pitch analysis.
+    await new Promise(resolve => setTimeout(resolve, 0));
+    const result = estimatePitch(data, ctx.sampleRate);
+    measuredFrequency = result.frequency;
+    rootEl.value = 'recorded'; // Preserve the original recording-to-drone workflow.
+    frequencyEl.textContent = result.frequency.toFixed(2);
+    document.getElementById('record-summary').textContent = `${result.frequency.toFixed(2)} Hz`;
+    document.getElementById('record-details').classList.add('has-recording');
+    noteEl.textContent = musicalNote(result.frequency);
+    detailsEl.textContent = `${result.valid} usable analysis windows; pitch variation ≈ ${result.spreadCents.toFixed(1)} cents RMS.`;
+    updateDegreeUI();
+    setStatus('Measurement complete. The recorded note is now the scale root.');
+  } catch (error) {
+    document.getElementById('record-summary').textContent = 'No reliable measurement';
+    noteEl.textContent = 'No reliable measurement';
+    detailsEl.textContent = 'Try recording a clear, sustained single note away from background noise.';
+    progressEl.style.width = '0%';
+    setStatus(error.name === 'NotAllowedError' ? 'Microphone permission was denied.' : (error.message || String(error)));
+  } finally {
+    recording = false;
+    recordButton.disabled = false;
+    tunerButton.disabled = false;
+    updateDegreeUI();
+  }
+}
+
+// Find the nearest just scale tone over surrounding octaves, independently
+// of which drone degree is selected. Degree 8 is covered by degree 1 + octave.
+function nearestScaleTone(frequency) {
+  const tonic = tonicFrequency();
+  if (tonic === null || !Number.isFinite(frequency) || frequency <= 0) return null;
+  let nearest = null;
+  for (let octave = -6; octave <= 6; octave++) {
+    for (let i = 0; i < 7; i++) {
+      const [numerator, denominator] = currentScale()[i];
+      const target = tonic * numerator / denominator * Math.pow(2, octave);
+      const cents = 1200 * Math.log2(frequency / target);
+      if (!nearest || Math.abs(cents) < Math.abs(nearest.cents)) {
+        nearest = { degree: i + 1, octave, target, cents };
+      }
+    }
+  }
+  return nearest;
+}
+
+function renderTuner(frequency) {
+  if (frequency === null) {
+    tunerFrequencyEl.textContent = '—';
+    tunerCentsEl.textContent = '— cents';
+    tunerCentsEl.dataset.compact = '—';
+    tunerMatchEl.textContent = liveTuner ? 'Listening for a stable pitch…' : 'Start the tuner and play a sustained note.';
+    tunerMatchEl.dataset.compact = liveTuner ? 'Listening for pitch…' : 'Start tuner to measure';
+    tunerNeedleEl.classList.add('hidden');
+    tunerMeterEl.setAttribute('aria-label', 'Tuning needle, no measurement');
+    return;
+  }
+  tunerFrequencyEl.textContent = frequency.toFixed(2);
+  const match = nearestScaleTone(frequency);
+  if (!match) {
+    tunerCentsEl.textContent = 'No reference';
+    tunerCentsEl.dataset.compact = 'No root';
+    tunerMatchEl.textContent = 'Record a reference pitch or select a standard scale root.';
+    tunerMatchEl.dataset.compact = 'Select a scale root';
+    tunerNeedleEl.classList.add('hidden');
+    tunerMeterEl.setAttribute('aria-label', 'Tuning needle, no reference');
+    return;
+  }
+  const cents = match.cents;
+  const close = Math.abs(cents) <= 5;
+  const direction = close ? 'In tune' : cents < 0 ? 'Flat' : 'Sharp';
+  tunerCentsEl.textContent = `${cents >= 0 ? '+' : '−'}${Math.abs(cents).toFixed(1)} cents · ${direction}`;
+  tunerCentsEl.dataset.compact = `${cents >= 0 ? '+' : '−'}${Math.abs(cents).toFixed(1)}¢`;
+  const octaveLabel = match.octave === 0 ? 'root octave' :
+    `${match.octave > 0 ? '+' : ''}${match.octave} octave${Math.abs(match.octave) === 1 ? '' : 's'}`;
+  tunerMatchEl.textContent = `Closest: degree ${match.degree} (${octaveLabel}) · ${match.target.toFixed(2)} Hz just intonation`;
+  tunerMatchEl.dataset.compact = `Degree ${match.degree} · target ${match.target.toFixed(1)} Hz · ${direction}`;
+  tunerNeedleEl.style.left = `${50 + Math.max(-50, Math.min(50, cents))}%`;
+  tunerNeedleEl.classList.toggle('in-tune', close);
+  tunerNeedleEl.classList.remove('hidden');
+  tunerMeterEl.setAttribute('aria-label', `${cents.toFixed(1)} cents ${cents < 0 ? 'flat' : 'sharp'} from degree ${match.degree}`);
+}
+
+function stopLiveTuner() {
+  ++tunerSession; // Invalidate any outstanding getUserMedia permission request.
+  if (liveTuner) {
+    clearInterval(liveTuner.timer);
+    liveTuner.processor.onaudioprocess = null;
+    liveTuner.processor.disconnect();
+    liveTuner.source.disconnect();
+    liveTuner.silent.disconnect();
+    liveTuner.stream.getTracks().forEach(track => track.stop());
+    liveTuner = null;
+  }
+  tunerStarting = false;
+  lastTunerPitch = null;
+  tunerButton.textContent = 'Start tuner';
+  tunerButton.setAttribute('aria-pressed', 'false');
+  tunerButton.disabled = recording;
+  tunerStateEl.textContent = 'Microphone off';
+  renderTuner(null);
+}
+
+function analyzeLivePitch() {
+  const state = liveTuner;
+  if (!state || state.filled < state.sampleRate * 0.29) return;
+  // Read the most recent 0.35 s of audio from a circular PCM buffer.
+  const count = Math.min(state.filled, Math.floor(state.sampleRate * 0.35));
+  const raw = new Float32Array(count);
+  const first = (state.writeIndex - count + state.buffer.length) % state.buffer.length;
+  const firstLength = Math.min(count, state.buffer.length - first);
+  raw.set(state.buffer.subarray(first, first + firstLength));
+  if (firstLength < count) raw.set(state.buffer.subarray(0, count - firstLength), firstLength);
+
+  const { samples, rate } = downsampleAndHighPass(raw, state.sampleRate);
+  const windowSize = Math.min(3072, samples.length);
+  const minLag = Math.max(2, Math.floor(rate / MAX_FREQUENCY));
+  const maxLag = Math.min(windowSize / 3 | 0, Math.ceil(rate / MIN_FREQUENCY));
+  const pitch = yinFrame(samples, samples.length - windowSize, rate, windowSize, minLag, maxLag);
+  if (!pitch) {
+    state.misses++;
+    if (state.misses >= 3) {
+      state.history.length = 0;
+      lastTunerPitch = null;
+      renderTuner(null);
+    }
+    return;
+  }
+  state.misses = 0;
+  state.history.push(pitch.frequency);
+  if (state.history.length > 3) state.history.shift();
+  const sorted = [...state.history].sort((a, b) => a - b);
+  lastTunerPitch = sorted[Math.floor(sorted.length / 2)];
+  renderTuner(lastTunerPitch);
+}
+
+async function startLiveTuner() {
+  if (liveTuner || tunerStarting || recording) return;
+  const session = ++tunerSession;
+  tunerStarting = true;
+  tunerButton.disabled = true;
+  tunerStateEl.textContent = 'Requesting microphone…';
+  let stream = null;
+  let source = null, processor = null, silent = null;
+  try {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      throw new Error('Microphone access unavailable: use HTTPS or localhost.');
+    }
+    const ctx = await getAudioContext();
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+    });
+    if (session !== tunerSession) return; // Stop was requested while permission was pending.
+    source = ctx.createMediaStreamSource(stream);
+    processor = ctx.createScriptProcessor(2048, 1, 1);
+    silent = ctx.createGain();
+    silent.gain.value = 0; // Do not route microphone to speakers.
+    const state = {
+      stream, source, processor, silent, sampleRate: ctx.sampleRate,
+      buffer: new Float32Array(Math.ceil(ctx.sampleRate * 0.45)),
+      writeIndex: 0, filled: 0, history: [], misses: 0, timer: null
+    };
+    processor.onaudioprocess = event => {
+      const input = event.inputBuffer.getChannelData(0);
+      for (let i = 0; i < input.length; i++) {
+        state.buffer[state.writeIndex] = input[i];
+        state.writeIndex = (state.writeIndex + 1) % state.buffer.length;
+      }
+      state.filled = Math.min(state.buffer.length, state.filled + input.length);
+    };
+    source.connect(processor);
+    processor.connect(silent);
+    silent.connect(ctx.destination);
+    liveTuner = state;
+    state.timer = setInterval(analyzeLivePitch, 110);
+    tunerButton.textContent = 'Stop tuner';
+    tunerButton.setAttribute('aria-pressed', 'true');
+    tunerStateEl.textContent = 'Microphone listening · play a note';
+    renderTuner(null);
+  } catch (error) {
+    if (session === tunerSession) {
+      tunerStateEl.textContent = error.name === 'NotAllowedError'
+        ? 'Microphone permission denied' : `Microphone error: ${error.message}`;
+    }
+  } finally {
+    if (session !== tunerSession || !liveTuner) {
+      if (processor) { processor.onaudioprocess = null; processor.disconnect(); }
+      if (source) source.disconnect();
+      if (silent) silent.disconnect();
+      if (stream) stream.getTracks().forEach(track => track.stop());
+    }
+    if (session === tunerSession) {
+      tunerStarting = false;
+      tunerButton.disabled = recording;
+    }
+  }
+}
+
+recordButton.addEventListener('click', recordAndAnalyze);
+playButton.addEventListener('click', toggleTone);
+volumeEl.addEventListener('input', syncTone);
+scaleEl.addEventListener('change', updateDegreeUI);
+rootEl.addEventListener('change', updateDegreeUI);
+rootOctaveEl.addEventListener('change', updateDegreeUI);
+octaveEl.addEventListener('change', updateDegreeUI);
+tunerButton.addEventListener('click', () => {
+  if (liveTuner || tunerStarting) stopLiveTuner();
+  else startLiveTuner();
+});
+tonicLayerEl.addEventListener('change', syncTone);
+initializeDegreeButtons();
+const compactScreen = window.matchMedia('(max-width: 600px)');
+const recordDetailsEl = document.getElementById('record-details');
+if (compactScreen.matches) recordDetailsEl.open = false;
+compactScreen.addEventListener?.('change', e => { recordDetailsEl.open = !e.matches; });
+window.addEventListener('pagehide', () => { stopLiveTuner(); stopTone(); });
+</script>
+<script>
+// A relative registration path supports both GitHub Pages repository URLs
+// (/<repository>/) and custom domains hosted at the site root.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js', { scope: './' })
+      .catch(error => console.warn('Offline support could not be enabled:', error));
+  });
+}
+</script>
+</body>
+</html>

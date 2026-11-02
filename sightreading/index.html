@@ -1,0 +1,1831 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>Sight Reading Lab</title>
+<meta name="theme-color" content="#0d1a28">
+<meta name="application-name" content="Sight Reading Lab">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sight Reading">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
+<style>
+:root{--night:#0d1a28;--night2:#15273a;--ink:#172b3f;--muted:#687889;--line:#e5e9ed;--teal:#c0eddd;--accent:#206d61;--paper:#fff;--ground:#f3f5f5}*{box-sizing:border-box}body{margin:0;font-family:Inter,'Segoe UI',Arial,sans-serif;background:var(--ground);color:var(--ink)}button,input,select{font:inherit}button{cursor:pointer}button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #7cd9c2;outline-offset:3px}.app{display:grid;grid-template-columns:296px minmax(0,1fr);min-height:100vh}.sidebar{background:var(--night);color:#ecf5f4;padding:28px 22px;display:flex;flex-direction:column;gap:21px}.brand{display:flex;align-items:center;gap:12px}.logo{width:39px;height:39px;background:#b8e5d6;border-radius:11px;color:#173f41;display:grid;place-items:center;font-size:25px;font-weight:bold}.brand-title{font-family:Georgia,serif;font-size:19px;letter-spacing:-.3px}.eyebrow{font-size:10px;letter-spacing:2px;font-weight:800;color:#8daaaa;margin:0 0 6px}.version{background:#263e48;color:#b6d4d0;display:inline-block;padding:5px 8px;border-radius:5px;font-size:10px;font-weight:800;letter-spacing:1.4px}.separator{height:1px;background:#314354}.sectionlabel{font-size:11px;font-weight:800;letter-spacing:1.5px;color:#93aab4;text-transform:uppercase;margin-bottom:14px}.field{margin:0 0 14px}.field>label{display:block;font-size:12px;color:#cdd9db;margin-bottom:8px}.field select,.field input[type=number]{width:100%;background:var(--night2);border:1px solid #42576a;color:#fff;border-radius:8px;padding:10px 12px;min-height:40px;font-size:13px}.field option{background:var(--night2)}.sublabel{font-size:10px;margin:12px 0 9px;color:#afd5c7}.field select:disabled{opacity:.6}.twocol{display:grid;grid-template-columns:1fr 1fr;gap:9px}.twocol .field{min-width:0}.twocol .field select{padding:10px 6px}.seed-wrap{display:flex;gap:6px}.seed-wrap input{flex:1;min-width:0}.square{width:40px;flex:none;background:#263f4c;color:#cce4df;border:1px solid #496472;border-radius:8px;font-size:18px}.checkrow{display:flex;align-items:center;gap:9px;font-size:13px;color:#dce8e8;cursor:pointer}.checkrow input{accent-color:#9fdfc9;width:16px;height:16px}.hint{font-size:12px;line-height:1.55;color:#9cb3be}.main{min-width:0;padding:34px max(28px,calc((100vw - 1500px)/2)) 48px}.masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:28px}.main h1{font-family:Georgia,serif;font-weight:500;font-size:35px;letter-spacing:-1.1px;margin:4px 0 5px}.subtitle{font-size:13px;color:#67788a}.topactions{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}.btn{border:1px solid #d4dce0;background:#fff;color:#1c3942;padding:10px 15px;border-radius:9px;font-size:13px;font-weight:700;min-height:40px}.btn:hover{background:#eff7f3}.btn.primary{background:#236e5f;color:#fff;border-color:#236e5f}.btn.primary:hover{background:#1a594d}.btn.dark{background:#172b3f;border-color:#172b3f;color:white}.tag{font-size:10px;font-weight:800;letter-spacing:1.3px;color:#337c6a;background:#e1f3e9;border:1px solid #c6e5d8;padding:8px 10px;border-radius:20px;display:inline-block}.viewer{background:#fff;border:1px solid #dde4e7;border-radius:14px;box-shadow:0 9px 26px rgba(23,43,63,.055);overflow:hidden}.viewerbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 24px;border-bottom:1px solid #e9ecef}.viewerbar h2{font-family:Georgia,serif;font-size:20px;margin:0;font-weight:500}.viewlabel{font-size:11px;color:#7b8a93;font-weight:700;letter-spacing:.6px}.sheet-scroller{width:100%;overflow-x:auto;scrollbar-width:thin;padding:14px 14px 12px}.paper{margin:auto;width:100%;max-width:1200px;background:#fff}.sheet-svg{display:block;width:100%;height:auto;min-width:800px}.sheet-svg .staff-line{stroke:#253647;stroke-width:1.18;shape-rendering:geometricPrecision}.sheet-svg .ledger{stroke:#20344a;stroke-width:1.5}.sheet-svg .barline{stroke:#283d50;stroke-width:1.18}.sheet-svg .stem{stroke:#172b3f;stroke-width:1.85}.sheet-svg .notehead,.sheet-svg .symbol{fill:#172b3f}.sheet-svg .signature,.sheet-svg .accidental{fill:#172b3f}.sheet-svg .timesig{font-family:Georgia,serif;font-size:26px;font-weight:bold;fill:#172b3f;text-anchor:middle}.sheet-svg .tuplet-label{font:italic 15px Georgia,serif;fill:#172b3f;paint-order:stroke;stroke:white;stroke-width:4px}.sheet-svg .final-barline{stroke-width:3}.sheet-svg .score-title{font-family:Georgia,serif;font-size:27px;fill:#172b3f}.sheet-svg .score-subtitle{font-family:'Segoe UI',sans-serif;font-size:12px;fill:#6c7b89}.sheet-svg .measure-no{font-family:Arial,sans-serif;font-size:10px;fill:#8c969e}.sheet-svg .harmony{font-family:Georgia,serif;font-size:15px;fill:#569184;font-style:italic}.viewerfoot{padding:12px 22px;border-top:1px solid #edf0f0;background:#fbfcfc;display:flex;justify-content:space-between;gap:12px;font-size:12px;color:#637587}.controlbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:18px 0;flex-wrap:wrap}.player{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.tempo{display:flex;align-items:center;gap:12px;border:1px solid #dbe2e5;padding:9px 12px;background:#fff;border-radius:9px;font-size:12px;color:#607484}.tempo select{border:1px solid #c5d3d3;color:#28434f;background:white;border-radius:6px;padding:7px 8px;font-size:12px;max-width:165px}.tempo input[type=range]{width:clamp(220px,26vw,430px);max-width:42vw;accent-color:#247563}.tempo input[type=number]{width:73px;border:1px solid #c5d3d3;border-radius:6px;padding:6px 5px;color:#28434f}.tempo strong{min-width:56px;color:#28434f}.tempo .tempo-step{border:1px solid #c5d3d3;background:#fff;border-radius:6px;min-width:26px;min-height:28px;color:#28434f;font-weight:bold}.tempo{flex-wrap:wrap}.note-actions{display:flex;gap:8px;flex-wrap:wrap}.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}.info{background:white;border:1px solid #e0e6e7;border-radius:11px;padding:19px 19px 17px}.info .ihead{font-size:12px;font-weight:800;color:#244638;margin-bottom:7px}.info p{font-size:12px;color:#6a7986;line-height:1.6;margin:0}.info strong{font-size:12px;color:#2c4851}.warn{background:#fff6e1;color:#7a4d00;border:1px solid #f4d18a;border-radius:8px;padding:13px;margin:16px 0}.abc-panel{margin-top:18px;background:#fff;border:1px solid #dfe5e6;padding:17px;border-radius:12px}.abc-panel textarea{width:100%;height:190px;margin-top:12px;border:1px solid #d8e1e3;border-radius:8px;background:#f9fafb;color:#24333b;font:12px/1.5 Consolas,monospace;padding:12px;resize:vertical}.footnote{font-size:12px;color:#839099;margin-top:22px;line-height:1.6}.version-line{color:#8ba1a8;font-size:11px;margin-top:auto}.playing{background:#8a3140!important;border-color:#8a3140!important}.muted{color:#a3b4b6}[hidden]{display:none!important}
+@media(max-width:1000px){.app{grid-template-columns:240px 1fr}.sidebar{padding:20px 16px}.main{padding:24px 18px}.info-grid{grid-template-columns:1fr}.masthead{align-items:flex-start;flex-direction:column}.main h1{font-size:30px}}@media(max-width:680px){.app{grid-template-columns:1fr}.sidebar{padding:18px;gap:10px}.sectionlabel{margin:12px 0}.sidebar .separator{margin:8px 0}.main{padding:20px 10px}.viewerbar{padding:14px}.controlbar{align-items:flex-start}.viewerfoot{flex-direction:column}.sheet-scroller{padding:12px 5px}}
+@media print{body{background:white}.app{display:block}.sidebar,.masthead,.topactions,.controlbar,.info-grid,.viewerbar,.viewerfoot,.footnote,.abc-panel,.warn{display:none!important}.main{padding:0}.viewer{border:0;box-shadow:none}.sheet-scroller{padding:0;overflow:visible}.sheet-svg{min-width:0;width:100%;max-width:none;page-break-inside:avoid}@page{size:A4 landscape;margin:12mm}}
+
+/* Bundle 0014: mobile landscape score-first layout. The sheet uses the browser's
+   available width, never the previous hard-coded 800 px minimum. */
+.mobile-toolbar,.settings-close,.sidebar-backdrop{display:none}
+.sheet-svg{min-width:0}
+:root{--score-zoom:1}
+.sheet-svg{width:calc(var(--score-zoom)*100%);min-width:0;max-width:none}
+.sheet-scroller{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+@media(max-width:850px){
+ html,body{min-width:0}
+ .app{display:block;min-height:100dvh}
+ .main{min-width:0;padding:0 0 20px}
+ .mobile-toolbar{display:flex;align-items:center;gap:6px;position:sticky;top:0;z-index:20;min-height:48px;padding:4px max(7px,env(safe-area-inset-right)) 4px max(7px,env(safe-area-inset-left));background:#0d1a28;color:#fff}
+ .mobile-toolbar button,.settings-close{display:inline-flex;justify-content:center;align-items:center;gap:4px;border:1px solid #526476;border-radius:7px;min-width:42px;min-height:38px;padding:5px 9px;font-size:14px;background:#203b4a;color:white;white-space:nowrap}
+ .mobile-toolbar .mobile-app-title{flex:1;min-width:0;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .sidebar{display:flex;position:fixed;top:0;bottom:0;left:0;width:min(350px,90vw);max-width:350px;height:100dvh;z-index:31;overflow-y:auto;overscroll-behavior:contain;padding:max(16px,env(safe-area-inset-top)) 18px max(20px,env(safe-area-inset-bottom));transform:translateX(-105%);transition:transform .18s ease;box-shadow:7px 0 35px #0004}
+ body.settings-open .sidebar{transform:translateX(0)}
+ .sidebar-backdrop{display:none;position:fixed;inset:0;z-index:30;background:rgba(4,19,30,.6)}
+ body.settings-open .sidebar-backdrop{display:block}
+ .sidebar .brand{justify-content:space-between}
+ .sidebar .brand-title{font-size:16px}
+ .settings-close{flex-shrink:0;font-size:24px;line-height:1}
+ .main .masthead{display:none}
+ .viewer{border-radius:0;box-shadow:none;border-left:0;border-right:0}
+ .viewerbar{padding:7px 12px}
+ .viewerbar h2{font-size:15px}
+ .viewerbar .viewlabel{font-size:9px}
+ .viewerbar .tag{font-size:9px;padding:6px 8px}
+ .sheet-scroller{padding:4px 2px;overflow:auto}
+ .paper{max-width:none;width:100%}
+ .viewerfoot{padding:8px 12px;gap:3px;font-size:11px}
+ .controlbar{margin:10px;padding:0 10px}
+ .info-grid,.footnote,.main>#status{display:none}
+ .tempo input[type=range]{width:clamp(100px,35vw,360px);max-width:none}
+ .tempo{max-width:100%}
+ .tempo select{max-width:135px}
+}
+/* Small tablets are also score-first in landscape, not just phones. */
+@media (orientation:landscape) and (max-height:700px) and (max-width:1250px){
+ html,body{width:100%;height:100%;margin:0;overflow:hidden}
+ .app{display:block;height:100dvh;min-height:0;overflow:hidden}
+ .main{display:flex;flex-direction:column;height:100dvh;min-height:0;padding:0;overflow:hidden}
+ .mobile-toolbar{display:flex;position:relative;flex-shrink:0;height:44px;min-height:44px;padding-top:2px;padding-bottom:2px}
+ .mobile-toolbar button{min-height:34px}
+ .viewer{display:flex;flex:1;min-height:0;flex-direction:column;margin:0;border:0;border-radius:0;overflow:hidden}
+ .viewerbar,.viewerfoot,#corpusCredit,#qualityStats,.controlbar,.info-grid,.footnote,.abc-panel,.main>#status{display:none!important}
+ .sheet-scroller{display:block;flex:1;min-height:0;width:100%;padding:0;overflow-y:auto;overflow-x:auto}
+ .paper{margin:0 auto;max-width:none;min-width:0;width:100%;height:auto}
+ .sheet-svg{min-width:0;display:block;height:auto}
+ .main .warn{position:absolute;z-index:25;bottom:5px;left:10px;right:10px;margin:0;max-height:35vh;overflow:auto}
+ .mobile-app-title{font-size:13px}
+ .sidebar{display:flex;position:fixed;top:0;bottom:0;left:0;z-index:31;width:min(350px,90vw);height:100dvh;max-width:350px;overflow-y:auto;transform:translateX(-105%);transition:transform .18s ease;box-shadow:7px 0 35px #0004}
+ body.settings-open .sidebar{transform:translateX(0)}
+ body.settings-open .sidebar-backdrop{display:block}
+ .sidebar-backdrop{position:fixed;inset:0;z-index:30;background:rgba(4,19,30,.6)}
+ .settings-close{display:inline-flex}
+ .main .masthead{display:none}
+}
+/* Focus mode works on desktop too, without using the Fullscreen API that iOS Safari lacks. */
+body.score-focus{height:100dvh;overflow:hidden}
+body.score-focus .app{display:block;height:100dvh;min-height:0;overflow:hidden}
+body.score-focus .sidebar{position:fixed;top:0;bottom:0;left:0;z-index:31;display:flex;width:min(350px,90vw);max-width:350px;height:100dvh;overflow-y:auto;transform:translateX(-105%);transition:transform .18s ease}
+body.score-focus.settings-open .sidebar{transform:translateX(0)}
+body.score-focus.settings-open .sidebar-backdrop{display:block}
+body.score-focus .settings-close{display:inline-flex}
+body.score-focus .main{display:flex;flex-direction:column;height:100dvh;min-height:0;padding:0;overflow:hidden}
+body.score-focus .mobile-toolbar{display:flex;flex-shrink:0;position:relative;z-index:20;align-items:center;gap:6px;padding:3px 8px;min-height:44px;height:44px;background:#0d1a28;color:#fff}
+body.score-focus .mobile-toolbar button{border:1px solid #526476;border-radius:7px;min-width:38px;min-height:34px;background:#203b4a;color:#fff}
+body.score-focus .mobile-toolbar .mobile-app-title{flex:1}
+body.score-focus .masthead,body.score-focus .viewerbar,body.score-focus .viewerfoot,body.score-focus #corpusCredit,body.score-focus #qualityStats,body.score-focus .controlbar,body.score-focus .info-grid,body.score-focus .footnote,body.score-focus .abc-panel,body.score-focus .main>#status{display:none!important}
+body.score-focus .viewer{display:flex;flex-direction:column;flex:1;min-height:0;border:0;border-radius:0;box-shadow:none}
+body.score-focus .sheet-scroller{flex:1;min-height:0;width:100%;overflow:auto;padding:0}
+body.score-focus .paper{width:100%;max-width:none}
+body.score-focus .sheet-svg{min-width:0}
+@media (max-width:680px) and (orientation:portrait){.viewerbar,.viewerfoot,#corpusCredit,#qualityStats{display:none!important}}
+@media (max-width:540px){.mobile-toolbar .toolbar-label{display:none}.mobile-toolbar button{padding:3px 7px;min-width:36px}.mobile-app-title{font-size:12px}}
+@media print{.mobile-toolbar,.sidebar-backdrop,.settings-close{display:none!important}body,body.score-focus{height:auto;overflow:visible}.app,body.score-focus .app{display:block;height:auto;overflow:visible}.main,body.score-focus .main{display:block;height:auto;overflow:visible}.viewer,body.score-focus .viewer{display:block;border:0;box-shadow:none;overflow:visible}.sheet-scroller,body.score-focus .sheet-scroller{display:block;height:auto;overflow:visible}.sheet-svg{width:100%!important;max-width:none;min-width:0}.sidebar,body.score-focus .sidebar{display:none!important}}
+
+/* 0014: legible music-notation previews inside desktop and mobile settings. */
+.range-notation-preview{display:block;background:#fff;border:1px solid #8eabae;border-radius:8px;padding:5px 5px 3px;margin:2px 0 14px;overflow-y:auto;max-height:310px;scrollbar-width:thin}
+.range-notation-preview svg{width:100%;display:block;height:auto;overflow:visible;min-width:0}
+.range-notation-preview svg .ledger{stroke:#20344a;stroke-width:1.5;stroke-linecap:butt}
+.range-notation-preview svg .hollow-notehead{fill:none;stroke:#162738}
+.range-preview-summary{font-size:11px;color:#285f52;text-align:center;padding:5px 4px 3px;line-height:1.4}
+.range-notation-preview .preview-invalid{display:block;color:#9b3d38;padding:12px 6px;font-size:12px}
+@media(max-width:850px){.range-notation-preview{max-height:270px}}
+
+
+/* Standalone-mode safe areas: reserve the iPhone status bar and home indicator. */
+@media (display-mode: standalone) and (max-width: 850px) {
+  .mobile-toolbar {
+    padding-top: max(4px, env(safe-area-inset-top));
+    min-height: calc(48px + env(safe-area-inset-top));
+  }
+  .main { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+  body.score-focus .mobile-toolbar {
+    height: calc(44px + env(safe-area-inset-top));
+    min-height: calc(44px + env(safe-area-inset-top));
+    padding-top: max(3px, env(safe-area-inset-top));
+  }
+  body.score-focus .main { padding-bottom: 0; }
+}
+@media (display-mode: standalone) and (orientation: landscape) and (max-height: 700px) and (max-width: 1250px) {
+  .mobile-toolbar {
+    height: calc(44px + env(safe-area-inset-top));
+    min-height: calc(44px + env(safe-area-inset-top));
+    padding-top: max(2px, env(safe-area-inset-top));
+  }
+  .main { padding-bottom: 0; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="sidebar-backdrop" id="sidebarBackdrop" hidden></div>
+<aside class="sidebar" id="settingsPanel" aria-label="Exercise settings">
+ <div class="brand"><div class="logo">♫</div><div><div class="brand-title">Sight Reading Lab</div><div class="eyebrow">MUSIC PRACTICE WORKSPACE</div></div><button type="button" id="closeSettings" class="settings-close" title="Close settings" aria-label="Close settings">×</button></div>
+ <div><span class="version">PROTOTYPE 0020</span></div><div class="separator"></div>
+ <section><div class="sectionlabel">01 / INSTRUMENT</div><div class="field"><label for="instrument">Instrument</label><select id="instrument"><option value="piano">Piano · grand staff</option><option value="trumpet" selected>B♭ trumpet · treble clef</option><option value="trombone">Trombone · single staff</option></select></div>
+ <div class="field" id="clefRow" hidden><label for="clef">Trombone clef</label><select id="clef"><option value="bass">Bass clef</option><option value="tenor">Tenor clef</option><option value="alto">Alto clef</option></select></div>
+ <div class="field" id="pianoRow"><label for="accompaniment">Left-hand texture</label><select id="accompaniment"><option value="simple">Bass + fifth · half notes</option><option value="arpeggio">Arpeggiated · quarter notes</option><option value="broken">Broken chords · eighth notes</option><option value="alberti">Alberti bass · low–high–middle–high</option><option value="waltz">Waltz / compound pulse · bass and upper tones</option><option value="walking">Walking chord tones · quarters</option></select></div>
+ <div id="singleRangeRow" hidden><div class="sectionlabel sublabel">Written-pitch range</div><div class="twocol"><div class="field"><label for="rangeMin">Lowest note</label><select id="rangeMin" aria-label="Lowest written note"></select></div><div class="field"><label for="rangeMax">Highest note</label><select id="rangeMax" aria-label="Highest written note"></select></div></div><div class="field"><label for="register">Preferred register</label><select id="register"><option value="low">Low third</option><option value="middle">Middle third</option><option value="high">High third</option><option value="lowTwoThirds">Low two-thirds</option><option value="highTwoThirds">High two-thirds</option><option value="full" selected>Full range</option></select></div><div id="singleRangePreview" class="range-notation-preview" aria-label="Written range notation"></div></div>
+ <div id="pianoRanges"><div class="sectionlabel sublabel">Right hand · treble</div><div class="twocol"><div class="field"><label for="rhMin">Lowest note</label><select id="rhMin"></select></div><div class="field"><label for="rhMax">Highest note</label><select id="rhMax"></select></div></div><div class="field"><label for="rhRegister">Preferred register</label><select id="rhRegister"><option value="low">Low third</option><option value="middle" selected>Middle third</option><option value="high">High third</option><option value="lowTwoThirds">Low two-thirds</option><option value="highTwoThirds">High two-thirds</option><option value="full">Full range</option></select></div><div id="rhRangePreview" class="range-notation-preview" aria-label="Right hand range notation"></div><div class="sectionlabel sublabel">Left hand · bass</div><div class="twocol"><div class="field"><label for="lhMin">Lowest note</label><select id="lhMin"></select></div><div class="field"><label for="lhMax">Highest note</label><select id="lhMax"></select></div></div><div class="field"><label for="lhRegister">Preferred register</label><select id="lhRegister"><option value="low">Low third</option><option value="middle" selected>Middle third</option><option value="high">High third</option><option value="lowTwoThirds">Low two-thirds</option><option value="highTwoThirds">High two-thirds</option><option value="full">Full range</option></select></div><div id="lhRangePreview" class="range-notation-preview" aria-label="Left hand range notation"></div></div>
+ <p class="hint" style="margin-top:-8px">Noteheads mark the lowest and highest permitted <b>written</b> notes. Green indicates the preferred register (a soft bias, not a hard limit). All previews use the selected clef and key signature.</p>
+ </section><div class="separator"></div>
+ <section><div class="sectionlabel">02 / MUSICAL MATERIAL</div><div class="field"><label for="exerciseMode">Exercise content</label><select id="exerciseMode"><option value="generated">Generate study</option><option value="accidentals">Audit · accidentals</option><option value="chromatic">Audit · dense sharps and naturals</option><option value="rhythm">Audit · rhythms</option></select></div>
+ <div class="field"><label for="generatorMode">Music generation method</label><select id="generatorMode"><option value="rules" selected>Rule-based generator (original)</option><option value="corpus">Corpus-informed variation (experimental)</option></select><p class="hint">Corpus mode adapts short motifs from hand-encoded public-domain melodies to your harmony, instrument, meter and range. It does not copy complete scores.</p></div>
+ <div class="field"><label for="corpusSource">Corpus source number (0 = automatic)</label><input id="corpusSource" type="number" min="0" step="1" value="0" aria-label="Corpus source number"><div class="hint" style="padding-top:6px"><span id="corpusCount">20</span> sources available · numeric IDs only</div></div>
+ <div class="twocol"><div class="field"><label id="keyLabel" for="key">Concert key</label><select id="key"><option>C</option><option>G</option><option>D</option><option>A</option><option>F</option><option selected>Bb</option><option>Eb</option></select></div><div class="field"><label for="difficulty">Rhythm level</label><select id="difficulty"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Advanced</option></select></div></div>
+ <div class="twocol"><div class="field"><label for="tonality">Tonality</label><select id="tonality"><option value="major" selected>Major</option><option value="minor">Minor</option></select></div><div class="field"><label for="bars">Number of bars</label><input id="bars" type="number" min="1" max="64" step="1" value="6" inputmode="numeric" aria-describedby="barsHelp"><div id="barsHelp" class="hint" style="font-size:11px;margin-top:5px">1–64 bars · any whole number</div></div></div>
+ <div class="field"><label for="meter">Time signature</label><select id="meter"><option value="2/4">2/4 · two quarters</option><option value="3/4">3/4 · waltz</option><option value="4/4" selected>4/4 · common time</option><option value="5/4">5/4 · five quarters</option><option value="6/8">6/8 · compound duple</option><option value="9/8">9/8 · compound triple</option><option value="12/8">12/8 · compound quadruple</option></select></div>
+ <div class="twocol"><div class="field"><label for="restMode">Rests / breath space</label><select id="restMode"><option value="none">None</option><option value="phrases" selected>At phrase endings</option><option value="occasional">Occasional · weak beats</option></select></div><div class="field"><label for="articulationRhythm">Rhythmic features</label><div id="articulationRhythm" style="display:flex;flex-direction:column;gap:8px;padding-top:7px"><label class="checkrow"><input type="checkbox" id="dotted"> Dotted notes</label><label class="checkrow"><input type="checkbox" id="triplets"> Eighth-note triplets</label></div></div></div>
+ <div class="field" id="minorVariantRow" hidden><label for="minorVariant">Minor scale variant</label><select id="minorVariant"><option value="natural">Natural minor · ♭6, ♭7</option><option value="harmonic">Harmonic minor · raised 7</option><option value="melodic">Classical melodic · up ↑, down ↓</option><option value="melodic-ascending">Melodic ascending form · raised 6, 7</option><option value="melodic-descending">Melodic descending form · natural</option><option value="jazz">Jazz melodic · raised 6, 7 both ways</option></select></div>
+ <div class="field"><label for="figureMode">Melody movement</label><select id="figureMode"><option value="balanced">Balanced · longer notes</option><option value="scales">Scale fragments · mostly eighths</option><option value="arpeggios">Arpeggios · mostly eighths</option><option value="mixed" selected>Mixed scales + arpeggios · eighths</option></select></div>
+ <div class="field"><label for="shortestNote">Shortest notes in generated melody</label><select id="shortestNote"><option value="8" selected>Eighth notes (♪)</option><option value="16">Sixteenth notes (16ths)</option><option value="32">Thirty-second notes (32nds)</option></select></div>
+ <div class="twocol"><div class="field"><label for="style">Melodic style</label><select id="style"><option value="folk">Folk-like</option><option value="lyrical">Lyrical</option><option value="march">March-like</option></select></div><div class="field"><label for="maxLeap">Maximum leap</label><select id="maxLeap"><option value="5">5 semitones</option><option value="7">7 semitones</option><option value="9">9 semitones</option><option value="12" selected>12 semitones</option></select></div></div>
+ <div class="field"><label for="seed">Reproducible random seed</label><div class="seed-wrap"><input type="number" id="seed" min="1" max="4294967295" value="12017"><button id="randomSeed" type="button" class="square" title="Random seed">↻</button><button id="copySeed" type="button" class="square" title="Copy seed">⧉</button></div></div>
+ <label class="checkrow"><input id="harmony" type="checkbox"> Show harmonic analysis</label>
+ <div class="field"><label for="corpusImport">Extend corpus from your MusicXML files</label><input id="corpusImport" type="file" accept=".musicxml,.xml,.mxl,.json" multiple style="width:100%;font-size:12px;max-width:100%"><div class="hint" id="importStatus">Import MusicXML or corpus JSON; files remain on this device. For .mxl, extract MusicXML first.</div><button id="exportCorpus" type="button" class="btn" style="margin-top:8px;width:100%">↓ Export added corpus JSON</button></div></section><div class="separator"></div>
+ <section><div class="sectionlabel">03 / ACTIONS</div><button id="generate" type="button" class="btn primary" style="width:100%">✦ &nbsp;Generate new exercise</button><button id="renderCurrent" type="button" class="btn" style="width:100%;margin-top:9px;background:#182e40;color:#e8f3f0;border-color:#496070">↻ &nbsp;Render current seed</button></section>
+ <p class="hint">All notation and playback are local. The 20 built-in phrase sources include 16 simplified historical references and 4 original training phrases. Imported MusicXML is used only locally; verify the rights to any scores you redistribute. Rule-based mode still uses newly authored motifs.</p>
+ <p class="version-line">Build 0020 · Offline single-file edition</p>
+</aside>
+<main class="main">
+ <nav class="mobile-toolbar" aria-label="Score controls">
+  <button type="button" id="openSettings" aria-label="Open exercise settings" aria-controls="settingsPanel" aria-expanded="false">☰ <span class="toolbar-label">Settings</span></button>
+  <span class="mobile-app-title" aria-hidden="true">Sight Reading</span>
+  <button type="button" id="mobileGenerate" title="Generate a new score" aria-label="Generate new score">↻ <span class="toolbar-label">New</span></button>
+  <button type="button" id="mobilePlay" title="Play or stop the score" aria-label="Play score">▶ <span class="toolbar-label">Play</span></button>
+  <button type="button" id="zoomOut" title="Smaller score" aria-label="Zoom out">A−</button>
+  <button type="button" id="zoomIn" title="Larger score" aria-label="Zoom in">A+</button>
+  <button type="button" id="scoreFocus" title="Maximize score" aria-label="Toggle focused score view" aria-pressed="false">⛶</button>
+ </nav>
+ <header class="masthead"><div><div class="eyebrow" style="color:#3f8b78">TRAINING SESSION / NOTATION EXPERIMENT</div><h1>Your next unfamiliar score.</h1><div class="subtitle">Offline corpus embedded · phone and tablet landscape score view.</div></div><div class="topactions"><button type="button" id="downloadABC" class="btn">↓ ABC</button><button type="button" id="downloadSVG" class="btn">↓ SVG</button><button type="button" id="print" class="btn dark">⎙ Print</button></div></header>
+ <section class="viewer"><div class="viewerbar"><div><div class="viewlabel">EXERCISE PREVIEW</div><h2 id="scoreTitle">Eight-bar tonal study</h2></div><span class="tag" id="generationBadge">GENERATED · RULE-BASED</span></div>
+ <div id="corpusCredit" class="hint" style="padding:10px 24px;background:#f6faf7" hidden></div><div id="qualityStats" class="hint" style="padding:7px 24px;border-bottom:1px solid #eff2f2;font-size:11px" aria-live="polite"></div><div class="sheet-scroller" id="scoreScroller"><div id="paper" class="paper"></div></div><div class="viewerfoot"><span id="note">8 bars · selected concert key</span><span>Offline SVG · concert / written pitch aware</span></div></section>
+ <div class="controlbar"><div class="player"><button type="button" class="btn primary" id="playBtn">▶ &nbsp;Play example</button><div class="tempo"><label for="tempoMarking">ITALIAN TEMPO</label><select id="tempoMarking" aria-label="Italian tempo marking"><option value="">Custom BPM</option><option value="Grave" data-bpm="40">Grave · 40</option><option value="Largo" data-bpm="52">Largo · 52</option><option value="Adagio" data-bpm="68">Adagio · 68</option><option value="Andante" data-bpm="84" selected>Andante · 84</option><option value="Moderato" data-bpm="112">Moderato · 112</option><option value="Allegro" data-bpm="144">Allegro · 144</option><option value="Vivace" data-bpm="168">Vivace · 168</option><option value="Presto" data-bpm="184">Presto · 184</option><option value="Prestissimo" data-bpm="208">Prestissimo · 208</option></select><span>♩ BPM</span><button id="tempoMinus" type="button" class="tempo-step" aria-label="Decrease tempo by one BPM">−</button><input id="tempo" type="range" min="30" max="240" step="1" value="84" aria-label="Tempo slider"><button id="tempoPlus" type="button" class="tempo-step" aria-label="Increase tempo by one BPM">+</button><input id="tempoNumber" type="number" min="30" max="240" step="1" value="84" aria-label="Tempo in BPM"><strong id="tempoValue">84 bpm</strong></div></div><div class="note-actions"><button id="toggleABC" class="btn">View ABC source</button></div></div>
+ <div id="warnings" class="warn" role="alert" hidden></div><div class="abc-panel" id="abcPanel" hidden><div style="display:flex;justify-content:space-between;align-items:center"><strong>ABC export · editable reference</strong><button type="button" class="btn" id="copyABC">Copy</button></div><textarea id="abc" readonly spellcheck="false" aria-label="ABC notation output"></textarea></div>
+ <div class="info-grid"><div class="info"><div class="ihead">01 · Clef and transposition</div><p>Piano uses two synchronized staves. Trombone supports bass, tenor and alto clefs. B♭ trumpet shows written notes a whole step higher than sounding pitches.</p></div><div class="info"><div class="ihead">02 · Two music generators</div><p>Compare the existing rule-based composer with corpus-derived variations, with a numeric corpus-source selector and optional local MusicXML import. You retain key, register, rhythm and difficulty controls.</p></div><div class="info"><div class="ihead">03 · Engraving audit</div><p>Use the accidental, chromatic or rhythm audit for basic regression checks of signatures, cancellations, beams and ledger lines. Full notation coverage is not yet implemented.</p></div></div>
+ <p class="footnote"><strong>Prototype boundary.</strong> This bundle embeds the curated starter corpus and adds a phone-friendly, score-focused layout, alongside the existing rule-based method. It is not an abcjs / VexFlow integration or a neural generative model. The offline SVG engraver has metric beaming, aligned piano voices, and collision-aware spacing, but still supports a restricted notation subset.</p>
+ <div class="muted" id="status" aria-live="polite" style="font-size:11px"></div>
+</main>
+</div>
+<script>
+/* Bundle 0012: a compact, transparent, independently hand-encoded training corpus.
+   Public-domain underlying tunes; examples are deliberately simplified excerpts
+   rather than mechanically imported historic editions. Each bar is in eighth units.
+   Source events: [diatonic scale degree (0=tonic), eighth-note duration].
+   Not an OpenScore import. Treat the transcriptions as project-created adaptations.
+ */
+(function(g){'use strict';
+const SOURCES=[
+ {id:'ode',title:'Ode to Joy',attribution:'Ludwig van Beethoven, Symphony No. 9 (1824)',meter:'4/4',style:'lyrical',tonality:'major',url:'https://en.wikipedia.org/wiki/Ode_to_Joy',bars:[
+  [[2,2],[2,2],[3,2],[4,2]],[[4,2],[3,2],[2,2],[1,2]],[[0,2],[0,2],[1,2],[2,2]],[[2,3],[1,1],[1,4]]]},
+ {id:'twinkle',title:'Ah! vous dirai-je, maman / Twinkle, Twinkle',attribution:'Traditional French melody, 18th century',meter:'4/4',style:'folk',tonality:'major',url:'https://en.wikipedia.org/wiki/Twinkle,_Twinkle,_Little_Star',bars:[
+  [[0,2],[0,2],[4,2],[4,2]],[[5,2],[5,2],[4,4]],[[3,2],[3,2],[2,2],[2,2]],[[1,2],[1,2],[0,4]]]},
+ {id:'frere',title:'Frère Jacques',attribution:'Traditional French round, historical melody',meter:'4/4',style:'folk',tonality:'major',url:'https://en.wikipedia.org/wiki/Fr%C3%A8re_Jacques',bars:[
+  [[0,2],[1,2],[2,2],[0,2]],[[0,2],[1,2],[2,2],[0,2]],[[2,2],[3,2],[4,4]],[[2,2],[3,2],[4,4]]]},
+ {id:'london',title:'London Bridge Is Falling Down',attribution:'Traditional English nursery rhyme',meter:'4/4',style:'folk',tonality:'major',url:'https://en.wikipedia.org/wiki/London_Bridge_Is_Falling_Down',bars:[
+  [[4,1],[5,1],[4,1],[3,1],[2,2],[3,1],[4,1]],[[1,1],[2,1],[3,1],[2,1],[3,1],[4,1],[4,2]],[[4,1],[5,1],[4,1],[3,1],[2,2],[3,1],[4,1]],[[1,2],[4,2],[2,2],[0,2]]]},
+ {id:'mary',title:'Mary Had a Little Lamb',attribution:'Traditional 19th-century song (Lowell Mason, 1830)',meter:'4/4',style:'folk',tonality:'major',url:'https://en.wikipedia.org/wiki/Mary_Had_a_Little_Lamb',bars:[
+  [[2,2],[1,2],[0,2],[1,2]],[[2,2],[2,2],[2,4]],[[1,2],[1,2],[1,4]],[[2,2],[4,2],[4,4]]]},
+ {id:'jingle',title:'Jingle Bells',attribution:'James Lord Pierpont, 1857',meter:'4/4',style:'march',tonality:'major',url:'https://en.wikipedia.org/wiki/Jingle_Bells',bars:[
+  [[2,1],[2,1],[2,2],[2,1],[2,1],[2,2]],[[2,1],[4,1],[0,2],[1,2],[2,2]],[[3,1],[3,1],[3,2],[3,1],[3,1],[2,2]],[[2,1],[2,1],[2,1],[1,1],[1,2],[2,2]]]},
+ {id:'hotcross',title:'Hot Cross Buns',attribution:'Traditional English street cry and nursery song',meter:'3/4',style:'folk',tonality:'major',url:'https://en.wikipedia.org/wiki/Hot_Cross_Buns',bars:[
+  [[2,2],[1,2],[0,2]],[[2,2],[1,2],[0,2]],[[0,1],[0,1],[0,1],[0,1],[1,1],[1,1]],[[2,2],[1,2],[0,2]]]},
+ {id:'minuet',title:'Minuet in G major, BWV Anh. 114',attribution:'Christian Petzold, early 18th century (simplified excerpt)',meter:'3/4',style:'lyrical',tonality:'major',url:'https://en.wikipedia.org/wiki/Minuets_in_G_major_and_G_minor',bars:[
+  [[4,2],[0,2],[1,2]],[[2,2],[3,2],[4,2]],[[0,2],[5,2],[3,2]],[[4,2],[0,4]]]},
+ {id:'boat',title:'Row, Row, Row Your Boat',attribution:'Traditional English nursery round',meter:'6/8',style:'folk',tonality:'major',url:'https://en.wikipedia.org/wiki/Row,_Row,_Row_Your_Boat',bars:[
+  [[0,1],[0,1],[0,1],[1,1],[2,2]],[[2,1],[1,1],[2,1],[3,1],[4,2]],[[4,1],[4,1],[4,1],[2,1],[2,1],[2,1]],[[0,2],[4,1],[2,1],[0,2]]]},
+ {id:'clair',title:'Au clair de la lune',attribution:'Traditional French melody, 18th century',meter:'4/4',style:'lyrical',tonality:'major',url:'https://en.wikipedia.org/wiki/Au_clair_de_la_lune',bars:[
+  [[0,2],[0,2],[0,2],[1,2]],[[2,2],[1,2],[0,4]],[[2,2],[1,2],[1,2],[0,2]],[[0,2],[0,2],[0,4]]]},
+
+ // Historical minor/modal melodies. These are simplified, meter-normalized
+ // *pedagogical motifs*, not verbatim editions of the named compositions.
+ {id:'greensleeves',title:'Greensleeves (minor-style motif)',attribution:'English traditional melody, 16th century; adapted contour',meter:'6/8',style:'lyrical',tonality:'minor',url:'https://en.wikipedia.org/wiki/Greensleeves',bars:[
+  [[4,1],[0,1],[1,1],[2,1],[3,1],[2,1]],[[1,2],[0,1],[6,1],[0,2]],[[2,1],[3,1],[4,2],[3,1],[2,1]],[[1,2],[0,1],[6,1],[0,2]]]},
+ {id:'diesirae',title:'Dies irae (chant-inspired motif)',attribution:'Medieval Latin plainchant; metrical adaptation',meter:'4/4',style:'lyrical',tonality:'minor',url:'https://en.wikipedia.org/wiki/Dies_irae',bars:[
+  [[0,2],[0,2],[0,2],[5,2]],[[4,2],[4,2],[2,2],[2,2]],[[3,2],[3,2],[2,2],[1,2]],[[0,2],[6,2],[0,4]]]},
+ {id:'korobeiniki',title:'Korobeiniki (minor folk motif)',attribution:'Russian 19th-century folk melody; normalized adaptation',meter:'4/4',style:'folk',tonality:'minor',url:'https://en.wikipedia.org/wiki/Korobeiniki',bars:[
+  [[0,1],[1,1],[2,1],[4,1],[3,1],[2,1],[1,1],[0,1]],[[6,1],[2,1],[4,1],[3,1],[2,1],[1,1],[2,1],[3,1]],[[4,1],[2,1],[0,2],[6,1],[0,1],[1,2]],[[2,1],[1,1],[0,2],[6,2],[0,2]]]},
+ {id:'coventry',title:'Coventry Carol (minor-style motif)',attribution:'English traditional carol, 16th century; simplified adaptation',meter:'3/4',style:'lyrical',tonality:'minor',url:'https://en.wikipedia.org/wiki/Coventry_Carol',bars:[
+  [[4,2],[3,2],[2,2]],[[1,2],[2,2],[0,2]],[[2,1],[3,1],[4,2],[2,2]],[[1,2],[6,2],[0,2]]]},
+ {id:'mountain',title:'In the Hall of the Mountain King (minor motif)',attribution:'Edvard Grieg, Peer Gynt, 1875; simplified rhythmic adaptation',meter:'4/4',style:'march',tonality:'minor',url:'https://en.wikipedia.org/wiki/In_the_Hall_of_the_Mountain_King',bars:[
+  [[0,1],[1,1],[2,1],[3,1],[4,1],[2,1],[4,2]],[[3,1],[1,1],[3,1],[2,1],[0,1],[2,1],[0,2]],[[0,1],[1,1],[2,1],[3,1],[4,1],[2,1],[4,2]],[[5,1],[4,1],[3,1],[2,1],[1,1],[6,1],[0,2]]]},
+ {id:'otannenbaum',title:'O Tannenbaum (historical folk motif)',attribution:'Traditional German melody, early 19th century; simplified excerpt',meter:'3/4',style:'folk',tonality:'major',url:'https://en.wikipedia.org/wiki/O_Tannenbaum',bars:[
+  [[0,2],[3,2],[3,2]],[[3,2],[4,2],[5,2]],[[5,2],[4,2],[5,2]],[[6,2],[2,2],[3,2]]]},
+];
+function validateSource(src){
+ if(!src || typeof src.id!=='string'||!src.id||typeof src.title!=='string'||!['major','minor'].includes(src.tonality)||!['folk','lyrical','march'].includes(src.style))throw Error('Invalid corpus source metadata');
+ const [n,d]=String(src.meter).split('/').map(Number),units=n*8/d;
+ if(!Number.isInteger(units)||!Number.isInteger(n)||![4,8].includes(d)||n<2||n>12)throw Error('Unsupported imported meter');
+ if(!Array.isArray(src.bars)||src.bars.length!==4||src.bars.some(b=>!Array.isArray(b)||!b.length||b.some(e=>!Array.isArray(e)||!Number.isInteger(e[0])||!Number.isFinite(e[1])||e[1]<=0)||Math.abs(b.reduce((a,e)=>a+e[1],0)-units)>0.00001))throw Error('Invalid imported four-bar phrase: '+src.id);
+ if(src.harmony!=null&&(!Array.isArray(src.harmony)||src.harmony.length!==4||src.harmony.some(label=>!(label in ({I:1,ii:1,IV:1,V:1,vi:1,i:1,'ii°':1,iv:1,v:1,VI:1})))))throw Error('Invalid harmony vocabulary');
+ if(src.harmonyConfidence!=null&&(!Array.isArray(src.harmonyConfidence)||src.harmonyConfidence.length!==4||src.harmonyConfidence.some(v=>typeof v!=='number'||!Number.isFinite(v)||v<0||v>1)))throw Error('Invalid harmony confidence');
+ return true;
+}
+function addSources(entries){
+ if(!Array.isArray(entries))throw Error('Expected an array of corpus sources');
+ if(entries.length>500)throw Error('Import no more than 500 phrase windows at a time');
+ const added=[];
+ for(const source of entries){
+  validateSource(source);
+  const clean=JSON.parse(JSON.stringify(source));
+  let name=clean.id,serial=2;
+  while(SOURCES.some(s=>s.id===name))name=clean.id+'-'+serial++;
+  clean.id=name;SOURCES.push(clean);added.push(clean);
+ }
+ return added;
+}
+function total(bar){return bar.reduce((a,e)=>a+e[1],0);}
+for(const src of SOURCES){
+ const [n,d]=src.meter.split('/').map(Number),units=n*8/d;
+ if(src.bars.length!==4||src.bars.some(b=>total(b)!==units))throw Error('Invalid corpus source '+src.id);
+}
+function analyzeSource(s){
+ // Analysis is derivable locally, including for built-in historical motifs.
+ const notes=s.bars.flat(),intervals=notes.slice(1).map((e,i)=>e[0]-notes[i][0]);
+ const uniq=new Set(intervals),count=notes.length;
+ const stepwise=intervals.filter(n=>Math.abs(n)<=1).length/Math.max(1,intervals.length);
+ const last=s.harmony?.[3],end=notes.at(-1)[0]%7;
+ const cadence=(last==='I'||last==='i'||(!last&&end===0))?'closed':(last==='V'||last==='v')?'open':'neutral';
+ return {notes:count,rangeDegrees:Math.max(...notes.map(x=>x[0]))-Math.min(...notes.map(x=>x[0])),
+  maxDiatonicLeap:Math.max(0,...intervals.map(Math.abs)),stepwiseFraction:stepwise,
+  intervalDiversity:uniq.size/Math.max(1,intervals.length),cadence,
+  curationScore:s.analysis?.curationScore??70};
+}
+function choosePlan({meter='4/4',style='folk',tonality='major',sourceId='',seedPick,barCount=8,maxLeap=12,figureMode='balanced'}){
+ const locked=SOURCES.filter(s=>!sourceId || s.id===sourceId);
+ if(!locked.length)throw Error('Unknown corpus source: '+sourceId);
+ const compatible=locked.filter(s=>s.meter===meter);
+ const graded=compatible.length?compatible:locked;
+ const weights=graded.map(s=>{
+  const a=analyzeSource(s);
+  const mode=s.tonality===tonality?4:1,styleFactor=s.style===style?1.6:1;
+  const difficultyFactor=a.maxDiatonicLeap*2>maxLeap?0.6:1;
+  const cadenceFactor=a.cadence==='open'?1.12:1;
+  const quality=0.65+0.35*Math.min(100,Math.max(0,a.curationScore))/100;
+  return mode*styleFactor*difficultyFactor*cadenceFactor*quality;
+ });
+ function draw(pool=graded,ws=weights){
+  let v=seedPick()*ws.reduce((a,b)=>a+b,0);
+  for(let i=0;i<pool.length;i++)if((v-=ws[i])<0)return pool[i];
+  return pool.at(-1);
+ }
+ const phrases=Math.ceil(barCount/4),A=draw();
+ const family=SOURCES.filter(s=>s.family&&s.family===A.family&&s.meter===A.meter&&s.tonality===A.tonality&&s.id!==A.id);
+ // Prefer the next phrase in the same original work; if there are multiple,
+ // favor a closed cadence as a complement to an antecedent phrase.
+ const related=family.sort((a,b)=>{
+  const aa=analyzeSource(a),bb=analyzeSource(b);
+  const rank=x=>((x.phraseIndex===A.phraseIndex+1)?8:0)+((analyzeSource(x).cadence==='closed')?2:0);
+  return rank(b)-rank(a) || (a.phraseIndex??0)-(b.phraseIndex??0);
+ })[0];
+ let B=A;
+ if(phrases>=3){
+  if(related)B=related;
+  else if(!sourceId&&graded.length>1){
+   // Draw a contrasting phrase without severing tonality/meter unnecessarily.
+   const alternatives=graded.filter(s=>s.id!==A.id&&s.tonality===A.tonality);
+   B=alternatives.length?draw(alternatives,alternatives.map(s=>{
+     const c=analyzeSource(s);return (s.style===A.style?1.5:1)*(c.cadence==='closed'?2:1);
+   })):A;
+  }
+ }
+ const bars=[],sources=[],phraseRoles=[];
+ for(let phrase=0;phrase<phrases;phrase++){
+  const source=phrase%4===0||phrase%4===2?A:B;
+  const isReprise=phrase%4>=2 || (phrases===2&&phrase===1);
+  const role=phrase%4===0?'A':phrase%4===1?(phrases===2?'A′':'B'):phrase%4===2?'A′':'B′';
+  phraseRoles.push(role);sources.push(source);
+  for(let i=0;i<4&&bars.length<barCount;i++)bars.push({source,index:i,events:source.bars[i],role,
+   variation:isReprise && (i===1||i===2)?(i===1?1:-1):0,phrase});
+ }
+ return {bars,sources,phraseRoles,matchedMeter:compatible.length>0,selectionStrategy:related&&phrases>=3?'linked-family':'weighted-cadence-aware'};
+}
+function directionAt(events,onset){
+ const totalDuration=events.reduce((a,e)=>a+e[1],0);
+ const at=onset*totalDuration;
+ let cursor=0,index=0;
+ while(index<events.length-1&&cursor+events[index][1]<=at){cursor+=events[index][1];index++;}
+ return events[index][0];
+}
+const api={sources:SOURCES,choosePlan,directionAt,addSources,validateSource,analyzeSource};
+g.SightCorpus=api;
+if(typeof module!=='undefined'&&module.exports)module.exports=api;
+})(typeof window!=='undefined'?window:globalThis);
+
+</script>
+<script>
+/* Sight Reading Lab 0012. Safe, local, deliberately restricted MusicXML import.
+ * Produces four-bar phrase windows in the existing corpus schema. No remote fetch.
+ * The importer does NOT infer legal reuse rights; provenance must be reviewed.
+ */
+(function(g){'use strict';
+const LET='CDEFGAB', NAT=[0,2,4,5,7,9,11];
+const MAJOR_TONICS=['C','G','D','A','E','B','F#','C#','F','Bb','Eb','Ab','Db','Gb','Cb'];
+const MODES=['major','minor'];
+function child(node,name){return [...(node?.children||[])].find(x=>x.localName===name)||null;}
+function kids(node,name){return [...(node?.children||[])].filter(x=>x.localName===name);}
+function content(node,name){return child(node,name)?.textContent?.trim()||'';}
+function num(node,name,fallback=NaN){const n=Number(content(node,name));return Number.isFinite(n)&&content(node,name)!==''?n:fallback;}
+function fifthTonic(fifths,mode){if(!Number.isInteger(fifths)||Math.abs(fifths)>7)return null;
+ const major=MAJOR_TONICS[fifths>=0?fifths:15+fifths];
+ if(mode!=='minor')return major;
+ // Relative minor: major tonic minus a minor third (three diatonic positions down).
+ const known={C:'A',G:'E',D:'B',A:'F#',E:'C#',B:'G#','F#':'D#','C#':'A#',F:'D',Bb:'G',Eb:'C',Ab:'F',Db:'Bb',Gb:'Eb',Cb:'Ab'};
+ return known[major];
+}
+function midi(step,alter,oct){return 12*(oct+1)+NAT[LET.indexOf(step)]+alter;}
+const CHORDS={
+ major:{I:[0,4,7],ii:[2,5,9],IV:[5,9,0],V:[7,11,2],vi:[9,0,4]},
+ minor:{i:[0,3,7],'ii°':[2,5,8],iv:[5,8,0],v:[7,10,2],V:[7,11,2],VI:[8,0,3]}
+};
+function harmonyLabel(harm,tonicStep,mode){
+ const root=child(harm,'root'),step=content(root,'root-step');
+ if(!LET.includes(step))return null;
+ const degree=(LET.indexOf(step)-LET.indexOf(tonicStep)+7)%7;
+ const kind=content(harm,'kind').toLowerCase(),minorKind=kind.includes('minor'),dim=kind.includes('diminished');
+ const map=mode==='minor'?{0:'i',1:'ii°',3:'iv',4:minorKind?'v':'V',5:'VI'}:
+ {0:'I',1:'ii',3:'IV',4:'V',5:'vi'};
+ const label=map[degree]||null;
+ // Don't call foreign altered/extended-root chords a tonic triad.
+ if(label==='ii°'&&!dim&&!kind.includes('half-diminished')&&kind) return null;
+ return label;
+}
+function inferHarmony(allNotes,tonicPc,mode){
+ if(!allNotes.length)return {label:null,confidence:0};
+ const pcs=allNotes.map(n=>({pc:(n.midi%12-tonicPc+12)%12,weight:Math.max(0.25,n.dur)}));
+ const bass=allNotes.reduce((a,b)=>a.midi<b.midi?a:b);
+ const scores=[];
+ for(const [label,tones] of Object.entries(CHORDS[mode])){
+  let value=0;
+  for(const n of pcs)value+=tones.includes(n.pc)?n.weight:-n.weight*1.15;
+  if(tones[0]===(bass.midi%12-tonicPc+12)%12)value+=1.7;
+  scores.push({label,value});
+ }
+ scores.sort((a,b)=>b.value-a.value);
+ const margin=Math.max(0,scores[0].value-(scores[1]?.value??scores[0].value));
+ const total=pcs.reduce((a,n)=>a+n.weight,0);
+ return {label:scores[0].label,confidence:Math.round(Math.max(.15,Math.min(.90,.35+.60*margin/Math.max(1,total)))*1000)/1000};
+}
+function getMeasureNotes(measure,initial){
+ const at=child(measure,'attributes');
+ let divisions=initial.divisions,units=initial.units,mode=initial.mode,fifths=initial.fifths,meterText=initial.meterText;
+ if(at){divisions=num(at,'divisions',divisions);
+  const time=child(at,'time');if(time){const n=num(time,'beats'),d=num(time,'beat-type');if(n>0&&d>0){units=n*8/d;meterText=`${n}/${d}`;}}
+  const key=child(at,'key');if(key){fifths=num(key,'fifths',fifths);const m=content(key,'mode');if(MODES.includes(m))mode=m;}
+ }
+ const cursorByVoice=new Map(),events=[],harmony=[],allNotes=[];
+ let cursor=0,previousOnset=0;let firstVoice=null;
+ for(const item of [...measure.children]){
+  if(item.localName==='backup'){cursor-=num(item,'duration',0)/divisions*2;continue;}
+  if(item.localName==='forward'){cursor+=num(item,'duration',0)/divisions*2;continue;}
+  if(item.localName==='harmony'){harmony.push(item);continue;}
+  if(item.localName!=='note')continue;
+  if(child(item,'grace'))continue;
+  const dur=num(item,'duration',0)/divisions*2;
+  if(!(dur>0&&dur<=units+0.001))continue;
+  const isChord=!!child(item,'chord'),onset=isChord?previousOnset:cursor;
+  if(!isChord){cursor+=dur;previousOnset=onset;}
+  const voice=content(item,'voice')||'1';if(firstVoice===null)firstVoice=voice;
+  const pitch=child(item,'pitch'),isRest=!!child(item,'rest');
+  const step=content(pitch,'step'),oct=num(pitch,'octave'),alter=num(pitch,'alter',0);
+  const n={dur,start:onset,rest:isRest,midi:(!isRest&&LET.includes(step)&&Number.isInteger(oct))?midi(step,alter,oct):null,step,oct,alter};
+  if(n.midi!==null)allNotes.push(n);
+  if(voice===firstVoice&&!isChord){events.push(n);}
+ }
+ events.sort((a,b)=>a.start-b.start);
+ const valid=Number.isFinite(divisions)&&divisions>0&&Number.isInteger(units)&&units>0;
+ return {events,allNotes,harmony,divisions,units,mode,fifths,meterText,valid};
+}
+function parse(text,options={}){
+ if(typeof text!=='string'||text.length>5_000_000)throw Error('MusicXML must be text smaller than 5 MB. Unzip .mxl first.');
+ if(/<!DOCTYPE|<!ENTITY/i.test(text))throw Error('MusicXML with DOCTYPE/entities is not supported');
+ const doc=new DOMParser().parseFromString(text,'application/xml');
+ if(doc.getElementsByTagName('parsererror').length||doc.documentElement?.localName!=='score-partwise')throw Error('Expected valid, uncompressed score-partwise MusicXML');
+ const title=content(child(doc.documentElement,'work'),'work-title')||content(doc.documentElement,'movement-title')||options.filename||'Imported MusicXML';
+ const identification=child(doc.documentElement,'identification');
+ const composer=kids(identification,'creator').find(x=>x.getAttribute('type')==='composer')?.textContent?.trim()||'';
+ const list=child(doc.documentElement,'part-list');const names={};
+ for(const item of kids(list,'score-part')) names[item.getAttribute('id')]=content(item,'part-name');
+ const parts=kids(doc.documentElement,'part');if(!parts.length)throw Error('MusicXML has no parts');
+ const candidates=parts.map(part=>{
+  const name=names[part.getAttribute('id')]||'',melodyHint=/voice|vocal|sing|melody|sopran|flute|violin|clarinet|trumpet|trombone/i.test(name);
+  const avoid=/piano|keyboard|accompani|organ/i.test(name);
+  let state={divisions:1,units:8,meterText:'4/4',mode:'major',fifths:0},measures=[];
+  for(const m of kids(part,'measure')){
+   const result=getMeasureNotes(m,state);state={divisions:result.divisions,units:result.units,mode:result.mode,fifths:result.fifths,meterText:result.meterText};
+   measures.push(result);
+  }
+  const validCount=measures.filter(x=>x.events.length>=2&&x.events.some(n=>n.midi!==null)).length;
+  return {name,part,measures,grade:validCount+(melodyHint?1000:0)-(avoid?250:0)};
+ });
+ candidates.sort((a,b)=>b.grade-a.grade);
+ const selected=candidates[0];if(selected.grade<4)throw Error('No suitable single-note melodic part');
+ const roots=[],tonicStates=selected.measures;
+ let accepted=0;
+ for(let offset=0;offset+4<=selected.measures.length;offset+=4){
+  const chunk=selected.measures.slice(offset,offset+4);
+  const {units,fifths,mode}=chunk[0];
+  if(!chunk.every(m=>m.valid&&m.units===units&&m.meterText===chunk[0].meterText&&m.fifths===fifths&&m.mode===mode))continue;
+  const bars=[], melodyNotes=[];let ok=true;
+  for(const m of chunk){
+   const phrase=[];let cursor=0;
+   for(const n of m.events){
+    if(Math.abs(n.start-cursor)>0.00001 || n.rest || n.midi===null || n.dur<0.25 || Math.abs(n.dur*12-Math.round(n.dur*12))>1e-5){ok=false;break;}
+    phrase.push(n);cursor+=n.dur;
+   }
+   if(Math.abs(cursor-units)>0.00001||!phrase.length)ok=false;
+   if(!ok)break;
+   bars.push(phrase);melodyNotes.push(...phrase);
+  }
+  if(!ok)continue;
+  const tonic=fifthTonic(fifths,mode);
+  if(!tonic)continue;
+  const center=melodyNotes.reduce((a,b)=>a+b.midi,0)/melodyNotes.length;
+  const rootOct=Math.round(center/12-1),tonicIx=LET.indexOf(tonic[0]);
+  const sourceBars=bars.map(b=>b.map(n=>[(n.oct-rootOct)*7+LET.indexOf(n.step)-tonicIx,Number(n.dur.toFixed(6))]));
+  // Separate harmony events from all-part note distributions when there are no explicit symbols.
+  const harmony=[],methods=[],confidences=[];
+  for(let i=0;i<4;i++){
+   const idx=offset+i,all=parts.flatMap(part=>{
+    const c=candidates.find(x=>x.part===part);return c?.measures[idx]?.allNotes||[];
+   });
+   const symbol=candidates.flatMap(c=>c.measures[idx]?.harmony||[]).map(h=>harmonyLabel(h,tonic[0],mode)).find(Boolean);
+   const tonicPc=midi(tonic[0],tonic.endsWith('#')?1:tonic.endsWith('b')?-1:0,4)%12;
+   const guessed=inferHarmony(all,tonicPc,mode);
+   harmony.push(symbol||guessed.label);
+   confidences.push(symbol?1:guessed.confidence);
+   methods.push(symbol?'explicit':'inferred');
+  }
+  const id=`import-${(options.group||'score').replace(/[^a-z0-9-]/gi,'').slice(0,24)}-${Math.floor(offset/4)+1}`;
+  roots.push({id,title:`${title} · phrase ${Math.floor(offset/4)+1}`,attribution:options.attribution||'Local MusicXML (user-provided)',meter:chunk[0].meterText,style:'lyrical',tonality:mode,url:'',family:options.group||'imported',phraseIndex:offset/4,
+   origin:'user-import',rights:'Not verified — supplied by user',composer,bars:sourceBars,harmony:harmony.every(Boolean)?harmony:null,harmonyConfidence:confidences,harmonyMethod:methods.every(m=>m==='explicit')?'explicit':'partly-inferred'});
+  accepted++;
+ }
+ if(!roots.length)throw Error('No four complete consecutive monophonic bars found in a stable meter/key. Polyphony, rests and pickups need preprocessing.');
+ return {sources:roots,report:{title,part:selected.name,phraseCount:accepted,measures:selected.measures.length,mode:roots[0].tonality}};
+}
+const api={parse};g.SightMusicXML=api;
+if(typeof module!=='undefined'&&module.exports)module.exports=api;
+})(typeof window!=='undefined'?window:globalThis);
+
+</script>
+<script>
+SightCorpus.addSources([{"id":"import-sample-major-1","title":"Original Training Tune \u2014 C major \u00b7 phrase 1","attribution":"Locally imported MusicXML","meter":"4/4","style":"lyrical","tonality":"major","url":"","family":"sample-major","phraseIndex":0,"origin":"user-import","rights":"Not verified \u2014 supplied by user","bars":[[[0,2.0],[1,2.0],[2,2.0],[4,2.0]],[[5,2.0],[0,2.0],[2,2.0],[0,2.0]],[[3,2.0],[5,2.0],[0,2.0],[5,2.0]],[[4,2.0],[6,2.0],[1,2.0],[4,2.0]]],"harmony":["I","vi","IV","V"],"harmonyMethod":"explicit"},{"id":"import-sample-major-2","title":"Original Training Tune \u2014 C major \u00b7 phrase 2","attribution":"Locally imported MusicXML","meter":"4/4","style":"lyrical","tonality":"major","url":"","family":"sample-major","phraseIndex":1,"origin":"user-import","rights":"Not verified \u2014 supplied by user","bars":[[[0,2.0],[2,2.0],[4,2.0],[2,2.0]],[[1,2.0],[3,2.0],[5,2.0],[3,2.0]],[[4,2.0],[5,2.0],[6,2.0],[1,2.0]],[[0,2.0],[1,2.0],[6,2.0],[0,2.0]]],"harmony":["I","ii","V","I"],"harmonyMethod":"explicit"},{"id":"import-sample-minor-1","title":"Original Training Tune \u2014 A minor \u00b7 phrase 1","attribution":"Locally imported MusicXML","meter":"4/4","style":"lyrical","tonality":"minor","url":"","family":"sample-minor","phraseIndex":0,"origin":"user-import","rights":"Not verified \u2014 supplied by user","bars":[[[-7,2.0],[-6,2.0],[-12,2.0],[-10,2.0]],[[-11,2.0],[-10,2.0],[-9,2.0],[-7,2.0]],[[-8,2.0],[-6,2.0],[-11,2.0],[-8,2.0]],[[-7,2.0],[-12,2.0],[-6,2.0],[-7,2.0]]],"harmony":["i","iv","V","i"],"harmonyMethod":"explicit"},{"id":"import-sample-minor-2","title":"Original Training Tune \u2014 A minor \u00b7 phrase 2","attribution":"Locally imported MusicXML","meter":"4/4","style":"lyrical","tonality":"minor","url":"","family":"sample-minor","phraseIndex":1,"origin":"user-import","rights":"Not verified \u2014 supplied by user","bars":[[[-7,2.0],[-12,2.0],[-10,2.0],[-8,2.0]],[[-9,2.0],[-7,2.0],[-12,2.0],[-9,2.0]],[[-8,2.0],[-6,2.0],[-11,2.0],[-6,2.0]],[[-7,2.0],[-8,2.0],[-6,2.0],[-7,2.0]]],"harmony":["i","VI","V","i"],"harmonyMethod":"explicit"}]);
+</script>
+<script>
+/* Sight Reading Lab 0010 — a tonal, reproducible score generator.
+ * Two generation modes: authored-rule patterns or transparent public-domain-corpus-derived motifs.
+ * Internal pitches are sounding pitches and retain diatonic spelling.
+ * Rhythmic unit: one eighth note (4/4 = 8 units); subdivisions may be halves or quarters.
+ */
+(function(g){'use strict';
+const LETTERS='CDEFGAB', NAT=[0,2,4,5,7,9,11];
+const MAJOR=[0,2,4,5,7,9,11], MINOR=[0,2,3,5,7,8,10];
+// All fifteen conventional major key signatures (seven sharps through seven flats).
+const MAJOR_KEYS={C:0,G:1,D:2,A:3,E:4,B:5,'F#':6,'C#':7,F:-1,Bb:-2,Eb:-3,Ab:-4,Db:-5,Gb:-6,Cb:-7};
+// Minor tonics require three fewer fifths than their parallel major tonic.
+const MINOR_FIFTHS={A:0,E:1,B:2,'F#':3,'C#':4,'G#':5,'D#':6,'A#':7,D:-1,G:-2,C:-3,F:-4,Bb:-5,Eb:-6,Ab:-7};
+const MAJOR_TONICS=['C','G','D','A','E','B','F#','C#','F','Bb','Eb','Ab','Db','Gb','Cb'];
+const MINOR_TONICS=['A','E','B','F#','C#','G#','D#','A#','D','G','C','F','Bb','Eb','Ab'];
+// Choosing a concert key for trumpet must yield an engravable written signature;
+// cover all twelve chromatic tonics without requiring eight-sharp/eight-flat keys.
+const TRUMPET_MAJOR=['C','G','D','A','E','B','F','Bb','Eb','Ab','Db','Gb'];
+const TRUMPET_MINOR=['A','E','B','F#','C#','D','G','C','F','Bb','Eb','Ab'];
+const KEY_PC=Object.fromEntries([...new Set([...MAJOR_TONICS,...MINOR_TONICS])].map(k=>{
+ const shift=k.endsWith('#')?1:k.endsWith('b')?-1:0;
+ return [k,((NAT[LETTERS.indexOf(k[0])]+shift)%12+12)%12];
+}));
+const KEY_ACC={};
+for(const [key,fifths] of Object.entries(MAJOR_KEYS)){
+  const x={};const seq=fifths<0?'BEADGCF':'FCGDAEB';
+  for(let i=0;i<Math.abs(fifths);i++)x[seq[i]]=fifths<0?-1:1;
+  KEY_ACC[key]=x;
+}
+const KEY_BY_FIFTHS=Object.fromEntries(Object.entries(MAJOR_KEYS).map(([k,n])=>[n,k]));
+const MINOR_SIG=Object.fromEntries(Object.entries(MINOR_FIFTHS).map(([k,n])=>[k,KEY_BY_FIFTHS[n]]));
+function availableKeys(instrument='piano',tonality='major'){
+ return (instrument==='trumpet'?(tonality==='minor'?TRUMPET_MINOR:TRUMPET_MAJOR):
+         (tonality==='minor'?MINOR_TONICS:MAJOR_TONICS)).slice();
+}
+function tonicMidi(key,oct){return midiNatural(key[0],oct)+(key.endsWith('#')?1:key.endsWith('b')?-1:0);}
+const RANGES={piano:[60,84],trumpet:[58,79],bass:[43,67],tenor:[50,73],alto:[54,78]};
+// All user-facing ranges are written-pitch MIDI numbers. Only trumpet differs
+// from sounding pitch; the underlying events and Web Audio remain at concert pitch.
+const DEFAULT_WRITTEN_RANGES={rh:[60,84],lh:[38,60],trumpet:[54,81],bass:[43,67],tenor:[50,73],alto:[54,78]};
+const MINOR_VARIANTS=['natural','harmonic','melodic','melodic-ascending','melodic-descending','jazz'];
+const FIGURE_MODES=['balanced','scales','arpeggios','mixed'];
+const HARMONY_MAJOR={I:[0,2,4],ii:[1,3,5],IV:[3,5,7],V:[4,6,8],vi:[5,7,9]};
+const HARMONY_MINOR={i:[0,2,4], 'ii°':[1,3,5],iv:[3,5,7],v:[4,6,8],V:[4,6,8],VI:[5,7,9]};
+const TEMPLATES={
+  major:{open:[['I','IV','ii','V'],['I','vi','IV','V'],['I','IV','I','V'],['I','vi','ii','V']],
+         close:[['I','IV','V','I'],['I','vi','V','I'],['I','ii','V','I']]},
+  minor:{open:[['i','iv','ii°','V'],['i','VI','iv','V'],['i','iv','i','V']],
+         close:[['i','iv','V','i'],['i','VI','V','i'],['i','ii°','V','i']]}
+};
+const MOTIFS=[[0,1,2,4],[0,2,1,4],[2,1,0,2],[0,2,4,2],[2,3,4,2],[4,3,2,0],[0,1,3,2],[2,4,3,1],[0,2,3,4],[4,2,1,0]];
+const RHYTHMS={
+ easy:[[2,2,2,2],[4,2,2],[2,2,4],[4,4]],
+ medium:[[2,2,2,2],[2,1,1,2,2],[1,1,2,2,2],[2,2,4],[3,1,2,2],[2,2,1,1,2]],
+ hard:[[1,1,2,2,2],[2,1,1,1,1,2],[1,1,1,1,2,2],[3,1,2,2],[2,1,1,2,2],[1,1,2,1,1,2]]
+};
+// Short-note shapes are eighth-note units (e.g. 1 => eighth, 2 => quarter).
+// They are independently selected from diatonic/triadic pitch contours below.
+const FIGURE_RHYTHMS={
+ scales:[[1,1,1,1,1,1,1,1],[1,1,1,1,2,1,1],[2,1,1,1,1,1,1],[1,1,2,1,1,2]],
+ arpeggios:[[1,1,1,1,1,1,1,1],[1,1,2,1,1,2],[2,1,1,1,1,1,1],[1,1,1,1,2,2]]
+};
+function rng(seed){let x=(Number(seed)>>>0)||1;return ()=>{x^=x<<13;x^=x>>>17;x^=x<<5;return(x>>>0)/4294967296;};}
+function imod(n,m){return((n%m)+m)%m;}
+function midiNatural(step,oct){return 12*(oct+1)+NAT[LETTERS.indexOf(step)];}
+function signatureKey(key,tonality='major'){
+ const result=tonality==='minor'?MINOR_SIG[key]:key;
+ if(!(result in MAJOR_KEYS))throw Error(`Unengraveable key signature: ${key} ${tonality}`);
+ return result;
+}
+function writtenTonic(key,instrument){
+ if(instrument!=='trumpet')return key;
+ const ix=LETTERS.indexOf(key[0])+1,step=LETTERS[ix%7],oct=4+Math.floor(ix/7);
+ const written=tonicMidi(key,4)+2;
+ const difference=written-midiNatural(step,oct);
+ if(difference===0)return step;
+ if(difference===1)return step+'#';
+ if(difference===-1)return step+'b';
+ throw Error(`Cannot express ${key} as a conventional B♭-trumpet written tonic`);
+}
+function writtenKey(key,instrument,tonality='major'){
+ return signatureKey(writtenTonic(key,instrument),tonality);
+}
+function noteFromDegree(key,rootOct,degree,tonality='major',raiseLeading=false,minorVariant='natural',direction=0){
+ const ix=LETTERS.indexOf(key[0])+degree,step=LETTERS[imod(ix,7)],oct=rootOct+Math.floor(ix/7);
+ const scaleDegree=imod(degree,7);
+ let raise=0;
+ if(tonality==='minor'){
+  if(minorVariant==='harmonic'&&scaleDegree===6)raise=1;
+  if((minorVariant==='jazz'||minorVariant==='melodic-ascending'||(minorVariant==='melodic'&&direction>0))&&[5,6].includes(scaleDegree))raise=1;
+  // 'melodic-descending' deliberately uses natural minor notes both ways.
+ }
+ const semis=(tonality==='minor'?MINOR:MAJOR)[imod(degree,7)]+12*Math.floor(degree/7)+
+   ((raiseLeading&&scaleDegree===6)?1:raise);
+ const midi=tonicMidi(key,rootOct)+semis;
+ return {step,oct,alter:midi-midiNatural(step,oct),midi};
+}
+function toWritten(note,instrument){if(instrument!=='trumpet')return{...note};
+ const ix=LETTERS.indexOf(note.step)+1,step=LETTERS[ix%7],oct=note.oct+Math.floor(ix/7),midi=note.midi+2;
+ return{...note,step,oct,alter:midi-midiNatural(step,oct),midi};
+}
+function nearestOct(key,target){return [2,3,4,5].reduce((a,b)=>Math.abs(tonicMidi(key,b)-target)<Math.abs(tonicMidi(key,a)-target)?b:a,3);}
+function pick(values,r){return values[Math.floor(r()*values.length)];}
+function chordDegrees(label,tonality){return(tonality==='minor'?HARMONY_MINOR:HARMONY_MAJOR)[label];}
+function pitched(key,rootOct,degree,tonality,chord,minorVariant='natural',direction=0){
+ return noteFromDegree(key,rootOct,degree,tonality,false,minorVariant,direction);
+}
+function preferredMidi(range,region){const fraction=region==='low'?0.22:region==='high'?0.78:region==='lowTwoThirds'?1/3:region==='highTwoThirds'?2/3:0.50;return range[0]+(range[1]-range[0])*fraction;}
+function regionPenalty(midi,range,region){
+ const lo=range[0],hi=range[1],span=Math.max(8,hi-lo);
+ const band=region==='low'?[lo,lo+span/3]:region==='middle'?[lo+span/3,lo+2*span/3]:
+   region==='high'?[hi-span/3,hi]:region==='lowTwoThirds'?[lo,lo+2*span/3]:
+   region==='highTwoThirds'?[lo+span/3,hi]:[lo,hi];
+ return 5*Math.max(0,band[0]-midi,midi-band[1])/span;
+}
+function legalWrittenRange(value,fallback,instrument,label){
+ if(value==null)return fallback.slice();
+ if(!Array.isArray(value)||value.length!==2||!value.every(Number.isInteger)||value[0]<28||value[1]>96||value[0]>=value[1])throw Error(`Invalid ${label} range: choose an ascending pair from E1 through C7`);
+ return value.map(x=>x-(instrument==='trumpet'?2:0));
+}
+function chooseDegree(params){
+ const {key,oct,tonality,minorVariant,chord,previous,range,desired,accent,maxLeap,rand,final,
+  cadencePrep,cadenceApproach=0,registerTarget,registerRegion='middle',figureKind='balanced',figureTarget,history=[]}=params;
+ const chordNotes=chordDegrees(chord,tonality),candidates=[];
+ const tonicCandidates=[];
+ for(let d=-12;d<=20;d++)if(imod(d,7)===0){
+  const t=pitched(key,oct,d,tonality,chord,minorVariant,1);
+  if(t.midi>=range[0]&&t.midi<=range[1])tonicCandidates.push(t.midi);
+ }
+ if((final||cadencePrep)&&!tonicCandidates.length)return null;
+ for(let degree=-16;degree<=23;degree++){
+  const movement=previous?Math.sign(degree-previous.degree):0;
+  const n=pitched(key,oct,degree,tonality,chord,minorVariant,movement);
+  if(n.midi<range[0]||n.midi>range[1])continue;
+  if(previous&&Math.abs(n.midi-previous.midi)>maxLeap)continue;
+  const chordTone=chordNotes.some(d=>imod(d,7)===imod(degree,7));
+  if(final&&imod(degree,7)!==0)continue;
+  const tonicDistance=tonicCandidates.length?Math.min(...tonicCandidates.map(t=>Math.abs(t-n.midi))):99;
+  if(cadencePrep&&tonicDistance>maxLeap)continue;
+  const delta=previous?Math.abs(n.midi-previous.midi):0;
+  let quality=-(Math.abs(degree-desired)*0.55)-delta*(accent?0.12:0.21);
+  if(params.corpusTarget!==null&&params.corpusTarget!==undefined)
+    quality-=Math.abs(degree-params.corpusTarget)*(accent?0.85:1.65);
+  quality+=chordTone?(accent?4.7:1.0):(accent?-4.5:0.15);
+  if(previous&&degree===previous.degree)quality-=1.35;
+  quality-=regionPenalty(n.midi,range,registerRegion);
+  quality-=0.7*Math.abs(n.midi-registerTarget)/Math.max(8,range[1]-range[0]);
+  if(figureTarget!=null&&!final){
+   const steps=Math.abs(degree-previous.degree);
+   quality-=Math.abs(degree-figureTarget)*2.35;
+   if(figureKind==='scales')quality+=steps===1?5:steps===2?0.6:-4.5;
+   if(figureKind==='arpeggios')quality+=chordTone?4:-5.5;
+   if(figureKind==='arpeggios')quality+=steps===2?2.1:steps===4?0.6:steps===0?-6:-1.2;
+  }
+  // Discourage the A-B-A-B trap, even near a register boundary. This penalty
+  // is not a hard constraint: a genuinely narrow range can still terminate.
+  if(figureKind==='arpeggios' && previous && history.length){
+   const last=history[history.length-1], earlier=history.at(-2), old=history.at(-3);
+   if(last && n.midi===last.midi)quality-=12;
+   if(earlier && n.midi===earlier.midi)quality-=7;
+   if(old && n.midi===old.midi && last.midi===earlier?.midi)quality-=20;
+   if(old && n.midi===earlier?.midi && last.midi===old.midi)quality-=20;
+   if(history.slice(-4).some(a=>a.midi===n.midi))quality-=2.5;
+  }
+  // Corpus mode: keep learned phrase direction but resist mechanically repeating
+  // the same two-note oscillation across successive subdivisions.
+  if(params.corpusTarget!=null && history.length>=2){
+   const old=history.at(-2),recent=history.at(-1);
+   if(old && !old.rest && recent && !recent.rest && old.midi===n.midi && recent.midi!==n.midi)quality-=3.5;
+   if(history.length>=4){
+    const a=history.at(-4),b=history.at(-3),c=history.at(-2),d=history.at(-1);
+    if([a,b,c,d].every(x=>x&&!x.rest) && a.midi===c.midi && b.midi===d.midi && n.midi===a.midi)quality-=12;
+   }
+  }
+  if(final)quality+=12;
+  if(cadenceApproach)quality-=tonicDistance*cadenceApproach;
+  quality+=(rand()-0.5)*2.0;
+  candidates.push({note:{...n,degree},quality});
+ }
+ candidates.sort((a,b)=>b.quality-a.quality);
+ return candidates.length?candidates[0].note:null;
+}
+// Target a *chord-tone trajectory* rather than repeatedly choosing the
+// nearest reachable third. The old nearest-third heuristic could get stuck
+// at a register edge and bounce between two pitches for a whole measure.
+function arpeggioTarget({previous,history,chord,tonality,key,oct,minorVariant,range,maxLeap,registerTarget,direction,rand}){
+ if(!previous)return null;
+ const chordSet=new Set(chordDegrees(chord,tonality).map(d=>imod(d,7)));
+ const tones=[];
+ for(let d=-16;d<=23;d++){
+  if(!chordSet.has(imod(d,7)))continue;
+  const movement=Math.sign(d-previous.degree);
+  const n=pitched(key,oct,d,tonality,chord,minorVariant,movement);
+  if(n.midi<range[0]||n.midi>range[1]||Math.abs(n.midi-previous.midi)>maxLeap)continue;
+  const leap=Math.abs(d-previous.degree);
+  const last=history.at(-1),two=history.at(-2),three=history.at(-3);
+  let grade=0;
+  grade+=leap===2?5:leap===4?3:leap===0?-14:leap===7?-4:0;
+  grade+=Math.sign(d-previous.degree)===direction?3:0;
+  grade-=Math.abs(n.midi-registerTarget)*0.20;
+  if(two && n.midi===two.midi)grade-=12;
+  if(three && n.midi===three.midi && last && two && last.midi===two.midi)grade-=25;
+  // An arpeggio should expose at least three different notes whenever possible.
+  if(history.slice(-4).some(h=>h.midi===n.midi))grade-=4;
+  grade+=(rand()-0.5)*0.3;
+  tones.push({d,n,grade});
+ }
+ tones.sort((a,b)=>b.grade-a.grade);
+ return tones.length?tones[0].d:null;
+}
+function rhythmBar(difficulty,rand,index,last,preset,style,figureKind){
+ if(figureKind!=='balanced'){
+  if(last)return pick([[1,1,1,1,4],[1,1,2,4],[2,1,1,4]],rand).slice();
+  return pick(FIGURE_RHYTHMS[figureKind],rand).slice();
+ }
+ if(last)return[8];
+ if(index%4===0&&index>0&&preset&&rand()<0.75)return preset.slice();
+ const pool=RHYTHMS[difficulty]||RHYTHMS.medium;
+ const filtered=pool.filter(pattern=>{
+  if(style==='lyrical')return pattern.some(d=>d>=3)||pattern.every(d=>d===2);
+  if(style==='march')return pattern.every(d=>d<=2);
+  return true;
+ });
+ return pick(filtered.length?filtered:pool,rand).slice();
+}
+// Split an existing metrically sound rhythm into true sixteenths or thirty-seconds.
+// The original 8 eighth-note units remain exact: 0.5 = 16th, 0.25 = 32nd.
+function subdivideRhythm(pattern,smallest,rand,figureKind){
+ if(smallest!==16&&smallest!==32)return pattern.slice();
+ const result=[],maxOnsets=14;
+ for(let i=0;i<pattern.length;i++){
+  const duration=pattern[i],remain=pattern.length-i-1;
+  if(duration!==1){result.push(duration);continue;}
+  const chance=figureKind==='balanced'?0.42:0.72;
+  if(rand()>=chance){result.push(duration);continue;}
+  const candidate=smallest===16?[0.5,0.5]:
+   rand()<0.45?[0.25,0.25,0.25,0.25]:rand()<0.5?[0.5,0.25,0.25]:[0.25,0.25,0.5];
+  // Prevent a dense thirty-second note bar from exceeding a readable
+  // engraving width. The original eighth is retained instead.
+  if(result.length+candidate.length+remain<=maxOnsets)result.push(...candidate);
+  else result.push(duration);
+ }
+ return result;
+}
+function makeHarmony(bars,tonality,minorVariant,rand){
+ const phrases=Math.ceil(bars/4),out=[];
+ for(let p=0;p<phrases;p++){
+   const isEnd=p===phrases-1;
+   // Avoid the diatonically unstable VI/ii° chords for ascending/jazz melodic
+   // minor. Their scale-degree sixth is altered, changing their chord quality.
+   const melodicMinor=tonality==='minor'&&['melodic','melodic-ascending','jazz'].includes(minorVariant);
+   const pool=melodicMinor?(isEnd?[['i','iv','V','i'],['i','iv','V','i']]:
+        [['i','iv','i','V'],['i','iv','iv','V']]):TEMPLATES[tonality][isEnd?'close':'open'];
+   const target=pick(pool,rand);
+   for(const chord of target)out.push(tonality==='minor'&&minorVariant==='natural'&&chord==='V'?'v':chord);
+ }
+ out.length=bars;
+ // In 2-, 6-, and 10-bar studies preserve an actual final dominant–tonic cadence.
+ if(bars%4!==0 && bars>=2){out[bars-2]=tonality==='minor'&&minorVariant==='natural'?'v':'V';out[bars-1]=tonality==='minor'?'i':'I';}
+ return out;
+}
+function placeBass(key,tonality,chord,oct,previous,preferDegree,range,registerTarget,minorVariant){
+ const chordNotes=chordDegrees(chord,tonality),pool=[];
+ for(let degree=-22;degree<=22;degree++)if(chordNotes.some(c=>imod(c,7)===imod(degree,7))){
+  // Functional accompaniment: harmonic minor leading tone for V, and natural
+  // minor for v; melodic-minor rising variants use natural minor chord roots.
+  const bassVariant=minorVariant==='harmonic'?'harmonic':minorVariant==='natural'?'natural':chord==='V'?'harmonic':'natural';
+  const n=pitched(key,oct,degree,tonality,chord,bassVariant,0);
+  if(n.midi>=range[0]&&n.midi<=range[1]){
+   const isPreferred=imod(degree,7)===imod(preferDegree,7);
+   const grade=(isPreferred?10:0)-(previous?Math.abs(n.midi-previous.midi)*0.12:0)
+    -Math.abs(n.midi-registerTarget)*0.25;
+   pool.push({n,grade});
+  }
+ }
+ pool.sort((a,b)=>b.grade-a.grade);
+ if(!pool.length)throw Error(`No ${chord} chord tone exists in the selected left-hand range; widen its range`);
+ return {...pool[0].n};
+}
+// One-note LH textures (the renderer currently has no multi-note piano chords).
+// Every texture is meter-aware and generated from chord tones, not random pitches.
+function accompanimentEvents({texture,meter,chord,key,tonality,minorVariant,range,register,oct,previous}){
+ const units=meter[0]*8/meter[1],compound=meter[1]===8&&meter[0]>=6&&meter[0]%3===0;
+ const patterns={
+   simple:{unit:compound?3:4,idx:[0,2]},
+   arpeggio:{unit:compound?1:2,idx:[0,2,1,2]},
+   broken:{unit:1,idx:[0,1,2,1,0,2,1,2]},
+   alberti:{unit:1,idx:[0,2,1,2]},
+   waltz:{unit:compound?3:2,idx:[0,2,1,2]},
+   walking:{unit:2,idx:[0,1,2,1]}
+ };
+ const cfg=patterns[texture]||patterns.simple;
+ const degrees=chordDegrees(chord,tonality);
+ const events=[];let current=previous,start=0,i=0;
+ const target=preferredMidi(range,register);
+ while(start<units-1e-8){
+  const duration=Math.min(cfg.unit,units-start);
+  let ix=cfg.idx[i%cfg.idx.length];
+  // Alternating root and upper tones suit 6/8, 9/8, 12/8 as well as 3/4.
+  if(texture==='waltz' && i===0)ix=0;
+  const prefer=degrees[ix];
+  const note=placeBass(key,tonality,chord,oct,current,prefer,range,target,minorVariant);
+  events.push({...note,start,duration,voice:'lh'});
+  current=note;start+=duration;i++;
+ }
+ return events;
+}
+// Metrics are diagnostic descriptors, not calibrated judgments of musical quality.
+function scoreMetrics(measures,partId){
+ const notes=measures.flatMap(m=>m.voices[partId]||[]).filter(n=>!n.rest);
+ const degrees=notes.map(n=>n.degree),midis=notes.map(n=>n.midi);
+ const intervals=midis.slice(1).map((x,i)=>x-midis[i]);
+ let pairCycles=0;for(let i=0;i<midis.length-5;i++)
+   if(midis[i]===midis[i+2]&&midis[i]===midis[i+4]&&midis[i+1]===midis[i+3]&&midis[i+1]===midis[i+5]&&midis[i]!==midis[i+1])pairCycles++;
+ const phrases=[];for(let i=0;i<measures.length;i+=4)
+  phrases.push(measures.slice(i,i+4).flatMap(m=>(m.voices[partId]||[]).filter(n=>!n.rest).map(n=>n.degree%7)).join(','));
+ const ngrams=new Set();for(let i=0;i<intervals.length-2;i++)ngrams.add(intervals.slice(i,i+3).join(','));
+ return {notes:notes.length,uniquePitches:new Set(midis).size,intervalTrigramDiversity:intervals.length>=3?
+  Number((ngrams.size/(intervals.length-2)).toFixed(3)):1,alternatingSixNoteCycles:pairCycles,
+  phraseCount:phrases.length,uniquePhraseProfiles:new Set(phrases).size};
+}
+// Score time uses eighth-note units (quarter=2), including exact triplet durations (2/3).
+function parseMeter(value){
+ const text=String(value||'4/4'),m=/^(\d+)\/(4|8)$/.exec(text);
+ if(!m)throw Error('Choose a supported time signature');return [Number(m[1]),Number(m[2])];
+}
+function meterGroups(meter){
+ const [num,den]=meter,unit=num*8/den;
+ const groups=[],size=den===8&&num%3===0&&num>=6?3:2;
+ for(let pos=0;pos<unit;pos+=size)groups.push(Math.min(size,unit-pos));
+ return groups;
+}
+function rhythmicPlan(meter,difficulty,figure,shortest,rand,last,style,restMode,dotted,triplets,barIndex,count,sourceRhythm=null){
+ const units=meter[0]*8/meter[1],groups=meterGroups(meter),isFour=meter[0]===4&&meter[1]===4;
+ let ds;
+ if(sourceRhythm && sourceRhythm.reduce((a,b)=>a+b,0)===units){
+   // Preserve actual rhythmic vocabulary from a transcribed historical phrase.
+   ds=sourceRhythm.slice();
+   if(figure!=='balanced'){
+    // A corpus phrase is a rhythmic *starting point*: shorten notes for run-based drills.
+    const short=[];
+    for(const d of ds){
+      if(d>=4){short.push(2,1,d-3);}
+      else if(d===3&&rand()<0.7){short.push(1,1,1);}
+      else if(d===2&&rand()<0.75){short.push(1,1);}
+      else short.push(d);
+    }
+    ds=short;
+   }
+ } else if(isFour){ds=rhythmBar(difficulty,rand,barIndex,last,null,style,figure);}
+ else {
+  ds=[];for(const size of groups){
+   if(last&&figure==='balanced'){ds.push(size);continue;}
+   const short=figure!=='balanced'||difficulty==='hard';
+   const opts=size===3?(short?[[1,1,1],[2,1],[1,2],[3]]:[[3],[2,1],[1,2]]):
+      size===2?(short?[[1,1],[1,1],[2]]:[[2],[2],[1,1]]):[[size]];
+   ds.push(...pick(opts,rand));
+  }
+ }
+ // Never finish a short exercise without a sustained tonic (when possible).
+ if(last&&figure!=='balanced'&&units>=4){
+   const tail=ds.at(-1);if(tail<2){
+    let sum=0,split=ds.length;for(let i=ds.length-1;i>=0;i--){sum+=ds[i];if(sum>=Math.min(4,units)){split=i;break;}}
+    if(sum===Math.min(4,units))ds.splice(split,ds.length-split,sum);
+   }
+ }
+ // Dotted quarter in compound meter; dotted eighth + sixteenth in simple meter.
+ if(dotted){
+  let time=0;
+  for(let i=0;i<ds.length;i++){
+   const d=ds[i];
+   if(d===2&&ds[i+1]===2&&Math.abs(time/4-Math.round(time/4))<1e-7&&rand()<0.25){
+     ds.splice(i,2,3,1);i++;time+=4;continue; // dotted quarter and eighth
+   }
+   if(shortest>=16&&d===2&&ds[i+1]===1&&rand()<0.26){
+     ds.splice(i,2,1.5,1.5);i++;time+=3;continue; // two dotted eighths
+   }
+   if(shortest>=16&&d===1&&ds[i+1]===1&&Math.abs(time/2-Math.round(time/2))<1e-7&&rand()<0.36){
+     ds.splice(i,2,1.5,0.5);i++;time+=2;continue;
+   }
+   time+=d;
+  }
+ }
+ ds=subdivideRhythm(ds,shortest,rand,figure);
+ // Convert selected complete quarter-note beats to three eighth triplets.
+ // No tuplets cross barlines or overlap another rhythm event.
+ let events=ds.map(d=>({duration:d}));
+ if(triplets){
+  let start=0;
+  for(let i=0;i<events.length;){
+   const d=events[i].duration;
+   if(Math.abs(start/2-Math.round(start/2))<1e-7 && start+2<=units+1e-7 &&
+      !((last)&&(start>=units-4))&&rand()<(figure==='balanced'?0.13:0.22) && events.length<Math.max(17,Math.round(units*2.5))){
+    let end=i,sum=0;while(end<events.length&&sum<2-1e-8){sum+=events[end].duration;end++;}
+    if(Math.abs(sum-2)<1e-8){
+      const id=`${barIndex}-${start}`;
+      events.splice(i,end-i,...Array.from({length:3},(_,j)=>({duration:2/3,tuplet:3,tupletId:id,tupletIndex:j})));
+      i+=3;start+=2;continue;
+    }
+   }
+   start+=d;i++;
+  }
+ }
+ // Rests are phrased, not uniformly scattered. At four-bar phrase boundaries,
+ // split a sustained last value into a final played note and a breath rest.
+ if(restMode==='phrases' && !last && ((barIndex+1)%4===0||(count<=4&&barIndex===count-2)) && rand()<0.86){
+  const i=events.length-1,e=events[i];
+  if(e&&!e.tuplet){
+   if(e.duration>1){const pause=e.duration>=4?2:1;
+    if(e.duration-pause>=0.5){
+      e.duration-=pause;events.push({duration:pause,rest:true});
+    }else e.rest=true;
+   }else e.rest=true;
+  }
+ }
+ if(restMode==='occasional'&&!last&&rand()<0.38){
+  let time=0,choices=[];
+  for(let i=0;i<events.length;i++){
+   const e=events[i],atEnd=Math.abs(time+e.duration-units)<1e-8;
+   if(!e.tuplet&&e.duration<=2&&e.duration>=0.5&&i>0&&
+       (atEnd || (time>=2&&Math.abs(time/2-Math.round(time/2))<1e-8))){
+     choices.push({i,weight:atEnd?3:1});
+   }
+   time+=e.duration;
+  }
+  if(choices.length){
+   const endChoices=choices.filter(c=>c.weight===3);
+   const c=pick(endChoices.length&&rand()<0.72?endChoices:choices,rand);
+   events[c.i].rest=true;
+  }
+ }
+ let start=0;for(const e of events){e.start=start;start+=e.duration;}
+ if(Math.abs(start-units)>1e-7)throw Error(`Invalid rhythmic plan: ${start} vs ${units}`);
+ return events;
+}
+function score(settings={}){
+ const instrument=settings.instrument||'piano',clef=settings.clef||'bass';
+ const key=settings.key||'C',tonality=settings.tonality||'major';
+ const minorVariant=MINOR_VARIANTS.includes(settings.minorVariant)?settings.minorVariant:'natural';
+ const figureMode=FIGURE_MODES.includes(settings.figureMode)?settings.figureMode:'balanced';
+ const difficulty=settings.difficulty||'medium',seed=(Number(settings.seed)>>>0)||1;
+ const barCount = settings.bars == null ? 8 : Number(settings.bars);
+ if(!Number.isSafeInteger(barCount) || barCount < 1 || barCount > 64)
+  throw Error('Number of bars must be a whole number from 1 to 64');
+ const count=barCount;
+ const style=['folk','lyrical','march'].includes(settings.style)?settings.style:'folk';
+ const shortest=[8,16,32].includes(Number(settings.shortestNote))?Number(settings.shortestNote):8;
+ if(!(key in KEY_PC)||!['major','minor'].includes(tonality))throw Error('Unsupported tonality');
+ if(!['piano','trumpet','trombone'].includes(instrument))throw Error('Unsupported instrument');
+ if(instrument==='trombone'&&!['bass','tenor','alto'].includes(clef))throw Error('Unsupported trombone clef');
+ const ranges={};
+ if(instrument==='piano'){
+  ranges.rh=legalWrittenRange(settings.rhRange,DEFAULT_WRITTEN_RANGES.rh,'piano','right hand');
+  ranges.lh=legalWrittenRange(settings.lhRange,DEFAULT_WRITTEN_RANGES.lh,'piano','left hand');
+ }else{
+  const name=instrument==='trumpet'?'trumpet':clef;
+  ranges.melody=legalWrittenRange(settings.range,DEFAULT_WRITTEN_RANGES[name],instrument,'melody');
+ }
+ const regions={rh:settings.rhRegister||'middle',lh:settings.lhRegister||'middle',melody:settings.register||'middle'};
+ for(const reg of Object.values(regions))if(!['low','middle','high','lowTwoThirds','highTwoThirds','full'].includes(reg))throw Error('Invalid register preference');
+ const meter=Array.isArray(settings.meter)?settings.meter:parseMeter(settings.meter||'4/4');
+ const [numerator,denominator]=meter;
+ if(!Number.isInteger(numerator)||![4,8].includes(denominator)||numerator<2||numerator>12)throw Error('Unsupported time signature');
+ const units=numerator*8/denominator;
+ if(!Number.isInteger(units))throw Error('Meter must contain an integer number of eighth-note units');
+ const restMode=['none','phrases','occasional'].includes(settings.restMode)?settings.restMode:'none';
+ const dotted=Boolean(settings.dotted),triplets=Boolean(settings.triplets);
+ const rand=rng(seed),harmony=makeHarmony(count,tonality,minorVariant,rand);
+ const requestedGenerator=settings.generatorMode||'rules';
+ if(!['rules','corpus'].includes(requestedGenerator))throw Error('Unsupported generation method');
+ const corpus=g.SightCorpus;
+ if(requestedGenerator==='corpus'&&!corpus)throw Error('Corpus module is missing');
+ const corpusPlan=requestedGenerator==='corpus'?corpus.choosePlan({meter:meter.join('/'),style,sourceId:settings.corpusSource||'',seedPick:rand,barCount:count,tonality,maxLeap:Number(settings.maxLeap||9),figureMode}):null;
+ let borrowedBars=0,borrowedHarmonyBars=0;
+ // Imported four-bar MusicXML windows may contain explicit or estimated
+ // harmonies; only reuse supported chords in the same tonal mode and meter.
+ // Preserve the requested V-I ending for the last two bars.
+ if(corpusPlan)for(let b=0;b<count;b++){
+  const sourceBar=corpusPlan.bars[b],source=sourceBar?.source;
+  const label=source?.harmony?.[sourceBar.index];
+  // MusicXML chord symbols are authoritative; low-confidence chord guesses are not.
+  const confidence=source?.harmonyConfidence?.[sourceBar.index]??(source?.harmonyMethod==='partly-inferred'?0.60:1);
+  if(confidence>=0.55 && b<count-2 && source?.tonality===tonality && source.meter===meter.join('/') &&
+     label && label in (tonality==='minor'?HARMONY_MINOR:HARMONY_MAJOR)){
+   harmony[b]=(tonality==='minor' && ['natural','melodic-descending'].includes(minorVariant) && label==='V')?'v':label;borrowedHarmonyBars++;
+  }
+ }
+ let harmonyBorrowed=borrowedHarmonyBars;
+ const maxLeap=Number(settings.maxLeap|| (difficulty==='easy'?5:difficulty==='medium'?9:12));
+ if(!Number.isFinite(maxLeap)||maxLeap<1||maxLeap>24)throw Error('Invalid melodic leap limit');
+ const r=instrument==='piano'?ranges.rh:ranges.melody;
+ const registerTarget=preferredMidi(r,instrument==='piano'?regions.rh:regions.melody);
+ const oct=nearestOct(key,registerTarget);
+ const parts=instrument==='piano'?[{id:'rh',clef:'treble',label:'Right hand',transposition:0},{id:'lh',clef:'bass',label:'Left hand',transposition:0}]
+   :[{id:'melody',clef:instrument==='trumpet'?'treble':clef,label:instrument==='trumpet'?'B♭ trumpet':'Trombone',transposition:instrument==='trumpet'?2:0}];
+ const hasTonic=Array.from({length:6},(_,i)=>noteFromDegree(key,i+1,0,tonality).midi).some(n=>n>=r[0]&&n<=r[1]);
+ if(!hasTonic)throw Error('The selected melody range does not contain a tonic note. Widen or shift the range.');
+ const motif=pick(MOTIFS,rand),secondMotif=pick(MOTIFS,rand);
+ let previous=null,firstRhythm=null,previousBass=null;const measures=[];
+ for(let bar=0;bar<count;bar++){
+  const chord=harmony[bar],end=bar===count-1,phrase=bar%4;
+  const figureKind=figureMode==='mixed'?pick(['scales','arpeggios'],rand):figureMode;
+  const corpusBar=corpusPlan?.bars[bar]||null;
+  const sourceRhythm=corpusBar&&corpusBar.source.meter===meter.join('/')?corpusBar.events.map(e=>e[1]):null;
+  if(sourceRhythm)borrowedBars++;
+  const pattern=rhythmicPlan(meter,difficulty,figureKind,shortest,rand,end,style,restMode,dotted,triplets,bar,count,sourceRhythm);
+  const phraseMotif=Math.floor(bar/4)%2===0?motif:secondMotif;
+  const figureDirection=rand()<0.5?-1:1;
+  let start=0;const melody=[];
+  for(let i=0;i<pattern.length;i++){
+   const item=pattern[i],duration=item.duration,lastNote=end&&i===pattern.length-1;
+   if(item.rest){melody.push({...item,voice:instrument==='piano'?'rh':'melody'});start+=duration;continue;}
+   const contourIndex=Math.min(3,Math.floor(start/2)),offset=phrase===0?0:phrase===1?1:phrase===2?2:0;
+   let desired=phraseMotif[contourIndex]+offset;
+   if(corpusBar){
+    // Time-warp the source melodic contour to this bar's regenerated rhythm.
+    // Keep the learned scale-degree target near the current melodic register.
+    const sourceDegree=corpus.directionAt(corpusBar.events,start/units);
+    const reference=previous?previous.degree:0;
+    desired=sourceDegree+corpusBar.variation+7*Math.round((reference-sourceDegree-corpusBar.variation)/7);
+   }
+   if(phrase===3)desired=chord==='V'||chord==='v'?6:0;
+   if(lastNote)desired=0;
+   let figureTarget=null;
+   if(previous&&figureKind==='scales')figureTarget=previous.degree+figureDirection;
+   if(previous&&figureKind==='arpeggios')figureTarget=arpeggioTarget({
+    previous,history:melody,chord,tonality,key,oct,minorVariant,
+    range:r,maxLeap,registerTarget,direction:figureDirection,rand
+   });
+   const opts={key,oct,tonality,minorVariant,chord,previous,range:r,desired,
+       accent:start%4===0,maxLeap,rand,final:lastNote,registerTarget,registerRegion:instrument==='piano'?regions.rh:regions.melody,
+       figureKind,figureTarget,history:melody,corpusTarget:corpusBar?desired:null,
+       cadencePrep:(bar===count-2&&i===pattern.length-1)||(end&&i===pattern.length-2),
+       cadenceApproach:end?(0.9+3.3*i/Math.max(1,pattern.length-1)):
+         bar===count-2?(0.65+1.7*i/Math.max(1,pattern.length-1)):0};
+   const selected=chooseDegree(opts);
+   if(!selected)throw Error(`No legal melody note at bar ${bar+1}, position ${start}/8: try widening the range or increasing the leap limit`);
+   melody.push({...selected,...item,voice:instrument==='piano'?'rh':'melody'});
+   previous=selected;start+=duration;
+  }
+  const voices={};voices[parts[0].id]=melody;
+  if(instrument==='piano'){
+   const bOct=nearestOct(key,preferredMidi(ranges.lh,regions.lh));
+   voices.lh=accompanimentEvents({texture:settings.accompaniment||'simple',meter,chord,key,
+    tonality,minorVariant,range:ranges.lh,register:regions.lh,oct:bOct,previous:previousBass});
+   previousBass=voices.lh.at(-1);
+  }
+  measures.push({number:bar+1,voices,chord,figure:figureKind,phrase:Math.floor(bar/4),
+    ...(corpusBar?{corpus:{source:corpusBar.source.id,sourceBar:corpusBar.index,rhythmBorrowed:Boolean(sourceRhythm),phraseRole:corpusBar.role}}:{})});
+ }
+ return {metadata:{title:requestedGenerator==='corpus'?`${count}-bar corpus-derived variation`:`${count}-bar ${figureMode==='balanced'?style:figureMode} study`,
+       version:'0012',origin:requestedGenerator==='corpus'?'Algorithmic — corpus-informed adaptation':'Algorithmic — original motifs',seed,
+       ...(corpusPlan?{corpusSources:[...new Map(corpusPlan.sources.map(x=>[x.id,{id:x.id,title:x.title,attribution:x.attribution,url:x.url||'',origin:x.origin||'built-in',rights:x.rights||'Historical melody'}])).values()],
+        corpusRhythmBars:borrowedBars,corpusHarmonyBars:harmonyBorrowed,corpusMeterMatched:corpusPlan.matchedMeter,
+        corpusPhraseForm:corpusPlan.phraseRoles.join('–'),corpusSelectionStrategy:corpusPlan.selectionStrategy}: {})},
+     key,tonality,minorVariant,figureMode,accompaniment:settings.accompaniment||'simple',
+     qualityMetrics:scoreMetrics(measures,parts[0].id),writtenKey:writtenKey(key,instrument,tonality),writtenTonic:writtenTonic(key,instrument),
+     generatorMode:requestedGenerator,instrument,clef,difficulty,style,maxLeap,shortestNote:shortest,parts,ranges,regions,meter,tempo:settings.tempo||84,tempoMarking:settings.tempoMarking||'',restMode,dotted,triplets,measures};
+}
+function makeAudit(kind,options={}){
+ const instrument=options.instrument||'trombone',clef=instrument==='piano'||instrument==='trumpet'?'treble':options.clef||'bass';
+ const key=options.key||'C',tonality=options.tonality||'major',partIds=instrument==='piano'?['rh','lh']:['melody'];
+ const parts=instrument==='piano'?[{id:'rh',clef:'treble',label:'Right hand'},{id:'lh',clef:'bass',label:'Left hand'}]:[{id:'melody',clef,label:instrument==='trumpet'?'B♭ Trumpet':'Trombone'}];
+ const oct=nearestOct(key,instrument==='piano'?72:instrument==='trumpet'?68:clef==='bass'?54:65),bassOct=nearestOct(key,48);
+ function n(deg,start,duration,adjust=0){const a=noteFromDegree(key,oct,deg,tonality);return {...a,alter:a.alter+adjust,midi:a.midi+adjust,start,duration};}
+ const defs=kind==='chromatic'?
+  [Array.from({length:8},(_,i)=>[i,i,1,1]),
+   Array.from({length:8},(_,i)=>[7-i,i,1,(i%2===0?1:0)]),
+   Array.from({length:8},(_,i)=>[0,i,1,i%2===0?1:0]),
+   Array.from({length:8},(_,i)=>[i%4,i,1,(i%2===0?1:-1)])]:
+  kind==='accidentals'?
+  [[[0,0,2],[3,2,2,1],[3,4,2,1],[3,6,2]],[[4,0,2],[4,2,2,-1],[4,4,2],[2,6,2]],[[1,0,4],[0,4,2],[6,6,2,1]],[[0,0,8]]]:
+  [[[0,0,3],[1,3,1],[2,4,2],[4,6,2]],[[4,0,1],[3,1,1],[2,2,1],[1,3,1],[0,4,4]],[[2,0,2],[3,2,1],[4,3,1],[5,4,2],[4,6,2]],[[0,0,8]]];
+ const measures=defs.map((bar,i)=>{const voices={};voices[partIds[0]]=bar.map(v=>n(...v));
+  if(instrument==='piano')voices.lh=[{...noteFromDegree(key,bassOct,0,tonality),start:0,duration:4},{...noteFromDegree(key,bassOct,4,tonality),start:4,duration:4}];
+  return{number:i+1,voices,chord:'I'};});
+ return {metadata:{title:kind==='chromatic'?'Dense accidental-spacing audit':kind==='accidentals'?'Accidental handling audit':'Rhythmic engraving audit',version:'0012',origin:'Hand-authored'},
+  key,tonality,writtenKey:writtenKey(key,instrument,tonality),writtenTonic:writtenTonic(key,instrument),instrument,clef,parts,meter:[4,4],tempo:options.tempo||84,measures};
+}
+function validate(s){const problems=[],limit=s.meter[0]*8/s.meter[1];
+ for(const m of s.measures)for(const part of s.parts){
+  const ns=m.voices[part.id]||[],dur=ns.reduce((z,n)=>z+n.duration,0);
+  if(Math.abs(dur-limit)>1e-8)problems.push(`Bar ${m.number}/${part.id}: ${dur}/${limit} eighth-note units`);
+  let cursor=0;for(const n of ns){if(Math.abs(n.start-cursor)>1e-7)problems.push(`Bar ${m.number}: gap or overlap in ${part.id}`);cursor=n.start+n.duration;
+   if((!n.rest&&!Number.isInteger(n.midi))||!Number.isFinite(n.duration)||n.duration<=0||Math.abs(n.duration*12-Math.round(n.duration*12))>1e-7)problems.push('Invalid pitch/duration');
+   if(!n.rest&&n.midi!==midiNatural(n.step,n.oct)+n.alter)problems.push(`Inconsistent pitch spelling at bar ${m.number}`);
+   const partRange=s.ranges?.[part.id];
+   if(partRange&&!n.rest&&(n.midi<partRange[0]||n.midi>partRange[1]))problems.push(`Bar ${m.number}/${part.id}: pitch outside written range`);
+  }
+ }
+ if(s.metadata.origin?.startsWith('Algorithmic')){
+  const melody=s.measures.flatMap(m=>m.voices[s.parts[0].id]||[]).filter(n=>!n.rest);
+  if(imod(melody.at(-1).degree,7)!==0)problems.push('Final note must be tonic');
+  for(let i=1;i<melody.length;i++)if(Math.abs(melody[i].midi-melody[i-1].midi)>s.maxLeap){
+    problems.push(`Melodic leap of ${Math.abs(melody[i].midi-melody[i-1].midi)} exceeds configured ${s.maxLeap} semitones`);
+  }
+ }
+ return problems;
+}
+function abcLength(d){
+ if(Math.abs(d-1)<1e-7)return '';
+ if(Math.abs(d-Math.round(d))<1e-7)return String(Math.round(d));
+ const num=Math.round(d*12),den=12;
+ let a=num,b=den;while(b){const c=a%b;a=b;b=c;}
+ const p=num/a,q=den/a;return p===1?`/${q}`:`${p}/${q}`;
+}
+function noteToABC(n,key,state){
+ if(n.rest)return 'z'+abcLength(n.tuplet?1:n.duration);
+ const w=n,s=w.step,acc=KEY_ACC[key]?.[s]||0,k=s+':'+w.oct;
+ const was=state[k]===undefined?acc:state[k];let prefix='';
+ if(w.alter!==was){prefix=w.alter===0?'=':w.alter===1?'^':w.alter===-1?'_':w.alter===2?'^^':'__';state[k]=w.alter;}
+ let letter=w.oct>=5?s.toLowerCase():s;
+ if(w.oct<4)letter+=','.repeat(4-w.oct);
+ if(w.oct>5)letter+="'".repeat(w.oct-5);
+ return prefix+letter+abcLength(n.tuplet?1:n.duration);
+}
+function toABC(s){
+ const tonic=s.writtenTonic||s.key;const mode=s.tonality==='minor'?'m':'';
+ const head=['X:1',`T:${s.metadata.title}`,`M:${s.meter.join('/')}`,'L:1/8',`Q:${s.tempoMarking?'"'+s.tempoMarking+'" ':''}1/4=${s.tempo}`];
+ if(s.metadata.corpusSources?.length){
+   head.push('N:Corpus-informed adaptation; source rhythmic/melodic motifs re-harmonized and re-voiced.');
+   for(const source of s.metadata.corpusSources)head.push(`N:Source material: ${source.title} (${source.attribution}); ${source.url||'local import'}; rights: ${source.rights||'unverified'}`);
+ }
+ if(s.parts.length===2){head.push('%%score { RH | LH }','V:RH clef=treble name="Right hand"','V:LH clef=bass name="Left hand"');}
+ else head.push(`V:M clef=${s.parts[0].clef} name="${s.parts[0].label}"`);
+ head.push(`K:${tonic}${mode}`);
+ for(const p of s.parts){const id=s.parts.length===2?(p.id==='rh'?'RH':'LH'):'M';
+  const bars=s.measures.map(m=>{const state={};return (m.voices[p.id]||[]).map(n=>(n.tuplet&&n.tupletIndex===0?'(3':'')+noteToABC(n.rest?n:toWritten(n,s.instrument),s.writtenKey,state)).join(' ');});
+  head.push(`[V:${id}] `+bars.map((b,i)=>b+(i===bars.length-1?' |]':' |')).join(' '));
+ }
+ return head.join('\n')+'\n';
+}
+const api={scoreMetrics,accompanimentEvents,MAJOR_KEYS,KEY_PC,KEY_ACC,MINOR_FIFTHS,availableKeys,tonicMidi,subdivideRhythm,RANGES,DEFAULT_WRITTEN_RANGES,MINOR_VARIANTS,FIGURE_MODES,MINOR_SIG,rng,imod,nearestOct,noteFromDegree,toWritten,writtenKey,writtenTonic,signatureKey,score,makeAudit,validate,toABC,chordDegrees,preferredMidi,regionPenalty,parseMeter,meterGroups,rhythmicPlan};
+g.SightCore=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
+})(typeof window!=='undefined'?window:globalThis);
+
+</script>
+<script>
+/* Selected music-symbol vector outlines adapted from Noto Music (SIL Open Font License 1.1). No font files are redistributed. */
+window.MusicGlyphPaths={"treble":"M314 801Q300 854 291.0 906.0Q282 958 282 1012Q282 1059 288.5 1100.5Q295 1142 307 1177Q320 1217 341.0 1252.5Q362 1288 385.5 1311.0Q409 1334 427 1334Q451 1334 493 1249Q514 1206 524.0 1156.0Q534 1106 534 1049Q534 978 515.0 907.5Q496 837 459.5 775.0Q423 713 372 666L407 498Q422 500 432.0 501.0Q442 502 447 502Q508 502 556.0 467.5Q604 433 632.5 377.0Q661 321 661 254Q661 177 621.5 115.5Q582 54 503 25Q508 8 532 -117Q538 -147 541.0 -164.5Q544 -182 545.0 -195.0Q546 -208 546 -225Q546 -275 521.5 -314.5Q497 -354 455.5 -376.0Q414 -398 363 -398Q311 -398 271.0 -378.5Q231 -359 208.0 -324.5Q185 -290 185 -245Q185 -197 211.5 -165.0Q238 -133 287 -133Q329 -133 355.5 -163.5Q382 -194 382 -236Q382 -272 357.0 -299.0Q332 -326 292 -326H282Q308 -365 364 -365Q433 -365 472.0 -320.0Q511 -275 511 -205Q511 -188 507.0 -159.5Q503 -131 493 -91Q483 -51 477.5 -25.0Q472 1 470 12Q436 2 390 2Q304 2 222 52Q142 102 96.0 184.0Q50 266 50 361Q50 451 91 530Q132 609 192.5 675.0Q253 741 314 801ZM341 826Q364 838 390.0 870.5Q416 903 440.0 945.0Q464 987 479.0 1029.5Q494 1072 494 1106Q494 1142 483.0 1163.0Q472 1184 445 1184Q421 1184 398.5 1162.0Q376 1140 358.5 1103.5Q341 1067 331.0 1022.0Q321 977 321 930Q321 898 327.5 872.0Q334 846 341 826ZM398 379Q371 373 347.0 353.5Q323 334 308.5 306.5Q294 279 294 248Q294 223 307.0 196.5Q320 170 339 154Q352 142 365 136Q380 129 380 123Q380 120 370 117Q332 126 301.5 151.0Q271 176 253.5 211.5Q236 247 236 287Q236 330 253.5 370.0Q271 410 302.5 442.0Q334 474 374 490L345 641Q229 547 174.5 456.5Q120 366 120 277Q120 212 154.0 156.0Q188 100 247.0 65.5Q306 31 380 31Q400 31 420.5 35.0Q441 39 464 45ZM495 55Q593 97 593 227Q593 270 571.0 305.5Q549 341 512.0 362.0Q475 383 429 383Z","bass":"M50 123Q216 231 288 301Q336 348 373.0 408.5Q410 469 431.5 536.0Q453 603 453 669Q453 728 435.0 773.5Q417 819 383.0 845.0Q349 871 302 871Q284 871 264.5 867.0Q245 863 224 855Q181 839 158.0 813.5Q135 788 135 765Q135 756 143.0 752.0Q151 748 158 748Q168 748 183 752Q190 754 196.5 755.0Q203 756 210 756Q248 756 272.0 733.5Q296 711 296 674Q296 638 266.0 612.0Q236 586 195 586Q146 586 111.0 617.0Q76 648 76 697Q76 756 109.0 802.0Q142 848 198.5 874.0Q255 900 324 900Q400 900 460.0 867.0Q520 834 555.5 776.5Q591 719 591 646Q591 551 538 464Q511 419 476.5 379.0Q442 339 389.0 297.5Q336 256 256.0 208.0Q176 160 57 101ZM687 809Q710 809 726.0 793.0Q742 777 742 754Q742 731 726.0 715.5Q710 700 687 700Q664 700 648.0 715.5Q632 731 632 754Q632 777 648.0 793.0Q664 809 687 809ZM687 589Q710 589 726.0 573.0Q742 557 742 534Q742 511 726.0 495.5Q710 480 687 480Q664 480 648.0 495.5Q632 511 632 534Q632 557 648.0 573.0Q664 589 687 589Z","cclef":"M226 0V1000H263V510Q281 519 301.0 546.0Q321 573 339.0 608.5Q357 644 370.0 679.5Q383 715 386 742Q396 673 427.0 633.5Q458 594 503 594Q548 594 570 631Q593 668 593 775Q593 818 590.5 848.5Q588 879 582 898Q569 942 541.0 960.5Q513 979 470 979Q447 979 434.0 969.5Q421 960 421 951Q421 944 428.0 934.0Q435 924 443 914Q460 894 460 877Q460 853 442.5 833.5Q425 814 392 814Q362 814 342.5 835.5Q323 857 323 887Q323 924 347.5 952.0Q372 980 411.5 996.0Q451 1012 497 1012Q561 1012 612.0 982.0Q663 952 693.5 899.0Q724 846 724 777Q724 734 714.5 698.0Q705 662 685 633Q658 595 616.0 573.5Q574 552 527 552Q505 552 481.5 557.5Q458 563 437 574L390 500L437 426Q460 435 484.0 440.0Q508 445 532 445Q587 445 630.5 414.0Q674 383 699.0 332.0Q724 281 724 219Q724 157 694.0 104.5Q664 52 613.0 21.0Q562 -10 497 -10Q413 -10 368.0 23.5Q323 57 323 115Q323 145 342.5 166.5Q362 188 392 188Q425 188 442.5 168.5Q460 149 460 125Q460 106 443 88Q434 78 427.5 69.0Q421 60 421 52Q421 40 434.0 31.5Q447 23 470 23Q532 23 563.5 68.5Q595 114 595 219Q595 311 574.0 358.5Q553 406 503 406Q457 406 427.0 367.0Q397 328 388 260Q379 309 360.0 355.0Q341 401 316.0 437.0Q291 473 263 492V0ZM50 0V1000H167V0Z"};
+
+/* Numerals traced as SVG outlines from DejaVu Serif Bold, with
+ * copyright (c) 2003 Bitstream, Inc. and DejaVu changes in the public domain.
+ * See THIRD_PARTY_NOTICES.md for the full applicable license. */
+window.MusicTimeDigitPaths={"0":{"path":"M713 88Q833 88 877.5 197.0Q922 306 922 745Q922 1181 877.5 1292.0Q833 1403 713 1403Q593 1403 548.5 1294.0Q504 1185 504 745Q504 306 548.5 197.0Q593 88 713 88ZM713 -29Q414 -29 255.0 170.5Q96 370 96 745Q96 1120 255.0 1320.0Q414 1520 713 1520Q1011 1520 1170.0 1320.0Q1329 1120 1329 745Q1329 370 1170.0 170.5Q1011 -29 713 -29Z","bounds":[96,-29,1329,1520]},"1":{"path":"M281 0V121H561V1329L250 1145V1294L625 1520H940V121H1221V0Z","bounds":[250,0,1221,1520]},"2":{"path":"M270 1124H150V1446Q272 1483 391.5 1501.5Q511 1520 633 1520Q918 1520 1077.5 1403.5Q1237 1287 1237 1079Q1237 931 1149.0 813.5Q1061 696 813 535L397 262H1104V438H1241V0H137V244L358 397Q641 592 735.0 729.0Q829 866 829 1049Q829 1222 757.5 1312.5Q686 1403 549 1403Q431 1403 360.0 1331.5Q289 1260 270 1124Z","bounds":[137,0,1241,1520]},"3":{"path":"M176 1450Q308 1485 432.0 1502.5Q556 1520 674 1520Q944 1520 1088.5 1423.5Q1233 1327 1233 1147Q1233 1012 1150.0 928.0Q1067 844 907 815Q1102 784 1198.0 682.0Q1294 580 1294 403Q1294 194 1128.5 82.5Q963 -29 649 -29Q531 -29 405.5 -9.0Q280 11 143 51V379H264Q275 237 353.0 162.5Q431 88 569 88Q721 88 804.0 172.5Q887 257 887 412Q887 574 800.5 662.0Q714 750 555 750H489V870H541Q688 870 762.0 938.0Q836 1006 836 1141Q836 1268 766.5 1335.5Q697 1403 567 1403Q449 1403 380.0 1338.5Q311 1274 297 1151H176Z","bounds":[143,-29,1294,1520]},"4":{"path":"M1307 0H485V121H707V393H84V508L709 1520H1085V522H1341V393H1085V121H1307ZM707 522V1247L262 522Z","bounds":[84,0,1341,1520]},"5":{"path":"M1155 1493V1231H356V903Q422 954 503.0 980.0Q584 1006 674 1006Q950 1006 1110.0 866.5Q1270 727 1270 487Q1270 243 1110.0 107.0Q950 -29 662 -29Q540 -29 419.5 -9.0Q299 11 168 53V379H288Q294 232 364.5 160.0Q435 88 573 88Q720 88 791.0 186.5Q862 285 862 487Q862 686 792.5 784.5Q723 883 582 883Q506 883 446.5 851.5Q387 820 336 754H236V1493Z","bounds":[168,-29,1270,1493]},"6":{"path":"M504 885Q569 937 649.5 963.0Q730 989 825 989Q1054 989 1184.5 855.0Q1315 721 1315 487Q1315 240 1168.0 105.5Q1021 -29 750 -29Q444 -29 286.5 155.5Q129 340 129 698Q129 1105 304.0 1312.5Q479 1520 823 1520Q913 1520 1016.0 1505.0Q1119 1490 1237 1460V1196H1116Q1091 1298 1021.5 1350.5Q952 1403 842 1403Q664 1403 584.5 1281.0Q505 1159 504 885ZM727 88Q830 88 874.0 175.5Q918 263 918 479Q918 695 874.0 782.5Q830 870 727 870Q624 870 580.5 782.5Q537 695 537 479Q537 263 580.5 175.5Q624 88 727 88Z","bounds":[129,-29,1315,1520]},"7":{"path":"M1255 1239 639 0H436L1036 1210H299V1008H162V1493H1255Z","bounds":[162,0,1255,1493]},"8":{"path":"M952 795Q1130 766 1222.5 664.0Q1315 562 1315 397Q1315 191 1159.5 81.0Q1004 -29 711 -29Q418 -29 262.0 81.0Q106 191 106 397Q106 562 199.0 664.0Q292 766 469 795Q312 831 234.0 915.5Q156 1000 156 1130Q156 1320 298.0 1420.0Q440 1520 711 1520Q981 1520 1123.5 1420.0Q1266 1320 1266 1130Q1266 1000 1187.5 915.5Q1109 831 952 795ZM879 1126Q879 1284 841.0 1343.5Q803 1403 711 1403Q618 1403 580.5 1343.5Q543 1284 543 1126Q543 969 580.5 910.5Q618 852 711 852Q804 852 841.5 910.5Q879 969 879 1126ZM918 414Q918 597 871.5 666.0Q825 735 711 735Q596 735 550.0 666.0Q504 597 504 414Q504 229 550.5 158.5Q597 88 711 88Q824 88 871.0 158.5Q918 229 918 414Z","bounds":[106,-29,1315,1520]},"9":{"path":"M698 1403Q595 1403 551.5 1315.5Q508 1228 508 1012Q508 796 551.5 708.5Q595 621 698 621Q801 621 845.0 708.5Q889 796 889 1012Q889 1228 845.0 1315.5Q801 1403 698 1403ZM921 608Q855 555 774.5 528.5Q694 502 600 502Q372 502 241.5 635.5Q111 769 111 1004Q111 1252 257.0 1386.0Q403 1520 674 1520Q980 1520 1138.0 1335.0Q1296 1150 1296 793Q1296 386 1121.0 178.5Q946 -29 602 -29Q512 -29 409.0 -14.0Q306 1 188 31V295H309Q334 193 403.5 140.5Q473 88 584 88Q760 88 840.0 210.5Q920 333 921 608Z","bounds":[111,-29,1296,1520]}};
+
+</script>
+<script>
+/* Sight Reading Lab 0007: responsive offline SVG engraving for restricted, single-note voices.
+ * Note: this remains an internal engraved SVG renderer, not abcjs or VexFlow.
+ * Design principles: musical-time-aligned grand staff, measure-width allocation by note density,
+ * one stem per note, metric eighth-note beams, stable key/accidental placement, no clipping.
+ */
+(function(g){'use strict';
+const C=g.SightCore, NS='http://www.w3.org/2000/svg';
+const W=1220, LEFT=53, RIGHT=1182, STEP=6.2, LINE=2*STEP, STAFF_HEIGHT=8*STEP;
+const BOTTOM={treble:30,bass:18,tenor:22,alto:24}, LETTERS='CDEFGAB';
+const FIFTH_ORDER_SHARP=['F','C','G','D','A','E','B'];
+const FIFTH_ORDER_FLAT=['B','E','A','D','G','C','F'];
+const INK='#162738';
+function el(tag,at={},text){const e=document.createElementNS(NS,tag);for(const [k,v] of Object.entries(at))e.setAttribute(k,String(v));if(text!==undefined)e.textContent=text;return e;}
+function put(root,tag,at={},text){const e=el(tag,at,text);root.appendChild(e);return e;}
+function ln(root,x1,y1,x2,y2,cls='staff-line',more={}){return put(root,'line',{x1,y1,x2,y2,class:cls,...more});}
+function diatonic(n){return n.oct*7+LETTERS.indexOf(n.step);}
+function noteY(n,top,clef){return top+STAFF_HEIGHT-(diatonic(n)-BOTTOM[clef])*STEP;}
+function accidentalGlyph(root,kind,x,y,scale=1){
+ const group=put(root,'g',{class:'engraving-accidental', 'data-kind':kind, transform:`translate(${x} ${y}) scale(${scale})`});
+ const draw=(d,weight=1.6)=>put(group,'path',{d,fill:'none',stroke:INK,'stroke-width':weight,'stroke-linecap':'round','stroke-linejoin':'round'});
+ if(kind===2){
+  // Dedicated conventional double-sharp (cross), not two overlapping sharps.
+  put(group,'path',{d:'M-8 -8 L-3 -8 L0 -4 L3 -8 L8 -8 L8 -3 L4 0 L8 3 L8 8 L3 8 L0 4 L-3 8 L-8 8 L-8 3 L-4 0 L-8 -3 Z',fill:INK,class:'double-sharp'});
+ }else if(kind===1){
+  draw('M -4 -14 V 13 M 4 -18 V 10',1.5);draw('M -8 -5 L 8 -9 M -8 4 L 8 0',3.3);
+ }else if(kind===-2){
+  // Two independently shaped flat glyphs with non-overlapping bowls.
+  for(const shift of [-7,7]){
+   put(group,'path',{d:`M ${shift-5} -20 V 11 M ${shift-5} -1 Q ${shift+1} -9 ${shift+6} -5 Q ${shift+12} -1 ${shift+6} 7 Q ${shift+3} 11 ${shift-5} 11`,fill:'none',stroke:INK,'stroke-width':1.95,'stroke-linecap':'round','stroke-linejoin':'round'});
+  }
+ }else if(kind===-1){
+  draw('M -5 -20 V 11 M -5 -1 Q 1 -9 6 -5 Q 12 -1 6 7 Q 3 11 -5 11',1.95);
+ }else{
+  draw('M -5 -15 V 10 M 5 -10 V 15',1.5);
+  draw('M -5 0 L 5 -5 M -5 10 L 5 5',2.6);
+ }
+ return group;
+}
+function clef(root,name,x,top){
+ const paths=g.MusicGlyphPaths||{}; const gname=name==='treble'?'treble':name==='bass'?'bass':'cclef';
+ let scale=name==='treble'?0.062:name==='bass'?0.069:0.063;
+ // The Noto Music outlines are drawn upwards from their baseline in font coordinates.
+ // C clef center corresponds to line 3 (alto) or line 4 (tenor).
+ let base=name==='treble'?top+STAFF_HEIGHT+7:name==='bass'?top+STAFF_HEIGHT+7:top+STAFF_HEIGHT+9;
+ if(name==='tenor')base-=LINE;
+ put(root,'path',{d:paths[gname],transform:`translate(${x} ${base}) scale(${scale} ${-scale})`,class:'symbol'});
+}
+// Key signature pitches occupy exact diatonic staff steps in each clef.
+// Each value measures half-spaces downward from the top staff line.
+// These reference positions preserve the conventional sharp/flat patterns
+// and keep tenor-clef sharps on the staff rather than beyond a ledger line.
+const SIG_OFFSETS={
+ treble:{sharp:[0,3,-1,2,5,1,4],flat:[4,1,5,2,6,3,7]},
+ bass:{sharp:[2,5,1,4,7,3,6],flat:[6,3,7,4,8,5,2]},
+ alto:{sharp:[1,4,0,3,6,2,5],flat:[5,2,6,3,7,4,1]},
+ tenor:{sharp:[6,2,5,1,4,0,3],flat:[3,0,4,1,5,2,6]}
+};
+// Local accidental symbols originally had their visual centers slightly off
+// their stated nominal pitch: the sharp's crossing lay 2.5 px above y;
+// the flat's bowl lay roughly 3 px below y. Compensate *only* in
+// key signatures. Note accidentals keep the established relative positions.
+const KEY_ACCENT_CORRECTION={1:2.5,[-1]:-3};
+const SIGNATURE_ADVANCE=18;
+function signaturePositions(key,clef){
+ const fifths=C.MAJOR_KEYS[key]||0;
+ return (fifths>=0?SIG_OFFSETS[clef].sharp:SIG_OFFSETS[clef].flat).slice(0,Math.abs(fifths));
+}
+function signature(root,key,clef,start,top){
+ const fifths=C.MAJOR_KEYS[key]||0,count=Math.abs(fifths),typ=fifths>=0?1:-1;
+ const positions=signaturePositions(key,clef);
+ const names=fifths>=0?FIFTH_ORDER_SHARP:FIFTH_ORDER_FLAT;
+ for(let i=0;i<count;i++){
+  const pitchY=top+positions[i]*STEP;
+  const glyph=accidentalGlyph(root,typ,start+i*SIGNATURE_ADVANCE,pitchY+KEY_ACCENT_CORRECTION[typ],0.89);
+  glyph.classList.add('key-signature-accidental');
+  glyph.setAttribute('data-clef',clef);glyph.setAttribute('data-note',names[i]);
+  glyph.setAttribute('data-staff-step',String(positions[i]));
+  glyph.setAttribute('data-pitch-y',String(pitchY));
+ }
+ return start+count*SIGNATURE_ADVANCE;
+}
+// Each numeral is two staff spaces high and centered on staff line 2 / 4,
+// independent of browser font metrics. Supports multi-digit numerators.
+function timeSignatureGeometry(meter,x,top){
+ const digits=g.MusicTimeDigitPaths||{};
+ return meter.map((value,row)=>{
+  const chars=String(value).split('');
+  const glyphs=chars.map(ch=>{
+   const digit=digits[ch];
+   if(!digit)throw Error('Unknown time signature digit '+ch);
+   const [x0,y0,x1,y1]=digit.bounds;
+   const scale=(LINE*1.86)/(y1-y0);
+   return {path:digit.path,bounds:digit.bounds,width:(x1-x0)*scale,scale,ch};
+  });
+  const gap=1.5, totalWidth=glyphs.reduce((sum,v)=>sum+v.width,0)+(glyphs.length-1)*gap;
+  let cursor=x-totalWidth/2;
+  const centerY=top+(row===0?LINE:LINE*3);
+  const elements=glyphs.map(v=>{
+   const [x0,y0,x1,y1]=v.bounds;
+   const tx=cursor-x0*v.scale;
+   const ty=centerY+(y0+y1)*v.scale/2;
+   cursor+=v.width+gap;
+   return {...v,tx,ty,centerY};
+  });
+  return {value:String(value),centerY,totalWidth,glyphs:elements};
+ });
+}
+function timeSignature(root,meter,x,top){
+ const rows=timeSignatureGeometry(meter,x,top);
+ const group=put(root,'g',{class:'time-signature','data-meter':meter.join('/'),'data-center-x':x});
+ for(let row=0;row<rows.length;row++){
+  const data=rows[row];
+  const part=put(group,'g',{class:row===0?'time-numerator':'time-denominator',
+   'data-center-y':data.centerY,'data-width':data.totalWidth});
+  for(const d of data.glyphs){
+   put(part,'path',{d:d.path,transform:`translate(${d.tx} ${d.ty}) scale(${d.scale} ${-d.scale})`,
+    fill:INK,class:'time-digit','data-digit':d.ch});
+  }
+ }
+ return rows;
+}
+function text(root,x,y,value,cls,extra={}){return put(root,'text',{x,y,class:cls,...extra},value);}
+function staffLines(root,top,x0=LEFT,x1=RIGHT){for(let k=0;k<5;k++)ln(root,x0,top+k*LINE,x1,top+k*LINE);}
+// Ledger lines belong to fixed diatonic staff positions, not an estimated
+// distance from a floating-point notehead coordinate.  The first line below
+// a staff is two diatonic steps below the bottom staff line; the first line
+// above is two steps above its top line.  This covers notes both ON a ledger
+// line and IN the space beyond it, for every supported clef.
+function ledgerOffsets(note,clefName){
+ const offset=diatonic(note)-BOTTOM[clefName], positions=[];
+ if(offset<=-2)for(let i=-2;i>=offset;i-=2)positions.push(i);
+ if(offset>=10)for(let i=10;i<=offset;i+=2)positions.push(i);
+ return positions;
+}
+function ledger(root,x,n,top,clefName){
+ const pitchId=n.step+String(n.oct), offsets=ledgerOffsets(n,clefName);
+ for(const offset of offsets){
+  const y=top+STAFF_HEIGHT-offset*STEP;
+  ln(root,x-16,y,x+16,y,'ledger',{'data-pitch':pitchId,'data-clef':clefName,'data-offset':offset,'stroke':INK,'stroke-width':1.5});
+ }
+ return offsets.length;
+}
+function oval(root,x,y,rx,ry,filled){return put(root,'ellipse',{cx:x,cy:y,rx,ry,transform:`rotate(-19 ${x} ${y})`,fill:filled?INK:'none',stroke:filled?'none':INK,'stroke-width':filled?0:2.5,class:filled?'filled-notehead':'hollow-notehead'});}
+function head(root,x,y,duration){
+ if(duration===8)oval(root,x,y,11.3,6.2,false);
+ else if(duration>=4)oval(root,x,y,9.3,5.7,false);
+ else oval(root,x,y,9.4,6.2,true);
+}
+function accidentalFor(n,keyState,measureState){const k=n.step+':'+n.oct;const old=k in measureState?measureState[k]:(keyState[n.step]||0);if(old===n.alter)return null;measureState[k]=n.alter;return n.alter;}
+function isDotted(duration){return [0.75,1.5,3,6].some(n=>Math.abs(duration-n)<1e-7);}
+function noteBeams(n){if(n.rest)return 0;
+ // Eighth-note triplets keep the visual beam count of ordinary eighth notes.
+ // Their time value is shorter in the model (2/3), but engraving should not
+ // promote them to sixteenth notes with an extra beam line.
+ if(n.tuplet===3 && Math.abs(n.duration-(2/3))<1e-7)return 1;
+ const duration=n.duration;
+ if(duration<=0.375)return 3;
+ if(duration<=0.75)return 2;
+ if(duration<=1.5)return 1;
+ return 0;
+}
+function rest(root,x,top,n){
+ const d=n.duration,y=top+STAFF_HEIGHT/2;
+ const group=put(root,'g',{class:'engraving-rest','data-duration':d});
+ if(d>=8){put(group,'rect',{x:x-9,y:y-0.5,width:18,height:5.2,fill:INK});}
+ else if(d>=4){put(group,'rect',{x:x-9,y:y-12.4,width:18,height:5.2,fill:INK});}
+ else if(d>=2){
+  put(group,'path',{d:`M${x+2} ${y-23} l-7 11 l9 9 l-8 10 l9 8 l-3 8 l-5 -11 l-10 -9 l9 -10 l-8 -10 Z`,fill:INK});
+ }else{
+  const flags=d<=0.375?3:d<=0.75?2:1;
+  ln(group,x+6,y-20,x-4,y+19,'stem',{'stroke-width':2.4});
+  for(let i=0;i<flags;i++){
+   const yy=y-17+i*10;
+   put(group,'path',{d:`M${x+4} ${yy} C${x-12} ${yy-12}, ${x-13} ${yy+5}, ${x-3} ${yy+5} Q${x+3} ${yy+4} ${x+5} ${yy}`,fill:INK});
+  }
+ }
+ if(isDotted(d))put(group,'circle',{cx:x+15,cy:y-STEP,r:2.2,fill:INK});
+ return group;
+}
+function dot(root,x,y,top){const relative=Math.round((y-top)/STEP);const dy=relative%2===0?-STEP:0;put(root,'circle',{cx:x+15.6,cy:y+dy,r:2.25,fill:INK,class:'augmentation-dot'});}
+function positionWeight(notes){return notes.length+0.42*notes.filter(n=>n.duration<=1).length+0.6*notes.filter(n=>isDotted(n.duration)).length;}
+// Each onset has an ink footprint to the left/right of its reference pitch.
+// Include the accidentals of *all* simultaneously sounding piano parts. No
+// accidental is painted until the plan has reserved space for it.
+function onsetFootprints(m,score){
+ const footprints=new Map();
+ for(const part of score.parts){
+  const state={},keyAcc=C.KEY_ACC[score.writtenKey]||{};
+  for(const n of m.voices[part.id]||[]){
+   const w=n.rest?n:C.toWritten(n,score.instrument),acc=n.rest?null:accidentalFor(w,keyAcc,state);
+   const left=acc===null?15:(acc===-2?48:acc===2?32:30);
+   const right=isDotted(n.duration)?22:15;
+   const a=footprints.get(n.start)||{time:n.start,left:0,right:0,accidental:false};
+   a.left=Math.max(a.left,left);a.right=Math.max(a.right,right);
+   a.accidental ||= acc!==null;
+   footprints.set(n.start,a);
+  }
+ }
+ return [...footprints.values()].sort((a,b)=>a.time-b.time);
+}
+const INK_GAP=9, FIRST_PAD=14, LAST_PAD=18;
+function minimalWidth(m,score){
+ const f=onsetFootprints(m,score);if(!f.length)return 100;
+ let width=FIRST_PAD+f[0].left+f[f.length-1].right+LAST_PAD;
+ for(let i=1;i<f.length;i++)width+=f[i-1].right+f[i].left+INK_GAP;
+ return Math.max(96,width);
+}
+function headerWidth(score,systemIndex){
+ const f=Math.abs(C.MAJOR_KEYS[score.writtenKey]||0);
+ return (systemIndex===0?175+(score.meter[0]>=10?22:0):111)+f*SIGNATURE_ADVANCE;
+}
+// A dense chromatic measure may not fit among four bars. Move it to another
+// system instead of letting a fixed four-bars-per-line grid crush its symbols.
+function partitionSystems(score){
+ const result=[];let index=0;
+ while(index<score.measures.length){
+  const sys=result.length,available=RIGHT-LEFT-headerWidth(score,sys);
+  let width=0,group=[];
+  while(index<score.measures.length&&group.length<4){
+   const m=score.measures[index],needed=minimalWidth(m,score);
+   if(group.length&&width+needed>available)break;
+   group.push(m);width+=needed;index++;
+  }
+  result.push(group);
+ }
+ return result;
+}
+function measureGeometry(score,sys,measures){
+ const header=headerWidth(score,sys),budget=RIGHT-LEFT-header;
+ const mins=measures.map(m=>minimalWidth(m,score));
+ const weights=measures.map(m=>1.4+Math.max(...score.parts.map(p=>positionWeight(m.voices[p.id]||[]))));
+ const totalWeight=weights.reduce((a,b)=>a+b,0),sumMin=mins.reduce((a,b)=>a+b,0);
+ const surplus=Math.max(0,budget-sumMin);
+ let cursor=LEFT+header;
+ return measures.map((m,i)=>{
+  const w=mins[i]+surplus*weights[i]/totalWeight;
+  const result={measure:m,x0:i===0?LEFT:cursor,contentL:cursor,x1:cursor+w,minWidth:mins[i]};
+  cursor+=w;return result;
+ });
+}
+function positionsForMeasure(m,parts,l,r,score){
+ const f=onsetFootprints(m,score),out=new Map();if(!f.length)return out;
+ const minima=[],spring=[];
+ for(let i=1;i<f.length;i++){
+  minima.push(f[i-1].right+f[i].left+INK_GAP);
+  spring.push(Math.sqrt(Math.max(0.5,f[i].time-f[i-1].time)));
+ }
+ const needed=minimalWidth(m,score),surplus=Math.max(0,(r-l)-needed);
+ const springSum=spring.reduce((a,b)=>a+b,0);
+ let x=l+FIRST_PAD+f[0].left;out.set(f[0].time,x);
+ for(let i=1;i<f.length;i++){
+  x+=minima[i-1]+(springSum?surplus*spring[i-1]/springSum:0);
+  out.set(f[i].time,x);
+ }
+ return out;
+}
+function groupForBeaming(notes,meter=[4,4]){
+ const groups=[],single=[];let group=[];
+ function flush(){if(group.length===1)single.push(group[0]);else if(group.length>1)groups.push(group);group=[];}
+ for(const v of notes){
+  if(v.n.rest||noteBeams(v.n)===0){flush();continue;}
+  const last=group[group.length-1];
+  // Eighth/16th/32nd note beams share a quarter-note beat (two eighth units).
+  const boundary=meter[1]===8&&meter[0]>=6&&meter[0]%3===0?3:2;
+  const continues=last &&
+    (last.n.tupletId&&last.n.tupletId===v.n.tupletId||Math.floor((last.n.start+1e-8)/boundary)===Math.floor((v.n.start+1e-8)/boundary))
+    && Math.abs(v.n.start-(last.n.start+last.n.duration))<1e-7;
+  if(!continues)flush();group.push(v);
+ }
+ flush();return {groups,single};
+}
+function stem(root,v,up,endY){const stemX=v.x+(up?8.5:-8.5);ln(root,stemX,v.y,stemX,endY,'stem');return stemX;}
+function beam(root,group){
+ const avg=group.reduce((s,a)=>s+a.y,0)/group.length,up=avg>=group[0].top+STAFF_HEIGHT/2;
+ const dir=up?-1:1,first=group[0],last=group[group.length-1];
+ const slope=Math.max(-6,Math.min(6,(last.y-first.y)*0.26));
+ let lY=first.y+dir*40,rY=lY+slope;
+ for(const v of group){const t=(v.x-first.x)/(last.x-first.x||1),beamY=lY+t*(rY-lY);const dist=(beamY-v.y)*dir;
+  if(dist<38){lY+=dir*(38-dist);rY+=dir*(38-dist);}
+ }
+ const stemX=v=>v.x+(up?8.5:-8.5);
+ const beamY=v=>lY+(v.x-first.x)/(last.x-first.x||1)*(rY-lY);
+ const drawBeam=(x1,y1,x2,y2)=>put(root,'path',{d:`M${x1} ${y1} L${x2} ${y2} L${x2} ${y2+dir*5.1} L${x1} ${y1+dir*5.1}Z`,class:'beam',fill:INK});
+ for(const v of group)stem(root,v,up,beamY(v));
+ drawBeam(stemX(first),lY,stemX(last),rY);
+ // Secondary and tertiary beams: connect contiguous short-note groups;
+ // isolated shorter notes receive inward-facing partial beamlets.
+ for(const [level,threshold] of [[2,0.5],[3,0.25]]){
+  const offset=-dir*8.5*(level-1);
+  for(let i=0;i<group.length;){
+   if(noteBeams(group[i].n)<level){i++;continue;}
+   let j=i;
+   while(j+1<group.length&&noteBeams(group[j+1].n)>=level)j++;
+   if(j>i)drawBeam(stemX(group[i]),beamY(group[i])+offset,stemX(group[j]),beamY(group[j])+offset);
+   else{
+    const v=group[i],other=i>0?group[i-1]:group[i+1],side=i>0?-1:1;
+    const x1=stemX(v),x2=x1+side*Math.min(13,Math.abs(stemX(other)-x1)*0.40);
+    const y1=beamY(v)+offset,y2=y1+(x2-x1)/(stemX(last)-stemX(first)||1)*(rY-lY);
+    drawBeam(x1,y1,x2,y2);
+   }
+   i=j+1;
+  }
+ }
+ const triplets=new Map();
+ for(const v of group)if(v.n.tupletId){
+  const a=triplets.get(v.n.tupletId)||[];a.push(v);triplets.set(v.n.tupletId,a);
+ }
+ for(const segment of triplets.values())if(segment.length===3){
+  const mid=(segment[0].x+segment[2].x)/2;
+  const yy=beamY(segment[1])+dir*17;
+  text(root,mid,yy+4,'3','tuplet-label',{'text-anchor':'middle'});
+ }
+}
+function flag(root,v){
+ const up=v.y>=v.top+STAFF_HEIGHT/2,dir=up?-1:1,end=v.y+dir*40,x=stem(root,v,up,end);
+ const count=noteBeams(v.n);
+ for(let i=0;i<count;i++){
+  const shift=-dir*i*9,y=end+shift;
+  const path=up
+   ?`M${x} ${y} C${x+6} ${y+4} ${x+15} ${y+11} ${x+15} ${y+23} C${x+20} ${y+13} ${x+14} ${y+2} ${x} ${y-1}Z`
+   :`M${x} ${y} C${x+8} ${y-8} ${x+20} ${y-17} ${x+17} ${y-26} C${x+25} ${y-18} ${x+17} ${y-3} ${x} ${y+1}Z`;
+  put(root,'path',{d:path,fill:INK,class:'flag'});
+ }
+}
+function renderNotes(root,events,top,clef,xmap,score){
+ const state={},keyAcc=C.KEY_ACC[score.writtenKey]||{};const drawn=[];
+ for(const n of events){
+  if(n.rest){rest(root,xmap.get(n.start),top,n);continue;}
+  const w=C.toWritten(n,score.instrument),x=xmap.get(n.start),y=noteY(w,top,clef),acc=accidentalFor(w,keyAcc,state);
+  ledger(root,x,w,top,clef);
+  if(acc!==null)accidentalGlyph(root,acc,x-(acc===-2?36:21),y,0.9);
+  head(root,x,y,n.duration);
+  if(isDotted(n.duration))dot(root,x,y,top);
+  drawn.push({n,x,y,top});
+ }
+ const {groups,single}=groupForBeaming(drawn,score.meter);const used=new Set();
+ for(const grp of groups){beam(root,grp);grp.forEach(x=>used.add(x));}
+ for(const v of drawn){if(noteBeams(v.n)){if(!used.has(v))flag(root,v);}else if(v.n.duration!==8){const up=v.y>=top+STAFF_HEIGHT/2;stem(root,v,up,v.y+(up?-40:40));}}
+}
+function brace(root,x,top,bottom){const mid=(top+bottom)/2,half=(bottom-top)/2;
+ const d=`M${x+12} ${top} C${x-5} ${top} ${x+2} ${top+half*.32} ${x-9} ${mid-13} Q${x-13} ${mid-4} ${x-19} ${mid} Q${x-13} ${mid+4} ${x-9} ${mid+13} C${x+2} ${bottom-half*.32} ${x-5} ${bottom} ${x+12} ${bottom}`;
+ put(root,'path',{d,fill:'none',stroke:INK,'stroke-width':2.35,'stroke-linecap':'round'});
+}
+// Variable per-system staff spacing keeps ledger lines visible even when a
+// user explicitly selects unusually extreme instrument/hand ranges.  Normal
+// passages retain approximately the original spacing; ledger-heavy passages
+// receive the additional vertical clearance they need.
+function staffExtents(measures,part,score){
+ let min=-42,max=STAFF_HEIGHT;
+ for(const m of measures)for(const n of m.voices[part.id]||[]){
+  if(n.rest)continue;
+  const written=C.toWritten(n,score.instrument);
+  const y=noteY(written,0,part.clef);
+  min=Math.min(min,y-21);
+  max=Math.max(max,y+21);
+ }
+ return {min,max};
+}
+function verticalLayouts(systems,score){
+ const layouts=[];
+ let previousBottom=null,previousTop=null;
+ for(const measures of systems){
+  const ext=score.parts.map(part=>staffExtents(measures,part,score));
+  const secondGap=ext.length===2?Math.max(126,ext[0].max-ext[1].min+24):0;
+  const relativeMin=ext.length===2?Math.min(ext[0].min,secondGap+ext[1].min):ext[0].min;
+  const relativeMax=ext.length===2?Math.max(ext[0].max,secondGap+ext[1].max):ext[0].max;
+  const top=previousBottom===null?Math.max(128,82-relativeMin):
+    Math.max(previousTop+(ext.length===2?295:179),previousBottom+65-relativeMin);
+  layouts.push({top,secondGap,lowest:top+relativeMax});
+  previousBottom=top+relativeMax;
+  previousTop=top;
+ }
+ return layouts;
+}
+function render(target,score,options={}){
+ if(!target)throw Error('Target element missing');target.replaceChildren();const piano=score.parts.length===2;
+ const systems=partitionSystems(score),sysCount=systems.length;
+ const layouts=verticalLayouts(systems,score);
+ const height=layouts[sysCount-1].lowest+79;
+ const svg=el('svg',{xmlns:NS,viewBox:`0 0 ${W} ${height}`,width:W,height,role:'img','aria-label':`Music score: ${score.metadata.title}`});svg.classList.add('sheet-svg');
+ put(svg,'title',{},`${score.metadata.title} (${score.instrument})`);
+ put(svg,'rect',{x:0,y:0,width:W,height,fill:'#fff'});
+ text(svg,LEFT,35,score.metadata.title,'score-title');
+ const who=score.instrument==='piano'?'Piano':score.instrument==='trumpet'?'B♭ trumpet':`Trombone · ${score.clef} clef`;
+ text(svg,RIGHT,35,`${who}   •   ${score.writtenTonic||score.key} ${score.tonality||'major'} · ${score.meter.join('/')} · ${score.tempoMarking||score.tempo+' bpm'}`,'score-subtitle',{'text-anchor':'end'});
+ for(let sys=0;sys<sysCount;sys++){
+  const {top,secondGap}=layouts[sys],partY=score.parts.map((p,i)=>top+(i?secondGap:0));
+  const ms=systems[sys],geometry=measureGeometry(score,sys,ms);
+  partY.forEach((y,i)=>{
+    staffLines(svg,y);clef(svg,score.parts[i].clef,LEFT+6,y);
+    const signEnd=signature(svg,score.writtenKey,score.parts[i].clef,LEFT+81,y);
+    if(sys===0)timeSignature(svg,score.meter,signEnd+27,y);
+  });
+  if(piano){brace(svg,LEFT-16,top-3,partY[1]+STAFF_HEIGHT+3);ln(svg,LEFT,top,LEFT,partY[1]+STAFF_HEIGHT,'barline');}
+  ms.forEach((m,i)=>{
+   const gg=geometry[i],xmap=positionsForMeasure(m,score.parts,gg.contentL,gg.x1,score);
+   text(svg,(i===0?LEFT:gg.x0)+3,top-30,String(m.number),'measure-no');
+   if(options.showHarmony)text(svg,gg.contentL+16,top-37,m.chord,'harmony');
+   for(let j=0;j<score.parts.length;j++)renderNotes(svg,m.voices[score.parts[j].id]||[],partY[j],score.parts[j].clef,xmap,score);
+   const yEnd=partY[partY.length-1]+STAFF_HEIGHT;
+   if(piano)ln(svg,gg.x1,top,gg.x1,yEnd,'barline');
+   else ln(svg,gg.x1,top,gg.x1,yEnd,'barline');
+   if(m.number===score.measures.length){ln(svg,gg.x1-6,top,gg.x1-6,yEnd,'barline');ln(svg,gg.x1,top,gg.x1,yEnd,'final-barline');}
+  });
+ }
+ target.append(svg);return svg;
+}
+// Small, accurate notation previews for user-selected pitch limits.
+// Horizontal noteheads are the *hard* written-pitch bounds. The green band
+// denotes a preferred register (a soft sampling bias, not a second limit).
+function spellWrittenMidi(midi,key){
+ const accidentals=C.KEY_ACC[key]||{};
+ const fifths=C.MAJOR_KEYS[key]||0, candidates=[];
+ const natural=[0,2,4,5,7,9,11];
+ for(let octave=0;octave<=8;octave++)for(let i=0;i<7;i++)for(let alter=-2;alter<=2;alter++){
+  if(12*(octave+1)+natural[i]+alter!==midi)continue;
+  const step=LETTERS[i],signatureAlter=accidentals[step]||0;
+  const score= (alter===signatureAlter?0:2.4)
+    +Math.abs(alter)*0.38+Math.max(0,Math.abs(alter)-1)*2.8
+    +(fifths<0&&alter>0?1.1:0)+(fifths>0&&alter<0?1.1:0);
+  candidates.push({step,oct:octave,alter,midi,score});
+ }
+ candidates.sort((a,b)=>a.score-b.score||a.oct-b.oct);
+ if(!candidates.length)throw Error('Pitch cannot be spelled: '+midi);
+ return candidates[0];
+}
+function noteLabel(n){return n.step+({[-2]:'𝄫',[-1]:'♭',0:'',[1]:'♯',[2]:'𝄪'}[n.alter])+n.oct;}
+function preferredBand(range,region){
+ const [lo,hi]=range, span=Math.max(8,hi-lo);
+ let a=lo,b=hi;
+ switch(region){
+  case 'low':b=lo+span/3;break;
+  case 'middle':a=lo+span/3;b=lo+2*span/3;break;
+  case 'high':a=hi-span/3;break;
+  case 'lowTwoThirds':b=lo+2*span/3;break;
+  case 'highTwoThirds':a=lo+span/3;break;
+ }
+ return [Math.max(lo,Math.min(hi,a)),Math.max(lo,Math.min(hi,b))];
+}
+function rangePreview(target,{clef:clefName,key,range,register,partName=''}){
+ if(!target)throw Error('Missing pitch-range preview target');
+ target.replaceChildren();
+ const [min,max]=range;
+ if(!Number.isInteger(min)||!Number.isInteger(max)||min<28||max>96||min>=max){
+  const hint=document.createElement('span');hint.className='preview-invalid';
+  hint.textContent='Choose a lowest note below the highest note.';
+  target.appendChild(hint);return {valid:false};
+ }
+ const low=(partName==='B-flat trumpet' && key==='C' && min===54)
+   ?{step:'G',oct:3,alter:-1,midi:54}:spellWrittenMidi(min,key);
+ const high=spellWrittenMidi(max,key);
+ const [preferredLo,preferredHi]=preferredBand(range,register);
+ const pl=spellWrittenMidi(Math.max(min,Math.min(max,Math.round(preferredLo))),key);
+ const ph=spellWrittenMidi(Math.max(min,Math.min(max,Math.round(preferredHi))),key);
+ const y0=n=>noteY(n,0,clefName);
+ const minRelativeY=Math.min(y0(low),y0(high),y0(pl),y0(ph),0);
+ const top=Math.max(45,48-minRelativeY);
+ const lowerY=Math.max(y0(low),y0(high),y0(pl),y0(ph),STAFF_HEIGHT)+top;
+ const height=Math.max(132,lowerY+43);
+ const root=el('svg',{xmlns:NS,viewBox:`0 0 440 ${height}`,width:'440',height:String(height),
+   class:'range-preview-svg',role:'img',
+   'aria-label':`${partName?partName+': ':''}${clefName} clef, written range ${noteLabel(low)} to ${noteLabel(high)}, preferred ${register} ${noteLabel(pl)} to ${noteLabel(ph)}`});
+ put(root,'title',{},'Written-pitch range and preferred register');
+ put(root,'rect',{width:440,height,fill:'#fff'});
+ // Note range and preference are shaded across the same real five-line staff.
+ const zoneTop=Math.min(y0(low),y0(high))+top-4;
+ const zoneBottom=Math.max(y0(low),y0(high))+top+4;
+ put(root,'rect',{x:209,y:zoneTop,width:173,height:Math.max(6,zoneBottom-zoneTop),rx:4,fill:'#eef2f5'});
+ const bandTop=Math.min(y0(pl),y0(ph))+top-4;
+ const bandBottom=Math.max(y0(pl),y0(ph))+top+4;
+ put(root,'rect',{x:216,y:bandTop,width:159,height:Math.max(6,bandBottom-bandTop),rx:3,fill:'#bcebd9',opacity:'0.92',class:'preferred-register-band',
+  'data-low-midi':String(Math.round(preferredLo)),'data-high-midi':String(Math.round(preferredHi))});
+ for(let i=0;i<5;i++)ln(root,8,top+i*LINE,432,top+i*LINE,'staff-line',{stroke:'#516779','stroke-width':1.35});
+ clef(root,clefName,18,top);
+ signature(root,key,clefName,75,top);
+ // Keep visual reference noteheads clear of maximal key signatures.
+ const positions=[[240,low,'low'],[355,high,'high']];
+ for(const [x,n,role] of positions){
+  const y=noteY(n,top,clefName);
+  ledger(root,x,n,top,clefName);
+  if(((C.KEY_ACC[key]||{})[n.step]||0)!==n.alter)accidentalGlyph(root,n.alter,x-(Math.abs(n.alter)===2?29:21),y,0.77);
+  const head=oval(root,x,y,10,6.3,false);head.setAttribute('class','range-bound-note');
+  head.setAttribute('stroke-width','2.5');
+  put(root,'text',{x,y:22,'text-anchor':'middle',fill:'#172b3f','font-size':17,'font-weight':'700',
+    class:'range-note-label'},noteLabel(n));
+  put(root,'text',{x,y:height-17,'text-anchor':'middle',fill:'#4e5d6d','font-size':12},role==='low'?'LOW LIMIT':'HIGH LIMIT');
+ }
+ target.appendChild(root);
+ const preferred=register==='full'?'entire permitted range':`${noteLabel(pl)}–${noteLabel(ph)}`;
+ const summary=document.createElement('div');summary.className='range-preview-summary';
+ summary.textContent=`Preferred: ${preferred} · green band (soft)`;
+ target.appendChild(summary);
+ return {valid:true,low,high,preferredLow:pl,preferredHigh:ph,clef:clefName,key};
+}
+
+const api={render,ledgerOffsets,verticalLayouts,rangePreview,spellWrittenMidi,preferredBand,noteY,signaturePositions,SIG_OFFSETS,measureGeometry,groupForBeaming,onsetFootprints,minimalWidth,partitionSystems,positionsForMeasure,timeSignatureGeometry,KEY_ACCENT_CORRECTION};g.SightSvg=api;
+if(typeof module!=='undefined'&&module.exports)module.exports=api;
+})(typeof window!=='undefined'?window:globalThis);
+
+</script>
+<script>
+/* Sight Reading Lab 0020 — offline user interface, audio and exporting. */
+(()=>{'use strict';
+const $=id=>document.getElementById(id),Core=window.SightCore;
+let current=null,audioContext=null,active=[],playToken=0;
+let importedSources=[];
+
+const PITCH_CLASSES=['C','C♯ / D♭','D','D♯ / E♭','E','F','F♯ / G♭','G','G♯ / A♭','A','A♯ / B♭','B'];
+function noteName(midi){if(midi===54)return 'G♭3 / F♯3';const octave=Math.floor(midi/12-1);return PITCH_CLASSES[midi%12].split(' / ').map(n=>n+octave).join(' / ');}
+function fillNoteChoices(){
+ for(const id of ['rangeMin','rangeMax','rhMin','rhMax','lhMin','lhMax']){
+  const select=$(id);select.replaceChildren();
+  for(let n=28;n<=96;n++){const o=document.createElement('option');o.value=String(n);o.textContent=noteName(n);select.appendChild(o);}
+ }
+ $('rhMin').value='60';$('rhMax').value='84';$('lhMin').value='38';$('lhMax').value='60';
+ setSingleDefaults();
+}
+function setSingleDefaults(){
+ const type=$('instrument').value,clef=$('clef').value;
+ const [lo,hi]=Core.DEFAULT_WRITTEN_RANGES[type==='trumpet'?'trumpet':clef]||[43,67];
+ $('rangeMin').value=String(lo);$('rangeMax').value=String(hi);
+}
+function syncKeyLabels(){
+ const instrument=$('instrument').value,trumpet=instrument==='trumpet',tonality=$('tonality').value;
+ $('keyLabel').textContent=trumpet?'Written key · B♭ trumpet':'Concert key';
+ const selection=$('key').value,keys=Core.availableKeys(instrument,tonality);
+ const oldPc=Core.KEY_PC[selection];
+ $('key').replaceChildren();
+ for(const k of keys){
+  const option=document.createElement('option');option.value=k;
+  const printed=Core.writtenTonic(k,instrument);
+  option.textContent=trumpet?`${printed} (concert ${k})`:k;
+  $('key').appendChild(option);
+ }
+ const equivalent=keys.find(k=>Core.KEY_PC[k]===oldPc);
+ $('key').value=keys.includes(selection)?selection:equivalent||keys[0];
+}
+function getSettings(){return {
+ instrument:$('instrument').value,clef:$('clef').value,key:$('key').value,
+ tonality:$('tonality').value,style:$('style').value,bars:Number($('bars').value),meter:$('meter').value,restMode:$('restMode').value,dotted:$('dotted').checked,triplets:$('triplets').checked,tempoMarking:$('tempoMarking').value,maxLeap:Number($('maxLeap').value),
+ difficulty:$('difficulty').value,accompaniment:$('accompaniment').value,generatorMode:$('generatorMode').value,corpusSource:(Number($('corpusSource').value)>0?SightCorpus.sources[Number($('corpusSource').value)-1]?.id||'INVALID-SOURCE-NUMBER':''),
+ minorVariant:$('minorVariant').value,figureMode:$('figureMode').value,shortestNote:Number($('shortestNote').value),
+ range:[Number($('rangeMin').value),Number($('rangeMax').value)],register:$('register').value,
+ rhRange:[Number($('rhMin').value),Number($('rhMax').value)],rhRegister:$('rhRegister').value,
+ lhRange:[Number($('lhMin').value),Number($('lhMax').value)],lhRegister:$('lhRegister').value,
+ seed:(Number($('seed').value)||1)>>>0,tempo:Number($('tempo').value)
+};}
+function sanitizeInstruments(){const s=getSettings();$('corpusSource').disabled=s.generatorMode!=='corpus';$('clefRow').hidden=s.instrument!=='trombone';$('pianoRow').hidden=s.instrument!=='piano';
+ $('pianoRanges').hidden=s.instrument!=='piano';$('singleRangeRow').hidden=s.instrument==='piano';
+ $('minorVariantRow').hidden=s.tonality!=='minor';$('clef').disabled=s.instrument!=='trombone';}
+function updateRangePreviews(){
+ const settings=getSettings(), key=Core.writtenKey(settings.key,settings.instrument,settings.tonality);
+ if(settings.instrument==='piano'){
+  SightSvg.rangePreview($('rhRangePreview'),{clef:'treble',key,range:settings.rhRange,register:settings.rhRegister,partName:'Right hand'});
+  SightSvg.rangePreview($('lhRangePreview'),{clef:'bass',key,range:settings.lhRange,register:settings.lhRegister,partName:'Left hand'});
+ }else{
+  SightSvg.rangePreview($('singleRangePreview'),{clef:settings.instrument==='trumpet'?'treble':settings.clef,key,
+   range:settings.range,register:settings.register,partName:settings.instrument==='trumpet'?'B-flat trumpet':'Trombone'});
+ }
+}
+function stop(){playToken++;for(const a of active){try{a.stop();}catch{}}active=[];$('playBtn').textContent='▶  Play example';$('playBtn').classList.remove('playing');$('mobilePlay').textContent='▶ Play';$('mobilePlay').setAttribute('aria-label','Play score');}
+function build(){sanitizeInstruments();const s=getSettings();stop();updateRangePreviews();const audit=$('exerciseMode').value;
+ try{current=audit==='generated'?Core.score(s):Core.makeAudit(audit,s);
+  const issues=Core.validate(current);if(issues.length)throw new Error(issues.join('; '));
+  SightSvg.render($('paper'),current,{showHarmony:$('harmony').checked});
+  const mode=s.tonality==='minor'?s.minorVariant+' minor':'major';
+  const writtenLabel=current.writtenTonic+' '+mode,concertLabel=current.key+' '+mode;
+  const rangeDescription=s.instrument==='piano'?`RH ${noteName(s.rhRange[0])}–${noteName(s.rhRange[1])} · LH ${noteName(s.lhRange[0])}–${noteName(s.lhRange[1])}`:`${noteName(s.range[0])}–${noteName(s.range[1])}`;
+  $('corpusCredit').textContent=current.metadata.corpusSources?.length?`Corpus references: ${current.metadata.corpusSources.length} of ${SightCorpus.sources.length} available · ${current.metadata.corpusRhythmBars}/${current.measures.length} bars with source-meter rhythms · ${current.metadata.corpusHarmonyBars||0} bars with source harmonies · form ${current.metadata.corpusPhraseForm||'A'} · ${current.metadata.corpusSelectionStrategy||'weighted'} selection · source IDs and rights are included in ABC notes.`:'';
+  $('corpusCredit').hidden=!current.metadata.corpusSources?.length;
+  const q=current.qualityMetrics;
+  $('qualityStats').textContent=q?`Descriptive metrics (not a musical quality rating): ${q.uniquePitches} distinct pitches · ${Math.round(q.intervalTrigramDiversity*100)}% unique 3-interval patterns · ${q.alternatingSixNoteCycles} long two-note alternations · ${q.uniquePhraseProfiles}/${q.phraseCount} distinct phrase profiles${current.metadata.corpusPhraseForm?' · form '+current.metadata.corpusPhraseForm:''}.`:'';
+  $('note').textContent=`${current.measures.length} bars · ${current.meter.join('/')} · ${writtenLabel} (written)${s.instrument==='trumpet'?' · '+concertLabel+' (concert)':''} · ${audit==='generated'?`${rangeDescription} · ${s.figureMode} · seed ${s.seed}`:'engraving audit (fixed pitches; range/figures not applied)'}`;
+  $('status').textContent=`${current.metadata.title} · ${current.measures.length} bars · ${current.parts.map(p=>p.clef).join(' / ')}`;
+  $('warnings').hidden=true;$('warnings').textContent='';
+  $('abc').value=Core.toABC(current);$('generationBadge').textContent=audit!=='generated'?'HAND-CURATED AUDIT':s.generatorMode==='corpus'?'GENERATED · CORPUS VARIATION':'GENERATED · RULE-BASED';
+  $('scoreTitle').textContent=current.metadata.title;
+ }catch(err){current=null;$('paper').replaceChildren();$('abc').value='';$('status').textContent='No valid exercise for the selected settings.';
+  $('warnings').textContent='Generation/rendering error: '+err.message;$('warnings').hidden=false;console.error(err);}
+}
+function nextSeed(){$('seed').value=((Math.random()*0xffffffff)>>>0)||1;build();}
+function download(filename,txt,type){const a=document.createElement('a'),blob=new Blob([txt],{type});a.href=URL.createObjectURL(blob);a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1500);}
+function clickDownloadABC(){if(current)download(`sight-reading-${current.metadata.seed||'audit'}.abc`,Core.toABC(current),'text/vnd.abc;charset=utf-8');}
+function clickDownloadSVG(){const svg=$('paper').querySelector('svg');if(svg)download(`sight-reading-${current?.metadata?.seed||'audit'}.svg`,new XMLSerializer().serializeToString(svg),'image/svg+xml;charset=utf-8');}
+async function play(){if(!current)return;if(active.length){stop();return;}const AC=window.AudioContext||window.webkitAudioContext;
+ if(!AC){$('warnings').textContent='Web Audio is not supported in this browser.';$('warnings').hidden=false;return;}
+ try{const token=++playToken;audioContext=audioContext||new AC();await audioContext.resume();if(token!==playToken)return;
+  const bpm=Number($('tempo').value),beatSec=60/bpm,base=audioContext.currentTime+0.08;
+  let sound=[];const units=current.meter[0]*8/current.meter[1];for(let i=0;i<current.measures.length;i++)for(const p of current.parts)for(const n of current.measures[i].voices[p.id]||[])
+   if(!n.rest)sound.push({midi:n.midi,t:base+(i*units+n.start)/2*beatSec,duration:n.duration/2*beatSec,part:p.id});
+  for(const e of sound){const osc=audioContext.createOscillator(),gain=audioContext.createGain();
+   osc.type=e.part==='lh'?'sine':'triangle';osc.frequency.value=440*Math.pow(2,(e.midi-69)/12);
+   gain.gain.setValueAtTime(0.0001,e.t);gain.gain.exponentialRampToValueAtTime(e.part==='lh'?0.045:0.085,e.t+0.02);
+   gain.gain.setValueAtTime(e.part==='lh'?0.045:0.085,e.t+Math.max(0.03,e.duration-0.08));
+   gain.gain.exponentialRampToValueAtTime(0.0001,e.t+e.duration);
+   osc.connect(gain).connect(audioContext.destination);osc.start(e.t);osc.stop(e.t+e.duration+0.02);active.push(osc);
+  }
+  $('playBtn').textContent='■  Stop playback';$('playBtn').classList.add('playing');$('mobilePlay').textContent='■ Stop';$('mobilePlay').setAttribute('aria-label','Stop score playback');
+  const stopAt=base+current.measures.length*units/2*beatSec;
+  setTimeout(()=>{if(playToken===token)stop();},Math.max(10,(stopAt-audioContext.currentTime)*1000+150));
+ }catch(err){$('warnings').textContent='Audio error: '+err.message;$('warnings').hidden=false;stop();}}
+function wire(){
+ fillNoteChoices();syncKeyLabels();
+ $('corpusSource').max=String(SightCorpus.sources.length);
+ $('corpusCount').textContent=String(SightCorpus.sources.length);
+ for(const id of ['generatorMode','corpusSource','key','minorVariant','figureMode','shortestNote','meter','restMode','dotted','triplets','difficulty','accompaniment','exerciseMode','style','bars','maxLeap','harmony','rangeMin','rangeMax','rhMin','rhMax','lhMin','lhMax','register','rhRegister','lhRegister'])$(id).addEventListener('change',build);
+ $('instrument').addEventListener('change',()=>{setSingleDefaults();syncKeyLabels();build();});
+ $('tonality').addEventListener('change',()=>{syncKeyLabels();build();});
+ $('clef').addEventListener('change',()=>{setSingleDefaults();build();});
+ $('corpusImport').addEventListener('change',async()=>{
+  const files=Array.from($('corpusImport').files||[]);if(!files.length)return;
+  let summaries=[],errors=[];
+  for(const file of files){
+   try{
+    if(file.size>5_000_000)throw Error('File exceeds 5 MB limit');
+    const text=await file.text();let newSources,detail;
+    if(/\.json$/i.test(file.name)){
+     const obj=JSON.parse(text);newSources=Array.isArray(obj)?obj:obj.sources;
+     if(!Array.isArray(newSources))throw Error('JSON must contain an array of sources');
+     detail='corpus JSON';
+    }else{
+     const clean=file.name.replace(/\.(musicxml|xml)$/i,'').replace(/[^a-z0-9-]/gi,'-').slice(0,32);
+     const parsed=SightMusicXML.parse(text,{filename:file.name,group:clean});
+     newSources=parsed.sources;detail=parsed.report.part||'melody';
+    }
+    const added=SightCorpus.addSources(newSources);
+    importedSources.push(...added);
+    summaries.push(`${file.name}: +${added.length} phrases (${detail})`);
+   }catch(err){errors.push(`${file.name}: ${err.message}`);}
+  }
+  $('corpusImport').value='';
+  $('corpusCount').textContent=String(SightCorpus.sources.length);
+  $('corpusSource').max=String(SightCorpus.sources.length);
+  $('importStatus').textContent=[...summaries,...errors.map(x=>'Error: '+x)].join(' · ')||'No files imported';
+  $('importStatus').style.color=errors.length?'#ffcb97':'#b3e1ce';
+  if(summaries.length)build();
+ });
+ $('exportCorpus').addEventListener('click',()=>{
+  if(!importedSources.length){$('importStatus').textContent='Import a MusicXML or corpus JSON file before exporting.';return;}
+  download('sight-reading-corpus-0014.json',JSON.stringify({format:'sightreading-corpus-0012',sources:importedSources},null,2),'application/json');
+ });
+ $('seed').addEventListener('change',build);$('generate').addEventListener('click',nextSeed);
+ $('renderCurrent').addEventListener('click',build);$('randomSeed').addEventListener('click',nextSeed);
+ $('copySeed').addEventListener('click',()=>navigator.clipboard?.writeText($('seed').value).catch(()=>{}));
+ $('print').addEventListener('click',()=>window.print());$('downloadABC').addEventListener('click',clickDownloadABC);
+ $('downloadSVG').addEventListener('click',clickDownloadSVG);$('playBtn').addEventListener('click',play);
+ function updateTempo(raw,byMarking=false){
+  const n=Math.max(30,Math.min(240,Math.round(Number(raw)||84)));
+  $('tempo').value=String(n);$('tempoNumber').value=String(n);
+  $('tempoValue').textContent=n+' bpm';
+  if(!byMarking)$('tempoMarking').value='';
+  if(current){current.tempo=n;current.tempoMarking=$('tempoMarking').value;$('abc').value=Core.toABC(current);}
+  if(active.length)stop();
+ }
+ $('tempoMarking').addEventListener('change',()=>{const option=$('tempoMarking').selectedOptions[0];if(option.dataset.bpm)updateTempo(option.dataset.bpm,true);else if(current){current.tempoMarking='';$('abc').value=Core.toABC(current);}});
+ $('tempo').addEventListener('input',()=>updateTempo($('tempo').value));
+ $('tempoNumber').addEventListener('change',()=>updateTempo($('tempoNumber').value));
+ $('tempoMinus').addEventListener('click',()=>updateTempo(Number($('tempo').value)-1));
+ $('tempoPlus').addEventListener('click',()=>updateTempo(Number($('tempo').value)+1));
+ $('copyABC').addEventListener('click',()=>navigator.clipboard?.writeText($('abc').value).catch(()=>{}));
+ $('toggleABC').addEventListener('click',()=>{$('abcPanel').hidden=!$('abcPanel').hidden;});
+ // Score-first mobile workspace. No Fullscreen API: works from file:// on iOS.
+ const openPanel=()=>{document.body.classList.add('settings-open');$('sidebarBackdrop').hidden=false;$('openSettings').setAttribute('aria-expanded','true');};
+ const closePanel=()=>{document.body.classList.remove('settings-open');$('sidebarBackdrop').hidden=true;$('openSettings').setAttribute('aria-expanded','false');};
+ $('openSettings').addEventListener('click',openPanel);
+ $('closeSettings').addEventListener('click',closePanel);
+ $('sidebarBackdrop').addEventListener('click',closePanel);
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')closePanel();});
+ $('mobileGenerate').addEventListener('click',()=>{nextSeed();closePanel();$('scoreScroller').scrollTo({top:0,left:0});});
+ $('generate').addEventListener('click',closePanel);
+ $('renderCurrent').addEventListener('click',closePanel);
+ $('mobilePlay').addEventListener('click',()=>{$('playBtn').click();});
+ const zoomSteps=[1,1.15,1.35,1.6,2];let zoomIndex=0;
+ const setZoom=()=>{document.documentElement.style.setProperty('--score-zoom',String(zoomSteps[zoomIndex]));
+  $('zoomOut').disabled=zoomIndex===0;$('zoomIn').disabled=zoomIndex===zoomSteps.length-1;};
+ $('zoomIn').addEventListener('click',()=>{zoomIndex=Math.min(zoomSteps.length-1,zoomIndex+1);setZoom();});
+ $('zoomOut').addEventListener('click',()=>{zoomIndex=Math.max(0,zoomIndex-1);setZoom();});
+ $('scoreFocus').addEventListener('click',()=>{const on=document.body.classList.toggle('score-focus');$('scoreFocus').setAttribute('aria-pressed',String(on));closePanel();});
+ setZoom();build();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire);else wire();
+})();
+
+</script>
+<script>
+// Relative to this page so both GitHub Pages project paths and custom domains work.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js')
+      .catch(error => console.warn('Offline installation unavailable:', error));
+  });
+}
+</script>
+</body>
+</html>

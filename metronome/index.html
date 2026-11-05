@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1520">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Metronome">
+  <meta name="description" content="An accurate offline metronome with Italian tempo markings, time signatures, accents, and tap tempo.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <title>Metronome · Tempo & Meter</title>
+  <style>
+    :root { color-scheme: dark; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --bg:#0b1520; --panel:#132230; --well:#10202d; --stroke:#2c4251; --text:#edf4f7;
+      --muted:#9cb0be; --cyan:#53d7c5; --cyan-weak:#1c584f; --amber:#ffc46b;
+    }
+    * { box-sizing: border-box; }
+    html { min-height:100%; background:var(--bg); }
+    body { margin:0; min-height:100svh; color:var(--text); background:
+      radial-gradient(ellipse 75% 38% at 50% -10%, #1e4a55 0%, transparent 95%),var(--bg);
+      -webkit-tap-highlight-color:transparent; overscroll-behavior-y:contain; }
+    button, input, select { font:inherit; }
+    button { touch-action:manipulation; cursor:pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline:2px solid var(--cyan);outline-offset:3px; }
+    .app { width:min(100%,500px); margin:auto; padding: max(14px,env(safe-area-inset-top)) max(15px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(15px,env(safe-area-inset-left)); }
+    .top { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:13px; }
+    .brand { display:flex; align-items:center; gap:9px; letter-spacing:.15em; font-weight:850; font-size: .84rem; }
+    .brand-mark { width:29px;height:29px; display:grid;place-items:center; border-radius:9px; background:#20483f;color:var(--cyan); }
+    .brand-mark svg { width:21px;height:21px; }
+    .topnote { color:var(--muted); font-size:.74rem; font-variant-numeric:tabular-nums; }
+    .surface { border:1px solid var(--stroke); border-radius:19px; background:linear-gradient(160deg,#172938,#11202e); box-shadow:0 18px 65px #01070c35; }
+    .tempo { padding:16px 17px 14px; text-align:center; }
+    .eyebrow {font-size:.68rem; font-weight:750; letter-spacing:.16em; text-transform:uppercase;color:var(--muted);}
+    .tempo-controls { display:flex; align-items:center;justify-content:center;gap:12px; margin:3px auto 0; }
+    .stepper {flex:0 0 45px;width:45px;height:45px;border-radius:13px;border:1px solid #3c5763;background:#1d3442;color:#eefcff;font-size:1.6rem;line-height:1;}
+    .stepper:active {background:var(--cyan-weak);}
+    .tempo-number {display:flex;align-items:center;gap:5px;min-width:0;}
+    #bpm {width:3ch; min-width:0; padding:0; border:0;background:transparent;color:var(--text);text-align:center; font-size:clamp(3.5rem,18vw,5.5rem);font-weight:800;letter-spacing:-.065em;line-height:1.09; font-variant-numeric:tabular-nums;appearance:textfield;-moz-appearance:textfield;}
+    #bpm::-webkit-inner-spin-button, #bpm::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+    .unit {align-self:flex-end;padding-bottom:14px; font-size:.74rem;color:var(--muted);font-weight:750;letter-spacing:.06em; }
+    .tempo-info {display:flex;align-items:center;justify-content:center;gap:8px; min-height:19px;color:var(--muted);font-size:.78rem;}
+    .beat-symbol {color:var(--cyan);font-weight:800;font-size:1rem;}
+    .setting-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px; }
+    .field {min-width:0; background:var(--panel);border:1px solid var(--stroke);border-radius:13px;padding:8px 10px 9px; }
+    .field label {display:block;font-size:.68rem;letter-spacing:.035em;color:var(--muted);font-weight:670;margin-bottom:4px;}
+    .field select {display:block;width:100%;min-width:0; color:var(--text);background:transparent; border:0; padding:2px 16px 2px 0; font-size:.95rem;font-weight:700;appearance:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='m1 1 6 6 6-6' fill='none' stroke='%239cb0be' stroke-width='1.8'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 2px center; }
+    .field select option {background:#182b3b;color:#fff;}
+    .pulse {margin-top:10px; background:var(--panel);border:1px solid var(--stroke);border-radius:16px;padding:13px 12px 12px;text-align:center;}
+    .pulse-head { display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--muted);font-size:.75rem;font-variant-numeric:tabular-nums; }
+    #beatText {font-weight:700;color:var(--text);}
+    .beat-dots {min-height:37px;display:flex;align-items:center;justify-content:center;gap:clamp(7px,2.3vw,12px);margin-top:8px;}
+    .dot { width:clamp(18px,6vw,27px); height:clamp(18px,6vw,27px); border-radius:50%;border:2px solid #496070; background:#283b49;transition:background .08s ease, transform .08s ease, border-color .08s ease;}
+    .dot.downbeat {border-color:#a47940;}
+    .dot.group {border-color:#4d9c91;}
+    .dot.active {background:var(--cyan);border-color:#8ff9e8;transform:scale(1.15);box-shadow:0 0 0 4px #4bd2bd21;}
+    .dot.downbeat.active {background:var(--amber);border-color:#ffdc9a;box-shadow:0 0 0 4px #ffc46b25;}
+    .pulse-foot {display:flex;align-items:center;justify-content:center;gap:6px; margin-top:6px;color:var(--muted); font-size:.68rem;}
+    .actions {display:grid;grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);gap:10px;margin-top:11px;}
+    .action {min-height:58px;border-radius:14px;border:1px solid #415966;background:#223847;color:var(--text);font-size:1.05rem;font-weight:800;display:flex;align-items:center;justify-content:center;gap:10px;}
+    .action svg {width:20px;height:20px;flex:none;}
+    .primary {background:var(--cyan);color:#08251f;border-color:#72ecda;}
+    .primary:active {background:#92f4e5;}
+    .primary.running {background:#e8a969;border-color:#ffcd8f;color:#2d1d0a;}
+    .action:not(.primary):active {background:#2e4e60;}
+    .bottom-row {display:flex;align-items:center;gap:11px;justify-content:space-between; margin-top:12px;padding:0 2px;}
+    .check {display:flex;align-items:center;gap:7px;color:var(--muted);font-size:.78rem;white-space:nowrap;cursor:pointer;}
+    .check input {margin:0;width:17px;height:17px;accent-color:var(--cyan);}
+    .volume {display:flex;align-items:center;gap:6px;min-width:92px;max-width:148px;flex:1;color:var(--muted);font-size:.73rem;}
+    .volume input {min-width:0;width:100%;accent-color:var(--cyan);height:24px;}
+    .grouping {margin-top:10px;display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--stroke);border-radius:12px;padding:8px 11px;}
+    .grouping label {font-size:.77rem;color:var(--muted);}
+    .grouping select {margin-left:auto;background:var(--well);color:var(--text);font-size:.82rem;border:1px solid var(--stroke);border-radius:7px;padding:5px 8px;}
+    .tip {margin:11px 2px 0;color:var(--muted);text-align:center;font-size:.72rem;line-height:1.35;}
+    .help { margin:11px 1px 0; font-size:.77rem;color:var(--muted); }
+    .help summary {cursor:pointer;text-align:center;list-style:none;}
+    .help summary::-webkit-details-marker {display:none;}
+    .help p {background:var(--panel);padding:12px;border-radius:10px;line-height:1.5;}
+    .sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
+    [hidden] {display:none!important;}
+    @media (max-height:690px) and (max-width:500px) {
+      .app {padding-top:max(9px,env(safe-area-inset-top));padding-bottom:max(7px,env(safe-area-inset-bottom));}
+      .top {margin-bottom:8px;} .tempo {padding:9px 12px 9px;} .tempo-controls {margin-top:0;}
+      #bpm {font-size:clamp(3.35rem,17vw,4.45rem);} .unit {padding-bottom:10px;}
+      .stepper {width:42px;height:42px;flex-basis:42px;} .setting-grid {gap:8px;margin-top:8px;}
+      .field {padding:6px 9px 7px;} .pulse {margin-top:8px;padding:9px 10px 8px;}
+      .beat-dots {min-height:29px;margin-top:4px;} .actions {margin-top:9px;gap:8px;} .action {min-height:50px;}
+      .bottom-row {margin-top:8px;} .tip {margin-top:7px;} .help {margin-top:6px;}
+    }
+    @media (max-width:360px) { .app {padding-left:10px;padding-right:10px;} .brand {font-size:.77rem;} .topnote {font-size:.68rem;} .action {font-size:.95rem;} .dot {width:18px;height:18px;} .check {font-size:.74rem;} }
+
+    @media (orientation:landscape) and (max-height:500px) and (min-width:600px) {
+      .app {width:min(100%,980px);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+        column-gap:12px;row-gap:7px;padding-top:max(6px,env(safe-area-inset-top));padding-bottom:max(6px,env(safe-area-inset-bottom));}
+      .top {grid-column:1 / -1;grid-row:1;margin-bottom:0;}
+      .tempo {grid-column:1;grid-row:2;padding:9px 12px;}
+      .tempo-controls {margin-top:0;} #bpm {font-size:clamp(3.2rem,7vw,4rem);}
+      .unit {padding-bottom:9px;} .stepper {width:40px;height:40px;flex-basis:40px;}
+      .setting-grid {grid-column:2;grid-row:2;margin-top:0;align-self:stretch;}
+      .field {padding:7px 9px;}
+      .grouping {grid-column:2;grid-row:3;margin:0;}
+      .pulse {grid-column:1;grid-row:3 / span 3;margin:0;align-self:stretch;display:flex;flex-direction:column;justify-content:center;padding:8px 10px;}
+      .beat-dots {min-height:25px;margin-top:4px;} .dot {width:21px;height:21px;}
+      .actions {grid-column:2;grid-row:4;margin:0;align-self:center;}
+      .action {min-height:49px;}
+      .bottom-row {grid-column:2;grid-row:5;margin:0;align-self:center;}
+      .tip,.help {display:none;}
+    }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after {transition:none!important;animation:none!important;} }
+  </style>
+</head>
+<body>
+<main class="app" aria-label="Metronome">
+  <header class="top">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M6 19h12M9 19 12 4l3 15M12 8l6-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span> METRONOME</div>
+    <span class="topnote" id="topNote">Ready to play</span>
+  </header>
+  <section class="surface tempo" aria-label="Tempo">
+    <div class="eyebrow">Tempo</div>
+    <div class="tempo-controls">
+      <button class="stepper" id="minus" aria-label="Decrease tempo by one BPM">−</button>
+      <div class="tempo-number"><label class="sr-only" for="bpm">Beats per minute</label><input id="bpm" type="number" min="20" max="300" step="1" value="92" inputmode="numeric" aria-describedby="tempoHint"><span class="unit">BPM</span></div>
+      <button class="stepper" id="plus" aria-label="Increase tempo by one BPM">+</button>
+    </div>
+    <div class="tempo-info" id="tempoHint"><span class="beat-symbol" id="beatSymbol">♩</span><span id="tempoDescription">Andante · 76–108 BPM</span></div>
+  </section>
+  <section class="setting-grid" aria-label="Tempo and time signature settings">
+    <div class="field"><label for="italian">Italian tempo name</label>
+      <select id="italian"><option value="custom">Custom BPM</option>
+        <option value="grave">Grave</option><option value="largo">Largo</option><option value="larghetto">Larghetto</option><option value="adagio">Adagio</option><option value="andante" selected>Andante</option><option value="moderato">Moderato</option><option value="allegretto">Allegretto</option><option value="allegro">Allegro</option><option value="vivace">Vivace</option><option value="presto">Presto</option><option value="prestissimo">Prestissimo</option>
+      </select>
+    </div>
+    <div class="field"><label for="signature">Time signature</label><select id="signature">
+      <optgroup label="Simple meters"><option>2/4</option><option>3/4</option><option selected>4/4</option><option>5/4</option><option>6/4</option><option>7/4</option><option>2/2</option><option>3/2</option><option>4/2</option><option>3/8</option></optgroup>
+      <optgroup label="Compound meters"><option>6/8</option><option>9/8</option><option>12/8</option></optgroup>
+      <optgroup label="Asymmetric meters"><option>5/8</option><option>7/8</option></optgroup>
+    </select></div>
+  </section>
+  <div class="grouping" id="groupingRow" hidden><label for="grouping">Accent grouping</label><select id="grouping"></select></div>
+  <section class="pulse" aria-label="Beat display">
+    <div class="pulse-head"><span id="barText">Bar 1</span><span id="beatText">Beat 1 / 4</span></div>
+    <div class="beat-dots" id="beatDots" role="img" aria-label="Four beats in a bar"></div>
+    <div class="pulse-foot" id="meterDescription">4 quarter-note beats per bar</div>
+  </section>
+  <section class="actions" aria-label="Playback">
+    <button class="action primary" id="play" aria-label="Start metronome"><svg id="playIcon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m8 4 12 8-12 8V4Z"/></svg><span id="playText">Start</span></button>
+    <button class="action" id="tap" aria-label="Tap tempo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v5M5 7l3 3m11-3-3 3M4 15l7 7 9-9a2 2 0 0 0-3-3l-5 5V7a2 2 0 0 0-4 0v10"/></svg><span>Tap tempo</span></button>
+  </section>
+  <div class="bottom-row">
+    <label class="check" title="Add quieter clicks between the main beats"><input type="checkbox" id="subdivide"><span>Subdivisions</span></label>
+    <label class="check" title="Accent the first beat of each bar"><input type="checkbox" id="accent" checked><span>Downbeat</span></label>
+    <label class="volume" for="volume"><span>Vol.</span><input type="range" id="volume" min="0" max="100" value="65" aria-label="Click volume"></label>
+  </div>
+  <p class="tip" id="tip">Tap the BPM number to type a tempo, or choose an Italian marking.</p>
+  <details class="help"><summary>Meter and tempo notes ⌄</summary><p>In simple meters the BPM counts the denominator note (for example, ♩ in 4/4). In 6/8, 9/8 and 12/8 it counts the dotted-quarter pulse. In 5/8 and 7/8 it counts eighth notes, with secondary accents at group starts. Switch on <strong>Subdivisions</strong> to hear the smaller notes between main beats. Italian markings describe approximate, overlapping ranges rather than fixed speeds. Tap tempo averages your recent taps. Audio begins after you press Start, as required by mobile browsers. Some mobile browsers pause audio when the screen locks.</p></details>
+</main>
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const ui = Object.fromEntries(['bpm','minus','plus','italian','signature','grouping','groupingRow','beatSymbol','tempoDescription','barText','beatText','beatDots','meterDescription','play','playIcon','playText','tap','subdivide','accent','volume','topNote','tip'].map(id=>[id,$(id)]));
+  const PRESETS = {
+    grave:{bpm:40,min:25,max:45,label:'Grave'}, largo:{bpm:50,min:40,max:60,label:'Largo'},
+    larghetto:{bpm:63,min:60,max:66,label:'Larghetto'}, adagio:{bpm:72,min:66,max:76,label:'Adagio'},
+    andante:{bpm:92,min:76,max:108,label:'Andante'}, moderato:{bpm:114,min:108,max:120,label:'Moderato'},
+    allegretto:{bpm:124,min:112,max:132,label:'Allegretto'}, allegro:{bpm:144,min:120,max:168,label:'Allegro'},
+    vivace:{bpm:166,min:156,max:176,label:'Vivace'}, presto:{bpm:184,min:168,max:200,label:'Presto'},
+    prestissimo:{bpm:220,min:200,max:300,label:'Prestissimo'}
+  };
+  const GROUPS = {'5/8':['2+3','3+2'],'7/8':['2+2+3','2+3+2','3+2+2']};
+  const STORAGE = 'pwa-metronome-settings-v1';
+  const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
+  const isCompound=s=>['6/8','9/8','12/8'].includes(s);
+  const isOdd=s=>Object.hasOwn(GROUPS,s);
+  let bpm=92, context=null, mainGain=null, playing=false, scheduleTimer=null, frameId=null;
+  let nextTime=0, step=0, currentBeat=-1, currentBar=1, displayQueue=[], taps=[], playbackGeneration=0, wakeLock=null;
+
+  function loadSettings() {
+    try {
+      const d=JSON.parse(localStorage.getItem(STORAGE)||'{}');
+      if(Number.isFinite(d.bpm)) bpm=clamp(Math.round(d.bpm),20,300);
+      if(d.signature && [...ui.signature.options].some(o=>o.value===d.signature)) ui.signature.value=d.signature;
+      if(d.italian && [...ui.italian.options].some(o=>o.value===d.italian)) ui.italian.value=d.italian;
+      if(typeof d.accent==='boolean') ui.accent.checked=d.accent;
+      if(typeof d.subdivide==='boolean') ui.subdivide.checked=d.subdivide;
+      if(Number.isFinite(d.volume)) ui.volume.value=clamp(d.volume,0,100);
+      if(typeof d.grouping==='string') ui.grouping.dataset.preferred=d.grouping;
+    } catch (_) { /* Local settings are optional. */ }
+    ui.bpm.value=bpm;
+  }
+  function saveSettings() {
+    try { localStorage.setItem(STORAGE,JSON.stringify({bpm,italian:ui.italian.value,signature:ui.signature.value,
+      grouping:ui.grouping.value,accent:ui.accent.checked,subdivide:ui.subdivide.checked,volume:Number(ui.volume.value)})); }
+    catch (_) { /* Private mode may disallow storage. */ }
+  }
+  function measure() {
+    const signature=ui.signature.value;
+    const [n,denominator]=signature.split('/').map(Number);
+    const compound=isCompound(signature), odd=isOdd(signature);
+    const beatCount=compound?n/3:n;
+    const unit=compound?'dotted quarter':denominator===2?'half':denominator===4?'quarter':'eighth';
+    const symbol=compound?'♩.':denominator===2?'𝅗𝅥':denominator===4?'♩':'♪';
+    const group=(odd?ui.grouping.value:'') || (GROUPS[signature]?.[0]||'');
+    const groupOffsets=[];
+    if(odd) {let cursor=0; for(const part of group.split('+').map(Number)) {groupOffsets.push(cursor);cursor+=part;}}
+    return {signature,n,denominator,compound,odd,beatCount,unit,symbol,group,groupOffsets,
+      divisions:ui.subdivide.checked?(compound?3:2):1};
+  }
+  function setTempo(value,{custom=true}={}) {
+    bpm=clamp(Math.round(Number(value)||92),20,300);
+    ui.bpm.value=bpm;
+    if(custom) ui.italian.value='custom';
+    updateTempoInfo();saveSettings();
+  }
+  function updateTempoInfo() {
+    const m=measure();ui.beatSymbol.textContent=m.symbol;
+    if(ui.italian.value!=='custom') {
+      const p=PRESETS[ui.italian.value];
+      ui.tempoDescription.textContent=`${p.label} · approx. ${p.min}–${p.max} BPM`;
+    } else {
+      const closest=Object.values(PRESETS).reduce((best,p)=>Math.abs(p.bpm-bpm)<Math.abs(best.bpm-bpm)?p:best);
+      ui.tempoDescription.textContent=`${m.unit} pulse · near ${closest.label}`;
+    }
+  }
+  function updateMeter(resetBar=false) {
+    const sig=ui.signature.value;
+    const opts=GROUPS[sig]||[];
+    ui.groupingRow.hidden=!opts.length;
+    const prior=ui.grouping.value||ui.grouping.dataset.preferred;
+    ui.grouping.replaceChildren(...opts.map(p=>{const opt=document.createElement('option');opt.value=p;opt.textContent=p;return opt;}));
+    if(opts.includes(prior)) ui.grouping.value=prior;
+    delete ui.grouping.dataset.preferred;
+    const m=measure();
+    ui.beatDots.replaceChildren(...Array.from({length:m.beatCount},(_,i)=>{
+      const dot=document.createElement('span');dot.className='dot'+(i===0?' downbeat':m.groupOffsets.includes(i)?' group':'');return dot;
+    }));
+    ui.beatDots.setAttribute('aria-label',`${m.beatCount} ${m.unit} beats per bar`);
+    ui.meterDescription.textContent=m.odd?`${m.group} eighth-note grouping`:m.compound?
+      `${m.beatCount} dotted-quarter beats · ${m.n} eighth notes`:`${m.beatCount} ${m.unit}-note beats per bar`;
+    if(resetBar) {currentBeat=-1;currentBar=1;}
+    setVisualBeat(currentBeat<0?0:Math.min(currentBeat,m.beatCount-1),currentBar, currentBeat>=0);
+    updateTempoInfo();
+  }
+  function setVisualBeat(beat,bar,active) {
+    const total=measure().beatCount;
+    ui.barText.textContent=`Bar ${bar}`;
+    ui.beatText.textContent=`Beat ${beat+1} / ${total}`;
+    [...ui.beatDots.children].forEach((node,i)=>node.classList.toggle('active',active&&i===beat));
+  }
+  function ensureContext() {
+    if(!context) context=new (window.AudioContext||window.webkitAudioContext)({latencyHint:'interactive'});
+    return context;
+  }
+  function makeSound(time,kind) {
+    if(!mainGain) return;
+    const ctx=context, osc=ctx.createOscillator(), gain=ctx.createGain();
+    const hz=kind==='down'?1260:kind==='group'?980:kind==='sub'?520:760;
+    const peak=kind==='down'?.48:kind==='group'?.35:kind==='sub'?.13:.27;
+    const duration=kind==='sub'?.032:.048;
+    osc.type='sine';osc.frequency.setValueAtTime(hz,time);
+    osc.frequency.exponentialRampToValueAtTime(hz*.72,time+duration);
+    gain.gain.setValueAtTime(Math.max(.0001,peak),time);
+    gain.gain.exponentialRampToValueAtTime(.0001,time+duration);
+    osc.connect(gain);gain.connect(mainGain);
+    osc.start(time);osc.stop(time+duration+.005);
+    osc.onended=()=>{try{osc.disconnect();gain.disconnect();}catch(_){}};
+  }
+  function schedule() {
+    if(!playing||!context) return;
+    const m=measure(), interval=60/bpm/m.divisions;
+    // A suspended/throttled tab must not replay a backlog of missed clicks.
+    const lag=context.currentTime-nextTime;
+    if(lag>.08){
+      const skip=Math.ceil((lag+.02)/interval);
+      step+=skip;nextTime+=skip*interval;
+      displayQueue=displayQueue.filter(event=>event.time>=context.currentTime-.03);
+    }
+    while(playing && nextTime<context.currentTime+.14) {
+      const beat=Math.floor(step/m.divisions)%m.beatCount;
+      const subdivision=step%m.divisions;
+      if(subdivision===0) {
+        const bar=Math.floor(step/(m.divisions*m.beatCount))+1;
+        const secondary=m.odd&&m.groupOffsets.includes(beat)&&beat!==0;
+        makeSound(nextTime,beat===0&&ui.accent.checked?'down':secondary?'group':'beat');
+        displayQueue.push({time:nextTime,beat,bar});
+      } else makeSound(nextTime,'sub');
+      step++;nextTime+=interval;
+    }
+  }
+  function render() {
+    if(!playing||!context)return;
+    const now=context.currentTime;
+    while(displayQueue.length&&displayQueue[0].time<=now+.004) {
+      const event=displayQueue.shift();currentBeat=event.beat;currentBar=event.bar;
+      setVisualBeat(currentBeat,currentBar,true);
+    }
+    frameId=requestAnimationFrame(render);
+  }
+  async function acquireWakeLock() {
+    try {if('wakeLock' in navigator&&!wakeLock)wakeLock=await navigator.wakeLock.request('screen');}catch(_){ /* Not universally supported. */ }
+  }
+  async function releaseWakeLock() {
+    if(wakeLock){try{await wakeLock.release();}catch(_){}wakeLock=null;}
+  }
+  async function start() {
+    if(playing)return;
+    try {
+      const ctx=ensureContext();
+      await ctx.resume();
+      if(playing)return;
+      playing=true;const generation=++playbackGeneration;
+      mainGain=ctx.createGain();mainGain.gain.value=Number(ui.volume.value)/100;
+      mainGain.connect(ctx.destination);
+      nextTime=ctx.currentTime+.065;step=0;currentBeat=-1;currentBar=1;displayQueue=[];
+      ui.play.classList.add('running');ui.playText.textContent='Stop';ui.playIcon.innerHTML='<rect x="5" y="4" width="5" height="16" rx="1"/><rect x="14" y="4" width="5" height="16" rx="1"/>';
+      ui.play.setAttribute('aria-label','Stop metronome');ui.topNote.textContent='Playing';
+      setVisualBeat(0,1,false);
+      schedule();scheduleTimer=setInterval(()=>{if(generation===playbackGeneration)schedule();},25);
+      render();acquireWakeLock();
+    } catch(e) {ui.topNote.textContent='Audio unavailable';ui.tip.textContent=`Could not start audio: ${e.message||e}`;}
+  }
+  function stop() {
+    if(!playing)return;
+    playing=false;playbackGeneration++;
+    if(scheduleTimer!==null){clearInterval(scheduleTimer);scheduleTimer=null;}
+    if(frameId!==null){cancelAnimationFrame(frameId);frameId=null;}
+    displayQueue=[];
+    if(mainGain){ const old=mainGain;mainGain=null;
+      const t=context.currentTime;old.gain.cancelScheduledValues(t);old.gain.setTargetAtTime(.0001,t,.008);
+      setTimeout(()=>{try{old.disconnect();}catch(_){}},250);
+    }
+    ui.play.classList.remove('running');ui.playText.textContent='Start';ui.playIcon.innerHTML='<path d="m8 4 12 8-12 8V4Z"/>';
+    ui.play.setAttribute('aria-label','Start metronome');ui.topNote.textContent='Ready to play';
+    currentBeat=-1;currentBar=1;setVisualBeat(0,1,false);releaseWakeLock();
+  }
+  function restartIfPlaying() {if(playing){stop();start();}}
+  function tapTempo(){
+    const now=performance.now();if(taps.length&&now-taps.at(-1)>2400)taps=[];
+    taps.push(now);if(taps.length>7)taps.shift();
+    if(taps.length>=2){
+      const intervals=taps.slice(1).map((t,i)=>t-taps[i]).filter(ms=>ms>190&&ms<3000).sort((a,b)=>a-b);
+      if(intervals.length){const center=Math.floor(intervals.length/2);const median=intervals.length%2?intervals[center]:(intervals[center-1]+intervals[center])/2;
+        setTempo(60000/median); ui.topNote.textContent=playing?'Playing · tap tempo':'Tap tempo set';}
+    } else {ui.topNote.textContent='Tap a few times';}
+  }
+  ui.minus.addEventListener('click',()=>setTempo(bpm-1));
+  ui.plus.addEventListener('click',()=>setTempo(bpm+1));
+  ui.bpm.addEventListener('input',()=>{const n=Number(ui.bpm.value);if(ui.bpm.value.trim()&&Number.isFinite(n)&&n>=20&&n<=300){bpm=Math.round(n);ui.italian.value='custom';updateTempoInfo();saveSettings();}});
+  ui.bpm.addEventListener('change',()=>setTempo(ui.bpm.value));
+  ui.bpm.addEventListener('blur',()=>setTempo(ui.bpm.value));
+  ui.italian.addEventListener('change',()=>{const preset=PRESETS[ui.italian.value]; if(preset)setTempo(preset.bpm,{custom:false});else {updateTempoInfo();saveSettings();}});
+  ui.signature.addEventListener('change',()=>{updateMeter(true);saveSettings();restartIfPlaying();});
+  ui.grouping.addEventListener('change',()=>{updateMeter(true);saveSettings();restartIfPlaying();});
+  ui.subdivide.addEventListener('change',()=>{saveSettings();restartIfPlaying();});
+  ui.accent.addEventListener('change',saveSettings);
+  ui.volume.addEventListener('input',()=>{saveSettings();if(mainGain&&context){mainGain.gain.setTargetAtTime(Number(ui.volume.value)/100,context.currentTime,.015);}});
+  ui.play.addEventListener('click',()=>playing?stop():start());
+  ui.tap.addEventListener('click',tapTempo);
+  window.addEventListener('keydown',e=>{
+    if(e.target.matches('input,select,button,textarea,summary')||e.repeat)return;
+    if(e.code==='Space'){e.preventDefault();playing?stop():start();}
+    else if(e.key==='ArrowUp'){e.preventDefault();setTempo(bpm+1);}
+    else if(e.key==='ArrowDown'){e.preventDefault();setTempo(bpm-1);}
+  });
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&playing)acquireWakeLock();});
+  loadSettings();updateMeter(true);
+  if('serviceWorker' in navigator) window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./service-worker.js',{scope:'./'}).catch(()=>{});
+  });
+})();
+</script>
+</body>
+</html>

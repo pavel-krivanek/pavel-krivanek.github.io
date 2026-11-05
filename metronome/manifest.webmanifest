@@ -1,0 +1,17 @@
+{
+  "name": "Metronome – Tempo & Meter",
+  "short_name": "Metronome",
+  "description": "A compact metronome with tap tempo, Italian tempo presets, and time signatures.",
+  "id": "./",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1520",
+  "theme_color": "#0b1520",
+  "orientation": "any",
+  "icons": [
+    {"src":"./icons/icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},
+    {"src":"./icons/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},
+    {"src":"./icons/icon-maskable-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
+  ]
+}
